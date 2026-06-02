@@ -121,12 +121,12 @@ public class ForzaFireReferenceTests
         Assert.InRange(r.ToeRear, 0.0, 0.5);
     }
 
-    // 112 – Drift rear toe: ForzaFire says +0.5° to +3.0° (aggressive toe-out)
+    // 112 – Drift rear toe: ForzaFire says +0.5° to +3.0° (toe-in for sustained angle control)
     [Fact]
     public void T112_DriftRearToePositive()
     {
         var r = Gen(CarFactory.SupraA90(), CarFactory.Drift());
-        Assert.True(r.ToeRear >= 0.1, $"Drift rear toe {r.ToeRear} should be positive (toe-out)");
+        Assert.True(r.ToeRear >= 0.1, $"Drift rear toe {r.ToeRear} should be positive (toe-in for angle control)");
     }
 
     // 113 – FWD road front toe: ForzaFire says -0.1° to +0.1° (neutral to slight toe-out)
@@ -641,7 +641,7 @@ public class ForzaFireReferenceTests
         }
     }
 
-    // 159 – Power-scaling of final drive: more power → shorter final drive (higher ratio)
+    // 159 – Power-scaling of final drive: more power → higher top speed → lower numerical FD
     [Fact]
     public void T159_PowerScalesFinalDrive()
     {
@@ -649,8 +649,9 @@ public class ForzaFireReferenceTests
         var low  = CarFactory.SupraA90(); low.PowerHP  = 150; low.GearCount  = 6;
         var r_high = Gen(high, CarFactory.Road());
         var r_low  = Gen(low,  CarFactory.Road());
-        Assert.True(r_high.FinalDrive >= r_low.FinalDrive,
-            $"High power FD {r_high.FinalDrive} should be >= low {r_low.FinalDrive}");
+        // Higher power → higher computed top speed → numerically lower FD (longer gear for high speed)
+        Assert.True(r_high.FinalDrive <= r_low.FinalDrive,
+            $"High power FD {r_high.FinalDrive} should be <= low power FD {r_low.FinalDrive}");
     }
 
     // 160 – All explanations contain meaningful content (not just numbers)

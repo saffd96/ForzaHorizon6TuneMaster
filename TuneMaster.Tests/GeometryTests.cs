@@ -75,12 +75,12 @@ public class GeometryTests
         Assert.Equal(0.0, r.ToeRear);
     }
 
-    // 027 – Drift rear toe: positive (toe-out promotes rotation)
+    // 027 – Drift rear toe: positive (toe-in for angle stability; Forza convention: positive = toe-in)
     [Fact]
     public void T027_DriftRearToePositive()
     {
         var r = Gen(CarFactory.SupraA90(), CarFactory.Drift());
-        Assert.True(r.ToeRear >= 0, $"Drift rear toe {r.ToeRear} should be >= 0 (toe-out)");
+        Assert.True(r.ToeRear >= 0, $"Drift rear toe {r.ToeRear} should be >= 0 (toe-in for angle control)");
     }
 
     // 028 – Drift front toe: zero or slightly negative (counter-steer)
@@ -133,6 +133,21 @@ public class GeometryTests
         var r = Gen(CarFactory.Gemera(), CarFactory.Drag(DragDistance.Mile));
         Assert.True(r.Caster <= 6.5,
             $"Drag caster {r.Caster} should be <= 6.5° (community: 5–6° for drag)");
+    }
+
+    // 032b – Drift caster: reduced vs Road — lighter steering needed for initiation (community: 5–6°)
+    [Fact]
+    public void T032b_DriftCasterLowerThanRoad()
+    {
+        foreach (var car in new[] { CarFactory.SupraA90(), CarFactory.GtrR35(), CarFactory.Hellcat() })
+        {
+            var r_road  = Gen(car, CarFactory.Road());
+            var r_drift = Gen(car, CarFactory.Drift());
+            Assert.True(r_drift.Caster < r_road.Caster,
+                $"{car.DriveType} drift caster {r_drift.Caster}° should be < road caster {r_road.Caster}°");
+            Assert.True(r_drift.Caster <= 6.5,
+                $"{car.DriveType} drift caster {r_drift.Caster}° should be ≤ 6.5° (community: 5–6° for drift)");
+        }
     }
 
     // 033 – Road high-speed car (>300 km/h) caster higher than slow car (<200 km/h)

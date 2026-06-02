@@ -24,7 +24,7 @@ public class TuneResult
     public double ARBFront { get; set; }
     public double ARBRear { get; set; }
 
-    // Springs (kgf/mm)
+    // Springs (N/mm)
     public double SpringFront { get; set; }
     public double SpringRear { get; set; }
 

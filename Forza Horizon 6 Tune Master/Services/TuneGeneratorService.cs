@@ -54,6 +54,8 @@ public class TuneGeneratorService
         CalculateDifferential(car, track, c, r, ex);
         CalculateBrakes(car, track, c, r, ex);
         CalculateGearing(car, track, c, r, ex);
+        if (track.Discipline == Discipline.Drag)
+            CalculateLaunchControl(car, r);
 
         return r;
     }
@@ -86,7 +88,10 @@ public class TuneGeneratorService
             _             => 1.00
         };
 
-        double launch = Math.Clamp(baseLaunch * driveAdj, 1000, car.MaxRPM * 0.75);
+        // Torque: high-torque engines need lower launch RPM to avoid spinning wheels
+        // Factor scales from 1.0 (400 Nm baseline) down to 0.65 (extreme torque)
+        double torqueFactor = Math.Clamp(1.0 - Math.Max(0, car.TorqueNm - 400.0) / 1500.0, 0.65, 1.0);
+        double launch = Math.Clamp(baseLaunch * driveAdj * torqueFactor, 1000, car.MaxRPM * 0.75);
         r.LaunchControlRpm = Math.Round(launch / 100.0) * 100;
     }
 
@@ -96,10 +101,11 @@ public class TuneGeneratorService
             return car.WeightDistributionFront;
         return car.EnginePosition switch
         {
-            EnginePosition.Front => 55,
-            EnginePosition.Mid   => 48,
-            EnginePosition.Rear  => 40,
-            _                    => 50
+            EnginePosition.Front   => 55,
+            EnginePosition.Mid     => 48,
+            EnginePosition.RearMid => 43,  // between Mid and Rear: rear-biased dynamic load
+            EnginePosition.Rear    => 40,
+            _                      => 50
         };
     }
 
@@ -249,8 +255,8 @@ public class TuneGeneratorService
         }
 
         // Engine position bias
-        double epF = car.EnginePosition switch { EnginePosition.Front => -0.2, EnginePosition.Rear => 0.1, _ => 0.0 };
-        double epR = car.EnginePosition switch { EnginePosition.Front => 0.1, EnginePosition.Rear => -0.2, _ => 0.0 };
+        double epF = car.EnginePosition switch { EnginePosition.Front => -0.2, EnginePosition.RearMid => 0.05, EnginePosition.Rear => 0.1, _ => 0.0 };
+        double epR = car.EnginePosition switch { EnginePosition.Front => 0.1, EnginePosition.RearMid => -0.1, EnginePosition.Rear => -0.2, _ => 0.0 };
 
         // Drivetrain camber bias (ForzaFire): road only
         if (track.Discipline is Discipline.Road or Discipline.Street or Discipline.Touge)
@@ -337,10 +343,11 @@ public class TuneGeneratorService
 
         double discAdj = track.Discipline switch
         {
-            Discipline.Drag  => -0.5,
-            Discipline.Rally => -0.5,
-            Discipline.CrossCountry => -1.0,
-            _                => 0.0
+            Discipline.Drag          => -0.5,
+            Discipline.Drift         => -1.0, // light steering for drift initiation (community: 5–6°)
+            Discipline.Rally         => -0.5,
+            Discipline.CrossCountry  => -1.0,
+            _                        => 0.0
         };
 
         double caster = Clamp(baseByWeight + speedAdj + discAdj, c.CasterMin, c.CasterMax);
@@ -385,12 +392,12 @@ public class TuneGeneratorService
             (_, _)                           => (26.0, 33.0, "Road AWD: F26/R33 — сбалансированные стабилизаторы (ForzaFire F22-30/R28-38).")
         };
 
-        // Wheelbase: longer → slightly stiffer (applied to base first, then add fixed offsets)
-        double wbFactor = car.Wheelbase / 2700.0;
-        double arbF = baseF * massScale * wbFactor;
-        double arbR = baseR * massScale * wbFactor;
+        // Track width: wider track → less roll tendency → softer ARB needed (physical: roll moment ∝ 1/track)
+        double trackFactor = car.FrontTrack / 1550.0;
+        double arbF = baseF * massScale * trackFactor;
+        double arbR = baseR * massScale * trackFactor;
 
-        // Weight distribution: shift after wbFactor so offset isn't scaled by wheelbase
+        // Weight distribution: shift after trackFactor so offset isn't scaled
         arbF += wdDev * 4.0;
         arbR -= wdDev * 4.0;
 
@@ -404,7 +411,7 @@ public class TuneGeneratorService
         r.ARBFront = Math.Round(Clamp(arbF, c.ARBFrontMin, c.ARBFrontMax));
         r.ARBRear  = Math.Round(Clamp(arbR, c.ARBRearMin,  c.ARBRearMax));
         ex["ARB"] = $"Стаб.: П {r.ARBFront} / З {r.ARBRear} (диап. 1–65). " +
-            $"{car.DriveType}, база {car.Wheelbase} мм, {car.PowerHP} л.с. {note}";
+            $"{car.DriveType}, колея {car.FrontTrack} мм, {car.PowerHP} л.с. {note}";
     }
 
     // ── Springs ──────────────────────────────────────────────────────────────
@@ -432,10 +439,13 @@ public class TuneGeneratorService
         // Power: more power → stiffer rear to control squat
         double pwrHz = Math.Max(0, (car.PowerHP - 300) / 300.0 * 0.25);
         hzR += pwrHz;
+        // Torque: high torque causes rear squat under acceleration → stiffer rear spring
+        double torqueHz = Math.Min(0.4, Math.Max(0, (car.TorqueNm - 400) / 600.0 * 0.25));
+        hzR += torqueHz;
 
-        // K (kгс/мм) = (2π)² / (2 × 981) × f² × mass_kg × dist  (g=981 cm/s²)
-        double sprF = 0.02012 * hzF * hzF * car.TotalMass * wdF;
-        double sprR = 0.02012 * hzR * hzR * car.TotalMass * wdR;
+        // K (Н/мм) per spring = 4π²/2000 × f² × m_corner; exact constant = 0.019739
+        double sprF = 0.019739 * hzF * hzF * car.TotalMass * wdF;
+        double sprR = 0.019739 * hzR * hzR * car.TotalMass * wdR;
 
         // Suspension upgrade multiplier.
         // Rally/CC disciplines already use soft Hz targets — Rally upgrade keeps them neutral (0.85)
@@ -540,17 +550,16 @@ public class TuneGeneratorService
         double wdF = EffectiveWtDist(car) / 100.0;
         double wdDev = wdF - 0.5;
 
-        // Base rebound for reference car, per discipline
-        double baseReb = (track.Discipline, car.DriveType) switch
+        // Base rebound for reference car, per discipline. Unified road base=15 — mass scaling handles weight.
+        double baseReb = track.Discipline switch
         {
-            (Discipline.Drag, _)             => 10.0,
-            (Discipline.Drift, _)            => 4.0,
-            (Discipline.Rally, _)            => 9.0,
-            (Discipline.CrossCountry, _)     => 8.0,
-            (Discipline.Touge, _)            => 13.0,
-            (Discipline.Street, _)           => 12.0,
-            (_, DriveType.AWD)               => 18.0,
-            (_, _)                           => 14.0
+            Discipline.Drag          => 10.0,
+            Discipline.Drift         => 4.0,
+            Discipline.Rally         => 9.0,
+            Discipline.CrossCountry  => 8.0,
+            Discipline.Touge         => 13.0,
+            Discipline.Street        => 12.0,
+            _                        => 15.0  // road + eliminator: unified base, √mass scales AWD/RWD/FWD
         };
 
         // Bump ratio: bump / rebound
@@ -573,6 +582,8 @@ public class TuneGeneratorService
 
         // Power: more power → stiffer rear rebound
         rebR += Math.Max(0, (car.PowerHP - 300) / 200.0 * 0.5);
+        // Torque: high torque squat → stiffer rear rebound to control extension
+        rebR += Math.Max(0, (car.TorqueNm - 400) / 500.0 * 0.5);
 
         double bmpF = rebF * bumpRatio;
         double bmpR = rebR * bumpRatio;
@@ -621,9 +632,9 @@ public class TuneGeneratorService
 
         var (fwFactor, rwFactor) = car.DriveType switch
         {
-            Models.DriveType.RWD => (0.55, 0.70),
-            Models.DriveType.FWD => (0.65, 0.55),
-            Models.DriveType.AWD => (0.90, 0.15),
+            Models.DriveType.RWD => (0.55, 0.70),  // rear-biased for RWD stability
+            Models.DriveType.FWD => (0.65, 0.55),  // slight front emphasis for FWD
+            Models.DriveType.AWD => (0.70, 0.45),  // front emphasis to mitigate AWD understeer, balanced
             _                    => (0.55, 0.60)
         };
         double aeroF = car.HasFrontAero ? c.AeroFrontMax * fwFactor * speedFactor * pwrFactor : 0;
@@ -718,6 +729,8 @@ public class TuneGeneratorService
 
         // Power: more power → more accel lock
         accel += Math.Max(0, (car.PowerHP - 300) / 200.0 * 5.0);
+        // Torque: more torque → higher wheel slip tendency → more accel lock (direct traction factor)
+        accel += Math.Max(0, (car.TorqueNm - 400) / 300.0 * 3.0);
         // Weight: heavier → more accel lock
         accel += (car.TotalMass - 1400) / 100.0 * 1.5;
         // Engine position: rear/mid → more accel lock
@@ -758,11 +771,11 @@ public class TuneGeneratorService
             // Community: road AWD target 70-85% rear bias
             double targetBias = track.Discipline switch
             {
-                Discipline.Drift  => 0.50,
-                Discipline.Drag   => 0.60,
-                Discipline.Rally  => 0.70,
+                Discipline.Drift        => 0.50, // AWD drift: balanced 50/50 — allows equal-slip rotation
+                Discipline.Drag         => 0.60,
+                Discipline.Rally        => 0.70,
                 Discipline.CrossCountry => 0.60,
-                _                 => 0.78
+                _                       => 0.78
             };
             // Blend user preference toward community target
             bias = bias * 0.4 + targetBias * 0.6;
@@ -843,6 +856,13 @@ public class TuneGeneratorService
         pressure += Math.Max(0, (car.PowerHP - 300) / 200.0 * 5.0);
         pressure += Math.Max(0, (car.MaxSpeedKmh - 200) / 100.0 * 5.0);
         if (car.DriveType == Models.DriveType.AWD) pressure += 5;
+        // Brake upgrade: better calipers/pads → higher effective bite
+        pressure += car.BrakesUpgrade switch
+        {
+            BrakesUpgrade.Race  => 5.0,
+            BrakesUpgrade.Sport => 2.5,
+            _                   => 0.0
+        };
 
         r.BrakeBalance  = Math.Round(Clamp(bias,  c.BrakeBalanceMin,  c.BrakeBalanceMax));
         r.BrakePressure = Math.Round(Clamp(pressure, c.BrakePressureMin, c.BrakePressureMax));

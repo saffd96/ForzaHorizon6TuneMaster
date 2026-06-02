@@ -114,9 +114,6 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="16"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="140"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Наддув" Style="{StaticResource FormLabel}" Width="150"/>
                         <ComboBox  x:Name="AspirationCombo" Grid.Column="1"
@@ -127,10 +124,6 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock Grid.Column="3" Text="{Binding SpeedFieldLabel}" Style="{StaticResource FormLabel}" MinWidth="160"/>
-                        <TextBox   Grid.Column="4" Text="{Binding SpeedDisplay, UpdateSourceTrigger=LostFocus}"
-                                   cv:NumericBehavior.IsNumeric="True"
-                                   ToolTip="Максимальная скорость автомобиля. Используется для расчёта главной пары."/>
                     </Grid>
                     <CheckBox Content="Антилаг"
                               IsChecked="{Binding Car.AntiLag}"
@@ -163,21 +156,39 @@
             <!-- ── Transmission ─────────────────────────────────────────── -->
             <TextBlock Text="ТРАНСМИССИЯ" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="160"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="80"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Тип привода"  Style="{StaticResource FormLabel}" Width="130"/>
-                    <ComboBox  x:Name="DriveTypeCombo" Grid.Column="1"
-                               SelectedValue="{Binding Car.DriveType}"/>
-                    <TextBlock Grid.Column="3" Text="Кол-во передач" Style="{StaticResource FormLabel}" Width="130"/>
-                    <TextBox   Grid.Column="4" Text="{Binding Car.GearCount, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                </Grid>
+                <StackPanel>
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Тип привода"  Style="{StaticResource FormLabel}" Width="130"/>
+                        <ComboBox  x:Name="DriveTypeCombo" Grid.Column="1"
+                                   SelectedValue="{Binding Car.DriveType}"/>
+                        <TextBlock Grid.Column="3" Text="Кол-во передач" Style="{StaticResource FormLabel}" Width="130"/>
+                        <TextBox   Grid.Column="4" Text="{Binding Car.GearCount, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                    </Grid>
+                    <!-- Computed max speed — calculated from power, mass, drivetrain -->
+                    <Border Background="{StaticResource ElevatedBrush}" CornerRadius="5" Padding="12,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding SpeedFieldLabel}"
+                                       Foreground="{StaticResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding SpeedDisplay, StringFormat='≈ {0:F0}'}"
+                                       Foreground="{StaticResource CyanBrush}" FontWeight="SemiBold" VerticalAlignment="Center"
+                                       ToolTip="Расчётная максимальная скорость — вычисляется из мощности, массы и аэродинамики. Обновляется при изменении данных."/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
             </Border>
 
             <!-- ── Tires ────────────────────────────────────────────────── -->

@@ -39,7 +39,7 @@ public class CarCard : NotifyBase
     public double TotalMass
     {
         get => _totalMass;
-        set { Set(ref _totalMass, value); }
+        set { Set(ref _totalMass, value); OnPropertyChanged(nameof(MaxSpeedKmh)); }
     }
 
     private double _weightDistributionFront = 50;
@@ -54,7 +54,7 @@ public class CarCard : NotifyBase
     public double PowerHP
     {
         get => _powerHP;
-        set { Set(ref _powerHP, value); }
+        set { Set(ref _powerHP, value); OnPropertyChanged(nameof(MaxSpeedKmh)); }
     }
 
     private double _torqueNm = 400;
@@ -184,7 +184,7 @@ public class CarCard : NotifyBase
     public DriveType DriveType
     {
         get => _driveType;
-        set { Set(ref _driveType, value); }
+        set { Set(ref _driveType, value); OnPropertyChanged(nameof(MaxSpeedKmh)); }
     }
 
     private int _gearCount = 6;
@@ -206,7 +206,7 @@ public class CarCard : NotifyBase
     public int FrontTireProfile
     {
         get => _frontTireProfile;
-        set { Set(ref _frontTireProfile, value); OnPropertyChanged(nameof(FrontWheelDiameterInch)); }
+        set { Set(ref _frontTireProfile, value); OnPropertyChanged(nameof(FrontWheelDiameterInch)); OnPropertyChanged(nameof(MaxSpeedKmh)); }
     }
 
     private int _rearTireWidth = 265;
@@ -220,7 +220,7 @@ public class CarCard : NotifyBase
     public int RearTireProfile
     {
         get => _rearTireProfile;
-        set { Set(ref _rearTireProfile, value); OnPropertyChanged(nameof(RearWheelDiameterInch)); }
+        set { Set(ref _rearTireProfile, value); OnPropertyChanged(nameof(RearWheelDiameterInch)); OnPropertyChanged(nameof(MaxSpeedKmh)); }
     }
 
     private int _frontRimDiameter = 19;
@@ -266,12 +266,23 @@ public class CarCard : NotifyBase
         set { Set(ref _rearTrack, value); }
     }
 
-    // Performance
-    private double _maxSpeedKmh = 250;
+    // Performance — computed from aerodynamic drag: v = (2P × η / (CdA × ρ))^(1/3)
+    // CdA estimated from mass + tire profile (high profile = SUV body = more drag)
+    // η: AWD=0.87 (two diffs), RWD/FWD=0.92
+    [JsonIgnore]
     public double MaxSpeedKmh
     {
-        get => _maxSpeedKmh;
-        set { Set(ref _maxSpeedKmh, value); }
+        get
+        {
+            double avgProfile  = (FrontTireProfile + RearTireProfile) / 2.0;
+            double bodyFactor  = avgProfile > 55 ? 3.0 : 1.0;
+            double cdA         = (0.40 + TotalMass / 3000.0) * bodyFactor;
+            double eta         = DriveType == DriveType.AWD ? 0.87 : 0.92;
+            double powerWatts  = PowerHP * 745.7 * eta;
+            double vMaxMs      = Math.Pow(2.0 * powerWatts / (cdA * 1.225), 1.0 / 3.0);
+            return Math.Round(Math.Clamp(vMaxMs * 3.6, 60.0, 600.0));
+        }
+        set { /* computed — no-op for backward compat with profiles and tests */ }
     }
 
     // Aero

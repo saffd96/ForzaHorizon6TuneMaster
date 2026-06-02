@@ -30,7 +30,7 @@ WPF .NET 8, MVVM, single ViewModel (`MainViewModel`) bound to all UserControl vi
 - Power → HP (`Car.PowerHP`)
 - Speed → km/h (`Car.MaxSpeedKmh`)
 - Mass → kg (`Car.TotalMass`)
-- Spring rates → kgf/mm (`TuneResult.SpringFront/Rear`)
+- Spring rates → N/mm (`TuneResult.SpringFront/Rear`) — formula: k = 4π²/2000 × f² × m_corner
 - Tire pressure → bar
 - Heights → mm
 
@@ -62,7 +62,7 @@ ConvertBack returns `Binding.DoNothing` for the unchecked case so only the check
 
 ## TuneGeneratorService
 
-Pure static-method calculation service. Each `Calculate*` method takes `(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string,string> ex)` and writes directly to `r` and `ex`. Adding a new discipline requires updating every `switch` statement in this file. Spring rate formula: `k = mass * (2πf)² / 9810` (kgf/mm). Final drive formula targets `MaxSpeedKmh` at 95% MaxRPM through the top gear ratio.
+Pure static-method calculation service. Each `Calculate*` method takes `(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string,string> ex)` and writes directly to `r` and `ex`. Adding a new discipline requires updating every `switch` statement in this file. Spring rate formula: `k = mass * wdF * (2πf)² / 2000` (N/mm per spring; constant 0.019739). Final drive formula targets `MaxSpeedKmh` at 95% MaxRPM through the top gear ratio.
 
 ## Enums (Models/Enums.cs)
 

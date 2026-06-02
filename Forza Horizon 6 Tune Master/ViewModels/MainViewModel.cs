@@ -284,11 +284,7 @@ public class MainViewModel : INotifyPropertyChanged
         get => _measurementSystem == UnitSystem.Imperial
             ? Math.Round(_car.MaxSpeedKmh * 0.6214, 1)
             : _car.MaxSpeedKmh;
-        set
-        {
-            _car.MaxSpeedKmh = _measurementSystem == UnitSystem.Imperial ? value / 0.6214 : value;
-            OnPropertyChanged();
-        }
+        set { /* computed — read-only */ OnPropertyChanged(); }
     }
 
     public double MassDisplay
@@ -359,7 +355,7 @@ public class MainViewModel : INotifyPropertyChanged
         _            => "Мощность (л.с.)"
     };
     public string SpeedFieldLabel => _measurementSystem == UnitSystem.Imperial
-        ? "Макс. скорость (миль/ч)" : "Макс. скорость (км/ч)";
+        ? "Макс. скорость (миль/ч, расч.)" : "Макс. скорость (км/ч, расч.)";
     public string MassFieldLabel  => _measurementSystem == UnitSystem.Imperial
         ? "Полная масса (фнт)" : "Полная масса (кг)";
     public string TorqueFieldLabel => _measurementSystem == UnitSystem.Imperial
@@ -548,6 +544,8 @@ public class MainViewModel : INotifyPropertyChanged
     {
         if (e.PropertyName == nameof(CarCard.PowertrainType))
             OnPropertyChanged(nameof(MaxRPMFieldLabel));
+        if (e.PropertyName == nameof(CarCard.MaxSpeedKmh))
+            OnPropertyChanged(nameof(SpeedDisplay));
     }
 
     private void OnModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -784,7 +782,7 @@ public class MainViewModel : INotifyPropertyChanged
             sb.AppendLine($"Wheelbase={Car.Wheelbase}");
             sb.AppendLine($"FrontTrack={Car.FrontTrack}");
             sb.AppendLine($"RearTrack={Car.RearTrack}");
-            sb.AppendLine($"MaxSpeedKmh={Car.MaxSpeedKmh}");
+            sb.AppendLine($"MaxSpeedKmh={Car.MaxSpeedKmh:F0}"); // computed from physics
             sb.AppendLine($"HasFrontAero={Car.HasFrontAero}");
             sb.AppendLine($"HasRearAero={Car.HasRearAero}");
             sb.AppendLine($"SuspensionUpgrade={Car.SuspensionUpgrade}");
@@ -949,7 +947,7 @@ public class MainViewModel : INotifyPropertyChanged
             case "Wheelbase":         car.Wheelbase = SafeDouble(val, 2700); break;
             case "FrontTrack":        car.FrontTrack = SafeDouble(val, 1550); break;
             case "RearTrack":         car.RearTrack = SafeDouble(val, 1570); break;
-            case "MaxSpeedKmh":       car.MaxSpeedKmh = SafeDouble(val, 250); break;
+            case "MaxSpeedKmh":       /* legacy: now computed from physics */ break;
             case "HasFrontAero":      car.HasFrontAero = SafeBool(val); break;
             case "HasRearAero":       car.HasRearAero = SafeBool(val); break;
             case "SuspensionUpgrade": car.SuspensionUpgrade = SafeEnum<SuspensionUpgrade>(val); break;

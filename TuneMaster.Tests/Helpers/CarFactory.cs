@@ -53,7 +53,7 @@ internal static class CarFactory
         DifferentialUpgrade = DifferentialUpgrade.Sport,
         FrontTireWidth = 255, FrontTireProfile = 40, FrontRimDiameter = 20,
         RearTireWidth  = 285, RearTireProfile  = 35, RearRimDiameter  = 20,
-        Wheelbase = 2780, MaxSpeedKmh = 315,
+        Wheelbase = 2780,
         HasFrontAero = false, HasRearAero = false,
     };
 
@@ -69,7 +69,7 @@ internal static class CarFactory
         DifferentialUpgrade = DifferentialUpgrade.Sport,
         FrontTireWidth = 255, FrontTireProfile = 35, FrontRimDiameter = 19,
         RearTireWidth  = 275, RearTireProfile  = 35, RearRimDiameter  = 19,
-        Wheelbase = 2470, MaxSpeedKmh = 280,
+        Wheelbase = 2470,
         HasFrontAero = false, HasRearAero = false,
     };
 
@@ -85,7 +85,7 @@ internal static class CarFactory
         DifferentialUpgrade = DifferentialUpgrade.Race,
         FrontTireWidth = 235, FrontTireProfile = 35, FrontRimDiameter = 18,
         RearTireWidth  = 235, RearTireProfile  = 35, RearRimDiameter  = 18,
-        Wheelbase = 2620, MaxSpeedKmh = 235,
+        Wheelbase = 2620,
         HasFrontAero = false, HasRearAero = false,
     };
 
@@ -102,7 +102,7 @@ internal static class CarFactory
         DifferentialUpgrade = DifferentialUpgrade.Stock,
         FrontTireWidth = 315, FrontTireProfile = 30, FrontRimDiameter = 19,
         RearTireWidth  = 265, RearTireProfile  = 35, RearRimDiameter  = 19,
-        Wheelbase = 3000, MaxSpeedKmh = 463,
+        Wheelbase = 3000,
         HasFrontAero = false, HasRearAero = false,
     };
 
@@ -118,7 +118,7 @@ internal static class CarFactory
         DifferentialUpgrade = DifferentialUpgrade.Stock,
         FrontTireWidth = 205, FrontTireProfile = 45, FrontRimDiameter = 17,
         RearTireWidth  = 205, RearTireProfile  = 45, RearRimDiameter  = 17,
-        Wheelbase = 2310, MaxSpeedKmh = 215,
+        Wheelbase = 2310,
         HasFrontAero = false, HasRearAero = false,
     };
 
@@ -134,7 +134,7 @@ internal static class CarFactory
         DifferentialUpgrade = DifferentialUpgrade.Sport,
         FrontTireWidth = 285, FrontTireProfile = 70, FrontRimDiameter = 17,
         RearTireWidth  = 285, RearTireProfile  = 70, RearRimDiameter  = 17,
-        Wheelbase = 2949, MaxSpeedKmh = 165,
+        Wheelbase = 2949,
         HasFrontAero = false, HasRearAero = false,
     };
 
@@ -150,7 +150,7 @@ internal static class CarFactory
         DifferentialUpgrade = DifferentialUpgrade.Race,
         FrontTireWidth = 265, FrontTireProfile = 35, FrontRimDiameter = 21,
         RearTireWidth  = 325, RearTireProfile  = 30, RearRimDiameter  = 21,
-        Wheelbase = 2457, MaxSpeedKmh = 296,
+        Wheelbase = 2457,
         HasFrontAero = true, HasRearAero = true,
     };
 
@@ -166,7 +166,7 @@ internal static class CarFactory
         DifferentialUpgrade = DifferentialUpgrade.Race,
         FrontTireWidth = 245, FrontTireProfile = 45, FrontRimDiameter = 21,
         RearTireWidth  = 265, RearTireProfile  = 45, RearRimDiameter  = 21,
-        Wheelbase = 2960, MaxSpeedKmh = 322,
+        Wheelbase = 2960,
         HasFrontAero = false, HasRearAero = false,
     };
 
@@ -182,7 +182,7 @@ internal static class CarFactory
         DifferentialUpgrade = DifferentialUpgrade.Sport,
         FrontTireWidth = 245, FrontTireProfile = 45, FrontRimDiameter = 17,
         RearTireWidth  = 245, RearTireProfile  = 45, RearRimDiameter  = 17,
-        Wheelbase = 2650, MaxSpeedKmh = 255,
+        Wheelbase = 2650,
         HasFrontAero = false, HasRearAero = true,
     };
 
@@ -199,7 +199,7 @@ internal static class CarFactory
         DifferentialUpgrade = DifferentialUpgrade.Race,
         FrontTireWidth = 275, FrontTireProfile = 40, FrontRimDiameter = 20,
         RearTireWidth  = 305, RearTireProfile  = 35, RearRimDiameter  = 20,
-        Wheelbase = 3020, MaxSpeedKmh = 328,
+        Wheelbase = 3020,
         HasFrontAero = false, HasRearAero = false,
     };
 
