@@ -515,6 +515,13 @@
                                         <TextBlock Text="ГЛАВНАЯ ПАРА" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel HorizontalAlignment="Center" Margin="0,0,24,4">
+                                        <TextBlock Text="{Binding TuneResult.ActualMaxSpeedKmh, StringFormat='{}{0:F0}'}"
+                                                   Style="{StaticResource ValueDisplay}" FontSize="20"
+                                                   Foreground="{StaticResource CyanBrush}"
+                                                   ToolTip="Расчётная максимальная скорость при данных передаточных числах и оборотах"/>
+                                        <TextBlock Text="КМ/Ч (МАКС.)" Style="{StaticResource ParamLabel}"/>
+                                    </StackPanel>
+                                    <StackPanel HorizontalAlignment="Center" Margin="0,0,24,4">
                                         <TextBlock Text="{Binding TuneResult.RecommendedGearCount}"
                                                    Style="{StaticResource ValueDisplay}" FontSize="20"
                                                    ToolTip="{Binding TuneResult.Explanations[FinalDrive]}"/>

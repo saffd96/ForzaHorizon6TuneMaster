@@ -172,22 +172,6 @@
                         <TextBlock Grid.Column="3" Text="Кол-во передач" Style="{StaticResource FormLabel}" Width="130"/>
                         <TextBox   Grid.Column="4" Text="{Binding Car.GearCount, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     </Grid>
-                    <!-- Computed max speed — calculated from power, mass, drivetrain -->
-                    <Border Background="{StaticResource ElevatedBrush}" CornerRadius="5" Padding="12,8">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="{Binding SpeedFieldLabel}"
-                                       Foreground="{StaticResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding SpeedDisplay, StringFormat='≈ {0:F0}'}"
-                                       Foreground="{StaticResource CyanBrush}" FontWeight="SemiBold" VerticalAlignment="Center"
-                                       ToolTip="Расчётная максимальная скорость — вычисляется из мощности, массы и аэродинамики. Обновляется при изменении данных."/>
-                        </Grid>
-                    </Border>
                 </StackPanel>
             </Border>
 

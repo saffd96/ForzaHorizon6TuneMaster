@@ -14,14 +14,14 @@
         <StackPanel Margin="24,16,24,24">
 
             <TextBlock Foreground="{StaticResource TextDimBrush}" FontSize="12" Margin="0,0,0,16" TextWrapping="Wrap">
-                Задайте минимальные и максимальные значения для каждого параметра.
-                Генератор не выйдет за эти пределы. Оставьте значения по умолчанию для автоматической настройки.
+                Задайте допустимые диапазоны для пружин, дорожного просвета и аэродинамики.
+                Остальные параметры рассчитываются автоматически в пределах стандартных игровых ограничений.
             </TextBlock>
 
             <!-- Helper template -->
             <!-- ── Tire Pressure ─────────────────────────────────────── -->
-            <TextBlock Text="{Binding TirePressureUnitLabel}" Style="{StaticResource SectionHeader}"/>
-            <Border Style="{StaticResource SectionCard}">
+            <TextBlock Text="{Binding TirePressureUnitLabel}" Style="{StaticResource SectionHeader}" Visibility="Collapsed"/>
+            <Border Style="{StaticResource SectionCard}" Visibility="Collapsed">
                 <StackPanel>
                     <Grid Style="{StaticResource MinMaxRow}">
                         <Grid.ColumnDefinitions>
@@ -46,8 +46,8 @@
             </Border>
 
             <!-- ── Alignment ─────────────────────────────────────────── -->
-            <TextBlock Text="ГЕОМЕТРИЯ ПОДВЕСКИ" Style="{StaticResource SectionHeader}"/>
-            <Border Style="{StaticResource SectionCard}">
+            <TextBlock Text="ГЕОМЕТРИЯ ПОДВЕСКИ" Style="{StaticResource SectionHeader}" Visibility="Collapsed"/>
+            <Border Style="{StaticResource SectionCard}" Visibility="Collapsed">
                 <StackPanel>
                     <Grid Style="{StaticResource MinMaxRow}">
                         <Grid.ColumnDefinitions>
@@ -103,8 +103,8 @@
             </Border>
 
             <!-- ── ARB ───────────────────────────────────────────────── -->
-            <TextBlock Text="СТАБИЛИЗАТОРЫ ПОПЕРЕЧНОЙ УСТОЙЧИВОСТИ (1–65)" Style="{StaticResource SectionHeader}"/>
-            <Border Style="{StaticResource SectionCard}">
+            <TextBlock Text="СТАБИЛИЗАТОРЫ ПОПЕРЕЧНОЙ УСТОЙЧИВОСТИ (1–65)" Style="{StaticResource SectionHeader}" Visibility="Collapsed"/>
+            <Border Style="{StaticResource SectionCard}" Visibility="Collapsed">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="130"/>
@@ -175,8 +175,8 @@
             </Border>
 
             <!-- ── Dampers ───────────────────────────────────────────── -->
-            <TextBlock Text="АМОРТИЗАТОРЫ (1–20)" Style="{StaticResource SectionHeader}"/>
-            <Border Style="{StaticResource SectionCard}">
+            <TextBlock Text="АМОРТИЗАТОРЫ (1–20)" Style="{StaticResource SectionHeader}" Visibility="Collapsed"/>
+            <Border Style="{StaticResource SectionCard}" Visibility="Collapsed">
                 <StackPanel>
                     <Grid Style="{StaticResource MinMaxRow}">
                         <Grid.ColumnDefinitions>
@@ -220,8 +220,8 @@
             </Border>
 
             <!-- ── Differential ──────────────────────────────────────── -->
-            <TextBlock Text="ДИФФЕРЕНЦИАЛ (%)" Style="{StaticResource SectionHeader}"/>
-            <Border Style="{StaticResource SectionCard}">
+            <TextBlock Text="ДИФФЕРЕНЦИАЛ (%)" Style="{StaticResource SectionHeader}" Visibility="Collapsed"/>
+            <Border Style="{StaticResource SectionCard}" Visibility="Collapsed">
                 <StackPanel>
                     <Grid Style="{StaticResource MinMaxRow}">
                         <Grid.ColumnDefinitions>
@@ -302,8 +302,8 @@
             </Border>
 
             <!-- ── Final Drive ───────────────────────────────────────── -->
-            <TextBlock Text="ГЛАВНАЯ ПАРА" Style="{StaticResource SectionHeader}"/>
-            <Border Style="{StaticResource SectionCard}">
+            <TextBlock Text="ГЛАВНАЯ ПАРА" Style="{StaticResource SectionHeader}" Visibility="Collapsed"/>
+            <Border Style="{StaticResource SectionCard}" Visibility="Collapsed">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="130"/>
