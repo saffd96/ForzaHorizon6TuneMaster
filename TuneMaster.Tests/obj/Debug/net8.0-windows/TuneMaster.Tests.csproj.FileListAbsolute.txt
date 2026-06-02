@@ -1,9 +1,4 @@
 U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\bin\Debug\net8.0-windows\CoverletSourceRootsMapping_TuneMaster.Tests
-U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMaster.Tests.csproj.AssemblyReference.cache
-U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMaster.Tests.GeneratedMSBuildEditorConfig.editorconfig
-U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMaster.Tests.AssemblyInfoInputs.cache
-U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMaster.Tests.AssemblyInfo.cs
-U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMaster.Tests.csproj.CoreCompileInputs.cache
 U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\bin\Debug\net8.0-windows\testhost.dll
 U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\bin\Debug\net8.0-windows\Forza Horizon 6 Tune Master.deps.json
 U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\bin\Debug\net8.0-windows\Forza Horizon 6 Tune Master.runtimeconfig.json
@@ -97,6 +92,12 @@ U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\bin\Debug\net8.0-windows\zh-Hant
 U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\bin\Debug\net8.0-windows\zh-Hant\Microsoft.VisualStudio.TestPlatform.Common.resources.dll
 U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\bin\Debug\net8.0-windows\Forza Horizon 6 Tune Master.dll
 U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\bin\Debug\net8.0-windows\Forza Horizon 6 Tune Master.pdb
+U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMaster.Tests.csproj.AssemblyReference.cache
+U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMaster.Tests.GeneratedMSBuildEditorConfig.editorconfig
+U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMaster.Tests.AssemblyInfoInputs.cache
+U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMaster.Tests.AssemblyInfo.cs
+U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMaster.Tests.csproj.CoreCompileInputs.cache
+U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMaster.Tests.sourcelink.json
 U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMast.88919EB8.Up2Date
 U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\TuneMaster.Tests.dll
 U:\Forza Horizon 6 Tune Master\TuneMaster.Tests\obj\Debug\net8.0-windows\refint\TuneMaster.Tests.dll

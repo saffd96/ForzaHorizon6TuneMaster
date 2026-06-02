@@ -831,6 +831,7 @@ public class MainViewModel : INotifyPropertyChanged
             sb.AppendLine($"BrakePressure={TuneResult.BrakePressure}");
             sb.AppendLine($"FinalDrive={TuneResult.FinalDrive}");
             sb.AppendLine($"GearRatios={string.Join(";", TuneResult.GearRatios)}");
+
             sb.AppendLine();
 
             sb.AppendLine("── Пояснения ──────────────────────────────────────");

@@ -54,8 +54,6 @@ public class TuneGeneratorService
         CalculateDifferential(car, track, c, r, ex);
         CalculateBrakes(car, track, c, r, ex);
         CalculateGearing(car, track, c, r, ex);
-        if (track.Discipline == Discipline.Drag)
-            CalculateLaunchControl(car, r);
 
         return r;
     }
@@ -186,8 +184,8 @@ public class TuneGeneratorService
                 break;
             case Discipline.Drift:
                 // Community: 20–26 PSI for drift. Lower both ends, rear more so.
-                discF = -0.10; discR = -0.45;
-                reason = "Drift: пониженное давление (~25 PSI сзади) для предсказуемого скольжения и прогрева шин.";
+                discF = -0.52; discR = -0.72;
+                reason = "Drift: ~25 PSI перед / ~22 PSI зад для предсказуемого скольжения.";
                 break;
             case Discipline.Rally or Discipline.CrossCountry:
                 discF = -0.20; discR = -0.20;
@@ -229,7 +227,7 @@ public class TuneGeneratorService
                 reason = "Drag: минимальный развал — максимальное пятно контакта на старте.";
                 break;
             case Discipline.Drift:
-                camF = -4.0; camR = -1.0;
+                camF = -5.0; camR = -1.0;
                 reason = "Drift: агрессивный передний развал для контроля при больших углах поворота.";
                 break;
             case Discipline.Rally:
@@ -253,6 +251,13 @@ public class TuneGeneratorService
         // Engine position bias
         double epF = car.EnginePosition switch { EnginePosition.Front => -0.2, EnginePosition.Rear => 0.1, _ => 0.0 };
         double epR = car.EnginePosition switch { EnginePosition.Front => 0.1, EnginePosition.Rear => -0.2, _ => 0.0 };
+
+        // Drivetrain camber bias (ForzaFire): road only
+        if (track.Discipline is Discipline.Road or Discipline.Street or Discipline.Touge)
+        {
+            camF += car.DriveType switch { DriveType.RWD => -0.3, DriveType.FWD => 0.3, _ => 0.0 };
+            camR += car.DriveType switch { DriveType.RWD => 0.2, DriveType.FWD => -0.2, _ => 0.0 };
+        }
 
         // Power: more power → more rear camber for exit grip (not for drag/CC)
         double pwrR = track.Discipline is Discipline.Drag or Discipline.CrossCountry
@@ -296,8 +301,8 @@ public class TuneGeneratorService
                 break;
         }
 
-        toeF /= wbNorm;
-        toeR /= wbNorm;
+        toeF *= wbNorm;
+        toeR *= wbNorm;
 
         // More power on RWD → more rear toe-in for exit stability (skip drag — 0° is mandatory)
         if (car.DriveType == Models.DriveType.RWD && track.Discipline != Discipline.Drag)
@@ -374,10 +379,10 @@ public class TuneGeneratorService
             (Discipline.Touge, _)            => (34.0, 28.0, "Тоге AWD: сбалансированные."),
             (Discipline.Street, Models.DriveType.RWD) => (28.0, 24.0, "Стрит RWD: средняя жёсткость."),
             (Discipline.Street, Models.DriveType.FWD) => (10.0, 30.0, "Стрит FWD: мягкий перед для зацепа, жёстче зад против сноса."),
-            (_, Models.DriveType.RWD)        => (30.0, 28.0, "Road RWD: классический баланс."),
+            (_, Models.DriveType.RWD)        => (22.0, 28.0, "Road RWD: классический баланс (ForzaFire F18-25)."),
             // FWD: soft front for grip, stiff rear for rotation — prevents understeer (forzafire.com)
             (_, Models.DriveType.FWD)        => (12.0, 28.0, "Road FWD: мягкий перед (зацеп), жёстче зад (ротация)."),
-            (_, _)                           => (28.0, 30.0, "Road AWD: чуть жёстче зад для вращения.")
+            (_, _)                           => (26.0, 33.0, "Road AWD: F26/R33 — сбалансированные стабилизаторы (ForzaFire F22-30/R28-38).")
         };
 
         // Wheelbase: longer → slightly stiffer (applied to base first, then add fixed offsets)
@@ -536,25 +541,26 @@ public class TuneGeneratorService
         double wdDev = wdF - 0.5;
 
         // Base rebound for reference car, per discipline
-        double baseReb = track.Discipline switch
+        double baseReb = (track.Discipline, car.DriveType) switch
         {
-            Discipline.Drag         => 10.0,
-            Discipline.Drift        => 12.0,
-            Discipline.Rally        => 9.0,
-            Discipline.CrossCountry => 8.0,
-            Discipline.Touge        => 13.0,
-            Discipline.Street       => 12.0,
-            _                       => 14.0
+            (Discipline.Drag, _)             => 10.0,
+            (Discipline.Drift, _)            => 4.0,
+            (Discipline.Rally, _)            => 9.0,
+            (Discipline.CrossCountry, _)     => 8.0,
+            (Discipline.Touge, _)            => 13.0,
+            (Discipline.Street, _)           => 12.0,
+            (_, DriveType.AWD)               => 18.0,
+            (_, _)                           => 14.0
         };
 
         // Bump ratio: bump / rebound
-        double bumpRatio = track.Discipline switch
+        double bumpRatio = (track.Discipline, car.DriveType) switch
         {
-            Discipline.Drag         => 0.45,
-            Discipline.Drift        => 0.50,
-            Discipline.Rally        => 0.65,
-            Discipline.CrossCountry => 0.67,
-            _                       => 0.57
+            (Discipline.Drag, _)             => 0.45,
+            (Discipline.Drift, _)            => 0.50,
+            (Discipline.Rally, _)            => 0.65,
+            (Discipline.CrossCountry, _)     => 0.67,
+            (_, _)                           => 0.57
         };
 
         // Weight distribution: heavier end gets stiffer damping
@@ -613,12 +619,15 @@ public class TuneGeneratorService
         double speedFactor = Math.Min(1.0, car.MaxSpeedKmh / 280.0);
         double pwrFactor = Math.Min(1.5, 1.0 + Math.Max(0, (car.PowerHP - 300) / 200.0 * 0.15));
 
-        double aeroF = car.HasFrontAero ? c.AeroFrontMax * 0.55 * speedFactor * pwrFactor : 0;
-        double aeroR = car.HasRearAero  ? c.AeroRearMax  * 0.60 * speedFactor * pwrFactor : 0;
-
-        // Drivetrain bias
-        if (car.DriveType == Models.DriveType.RWD) aeroR += 15;
-        if (car.DriveType == Models.DriveType.FWD) aeroF += 15;
+        var (fwFactor, rwFactor) = car.DriveType switch
+        {
+            Models.DriveType.RWD => (0.55, 0.70),
+            Models.DriveType.FWD => (0.65, 0.55),
+            Models.DriveType.AWD => (0.90, 0.15),
+            _                    => (0.55, 0.60)
+        };
+        double aeroF = car.HasFrontAero ? c.AeroFrontMax * fwFactor * speedFactor * pwrFactor : 0;
+        double aeroR = car.HasRearAero  ? c.AeroRearMax  * rwFactor * speedFactor * pwrFactor : 0;
 
         // Discipline
         switch (track.Discipline)
@@ -627,7 +636,7 @@ public class TuneGeneratorService
                 aeroF = 0; aeroR = car.HasRearAero ? 15 : 0;
                 break;
             case Discipline.Drift:
-                aeroF *= 0.3; aeroR *= 0.8;
+                aeroF *= 0.8; aeroR *= 0.3;
                 break;
             case Discipline.CrossCountry:
                 aeroF = car.HasFrontAero ? 30 : 0; aeroR = car.HasRearAero ? 50 : 0;
@@ -676,7 +685,7 @@ public class TuneGeneratorService
             case Discipline.Drift:
                 (accel, decel) = car.DriveType switch
                 {
-                    Models.DriveType.RWD => (95.0, 5.0),
+                    Models.DriveType.RWD => (95.0, 0.0),
                     Models.DriveType.AWD => (80.0, 10.0),
                     _                    => (0.0, 0.0)
                 };
@@ -829,6 +838,8 @@ public class TuneGeneratorService
             Discipline.CrossCountry => 85,
             _                 => 100
         };
+        // Mass: lighter cars need less pressure, heavier need more (ForzaFire: 85-115%)
+        pressure += (car.TotalMass - 1400) / 200.0 * 2.5;
         pressure += Math.Max(0, (car.PowerHP - 300) / 200.0 * 5.0);
         pressure += Math.Max(0, (car.MaxSpeedKmh - 200) / 100.0 * 5.0);
         if (car.DriveType == Models.DriveType.AWD) pressure += 5;
