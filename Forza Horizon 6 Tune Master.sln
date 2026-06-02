@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# 
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Forza Horizon 6 Tune Master", "Forza Horizon 6 Tune Master\Forza Horizon 6 Tune Master.csproj", "{39FF5592-D3E2-438B-A771-F92746ECE814}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TuneMaster.Tests", "TuneMaster.Tests\TuneMaster.Tests.csproj", "{27CF991C-0AB9-4C8D-97F3-AFA1EFC81421}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{39FF5592-D3E2-438B-A771-F92746ECE814}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39FF5592-D3E2-438B-A771-F92746ECE814}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39FF5592-D3E2-438B-A771-F92746ECE814}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39FF5592-D3E2-438B-A771-F92746ECE814}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27CF991C-0AB9-4C8D-97F3-AFA1EFC81421}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27CF991C-0AB9-4C8D-97F3-AFA1EFC81421}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27CF991C-0AB9-4C8D-97F3-AFA1EFC81421}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27CF991C-0AB9-4C8D-97F3-AFA1EFC81421}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

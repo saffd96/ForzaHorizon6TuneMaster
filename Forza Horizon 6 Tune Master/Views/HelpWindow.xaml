@@ -1,0 +1,155 @@
+<Window x:Class="Forza_Horizon_6_Tune_Master.Views.HelpWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Справка — Tune Master"
+        Width="560" Height="640"
+        MinWidth="440" MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="{StaticResource BgBrush}"
+        WindowStyle="SingleBorderWindow">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <StackPanel>
+                <TextBlock Text="Как пользоваться Tune Master"
+                           FontSize="18" FontWeight="Bold"
+                           Foreground="{StaticResource TextBrush}"/>
+                <TextBlock Text="Генератор оптимального тюнинга для Forza Horizon 6"
+                           FontSize="12" Foreground="{StaticResource TextDimBrush}" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="20,16">
+            <StackPanel>
+
+                <!-- Step 1 -->
+                <Border Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource AccentBrush}"
+                        BorderThickness="3,0,0,0"
+                        CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="1 — ДАННЫЕ АВТОМОБИЛЯ"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="13"
+                                   Text="Во вкладке «Автомобиль» введите марку, модель, мощность (л.с.), крутящий момент (Нм), максимальные обороты и тип привода. Укажите массу и распределение веса по осям. Выберите тип двигателя, подвески и дифференциала — они влияют на расчёт пружин и дифференциала."/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Step 2 -->
+                <Border Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource CyanBrush}"
+                        BorderThickness="3,0,0,0"
+                        CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="2 — ВЫБЕРИТЕ ДИСЦИПЛИНУ"
+                                   Foreground="{StaticResource CyanBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="13"
+                                   Text="В нижней панели выберите режим езды: Шоссе, Тоуге, Дрифт, Дрэг, Ралли, Бездорожье или Улица. Каждая дисциплина использует разные формулы и цели. Для дрэга укажите дистанцию (1/4 мили, 1/8 мили, миля)."/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Step 3 -->
+                <Border Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource AccentBrush}"
+                        BorderThickness="3,0,0,0"
+                        CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="3 — ГЕНЕРАЦИЯ ТЮНИНГА"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="13"
+                                   Text="Нажмите кнопку «⚡ Сгенерировать» в нижнем правом углу. Включите «✓ Авто» в шапке правой панели — тюнинг будет пересчитываться автоматически при любом изменении данных автомобиля или дисциплины."/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Step 4 -->
+                <Border Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource CyanBrush}"
+                        BorderThickness="3,0,0,0"
+                        CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="4 — ПРОСМОТР РЕЗУЛЬТАТОВ"
+                                   Foreground="{StaticResource CyanBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="13"
+                                   Text="Тюнинг отображается в правой панели: давление шин, геометрия, ARB, пружины, клиренс, амортизаторы, аэро, дифференциал, тормоза и передаточные числа. Наведите курсор на любое значение — появится всплывающая подсказка с физическим обоснованием."/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Step 5: Launch Control -->
+                <Border Background="{StaticResource ElevatedBrush}"
+                        BorderBrush="{StaticResource AccentBrush}"
+                        BorderThickness="3,0,0,0"
+                        CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="5 — LAUNCH CONTROL (ДРЭГ)"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="13"
+                                   Text="В режиме дрэга отображаются оптимальные обороты для старта. Удержи педаль газа на указанных оборотах перед стартом. Значение рассчитывается исходя из типа наддува, пика крутящего момента и типа привода: AWD допускает более высокие обороты, RWD — пониженные для контроля над пробуксовкой."/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Step 6: Profiles -->
+                <Border Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource CyanBrush}"
+                        BorderThickness="3,0,0,0"
+                        CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="6 — ПРОФИЛИ"
+                                   Foreground="{StaticResource CyanBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="13"
+                                   Text="Нажмите «💾 Сохранить» и введите имя профиля — все параметры автомобиля, ограничения слайдеров и готовый тюнинг сохранятся на диск. Выберите профиль в списке и нажмите «Загрузить» для восстановления. «+ Новый» сбрасывает все поля к значениям по умолчанию."/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Step 7: Export + Units -->
+                <Border Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource AccentBrush}"
+                        BorderThickness="3,0,0,0"
+                        CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="7 — ЭКСПОРТ И ЕДИНИЦЫ"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="13"
+                                   Text="«💾 Экспорт» в шапке правой панели сохраняет тюнинг как текстовый файл для публикации в Forza-сообществе. «📂 Импорт» загружает тюнинг из текстового файла. Единицы измерения — метрические или имперские, мощность в л.с. / PS / кВт, пружины в кгс/мм · Н/мм · фунт/дюйм — переключаются в верхней панели."/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <Border Grid.Row="2"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,10">
+            <Button Content="OK — Закрыть"
+                    Style="{StaticResource PrimaryButton}"
+                    HorizontalAlignment="Right"
+                    Padding="24,8"
+                    Click="OkButton_Click"/>
+        </Border>
+    </Grid>
+</Window>
