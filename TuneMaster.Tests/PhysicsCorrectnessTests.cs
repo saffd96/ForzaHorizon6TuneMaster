@@ -287,4 +287,21 @@ public class PhysicsCorrectnessTests
         Assert.True(Math.Abs(r.SpringFront - expectedF) / expectedF < 0.10,
             $"SpringFront {r.SpringFront:F1} deviates >10% from expected {expectedF:F1} N/mm");
     }
+
+    // ── Launch Control Drive-Type Ordering ─────────────────────────────────
+
+    // P022 – FWD launch RPM must be strictly less than RWD (weight transfer physics)
+    // AWD > RWD > FWD — FWD weight transfers away from driven wheels on acceleration
+    [Fact]
+    public void P022_FwdLaunchRpmLowerThanRwd()
+    {
+        var fwd = CarFactory.CivicTypeR();
+        var rwd = CarFactory.CivicTypeR(); rwd.DriveType = Models_DriveType.RWD;
+        var rFwd = Gen(fwd, CarFactory.Drag());
+        var rRwd = Gen(rwd, CarFactory.Drag());
+        Assert.NotNull(rFwd.LaunchControlRpm);
+        Assert.NotNull(rRwd.LaunchControlRpm);
+        Assert.True(rFwd.LaunchControlRpm < rRwd.LaunchControlRpm,
+            $"FWD launch {rFwd.LaunchControlRpm} should be < RWD launch {rRwd.LaunchControlRpm}");
+    }
 }

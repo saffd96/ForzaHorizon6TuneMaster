@@ -169,6 +169,7 @@ public class CarCard : NotifyBase
                 EngineType.I5       => 0.57,
                 EngineType.I6       => 0.55,
                 EngineType.Boxer    => 0.60,
+                EngineType.V6       => 0.52,
                 EngineType.V8       => 0.50,
                 EngineType.V10      => 0.62,
                 EngineType.V12      => 0.53,

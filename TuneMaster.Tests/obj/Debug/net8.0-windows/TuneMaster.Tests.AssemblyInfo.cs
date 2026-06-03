@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TuneMaster.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1d3e036e2a099c07d01abb1545a77619f225d141")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c28051c8e7a66000081a2cfa1023e521819e5eaa")]
 [assembly: System.Reflection.AssemblyProductAttribute("TuneMaster.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TuneMaster.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

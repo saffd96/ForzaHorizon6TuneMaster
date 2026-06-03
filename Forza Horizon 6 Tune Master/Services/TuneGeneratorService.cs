@@ -77,14 +77,15 @@ public class TuneGeneratorService
                                                    ? Math.Max(3000, torquePeak * 0.65)
                                                    : Math.Max(2800, torquePeak * 0.60),
             AspirationType.PositiveDisplacement => Math.Max(2200, torquePeak * 0.65),
-            _                                   => torquePeak * 0.70   // NA
+            AspirationType.Centrifugal          => Math.Max(2000, torquePeak * 0.72), // boost builds with RPM
+            _                                   => Math.Max(1500, torquePeak * 0.70)  // NA
         };
 
         double driveAdj = car.DriveType switch
         {
-            DriveType.AWD => 1.10,
-            DriveType.FWD => 0.95,
-            DriveType.RWD => 0.85,
+            DriveType.AWD => 1.10,  // AWD: best launch traction across all 4 wheels
+            DriveType.RWD => 1.00,  // RWD: weight transfers TO rear → aids traction
+            DriveType.FWD => 0.80,  // FWD: weight transfers AWAY from driven wheels → hurts traction
             _             => 1.00
         };
 
