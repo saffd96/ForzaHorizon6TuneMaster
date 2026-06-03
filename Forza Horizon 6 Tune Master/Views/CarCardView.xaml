@@ -2,12 +2,14 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:cv="clr-namespace:Forza_Horizon_6_Tune_Master.Converters"
+             xmlns:m="clr-namespace:Forza_Horizon_6_Tune_Master.Models"
              Background="{StaticResource BgBrush}">
     <UserControl.Resources>
         <cv:AspirationTypeLabelConverter      x:Key="AspLabel"/>
         <cv:PowertrainTypeLabelConverter      x:Key="PtLabel"/>
         <cv:BoolToVisibilityConverter         x:Key="BoolVis"/>
         <cv:InverseBoolToVisibilityConverter  x:Key="BoolToCollapsed"/>
+        <cv:EnumToBoolConverter               x:Key="E2B"/>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="24,16,24,24">
@@ -109,6 +111,19 @@
                                    HorizontalAlignment="Left"
                                    SelectedValue="{Binding Car.EnginePosition}"/>
                     </Grid>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
+                                Visibility="{Binding Car.IsElectricPowertrain, Converter={StaticResource BoolToCollapsed}}">
+                        <TextBlock Text="Тип топлива" Style="{StaticResource FormLabel}" Width="150"/>
+                        <RadioButton Content="Бензин / Газ" Margin="0,0,16,0"
+                                     GroupName="FuelType"
+                                     IsChecked="{Binding Car.FuelType, Converter={StaticResource E2B},
+                                                 ConverterParameter={x:Static m:FuelType.Gasoline}}"/>
+                        <RadioButton Content="Дизель"
+                                     GroupName="FuelType"
+                                     IsChecked="{Binding Car.FuelType, Converter={StaticResource E2B},
+                                                 ConverterParameter={x:Static m:FuelType.Diesel}}"/>
+                    </StackPanel>
+
                     <Grid Margin="0,0,0,8"
                           Visibility="{Binding Car.ShowAspiration, Converter={StaticResource BoolVis}}">
                         <Grid.ColumnDefinitions>
@@ -274,6 +289,85 @@
                         <ComboBox  x:Name="DiffCombo"        Grid.Column="4" SelectedValue="{Binding Car.DifferentialUpgrade}"/>
                         <TextBlock Grid.Column="6" Text="Тормоза"      Style="{StaticResource FormLabel}" MinWidth="60"/>
                         <ComboBox  x:Name="BrakesCombo"      Grid.Column="7" SelectedValue="{Binding Car.BrakesUpgrade}"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Constraints ───────────────────────────────────────────── -->
+            <TextBlock Text="ОГРАНИЧЕНИЯ ТЮНИНГА" Style="{StaticResource SectionHeader}"/>
+
+            <TextBlock Text="{Binding SpringUnitLabel}" Style="{StaticResource SectionHeader}"/>
+            <Border Style="{StaticResource SectionCard}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" MinWidth="130"/>
+                        <ColumnDefinition Width="*" MinWidth="65"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*" MinWidth="65"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto" MinWidth="130"/>
+                        <ColumnDefinition Width="*" MinWidth="65"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*" MinWidth="65"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Перед — мин / макс" Style="{StaticResource FormLabel}" MinWidth="130"/>
+                    <TextBox   Grid.Column="1" Text="{Binding SpringFrontMinDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                    <TextBox   Grid.Column="3" Text="{Binding SpringFrontMaxDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                    <TextBlock Grid.Column="5" Text="Зад — мин / макс"   Style="{StaticResource FormLabel}" MinWidth="130"/>
+                    <TextBox   Grid.Column="6" Text="{Binding SpringRearMinDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                    <TextBox   Grid.Column="8" Text="{Binding SpringRearMaxDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                </Grid>
+            </Border>
+
+            <TextBlock Text="{Binding RideHeightUnitLabel}" Style="{StaticResource SectionHeader}"/>
+            <Border Style="{StaticResource SectionCard}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" MinWidth="130"/>
+                        <ColumnDefinition Width="*" MinWidth="65"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*" MinWidth="65"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto" MinWidth="130"/>
+                        <ColumnDefinition Width="*" MinWidth="65"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*" MinWidth="65"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Перед — мин / макс" Style="{StaticResource FormLabel}" MinWidth="130"/>
+                    <TextBox   Grid.Column="1" Text="{Binding RideHeightFrontMinDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                    <TextBox   Grid.Column="3" Text="{Binding RideHeightFrontMaxDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                    <TextBlock Grid.Column="5" Text="Зад — мин / макс"   Style="{StaticResource FormLabel}" MinWidth="130"/>
+                    <TextBox   Grid.Column="6" Text="{Binding RideHeightRearMinDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                    <TextBox   Grid.Column="8" Text="{Binding RideHeightRearMaxDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                </Grid>
+            </Border>
+
+            <TextBlock Text="АЭРОДИНАМИКА (ограничения)" Style="{StaticResource SectionHeader}"/>
+            <Border Style="{StaticResource SectionCard}">
+                <StackPanel>
+                    <Grid Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" MinWidth="130"/>
+                            <ColumnDefinition Width="*" MinWidth="65"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*" MinWidth="65"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Перед Мин / Макс" Style="{StaticResource FormLabel}" MinWidth="130"/>
+                        <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroFrontMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                        <TextBox   Grid.Column="3" Text="{Binding Constraints.AeroFrontMax, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                    </Grid>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" MinWidth="130"/>
+                            <ColumnDefinition Width="*" MinWidth="65"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*" MinWidth="65"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Зад Мин / Макс" Style="{StaticResource FormLabel}" MinWidth="130"/>
+                        <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroRearMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                        <TextBox   Grid.Column="3" Text="{Binding Constraints.AeroRearMax, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     </Grid>
                 </StackPanel>
             </Border>

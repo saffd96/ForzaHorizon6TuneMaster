@@ -134,40 +134,16 @@
             <!-- ════════ LEFT PANEL (2/3) ════════════════════════════ -->
             <Grid Grid.Column="0" Margin="0,0,1,0" ClipToBounds="True">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>   <!-- Switcher -->
                     <RowDefinition Height="*"/>       <!-- Content -->
                     <RowDefinition Height="Auto"/>    <!-- Bottom bar -->
                 </Grid.RowDefinitions>
 
-                <!-- Tab switcher -->
-                <Border Grid.Row="0"
-                        Background="{StaticResource SurfaceBrush}"
-                        BorderBrush="{StaticResource BorderBrush}"
-                        BorderThickness="0,0,0,1"
-                        Padding="16,8">
-                    <StackPanel Orientation="Horizontal">
-                        <RadioButton Content="🚗  Автомобиль"
-                                     IsChecked="{Binding LeftTabIndex, Converter={StaticResource Eq}, ConverterParameter=0, Mode=TwoWay}"
-                                     Style="{StaticResource TabSwitcher}"
-                                     Margin="0,0,4,0"/>
-                        <RadioButton Content="⚙  Ограничения"
-                                     IsChecked="{Binding LeftTabIndex, Converter={StaticResource Eq}, ConverterParameter=1, Mode=TwoWay}"
-                                     Style="{StaticResource TabSwitcher}"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Content area: Car or Constraints -->
-                <Grid Grid.Row="1">
-                    <views:CarCardView
-                        Visibility="{Binding LeftTabIndex, Converter={StaticResource EqVis}, ConverterParameter=0}"
-                        DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}"/>
-                    <views:TuningConstraintsView
-                        Visibility="{Binding LeftTabIndex, Converter={StaticResource EqVis}, ConverterParameter=1}"
-                        DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}"/>
-                </Grid>
+                <!-- Content area: Car -->
+                <views:CarCardView Grid.Row="0"
+                    DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}"/>
 
                 <!-- Bottom bar: discipline + generate + auto -->
-                <Border Grid.Row="2"
+                <Border Grid.Row="1"
                         Background="{StaticResource SurfaceBrush}"
                         BorderBrush="{StaticResource BorderBrush}"
                         BorderThickness="0,1,0,0"

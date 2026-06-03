@@ -98,6 +98,13 @@ public class CarCard : NotifyBase
         }
     }
 
+    private FuelType _fuelType = FuelType.Gasoline;
+    public FuelType FuelType
+    {
+        get => _fuelType;
+        set { Set(ref _fuelType, value); OnPropertyChanged(nameof(TorquePeakRPM)); }
+    }
+
     private bool _antiLag;
     public bool AntiLag
     {
@@ -162,7 +169,7 @@ public class CarCard : NotifyBase
         {
             if (PowertrainType == PowertrainType.Electric)
                 return 0;
-            return Math.Max(500, (int)Math.Round(MaxRPM * EngineType switch
+            int peak = (int)Math.Round(MaxRPM * EngineType switch
             {
                 EngineType.I3       => 0.55,
                 EngineType.I4       => 0.58,
@@ -176,7 +183,9 @@ public class CarCard : NotifyBase
                 EngineType.Rotary   => 0.70,
                 EngineType.Electric => 0.03,
                 _                   => 0.57
-            } / 100.0) * 100);
+            } / 100.0) * 100;
+            if (FuelType == FuelType.Diesel) peak = (int)(peak * 0.65);
+            return Math.Max(500, peak);
         }
     }
 

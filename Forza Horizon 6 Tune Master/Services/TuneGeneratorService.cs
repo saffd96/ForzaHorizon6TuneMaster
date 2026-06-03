@@ -956,18 +956,37 @@ public class TuneGeneratorService
             return;
         }
 
-        (double first, double top, string note) = track.Discipline switch
-        {
-            Discipline.Drag => GetDragRatios(track.DragDistance, n),
-            Discipline.Drift    => (3.0, 0.85, "Удлинённые передачи для контроля в заносе."),
-            Discipline.Rally    => (4.0, 0.70, "Короткий ряд для быстрого разгона на грунте."),
-            Discipline.CrossCountry => (4.5, 0.65, "Макс. ускорение на бездорожье."),
-            Discipline.Touge    => (3.8, 0.82, "Короткие передачи для горных серпантинов."),
-            _                   => (3.5, 0.78, "Ряд под дорожные дисциплины.")
-        };
+        double first, top;
+        string note;
 
-        if (pwRatio > 200) { first += 0.3; top -= 0.05; }
-        else if (pwRatio < 100) { first -= 0.3; top += 0.05; }
+        if (track.Discipline == Discipline.Drag)
+        {
+            (first, top, note) = GetDragRatios(track.DragDistance, n);
+        }
+        else
+        {
+            double stepMin, stepMax;
+            (first, stepMin, stepMax, note) = track.Discipline switch
+            {
+                Discipline.Drift        => (3.0, 0.70, 0.88, "Удлинённые передачи для контроля в заносе."),
+                Discipline.Rally        => (4.0, 0.68, 0.78, "Короткий ряд для быстрого разгона на грунте."),
+                Discipline.CrossCountry => (4.5, 0.66, 0.75, "Макс. ускорение на бездорожье."),
+                Discipline.Touge        => (3.8, 0.70, 0.84, "Короткие передачи для горных серпантинов."),
+                _                       => (3.5, 0.68, 0.82, "Ряд под дорожные дисциплины.")
+            };
+
+            if (pwRatio > 200) first += 0.3;
+            else if (pwRatio < 100) first -= 0.3;
+
+            // Diesel has high low-end torque — needs less first-gear multiplication
+            if (car.FuelType == FuelType.Diesel) first = Math.Max(first - 0.45, 1.5);
+
+            double stepIdeal = car.MaxRPM > 0
+                ? (double)car.TorquePeakRPM / car.MaxRPM + 0.12
+                : (stepMin + stepMax) / 2.0;
+            double step = Math.Clamp(stepIdeal, stepMin, stepMax);
+            top = first * Math.Pow(step, n - 1);
+        }
 
         var ratios = new List<double>(n);
         for (int i = 0; i < n; i++)

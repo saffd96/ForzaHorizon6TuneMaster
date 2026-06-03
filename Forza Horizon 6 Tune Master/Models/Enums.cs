@@ -50,3 +50,5 @@ public enum UnitSystem { Metric, Imperial }
 public enum PowerUnit { HP, PS, KW }
 
 public enum SpringUnit { KgfMm, NMm, LbsIn }
+
+public enum FuelType { Gasoline, Diesel }

@@ -507,13 +507,6 @@ public class MainViewModel : INotifyPropertyChanged
     // AWD centre diff visibility
     public bool HasCenterDiffBias => Car.DriveType == Models.DriveType.AWD;
 
-    // ── Left panel tab ──────────────────────────────────────────────────────
-    private int _leftTabIndex;
-    public int LeftTabIndex
-    {
-        get => _leftTabIndex;
-        set { _leftTabIndex = value; OnPropertyChanged(); }
-    }
 
     // ── Auto-generate ───────────────────────────────────────────────────────
     private bool _isAutoGenerate;
@@ -672,6 +665,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         try
         {
+            Car.Name = SelectedProfile ?? AutoProfileName();
             TuneResult = _generator.Generate(Car, Track, Constraints);
             StatusMessage = $"Тюнинг сгенерирован  •  {Car.Make} {Car.Model}  •  {Track.Discipline}  •  {DateTime.Now:HH:mm}";
         }
@@ -690,6 +684,7 @@ public class MainViewModel : INotifyPropertyChanged
         try
         {
             string name = AutoProfileName();
+            Car.Name = name;
             _storage.Save(name, new SavedProfile
             {
                 Car = Car, Track = Track, Constraints = Constraints, LastResult = TuneResult

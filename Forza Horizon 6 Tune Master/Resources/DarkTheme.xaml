@@ -479,7 +479,8 @@
                         <Ellipse x:Name="dot"
                                  Width="6" Height="6"
                                  Fill="{StaticResource AccentBrush}"
-                                 Margin="-21,0,15,0"
+                                 Margin="-17,0,11,0"
+                                 VerticalAlignment="Center"
                                  Visibility="Collapsed"/>
                         <ContentPresenter VerticalAlignment="Center"/>
                     </StackPanel>
