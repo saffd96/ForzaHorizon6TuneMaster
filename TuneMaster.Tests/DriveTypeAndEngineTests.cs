@@ -418,6 +418,8 @@ public class DriveTypeAndEngineTests
         var car = CarFactory.GtrR35();
         var r_drag = Gen(car, CarFactory.Drag());
         var r_rally = Gen(car, CarFactory.Rally());
+        Assert.NotNull(r_drag.CenterDiffBias);
+        Assert.NotNull(r_rally.CenterDiffBias);
         Assert.InRange(r_drag.CenterDiffBias.Value, 0, 100);
         Assert.InRange(r_rally.CenterDiffBias.Value, 0, 100);
     }

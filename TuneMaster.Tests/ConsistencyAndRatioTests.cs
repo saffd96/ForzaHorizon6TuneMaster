@@ -329,6 +329,11 @@ public class ConsistencyAndRatioTests
         var r_cc    = Gen(car, CarFactory.CrossCountry());
         var r_drag  = Gen(car, CarFactory.Drag());
         // All should be in valid range
+        Assert.NotNull(r_road.CenterDiffBias);
+        Assert.NotNull(r_drift.CenterDiffBias);
+        Assert.NotNull(r_rally.CenterDiffBias);
+        Assert.NotNull(r_cc.CenterDiffBias);
+        Assert.NotNull(r_drag.CenterDiffBias);
         Assert.InRange(r_road.CenterDiffBias.Value,  0, 100);
         Assert.InRange(r_drift.CenterDiffBias.Value, 0, 100);
         Assert.InRange(r_rally.CenterDiffBias.Value, 0, 100);
@@ -376,6 +381,7 @@ public class ConsistencyAndRatioTests
     public void T250_DriftAwdCenterBiasBalanced()
     {
         var r_drift = Gen(CarFactory.GtrR35(), CarFactory.Drift());
+        Assert.NotNull(r_drift.CenterDiffBias);
         Assert.InRange(r_drift.CenterDiffBias.Value, 40, 60);
     }
 
