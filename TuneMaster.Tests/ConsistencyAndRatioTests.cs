@@ -76,13 +76,13 @@ public class ConsistencyAndRatioTests
 
     // ── ARB front/rear splits ───────────────────────────────────────────
 
-    // 226 – RWD road ARB split: front ≤ rear (less understeer)
+    // 226 – RWD road ARB split: front ≥ rear (front stiffer for turn-in, ForzaFire)
     [Fact]
-    public void T226_RwdRoadArbFrontSofterThanRear()
+    public void T226_RwdRoadArbFrontStifferOrEqual()
     {
         var r = Gen(CarFactory.SupraA90(), CarFactory.Road());
-        Assert.True(r.ARBFront <= r.ARBRear + 5,
-            $"RWD road: front ARB {r.ARBFront} should not be much stiffer than rear {r.ARBRear}");
+        Assert.True(r.ARBFront >= r.ARBRear,
+            $"RWD road: front ARB {r.ARBFront} should be >= rear {r.ARBRear} (front stiffer for turn-in)");
     }
 
     // 227 – FWD road ARB: front softer than rear (reduce understeer)

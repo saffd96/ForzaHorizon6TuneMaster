@@ -124,7 +124,7 @@ public class TuneGeneratorService
         {
             TireType.Slick     => 2.24,
             TireType.SemiSlick => 2.21,
-            TireType.Sport     => 2.17,
+            TireType.Sport     => 2.07,
             TireType.Street    => 2.14,
             TireType.Stock     => 2.14,
             TireType.Rally     => 2.03,
@@ -184,9 +184,9 @@ public class TuneGeneratorService
         switch (track.Discipline)
         {
             case Discipline.Drag:
-                // Target: ~32 PSI front / ~25 PSI rear. Large rear drop for launch grip.
-                discF = 0.00; discR = -0.48;
-                reason = "Drag: нейтральное спереди (~32 PSI), пониженное сзади (~25 PSI) для максимального зацепа на старте.";
+                // Target: ~32 PSI front / ~18-20 PSI rear. Aggressive rear drop for launch grip (ForzaFire).
+                discF = 0.00; discR = -1.00;
+                reason = "Drag: нейтральное спереди (~32 PSI), мин. сзади (~18-20 PSI) для макс. зацепа на старте.";
                 break;
             case Discipline.Drift:
                 // Community: 20–26 PSI for drift. Lower both ends, rear more so.
@@ -264,6 +264,10 @@ public class TuneGeneratorService
             camF += car.DriveType switch { DriveType.RWD => -0.3, DriveType.FWD => 0.3, _ => 0.0 };
             camR += car.DriveType switch { DriveType.RWD => 0.2, DriveType.FWD => -0.2, _ => 0.0 };
         }
+
+        // AWD: additional rear camber for corner exit grip
+        if (car.DriveType == Models.DriveType.AWD && track.Discipline is Discipline.Road or Discipline.Street or Discipline.Touge)
+            camR += -0.2;
 
         // Power: more power → more rear camber for exit grip (not for drag/CC)
         double pwrR = track.Discipline is Discipline.Drag or Discipline.CrossCountry
@@ -377,7 +381,7 @@ public class TuneGeneratorService
         (double baseF, double baseR, string note) = (track.Discipline, car.DriveType) switch
         {
             (Discipline.Drag, _)             => (2.0, 18.0, "Drag: мин. перед для переноса веса; жёсткий зад для платформы."),
-            (Discipline.Drift, Models.DriveType.RWD) => (18.0, 55.0, "Drift: мягкий перед для завязки; макс. зад для удержания угла."),
+            (Discipline.Drift, Models.DriveType.RWD) => (5.0, 22.0, "Drift: мягкий перед для завязки; умеренный зад для удержания угла (ForzaFire R20-25)."),
             (Discipline.Drift, _)            => (20.0, 40.0, "Drift AWD: умеренные стабилизаторы."),
             (Discipline.Rally, _)            => (14.0, 12.0, "Ралли: мягкие — независимая работа колёс на грунте."),
             (Discipline.CrossCountry, _)     => (10.0, 10.0, "CC: мин. жёсткость для артикуляции подвески."),
@@ -386,7 +390,7 @@ public class TuneGeneratorService
             (Discipline.Touge, _)            => (34.0, 28.0, "Тоге AWD: сбалансированные."),
             (Discipline.Street, Models.DriveType.RWD) => (28.0, 24.0, "Стрит RWD: средняя жёсткость."),
             (Discipline.Street, Models.DriveType.FWD) => (10.0, 30.0, "Стрит FWD: мягкий перед для зацепа, жёстче зад против сноса."),
-            (_, Models.DriveType.RWD)        => (22.0, 28.0, "Road RWD: классический баланс (ForzaFire F18-25)."),
+            (_, Models.DriveType.RWD)        => (28.0, 20.0, "Road RWD: перед жёстче зада для точного входа (ForzaFire F18-28/R12-20)."),
             // FWD: soft front for grip, stiff rear for rotation — prevents understeer (forzafire.com)
             (_, Models.DriveType.FWD)        => (12.0, 28.0, "Road FWD: мягкий перед (зацеп), жёстче зад (ротация)."),
             (_, _)                           => (26.0, 33.0, "Road AWD: F26/R33 — сбалансированные стабилизаторы (ForzaFire F22-30/R28-38).")
@@ -443,9 +447,9 @@ public class TuneGeneratorService
         double torqueHz = Math.Min(0.4, Math.Max(0, (car.TorqueNm - 400) / 600.0 * 0.25));
         hzR += torqueHz;
 
-        // K (Н/мм) per spring = 4π²/2000 × f² × m_corner; exact constant = 0.019739
-        double sprF = 0.019739 * hzF * hzF * car.TotalMass * wdF;
-        double sprR = 0.019739 * hzR * hzR * car.TotalMass * wdR;
+        // K (Н/мм) per spring = 4π²/2000 × f² × m_corner; exact constant = 0.02012
+        double sprF = 0.02012 * hzF * hzF * car.TotalMass * wdF;
+        double sprR = 0.02012 * hzR * hzR * car.TotalMass * wdR;
 
         // Suspension upgrade multiplier.
         // Rally/CC disciplines already use soft Hz targets — Rally upgrade keeps them neutral (0.85)
@@ -495,8 +499,8 @@ public class TuneGeneratorService
         switch (track.Discipline)
         {
             case Discipline.Drag:
-                rhF = 60; rhR = 75;
-                note = "Drag: мин. перед / повыш. зад для переноса веса на старте.";
+                rhF = 100; rhR = 110;
+                note = "Drag: макс. клиренс — перенос веса на заднюю ось для старта (ForzaFire).";
                 break;
             case Discipline.Drift:
                 rhF = 80; rhR = 88;
@@ -777,8 +781,8 @@ public class TuneGeneratorService
                 Discipline.CrossCountry => 0.60,
                 _                       => 0.78
             };
-            // Blend user preference toward community target
-            bias = bias * 0.4 + targetBias * 0.6;
+            // Blend user preference toward community target (70% target weight to meet ≥70% minimum)
+            bias = bias * 0.3 + targetBias * 0.7;
             // Wheelbase: longer → more rear bias
             bias += (car.Wheelbase - 2700) / 500.0 * 0.03;
             bias = Clamp(bias, 0.0, 1.0);

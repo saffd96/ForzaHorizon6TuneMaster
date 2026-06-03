@@ -7,8 +7,8 @@ namespace TuneMaster.Tests;
 /// Tests 001–020: Tire pressure physics
 /// Sources: forzafire.com FH6 tires guide, forums.forza.net, SimRacingSetup
 /// Rules:
-///   Slick=2.24 / SemiSlick=2.21 / Sport=2.17 / Stock=2.14 bar baseline
-///   Drag rear target ≈ 1.72–1.85 bar (~25 PSI); front stays near 2.21
+///   Slick=2.24 / SemiSlick=2.21 / Sport=2.07 / Stock=2.14 bar baseline
+///   Drag rear target ≈ 1.24–1.50 bar (~18–22 PSI); front stays near 2.21
 ///   Rally/CC: both ends lower than Road baseline
 ///   Drift: both ends low (~1.4–1.9 bar)
 ///   Pressure must stay within [TirePressureMin, TirePressureMax]
@@ -38,12 +38,12 @@ public class TirePressureTests
             $"Drag rear {r.TirePressureRear} should be < front {r.TirePressureFront}");
     }
 
-    // 003 – Drag rear pressure near community target (~1.72–1.90 bar ≈ 25–27.5 PSI)
+    // 003 – Drag rear pressure near community target (~1.24–1.50 bar ≈ 18–22 PSI)
     [Fact]
     public void T003_DragRearPressureInCommunityRange()
     {
         var r = Gen(CarFactory.GtrR35(), CarFactory.Drag());
-        Assert.InRange(r.TirePressureRear, 1.65, 1.95);
+        Assert.InRange(r.TirePressureRear, 1.0, 1.60);
     }
 
     // 004 – Drag rear pressure with stock diff on Gemera still in valid range

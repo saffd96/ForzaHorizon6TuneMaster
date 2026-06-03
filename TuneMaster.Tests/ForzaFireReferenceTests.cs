@@ -23,12 +23,12 @@ public class ForzaFireReferenceTests
         Assert.InRange(r.TirePressureRear,  1.30, 1.85);
     }
 
-    // 102 – Drag rear pressure in ForzaFire drag compound range (25-27 PSI ≈ 1.72-1.86 bar)
+    // 102 – Drag rear pressure in ForzaFire drag compound range (18-20 PSI ≈ 1.24-1.38 bar)
     [Fact]
     public void T102_DragRearPressureInForzaFireRange()
     {
         var r = Gen(CarFactory.Hellcat(), CarFactory.Drag());
-        Assert.InRange(r.TirePressureRear, 1.65, 1.95);
+        Assert.InRange(r.TirePressureRear, 1.2, 1.7);
     }
 
     // 103 – Road tire pressure in community range (30-35 PSI ≈ 2.07-2.41 bar) for sport tires
