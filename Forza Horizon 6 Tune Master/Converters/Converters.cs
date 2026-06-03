@@ -148,15 +148,13 @@ public static class NumericBehavior
     {
         var tb = (TextBox)sender;
         var text = tb.Text;
-        if (text.IndexOf(',') >= 0)
-            text = text.Replace(",", ".");
 
         var clean = new StringBuilder(text.Length);
-        bool dotSeen = false;
+        bool sepSeen = false;
         for (int i = 0; i < text.Length; i++)
         {
             var c = text[i];
-            if (c == '.') { if (!dotSeen) { dotSeen = true; clean.Append(c); } }
+            if (c is '.' or ',') { if (!sepSeen) { sepSeen = true; clean.Append('.'); } }
             else if (c == '-' && i == 0) clean.Append(c);
             else if (char.IsAsciiDigit(c)) clean.Append(c);
         }
@@ -175,7 +173,7 @@ public static class NumericBehavior
         for (int i = 0; i < s.Length; i++)
         {
             var c = s[i];
-            if (c == '.')
+            if (c is '.' or ',')
             {
                 if (++dots > 1) return false;
             }
@@ -184,7 +182,7 @@ public static class NumericBehavior
                 if (++signs > 1) return false;
                 if (i != 0) return false;
             }
-            else if (c is ',' or ' ')
+            else if (c == ' ')
             {
                 return false;
             }

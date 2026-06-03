@@ -342,7 +342,7 @@ public partial class GearChartView : UserControl
             ChartCanvas.Children.Add(new Ellipse
             {
                 Width = 6, Height = 6,
-                Fill = i == 0 ? Brushes.White : new SolidColorBrush(Palette[i - 1 % Palette.Length])
+                Fill = i == 0 ? Brushes.White : new SolidColorBrush(Palette[(i - 1) % Palette.Length])
             });
             Canvas.SetLeft(ChartCanvas.Children[^1], curX - 3);
             Canvas.SetTop(ChartCanvas.Children[^1], curY - 3);

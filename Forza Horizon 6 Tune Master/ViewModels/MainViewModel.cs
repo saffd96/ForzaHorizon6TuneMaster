@@ -78,7 +78,7 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
     public bool HasResult        => _tuneResult != null;
-    public bool HasAWDFrontDiff  => _tuneResult?.CenterDiffBias.HasValue == true;
+    public bool HasAWDFrontDiff  => Car.DriveType == Models.DriveType.AWD && _tuneResult?.CenterDiffBias.HasValue == true;
     public bool HasLaunchControl => _tuneResult?.LaunchControlRpm.HasValue == true;
 
     // ── Unit system ──────────────────────────────────────────────────────────
@@ -121,25 +121,28 @@ public class MainViewModel : INotifyPropertyChanged
 
     // ── Constraint display properties (unit-aware) ───────────────────────────
     // Tire Pressure
+    private double TirePressureToDisplay(double bar) => UseImperial ? Math.Round(bar * 14.504, 1) : bar;
+    private double TirePressureFromDisplay(double val) => UseImperial ? Math.Round(val / 14.504, 2) : val;
+
     public double TirePressureFrontMinDisplay
     {
-        get => UseImperial ? Math.Round(Constraints.TirePressureFrontMin * 14.504, 1) : Constraints.TirePressureFrontMin;
-        set { Constraints.TirePressureFrontMin = UseImperial ? Math.Round(value / 14.504, 2) : value; OnPropertyChanged(); }
+        get => TirePressureToDisplay(Constraints.TirePressureFrontMin);
+        set { Constraints.TirePressureFrontMin = TirePressureFromDisplay(value); OnPropertyChanged(); }
     }
     public double TirePressureFrontMaxDisplay
     {
-        get => UseImperial ? Math.Round(Constraints.TirePressureFrontMax * 14.504, 1) : Constraints.TirePressureFrontMax;
-        set { Constraints.TirePressureFrontMax = UseImperial ? Math.Round(value / 14.504, 2) : value; OnPropertyChanged(); }
+        get => TirePressureToDisplay(Constraints.TirePressureFrontMax);
+        set { Constraints.TirePressureFrontMax = TirePressureFromDisplay(value); OnPropertyChanged(); }
     }
     public double TirePressureRearMinDisplay
     {
-        get => UseImperial ? Math.Round(Constraints.TirePressureRearMin * 14.504, 1) : Constraints.TirePressureRearMin;
-        set { Constraints.TirePressureRearMin = UseImperial ? Math.Round(value / 14.504, 2) : value; OnPropertyChanged(); }
+        get => TirePressureToDisplay(Constraints.TirePressureRearMin);
+        set { Constraints.TirePressureRearMin = TirePressureFromDisplay(value); OnPropertyChanged(); }
     }
     public double TirePressureRearMaxDisplay
     {
-        get => UseImperial ? Math.Round(Constraints.TirePressureRearMax * 14.504, 1) : Constraints.TirePressureRearMax;
-        set { Constraints.TirePressureRearMax = UseImperial ? Math.Round(value / 14.504, 2) : value; OnPropertyChanged(); }
+        get => TirePressureToDisplay(Constraints.TirePressureRearMax);
+        set { Constraints.TirePressureRearMax = TirePressureFromDisplay(value); OnPropertyChanged(); }
     }
 
     // Springs
@@ -539,6 +542,11 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(MaxRPMFieldLabel));
         if (e.PropertyName == nameof(CarCard.MaxSpeedKmh))
             OnPropertyChanged(nameof(SpeedDisplay));
+        if (e.PropertyName == nameof(CarCard.DriveType))
+        {
+            OnPropertyChanged(nameof(HasCenterDiffBias));
+            OnPropertyChanged(nameof(HasAWDFrontDiff));
+        }
     }
 
     private void OnModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -559,9 +567,9 @@ public class MainViewModel : INotifyPropertyChanged
             if ((DateTime.Now - _lastInputChange).TotalMilliseconds < 350) return;
             _isGenerating = true;
             GenerateTune();
-            _isGenerating = false;
         }
-        catch { /* cancelled */ }
+        catch (OperationCanceledException) { /* cancelled */ }
+        finally { _isGenerating = false; }
     }
 
     // ── Status ───────────────────────────────────────────────────────────────
@@ -873,7 +881,8 @@ public class MainViewModel : INotifyPropertyChanged
             string section = "";
             var parsedCar = new CarCard();
             var parsedConstraints = new TuningConstraints();
-            bool hasCar = false, hasConstraints = false;
+            var parsedTrack = new TrackInfo();
+            bool hasCar = false, hasConstraints = false, hasTrack = false;
 
             foreach (string rawLine in lines)
             {
@@ -899,6 +908,10 @@ public class MainViewModel : INotifyPropertyChanged
                         SetConstraintProperty(parsedConstraints, key, val);
                         hasConstraints = true;
                         break;
+                    case "Track":
+                        SetTrackProperty(parsedTrack, key, val);
+                        hasTrack = true;
+                        break;
                 }
             }
 
@@ -907,6 +920,7 @@ public class MainViewModel : INotifyPropertyChanged
 
             if (hasCar) Car = parsedCar;
             if (hasConstraints) Constraints = parsedConstraints;
+            if (hasTrack) Track = parsedTrack;
 
             GenerateTune();
 
