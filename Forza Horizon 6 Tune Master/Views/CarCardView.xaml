@@ -265,13 +265,29 @@
             <TextBlock Text="АЭРОДИНАМИКА И ДЕТАЛИ" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
                 <StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <CheckBox Content="Передний аэро-пакет установлен"
                                   IsChecked="{Binding Car.HasFrontAero}"
                                   Margin="0,0,32,0"/>
                         <CheckBox Content="Задний аэро-пакет установлен"
                                   IsChecked="{Binding Car.HasRearAero}"/>
                     </StackPanel>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Cx (коэф. лобового сопр.)" Style="{StaticResource FormLabel}" Width="210"
+                                   ToolTip="Коэффициент лобового сопротивления кузова. При заполнении обоих полей заменяет оценку по массе/профилю. Типичные значения: спорткар 0.28–0.36, SUV 0.38–0.50."/>
+                        <TextBox   Grid.Column="1" Text="{Binding Car.Cd, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                        <TextBlock Grid.Column="3" Text="Площадь фронта (м²)" Style="{StaticResource FormLabel}" Width="170"
+                                   ToolTip="Площадь лобового сечения кузова. Типичные значения: спорткар 1.8–2.1, SUV 2.5–3.2."/>
+                        <TextBox   Grid.Column="4" Text="{Binding Car.FrontalAreaM2, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                    </Grid>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>

@@ -39,23 +39,42 @@ public class TuneGeneratorService
         return (d, s, dm);
     }
 
+    // Drag-limited speed: body CdA + wing-induced drag from computed aero.
+    // AeroDragFactor = 2g / (ρ × v_ref² × L/D) — empirically fitted from FH community data.
+    // Forza uses HP at-wheel with no drivetrain loss (forums.forza.net confirmed).
+    private static double ComputeEffectiveMaxSpeedKmh(CarCard car, TuneResult r)
+    {
+        double avgProfile = (car.FrontTireProfile + car.RearTireProfile) / 2.0;
+        double bodyFactor = avgProfile > 55 ? 3.0 : 1.0;
+        double cdABody    = car.Cd > 0 && car.FrontalAreaM2 > 0
+            ? car.Cd * car.FrontalAreaM2
+            : (0.50 + car.TotalMass / 2500.0) * bodyFactor;
+        const double AeroDragFactor = 0.001787; // m² per kg of displayed downforce
+        double cdAWing    = (r.AeroFront + r.AeroRear) * AeroDragFactor;
+        double vMs        = Math.Pow(car.PowerHP * 745.7 / (0.5 * 1.225 * (cdABody + cdAWing)), 1.0 / 3.0);
+        return Math.Round(Math.Clamp(vMs * 3.6, 60.0, 600.0));
+    }
+
     public TuneResult Generate(CarCard car, TrackInfo track, TuningConstraints c)
     {
         var r  = new TuneResult { Car = car, Track = track };
         var ex = r.Explanations;
 
+        // Aero runs first so effectiveMaxKmh (which uses r.AeroFront/Rear) is ready for all other methods
+        CalculateAero(car, track, c, r, ex);
+        double effectiveMaxKmh = ComputeEffectiveMaxSpeedKmh(car, r);
+
         CalculateTirePressure(car, track, c, r, ex);
         CalculateCamber(car, track, c, r, ex);
         CalculateToe(car, track, c, r, ex);
-        CalculateCaster(car, track, c, r, ex);
+        CalculateCaster(car, track, c, r, ex, effectiveMaxKmh);
         CalculateARB(car, track, c, r, ex);
         CalculateSprings(car, track, c, r, ex);
         CalculateRideHeight(car, track, c, r, ex);
         CalculateDampers(car, track, c, r, ex);
-        CalculateAero(car, track, c, r, ex);
         CalculateDifferential(car, track, c, r, ex);
-        CalculateBrakes(car, track, c, r, ex);
-        CalculateGearing(car, track, c, r, ex);
+        CalculateBrakes(car, track, c, r, ex, effectiveMaxKmh);
+        CalculateGearing(car, track, c, r, ex, effectiveMaxKmh);
         if (track.Discipline == Discipline.Drag)
             CalculateLaunchControl(car, r);
 
@@ -82,6 +101,7 @@ public class TuneGeneratorService
                                                    : Math.Max(car.MaxRPM * 0.38, torquePeak * 0.60),
             AspirationType.PositiveDisplacement => Math.Max(car.MaxRPM * 0.28, torquePeak * 0.65),
             AspirationType.Centrifugal          => Math.Max(car.MaxRPM * 0.25, torquePeak * 0.72),
+            AspirationType.Electric             => Math.Max(car.MaxRPM * 0.15, torquePeak * 0.50), // electric boost: instant torque, low launch RPM
             _                                   => Math.Max(car.MaxRPM * 0.20, torquePeak * 0.70)
         };
 
@@ -337,7 +357,7 @@ public class TuneGeneratorService
     //   Mid-weight road: 5.5°–6.5°
     //   Heavy/high-speed: 6.5°–7.0°
 
-    private static void CalculateCaster(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
+    private static void CalculateCaster(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
     {
         double baseByWeight = car.TotalMass switch
         {
@@ -346,7 +366,7 @@ public class TuneGeneratorService
             _      => 6.5
         };
 
-        double speedAdj = Math.Max(0, (car.MaxSpeedKmh - 200) / 100.0 * 0.5);
+        double speedAdj = Math.Max(0, (effectiveMaxKmh - 200) / 100.0 * 0.5);
         if (track.Discipline == Discipline.Drag)
             speedAdj = Math.Min(speedAdj, 0.3); // drag: light steering preferred, cap speed bonus
 
@@ -363,7 +383,7 @@ public class TuneGeneratorService
         r.Caster = Math.Round(caster, 1);
         ex["Caster"] = $"{r.Caster}° — " +
             $"{(r.Caster >= 6.5 ? "увеличенный — самовозврат и стабильность на скорости" : "стандартный")}. " +
-            $"Масса {car.TotalMass} кг, макс. {car.MaxSpeedKmh} км/ч.";
+            $"Масса {car.TotalMass} кг, макс. {effectiveMaxKmh} км/ч.";
     }
 
     // ── ARB ──────────────────────────────────────────────────────────────────
@@ -402,7 +422,7 @@ public class TuneGeneratorService
         };
 
         // Track width: wider track → less roll tendency → softer ARB needed (physical: roll moment ∝ 1/track)
-        double trackFactor = car.FrontTrack / 1550.0;
+        double trackFactor = 1550.0 / car.FrontTrack;
         double arbF = baseF * massScale * trackFactor;
         double arbR = baseR * massScale * trackFactor;
 
@@ -481,7 +501,7 @@ public class TuneGeneratorService
 
         r.SpringFront = Clamp(Math.Round(sprF), c.SpringFrontMin, c.SpringFrontMax);
         r.SpringRear  = Clamp(Math.Round(sprR), c.SpringRearMin,  c.SpringRearMax);
-        ex["Springs"] = $"Пружины: П {r.SpringFront} / З {r.SpringRear} кгс/мм " +
+        ex["Springs"] = $"Пружины: П {r.SpringFront} / З {r.SpringRear} Н/мм " +
             $"({hzF:F2}/{hzR:F2} Гц, подвеска {car.SuspensionUpgrade}).";
     }
 
@@ -622,7 +642,8 @@ public class TuneGeneratorService
         r.BumpFront    = Math.Round(Clamp(bmpF, c.BumpFrontMin,    c.BumpFrontMax));
         r.BumpRear     = Math.Round(Clamp(bmpR, c.BumpRearMin,     c.BumpRearMax));
         ex["Dampers"] = $"Отбой: П {r.ReboundFront} / З {r.ReboundRear}, " +
-            $"сжатие: П {r.BumpFront} / З {r.BumpRear}. (Bump ~{bmpF / rebF * 100:F0}% от Rebound)";
+            $"сжатие: П {r.BumpFront} / З {r.BumpRear}. " +
+            $"(Bump ~{(rebF > 0 ? bmpF / rebF * 100 : 0):F0}% от Rebound)";
     }
 
     // ── Aero ─────────────────────────────────────────────────────────────────
@@ -709,6 +730,7 @@ public class TuneGeneratorService
                 {
                     Models.DriveType.RWD => (95.0, 0.0),
                     Models.DriveType.AWD => (80.0, 10.0),
+                    Models.DriveType.FWD => (30.0, 5.0),  // FWD drift: slight accel lock for rotation
                     _                    => (0.0, 0.0)
                 };
                 break;
@@ -841,7 +863,7 @@ public class TuneGeneratorService
     //   FWD: 55-62% front bias
     //   Drift/Dirt: 45-50%
 
-    private static void CalculateBrakes(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
+    private static void CalculateBrakes(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
     {
         double bias = EffectiveWtDist(car);
 
@@ -870,7 +892,7 @@ public class TuneGeneratorService
         // Mass: lighter cars need less pressure, heavier need more (ForzaFire: 85-115%)
         pressure += (car.TotalMass - 1400) / 200.0 * 2.5;
         pressure += Math.Max(0, (car.PowerHP - 300) / 200.0 * 5.0);
-        pressure += Math.Max(0, (car.MaxSpeedKmh - 200) / 100.0 * 5.0);
+        pressure += Math.Max(0, (effectiveMaxKmh - 200) / 100.0 * 5.0);
         if (car.DriveType == Models.DriveType.AWD) pressure += 5;
         // Brake upgrade: better calipers/pads → higher effective bite
         pressure += car.BrakesUpgrade switch
@@ -896,8 +918,12 @@ public class TuneGeneratorService
     // Community (forza.guide): adjust final drive only, leave individual gears.
     // Target: max speed at 95% redline in top gear.
 
-    private static int CalcRecommendedGearCount(CarCard car, TrackInfo track)
+    private static int CalcRecommendedGearCount(CarCard car, TrackInfo track, double effectiveMaxKmh)
     {
+        // Electric drivetrains use 1–2 gears regardless of discipline
+        if (car.PowertrainType == PowertrainType.Electric)
+            return track.Discipline == Discipline.Drag ? 1 : 2;
+
         double pwRatio = car.PowerHP / (car.TotalMass / 1000.0);
 
         int rec = track.Discipline switch
@@ -913,22 +939,25 @@ public class TuneGeneratorService
         };
 
         if (pwRatio > 250) rec++;
-        if (car.MaxSpeedKmh > 280) rec++;
+        if (effectiveMaxKmh > 280) rec++; // uses drag-limited speed (wing drag already included)
+        // Narrow RPM range (diesel, low-rev engines): fewer gears needed to cover the rev band
+        if (car.MaxRPM < 5000) rec--;
         if (car.EngineType == EngineType.I3) rec--;
 
         return Math.Clamp(rec, 1, 10);
     }
 
-    private static void CalculateGearing(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
+    private static void CalculateGearing(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
     {
         int n = Math.Max(1, Math.Min(car.GearCount, 10));
-        r.RecommendedGearCount = CalcRecommendedGearCount(car, track);
+        r.RecommendedGearCount = CalcRecommendedGearCount(car, track, effectiveMaxKmh);
 
         double pwRatio = car.PowerHP / (car.TotalMass / 1000.0);
         double tireCirc = Math.PI * car.RearWheelDiameterInch * 0.0254;
+
         double targetKmh = track.Discipline == Discipline.Drag
-            ? car.MaxSpeedKmh
-            : Math.Min(car.MaxSpeedKmh, 400);
+            ? effectiveMaxKmh
+            : Math.Min(effectiveMaxKmh, 400);
         double targetMs = targetKmh / 3.6;
 
         // Single-speed: Gear 1 × FinalDrive = total reduction (same Forza mechanics, one gear).
@@ -953,10 +982,11 @@ public class TuneGeneratorService
             else if (pwRatio < 100) g1 -= 0.3;
             g1 = Math.Max(1.0, g1);
 
-            double fd1 = total / g1;
-            if (fd1 < c.FinalDriveMin) { fd1 = c.FinalDriveMin; g1 = total / fd1; }
-            else if (fd1 > c.FinalDriveMax) { fd1 = c.FinalDriveMax; g1 = total / fd1; }
-            g1 = Math.Clamp(g1, GearRatioMin, GearRatioMax);
+            // Resolve both constraint ranges: FinalDrive first, then GearRatio.
+            // If both clamp simultaneously the product g1×fd1 may not equal total — accept best fit.
+            double fd1 = Math.Clamp(total / g1, c.FinalDriveMin, c.FinalDriveMax);
+            g1 = Math.Clamp(total / fd1, GearRatioMin, GearRatioMax);
+            fd1 = Math.Clamp(total / g1, c.FinalDriveMin, c.FinalDriveMax);
 
             g1  = Math.Round(g1,  2);
             fd1 = Math.Round(fd1, 2);
@@ -964,7 +994,7 @@ public class TuneGeneratorService
             r.FinalDrive = fd1;
             ex["FinalDrive"] = $"ГП {fd1}. Передача 1: {g1} (одна ступень). " +
                 $"Суммарное передаточное: {g1} × {fd1} = {g1 * fd1:F2}. " +
-                $"{car.MaxSpeedKmh} км/ч @ {car.MaxRPM} об/мин. Рек. передач: {r.RecommendedGearCount}.";
+                $"{effectiveMaxKmh} км/ч @ {car.MaxRPM} об/мин. Рек. передач: {r.RecommendedGearCount}.";
             return;
         }
 
@@ -1005,7 +1035,7 @@ public class TuneGeneratorService
                 case AspirationType.TwinTurbo:            stepMax -= 0.02; break;
                 case AspirationType.Electric:             stepMin += 0.05; stepMax += 0.05; break;
             }
-            stepMin = Math.Max(0.50f, stepMin);
+            stepMin = Math.Max(0.50, stepMin);
             stepMax = Math.Clamp(stepMax, stepMin + 0.05, 0.95);
 
             double stepIdeal = car.MaxRPM > 0
@@ -1037,7 +1067,7 @@ public class TuneGeneratorService
 
         string gearStr = string.Join("  ", ratios.Select((g, i) => $"{i + 1}: {g:F2}"));
         ex["FinalDrive"] = $"ГП {r.FinalDrive}. Рек. передач: {r.RecommendedGearCount}. Ряд: {gearStr}. " +
-            $"{car.MaxSpeedKmh} км/ч @ {car.MaxRPM} об/мин, P/W {pwRatio:F1} л.с./т. {note}";
+            $"{effectiveMaxKmh} км/ч @ {car.MaxRPM} об/мин, P/W {pwRatio:F1} л.с./т. {note}";
     }
 
     private static (double first, double top, string note) GetDragRatios(DragDistance dist, int gears)

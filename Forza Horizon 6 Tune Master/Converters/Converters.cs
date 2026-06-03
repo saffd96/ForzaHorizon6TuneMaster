@@ -91,9 +91,9 @@ public class UnitValueConverter : IMultiValueConverter
         return (parameter as string) switch
         {
             "pressure" => imp ? $"{val * 14.504:F1} psi"      : $"{val:F2} бар",
-            "spring"   => su == SpringUnit.NMm    ? $"{val * 9.807:F1} Н/мм"
-                        : su == SpringUnit.LbsIn  ? $"{val * 55.997:F1} фнт/дюйм"
-                        :                           $"{val:F1} кгс/мм",
+            "spring"   => su == SpringUnit.KgfMm   ? $"{val / 9.807:F2} кгс/мм"
+                        : su == SpringUnit.LbsIn  ? $"{val * 5.710:F1} фнт/дюйм"
+                        :                           $"{val:F1} Н/мм",
             "height"   => imp ? $"{val / 25.4:F2}\"" : $"{val:F0} мм",
             "speed"    => imp ? $"{val * 0.6214:F0} миль/ч" : $"{val:F0} км/ч",
             "mass"     => imp ? $"{val * 2.2046:F0} фнт"    : $"{val:F0} кг",

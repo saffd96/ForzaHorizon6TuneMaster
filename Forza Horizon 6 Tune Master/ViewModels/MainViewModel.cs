@@ -143,16 +143,16 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // Springs
-    private double SpringToDisplay(double kgfmm) => _springUnit switch
+    private double SpringToDisplay(double nmm) => _springUnit switch
     {
-        SpringUnit.NMm   => Math.Round(kgfmm * 9.807, 1),
-        SpringUnit.LbsIn => Math.Round(kgfmm * 55.997, 1),
-        _                => Math.Round(kgfmm, 1)
+        SpringUnit.KgfMm => Math.Round(nmm / 9.807, 2),
+        SpringUnit.LbsIn => Math.Round(nmm * 5.710, 1),
+        _                => Math.Round(nmm, 1)
     };
     private double SpringFromDisplay(double val) => _springUnit switch
     {
-        SpringUnit.NMm   => val / 9.807,
-        SpringUnit.LbsIn => val / 55.997,
+        SpringUnit.KgfMm => val * 9.807,
+        SpringUnit.LbsIn => val / 5.710,
         _                => val
     };
 
@@ -233,7 +233,7 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     private bool _syncingSpringUnit;
-    private SpringUnit _springUnit = SpringUnit.KgfMm;
+    private SpringUnit _springUnit = SpringUnit.NMm;
     public SpringUnit SpringUnit
     {
         get => _springUnit;
@@ -597,7 +597,7 @@ public class MainViewModel : INotifyPropertyChanged
 
         _selectedUnitSystemItem  = UnitSystemOptions[0];
         _selectedPowerUnitItem   = PowerUnitOptions[0];
-        _selectedSpringUnitItem  = SpringUnitOptions[0];
+        _selectedSpringUnitItem  = SpringUnitOptions[1];
         OnPropertyChanged(nameof(SelectedUnitSystemItem));
         OnPropertyChanged(nameof(SelectedPowerUnitItem));
         OnPropertyChanged(nameof(SelectedSpringUnitItem));

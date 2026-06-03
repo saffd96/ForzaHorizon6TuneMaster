@@ -156,7 +156,6 @@ public class CarCard : NotifyBase
                 EngineType.V10      => 0.88,
                 EngineType.V12      => 0.82,
                 EngineType.Rotary   => 0.92,
-                EngineType.Electric => 0.45,
                 _                   => 0.85
             } / 100.0) * 100;
         }
@@ -181,7 +180,6 @@ public class CarCard : NotifyBase
                 EngineType.V10      => 0.62,
                 EngineType.V12      => 0.53,
                 EngineType.Rotary   => 0.70,
-                EngineType.Electric => 0.03,
                 _                   => 0.57
             } / 100.0) * 100;
             return Math.Max(500, peak);
@@ -193,7 +191,7 @@ public class CarCard : NotifyBase
     public DriveType DriveType
     {
         get => _driveType;
-        set { Set(ref _driveType, value); OnPropertyChanged(nameof(MaxSpeedKmh)); }
+        set { Set(ref _driveType, value); }
     }
 
     private int _gearCount = 6;
@@ -275,23 +273,44 @@ public class CarCard : NotifyBase
         set { Set(ref _rearTrack, value); }
     }
 
-    // Performance — computed from aerodynamic drag: v = (2P × η / (CdA × ρ))^(1/3)
-    // CdA estimated from mass + tire profile (high profile = SUV body = more drag)
-    // η: AWD=0.87 (two diffs), RWD/FWD=0.92
+    // Body drag inputs — override the estimated CdA when known.
+    private double _cd;
+    public double Cd
+    {
+        get => _cd;
+        set { Set(ref _cd, value); OnPropertyChanged(nameof(MaxSpeedKmh)); }
+    }
+
+    private double _frontalAreaM2;
+    public double FrontalAreaM2
+    {
+        get => _frontalAreaM2;
+        set { Set(ref _frontalAreaM2, value); OnPropertyChanged(nameof(MaxSpeedKmh)); }
+    }
+
+    // v = (P / (0.5 × ρ × CdA_body))^(1/3)  — body drag only (display estimate).
+    // Uses Cd × FrontalAreaM2 when both are set; otherwise estimates from mass/tire profile.
+    // Wing-induced drag is added in TuneGeneratorService using computed r.AeroFront/Rear.
+    // Forza uses engine HP directly at wheels — no drivetrain loss (confirmed: forums.forza.net).
     [JsonIgnore]
     public double MaxSpeedKmh
     {
         get
         {
-            double avgProfile  = (FrontTireProfile + RearTireProfile) / 2.0;
-            double bodyFactor  = avgProfile > 55 ? 3.0 : 1.0;
-            double cdA         = (0.40 + TotalMass / 3000.0) * bodyFactor;
-            double eta         = DriveType == DriveType.AWD ? 0.87 : 0.92;
-            double powerWatts  = PowerHP * 745.7 * eta;
-            double vMaxMs      = Math.Pow(2.0 * powerWatts / (cdA * 1.225), 1.0 / 3.0);
+            double cdABody;
+            if (Cd > 0 && FrontalAreaM2 > 0)
+                cdABody = Cd * FrontalAreaM2;
+            else
+            {
+                double avgProfile = (FrontTireProfile + RearTireProfile) / 2.0;
+                double bodyFactor = avgProfile > 55 ? 3.0 : 1.0;
+                cdABody = (0.50 + TotalMass / 2500.0) * bodyFactor;
+            }
+            double powerWatts = PowerHP * 745.7;
+            double vMaxMs     = Math.Pow(powerWatts / (0.5 * 1.225 * cdABody), 1.0 / 3.0);
             return Math.Round(Math.Clamp(vMaxMs * 3.6, 60.0, 600.0));
         }
-        set { /* computed — no-op for backward compat with profiles and tests */ }
+        set { /* computed — no-op for backward compat with saved profiles */ }
     }
 
     // Aero
