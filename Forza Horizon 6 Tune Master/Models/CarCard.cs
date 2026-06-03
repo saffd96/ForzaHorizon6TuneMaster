@@ -93,7 +93,7 @@ public class CarCard : NotifyBase
         {
             Set(ref _aspirationType, value);
             OnPropertyChanged(nameof(ShowAntiLag));
-            if (value != AspirationType.SingleTurbo)
+            if (value != AspirationType.SingleTurbo && value != AspirationType.TwinTurbo)
                 AntiLag = false;
         }
     }
@@ -113,7 +113,7 @@ public class CarCard : NotifyBase
     }
 
     [JsonIgnore]
-    public bool ShowAntiLag => AspirationType == AspirationType.SingleTurbo;
+    public bool ShowAntiLag => AspirationType == AspirationType.SingleTurbo || AspirationType == AspirationType.TwinTurbo;
 
     private PowertrainType _powertrainType = PowertrainType.ICE;
     public PowertrainType PowertrainType

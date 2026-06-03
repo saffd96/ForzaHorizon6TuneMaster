@@ -36,7 +36,7 @@ public class TuneGeneratorService
         var (d, s, dm) = asp switch
         {
             AspirationType.SingleTurbo          => antiLag ? (1.12, 1.05, 1.05) : (1.10, 1.05, 1.04),
-            AspirationType.TwinTurbo            => (1.07, 1.04, 1.03),
+            AspirationType.TwinTurbo            => antiLag ? (1.09, 1.04, 1.04) : (1.07, 1.04, 1.03),
             AspirationType.PositiveDisplacement => (1.05, 1.03, 1.03),
             AspirationType.Centrifugal          => (1.03, 1.02, 1.01),
             AspirationType.Electric             => (1.20, 1.08, 1.06),
@@ -110,7 +110,9 @@ public class TuneGeneratorService
         // don't get pushed to 70%+ of their redline by a floor calibrated for high-rev gasoline.
         double baseLaunch = car.AspirationType switch
         {
-            AspirationType.TwinTurbo            => Math.Max(car.MaxRPM * 0.32, torquePeak * 0.55),
+            AspirationType.TwinTurbo            => car.AntiLag
+                                                   ? Math.Max(car.MaxRPM * 0.37, torquePeak * 0.60)
+                                                   : Math.Max(car.MaxRPM * 0.32, torquePeak * 0.55),
             AspirationType.SingleTurbo          => car.AntiLag
                                                    ? Math.Max(car.MaxRPM * 0.42, torquePeak * 0.65)
                                                    : Math.Max(car.MaxRPM * 0.38, torquePeak * 0.60),
@@ -1005,7 +1007,8 @@ public class TuneGeneratorService
             case AspirationType.Centrifugal:            stepMax -= 0.08; break;
             case AspirationType.SingleTurbo when !antiLag: stepMax -= 0.04; break;
             case AspirationType.SingleTurbo:            stepMax -= 0.02; break;
-            case AspirationType.TwinTurbo:              stepMax -= 0.02; break;
+            case AspirationType.TwinTurbo when !antiLag: stepMax -= 0.02; break;
+            case AspirationType.TwinTurbo:              stepMax -= 0.01; break;
             case AspirationType.Electric:               stepMin += 0.05; stepMax += 0.05; break;
         }
     }
