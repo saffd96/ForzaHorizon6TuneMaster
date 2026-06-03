@@ -203,6 +203,87 @@ internal static class CarFactory
         HasFrontAero = false, HasRearAero = false,
     };
 
+    /// Porsche 918 Spyder — Hybrid, AWD, RearMid, 887 HP
+    public static CarCard Porsche918() => new()
+    {
+        TotalMass = 1674, WeightDistributionFront = 43,
+        PowerHP = 887, TorqueNm = 1000, MaxRPM = 9150,
+        DriveType = Models_DriveType.AWD, EnginePosition = EnginePosition.RearMid,
+        AspirationType = AspirationType.Natural, PowertrainType = PowertrainType.Hybrid,
+        EngineType = EngineType.V8, GearCount = 7,
+        TireType = TireType.SemiSlick, SuspensionUpgrade = SuspensionUpgrade.Race,
+        DifferentialUpgrade = DifferentialUpgrade.Race,
+        FrontTireWidth = 265, FrontTireProfile = 35, FrontRimDiameter = 21,
+        RearTireWidth  = 325, RearTireProfile  = 30, RearRimDiameter  = 21,
+        Wheelbase = 2730,
+        HasFrontAero = true, HasRearAero = true,
+    };
+
+    /// Mitsubishi Lancer Evo X — AWD, SingleTurbo, AntiLag
+    public static CarCard LancerEvoXAntiLag() => new()
+    {
+        TotalMass = 1600, WeightDistributionFront = 58,
+        PowerHP = 350, TorqueNm = 470, MaxRPM = 7000,
+        DriveType = Models_DriveType.AWD, EnginePosition = EnginePosition.Front,
+        AspirationType = AspirationType.SingleTurbo, PowertrainType = PowertrainType.ICE,
+        AntiLag = true,
+        EngineType = EngineType.I4, GearCount = 6,
+        TireType = TireType.Sport, SuspensionUpgrade = SuspensionUpgrade.Race,
+        DifferentialUpgrade = DifferentialUpgrade.Race,
+        FrontTireWidth = 245, FrontTireProfile = 40, FrontRimDiameter = 18,
+        RearTireWidth  = 245, RearTireProfile  = 40, RearRimDiameter  = 18,
+        Wheelbase = 2650,
+        HasFrontAero = false, HasRearAero = false,
+    };
+
+    /// McLaren 720S — RWD, TwinTurbo, RearMid
+    public static CarCard McLaren720S() => new()
+    {
+        TotalMass = 1283, WeightDistributionFront = 42,
+        PowerHP = 710, TorqueNm = 770, MaxRPM = 8500,
+        DriveType = Models_DriveType.RWD, EnginePosition = EnginePosition.RearMid,
+        AspirationType = AspirationType.TwinTurbo, PowertrainType = PowertrainType.ICE,
+        EngineType = EngineType.V8, GearCount = 7,
+        TireType = TireType.SemiSlick, SuspensionUpgrade = SuspensionUpgrade.Race,
+        DifferentialUpgrade = DifferentialUpgrade.Race,
+        FrontTireWidth = 245, FrontTireProfile = 35, FrontRimDiameter = 20,
+        RearTireWidth  = 305, RearTireProfile  = 30, RearRimDiameter  = 21,
+        Wheelbase = 2670,
+        HasFrontAero = true, HasRearAero = true,
+    };
+
+    /// Bugatti Chiron — AWD, TwinTurbo (quad-turbo mapped), Mid, extreme power
+    public static CarCard BugattiChiron() => new()
+    {
+        TotalMass = 1997, WeightDistributionFront = 46,
+        PowerHP = 1479, TorqueNm = 1600, MaxRPM = 6700,
+        DriveType = Models_DriveType.AWD, EnginePosition = EnginePosition.Mid,
+        AspirationType = AspirationType.TwinTurbo, PowertrainType = PowertrainType.ICE,
+        EngineType = EngineType.V8, GearCount = 7,
+        TireType = TireType.SemiSlick, SuspensionUpgrade = SuspensionUpgrade.Race,
+        DifferentialUpgrade = DifferentialUpgrade.Race,
+        FrontTireWidth = 285, FrontTireProfile = 30, FrontRimDiameter = 21,
+        RearTireWidth  = 355, RearTireProfile  = 25, RearRimDiameter  = 21,
+        Wheelbase = 2711,
+        HasFrontAero = true, HasRearAero = true,
+    };
+
+    /// Honda S2000 AP2 — RWD, NA, high-rev front-engine
+    public static CarCard HondaS2000() => new()
+    {
+        TotalMass = 1250, WeightDistributionFront = 52,
+        PowerHP = 237, TorqueNm = 220, MaxRPM = 9000,
+        DriveType = Models_DriveType.RWD, EnginePosition = EnginePosition.Front,
+        AspirationType = AspirationType.Natural, PowertrainType = PowertrainType.ICE,
+        EngineType = EngineType.I4, GearCount = 6,
+        TireType = TireType.Sport, SuspensionUpgrade = SuspensionUpgrade.Race,
+        DifferentialUpgrade = DifferentialUpgrade.Sport,
+        FrontTireWidth = 205, FrontTireProfile = 55, FrontRimDiameter = 17,
+        RearTireWidth  = 225, RearTireProfile  = 50, RearRimDiameter  = 17,
+        Wheelbase = 2400,
+        HasFrontAero = false, HasRearAero = false,
+    };
+
     // ── Tracks ───────────────────────────────────────────────────────────────
     public static TrackInfo Road()         => new() { Discipline = Discipline.Road };
     public static TrackInfo Drag(DragDistance d = DragDistance.Quarter) => new() { Discipline = Discipline.Drag, DragDistance = d };

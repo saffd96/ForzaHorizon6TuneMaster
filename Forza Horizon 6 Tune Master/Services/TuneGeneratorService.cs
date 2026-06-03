@@ -447,9 +447,9 @@ public class TuneGeneratorService
         double torqueHz = Math.Min(0.4, Math.Max(0, (car.TorqueNm - 400) / 600.0 * 0.25));
         hzR += torqueHz;
 
-        // K (Н/мм) per spring = 4π²/2000 × f² × m_corner; exact constant = 0.02012
-        double sprF = 0.02012 * hzF * hzF * car.TotalMass * wdF;
-        double sprR = 0.02012 * hzR * hzR * car.TotalMass * wdR;
+        // K (Н/мм) per spring = 4π²/2000 × f² × m_corner; exact constant = 0.019739 (= 4π²/2000)
+        double sprF = 0.019739 * hzF * hzF * car.TotalMass * wdF;
+        double sprR = 0.019739 * hzR * hzR * car.TotalMass * wdR;
 
         // Suspension upgrade multiplier.
         // Rally/CC disciplines already use soft Hz targets — Rally upgrade keeps them neutral (0.85)
