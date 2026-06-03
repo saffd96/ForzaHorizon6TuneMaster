@@ -52,11 +52,11 @@
                         <Viewbox Width="32" Height="32" Margin="0,0,12,0">
                             <Canvas Width="32" Height="32">
                                 <Rectangle Width="32" Height="32" Fill="#0C0E16" RadiusX="6" RadiusY="6"/>
-                                <Ellipse Canvas.Left="9" Canvas.Top="3" Width="14" Height="14" Fill="#1ABCFE" Opacity="0.85"/>
-                                <Rectangle Canvas.Left="2"  Canvas.Top="7"  Width="28" Height="4"  Fill="#FF5E0E" RadiusX="2" RadiusY="2"/>
-                                <Rectangle Canvas.Left="8"  Canvas.Top="11" Width="4"  Height="18" Fill="#FF5E0E"/>
-                                <Rectangle Canvas.Left="20" Canvas.Top="11" Width="4"  Height="18" Fill="#FF5E0E"/>
-                                <Rectangle Canvas.Left="8"  Canvas.Top="15" Width="16" Height="3"  Fill="#FF5E0E"/>
+                                <Ellipse Canvas.Left="11" Canvas.Top="1.5" Width="10" Height="10" Fill="#1ABCFE" Opacity="0.9"/>
+                                <Rectangle Canvas.Left="3"  Canvas.Top="10"  Width="26" Height="3.5" Fill="#FF5E0E" RadiusX="1" RadiusY="1"/>
+                                <Rectangle Canvas.Left="6.5" Canvas.Top="16" Width="19" Height="2.5" Fill="#FF5E0E"/>
+                                <Rectangle Canvas.Left="7.5" Canvas.Top="10" Width="4"  Height="20" Fill="#FF5E0E"/>
+                                <Rectangle Canvas.Left="20.5" Canvas.Top="10" Width="4"  Height="20" Fill="#FF5E0E"/>
                             </Canvas>
                         </Viewbox>
                         <StackPanel VerticalAlignment="Center">

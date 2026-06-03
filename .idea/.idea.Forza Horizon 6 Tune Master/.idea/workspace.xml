@@ -7,7 +7,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6f5aca4a-8e95-4953-8a4a-45b281d20313" name="Changes" comment="" />
+    <list default="true" id="6f5aca4a-8e95-4953-8a4a-45b281d20313" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/MainWindow.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/MainWindow.xaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/icon.ico" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/icon.ico" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
