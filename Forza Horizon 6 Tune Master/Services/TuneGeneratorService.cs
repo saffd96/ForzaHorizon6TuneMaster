@@ -7,6 +7,8 @@ public class TuneGeneratorService
     private static double Clamp(double v, double min, double max) => Math.Max(min, Math.Min(max, v));
 
     private const double LbPerKg = 2.20462;
+    private const double GearRatioMin = 0.48;
+    private const double GearRatioMax = 6.10;
 
     // Returns (diffFactor, springRearFactor, damperRearFactor) based on powertrain and aspiration type.
     // Electric BEV always uses max instant-torque factors regardless of stored AspirationType.
@@ -70,15 +72,17 @@ public class TuneGeneratorService
 
         double torquePeak = car.TorquePeakRPM;
 
+        // Floors are proportional to MaxRPM so low-redline engines (diesel, small-displacement)
+        // don't get pushed to 70%+ of their redline by a floor calibrated for high-rev gasoline.
         double baseLaunch = car.AspirationType switch
         {
-            AspirationType.TwinTurbo            => Math.Max(2500, torquePeak * 0.55),
+            AspirationType.TwinTurbo            => Math.Max(car.MaxRPM * 0.32, torquePeak * 0.55),
             AspirationType.SingleTurbo          => car.AntiLag
-                                                   ? Math.Max(3000, torquePeak * 0.65)
-                                                   : Math.Max(2800, torquePeak * 0.60),
-            AspirationType.PositiveDisplacement => Math.Max(2200, torquePeak * 0.65),
-            AspirationType.Centrifugal          => Math.Max(2000, torquePeak * 0.72), // boost builds with RPM
-            _                                   => Math.Max(1500, torquePeak * 0.70)  // NA
+                                                   ? Math.Max(car.MaxRPM * 0.42, torquePeak * 0.65)
+                                                   : Math.Max(car.MaxRPM * 0.38, torquePeak * 0.60),
+            AspirationType.PositiveDisplacement => Math.Max(car.MaxRPM * 0.28, torquePeak * 0.65),
+            AspirationType.Centrifugal          => Math.Max(car.MaxRPM * 0.25, torquePeak * 0.72),
+            _                                   => Math.Max(car.MaxRPM * 0.20, torquePeak * 0.70)
         };
 
         double driveAdj = car.DriveType switch
@@ -351,7 +355,7 @@ public class TuneGeneratorService
             Discipline.Drag          => -0.5,
             Discipline.Drift         => -1.0, // light steering for drift initiation (community: 5–6°)
             Discipline.Rally         => -0.5,
-            Discipline.CrossCountry  => -1.0,
+            Discipline.CrossCountry  => -0.3, // offroad needs self-centering; softer than road, not as light as drift
             _                        => 0.0
         };
 
@@ -406,12 +410,14 @@ public class TuneGeneratorService
         arbF += wdDev * 4.0;
         arbR -= wdDev * 4.0;
 
-        // Power: more power → stiffer to control roll (drag skipped — stiff ARBs kill launch grip via wheel hop)
+        // Power: more power → stiffer ARB on driven axle(s) to control squat/torque steer
+        // RWD: rear only; FWD: front only; AWD: both
         double pwrAdj = track.Discipline == Discipline.Drag
             ? 0.0
             : Math.Max(0, (car.PowerHP - 300) / 200.0 * 3.0);
-        arbF += pwrAdj;
-        arbR += pwrAdj;
+        if (car.DriveType == Models.DriveType.RWD)       arbR += pwrAdj;
+        else if (car.DriveType == Models.DriveType.FWD)  arbF += pwrAdj;
+        else { arbF += pwrAdj; arbR += pwrAdj; }
 
         r.ARBFront = Math.Round(Clamp(arbF, c.ARBFrontMin, c.ARBFrontMax));
         r.ARBRear  = Math.Round(Clamp(arbR, c.ARBRearMin,  c.ARBRearMax));
@@ -806,8 +812,13 @@ public class TuneGeneratorService
                 _                       => 0   // road: open front decel
             };
 
+            // bias → rear-biased: reduce front lock, increase rear lock
             double frontFactor = 1.2 - bias * 0.4;
             double rearFactor  = 0.8 + bias * 0.4;
+
+            // Apply rearFactor to rear diff (accel already has cap applied)
+            r.DiffAccel = Math.Round(Clamp(accel * rearFactor, c.DiffAccelMin, c.DiffAccelMax));
+            r.DiffDecel = Math.Round(Clamp(decel * rearFactor, c.DiffDecelMin, c.DiffDecelMax));
 
             double pwrF = Math.Max(0, (car.PowerHP - 300) / 200.0 * 3.0);
 
@@ -945,6 +956,7 @@ public class TuneGeneratorService
             double fd1 = total / g1;
             if (fd1 < c.FinalDriveMin) { fd1 = c.FinalDriveMin; g1 = total / fd1; }
             else if (fd1 > c.FinalDriveMax) { fd1 = c.FinalDriveMax; g1 = total / fd1; }
+            g1 = Math.Clamp(g1, GearRatioMin, GearRatioMax);
 
             g1  = Math.Round(g1,  2);
             fd1 = Math.Round(fd1, 2);
@@ -978,8 +990,23 @@ public class TuneGeneratorService
             if (pwRatio > 200) first += 0.3;
             else if (pwRatio < 100) first -= 0.3;
 
-            // Diesel has high low-end torque — needs less first-gear multiplication
+            // Diesel: flat torque from low RPM — shorter first gear, no step adjustment needed
             if (car.FuelType == FuelType.Diesel) first = Math.Max(first - 0.45, 1.5);
+
+            // Aspiration: affects where power lives in the rev range → tighten/loosen step accordingly
+            // Centrifugal boost peaks at redline → stay high in rev range (tightest ratios)
+            // Turbo: need to land above boost threshold after shift → moderately tighter
+            // Electric: instant torque everywhere → wide ratios acceptable
+            switch (car.AspirationType)
+            {
+                case AspirationType.Centrifugal:          stepMax -= 0.08; break;
+                case AspirationType.SingleTurbo when !car.AntiLag: stepMax -= 0.04; break;
+                case AspirationType.SingleTurbo:          stepMax -= 0.02; break; // anti-lag fills the hole
+                case AspirationType.TwinTurbo:            stepMax -= 0.02; break;
+                case AspirationType.Electric:             stepMin += 0.05; stepMax += 0.05; break;
+            }
+            stepMin = Math.Max(0.50f, stepMin);
+            stepMax = Math.Clamp(stepMax, stepMin + 0.05, 0.95);
 
             double stepIdeal = car.MaxRPM > 0
                 ? (double)car.TorquePeakRPM / car.MaxRPM + 0.12
@@ -988,11 +1015,15 @@ public class TuneGeneratorService
             top = first * Math.Pow(step, n - 1);
         }
 
+        // Clamp endpoints to Forza's physical gear ratio range before generating the sequence
+        first = Math.Clamp(first, GearRatioMin, GearRatioMax);
+        top   = Math.Clamp(top,   GearRatioMin, first);
+
         var ratios = new List<double>(n);
         for (int i = 0; i < n; i++)
         {
             double t = (double)i / (n - 1);
-            ratios.Add(Math.Round(first * Math.Pow(top / first, t), 2));
+            ratios.Add(Math.Round(Math.Clamp(first * Math.Pow(top / first, t), GearRatioMin, GearRatioMax), 2));
         }
 
         double fd = targetMs > 0 && car.MaxRPM > 0

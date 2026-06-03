@@ -184,7 +184,6 @@ public class CarCard : NotifyBase
                 EngineType.Electric => 0.03,
                 _                   => 0.57
             } / 100.0) * 100;
-            if (FuelType == FuelType.Diesel) peak = (int)(peak * 0.65);
             return Math.Max(500, peak);
         }
     }
