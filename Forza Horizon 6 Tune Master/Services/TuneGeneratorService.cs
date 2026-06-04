@@ -510,12 +510,13 @@ public class TuneGeneratorService
         bool offRoadDisc = track.Discipline is Discipline.Rally or Discipline.CrossCountry;
         double suspMul = car.SuspensionUpgrade switch
         {
-            SuspensionUpgrade.Race   => 1.10,
-            SuspensionUpgrade.Sport  => 1.00,
-            SuspensionUpgrade.Street => 0.88,
-            SuspensionUpgrade.Rally  => offRoadDisc ? 0.85 : 0.55,
-            SuspensionUpgrade.Drift  => 0.85,
-            _                        => 0.72
+            SuspensionUpgrade.Race    => 1.10,
+            SuspensionUpgrade.Sport   => 1.00,
+            SuspensionUpgrade.Street  => 0.88,
+            SuspensionUpgrade.Rally   => offRoadDisc ? 0.85 : 0.55,
+            SuspensionUpgrade.Drift   => 0.85,
+            SuspensionUpgrade.Offroad => offRoadDisc ? 0.80 : 0.50,
+            _                         => 0.72
         };
         sprF *= suspMul;
         sprR *= suspMul;
@@ -541,12 +542,13 @@ public class TuneGeneratorService
 
         double suspOff = car.SuspensionUpgrade switch
         {
-            SuspensionUpgrade.Race  => -5,
-            SuspensionUpgrade.Sport => 0,
-            SuspensionUpgrade.Street => 5,
-            SuspensionUpgrade.Rally => 15,
-            SuspensionUpgrade.Drift => -5,
-            _                       => 0
+            SuspensionUpgrade.Race    => -5,
+            SuspensionUpgrade.Sport   => 0,
+            SuspensionUpgrade.Street  => 5,
+            SuspensionUpgrade.Rally   => 15,
+            SuspensionUpgrade.Drift   => -5,
+            SuspensionUpgrade.Offroad => 25,
+            _                         => 0
         };
 
         switch (track.Discipline)
@@ -657,12 +659,13 @@ public class TuneGeneratorService
         // Suspension upgrade range modifier
         double suspMul = car.SuspensionUpgrade switch
         {
-            SuspensionUpgrade.Race  => 1.10,
-            SuspensionUpgrade.Sport => 1.00,
-            SuspensionUpgrade.Rally => 1.05,
-            SuspensionUpgrade.Drift => 0.95,
-            SuspensionUpgrade.Street => 0.90,
-            _                       => 0.85
+            SuspensionUpgrade.Race    => 1.10,
+            SuspensionUpgrade.Sport   => 1.00,
+            SuspensionUpgrade.Rally   => 1.05,
+            SuspensionUpgrade.Drift   => 0.95,
+            SuspensionUpgrade.Street  => 0.90,
+            SuspensionUpgrade.Offroad => 0.85,
+            _                         => 0.85
         };
         rebF *= suspMul; rebR *= suspMul;
         bmpF *= suspMul; bmpR *= suspMul;
@@ -746,6 +749,7 @@ public class TuneGeneratorService
             DifferentialUpgrade.Stock    => 0.40,
             DifferentialUpgrade.Street   => 0.60,
             DifferentialUpgrade.Sport    => 0.80,
+            DifferentialUpgrade.Rally    => 0.90,
             DifferentialUpgrade.Race     => 1.00,
             DifferentialUpgrade.DriftSpec => 1.00,
             _                            => 0.80

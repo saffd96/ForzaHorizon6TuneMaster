@@ -22,9 +22,9 @@ public enum EnginePosition { Front, Mid, RearMid, Rear }
 
 public enum TireType { Stock, Street, Sport, SemiSlick, Slick, Rally, Offroad, Drag }
 
-public enum SuspensionUpgrade { Stock, Street, Sport, Race, Rally, Drift }
+public enum SuspensionUpgrade { Stock, Street, Sport, Race, Rally, Drift, Offroad }
 
-public enum DifferentialUpgrade { Stock, Street, Sport, Race, DriftSpec }
+public enum DifferentialUpgrade { Stock, Street, Sport, Rally, Race, DriftSpec }
 
 public enum BrakesUpgrade { Stock, Sport, Race }
 
