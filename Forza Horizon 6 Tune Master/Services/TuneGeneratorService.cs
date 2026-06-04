@@ -60,7 +60,7 @@ public class TuneGeneratorService
     private static double ComputeEffectiveMaxSpeedKmh(CarCard car, TuneResult r)
     {
         double avgProfile = (car.FrontTireProfile + car.RearTireProfile) / 2.0;
-        double bodyFactor = avgProfile > 55 ? 3.0 : 1.0;
+        double bodyFactor = Math.Clamp(1.0 + Math.Max(0, (avgProfile - 45.0) / 20.0) * 2.0, 1.0, 3.5);
         double cdABody    = car.Cd > 0 && car.FrontalAreaM2 > 0
             ? car.Cd * car.FrontalAreaM2
             : (0.50 + car.TotalMass / 2500.0) * bodyFactor;
@@ -200,21 +200,22 @@ public class TuneGeneratorService
         double powerAdjF = 0, powerAdjR = 0;
         if (track.Discipline != Discipline.Drag)
         {
-            double hpOver = Math.Max(0, car.PowerHP - 300);
+            double hpOver = Math.Max(0, car.PowerHP  - PowerBaselineHP);
+            double tqOver = Math.Max(0, car.TorqueNm - TorqueBaselineNm);
             if (car.DriveType == Models.DriveType.RWD)
             {
-                powerAdjR = -(hpOver / 300.0 * 0.06);
-                powerAdjF = hpOver / 300.0 * 0.03;
+                powerAdjR = -(hpOver / 300.0 * 0.06) - (tqOver / 600.0 * 0.03);
+                powerAdjF =   hpOver / 300.0 * 0.03;
             }
             else if (car.DriveType == Models.DriveType.FWD)
             {
-                powerAdjF = -(hpOver / 300.0 * 0.06);
-                powerAdjR = hpOver / 300.0 * 0.03;
+                powerAdjF = -(hpOver / 300.0 * 0.06) - (tqOver / 600.0 * 0.03);
+                powerAdjR =   hpOver / 300.0 * 0.03;
             }
             else
             {
-                powerAdjF = hpOver / 300.0 * 0.03;
-                powerAdjR = hpOver / 300.0 * 0.03;
+                powerAdjF = hpOver / 300.0 * 0.03 - tqOver / 600.0 * 0.015;
+                powerAdjR = hpOver / 300.0 * 0.03 - tqOver / 600.0 * 0.015;
             }
         }
 
@@ -311,10 +312,13 @@ public class TuneGeneratorService
         if (car.DriveType == Models.DriveType.AWD && track.Discipline is Discipline.Road or Discipline.Street or Discipline.Touge)
             camR += -0.2;
 
-        // Power: more power → more rear camber for exit grip (not for drag/CC)
-        double pwrR = track.Discipline is Discipline.Drag or Discipline.CrossCountry
-            ? 0
-            : -Math.Max(0, (car.PowerHP - PowerBaselineHP) / PowerStepHP * 0.15);
+        // Power + torque → more rear camber for exit grip (not for drag/CC where flat patch is priority)
+        double pwrR = 0.0;
+        if (track.Discipline is not Discipline.Drag and not Discipline.CrossCountry)
+        {
+            pwrR -= Math.Max(0, (car.PowerHP  - PowerBaselineHP)  / PowerStepHP * 0.15);
+            pwrR -= Math.Max(0, (car.TorqueNm - TorqueBaselineNm) / 500.0       * 0.08);
+        }
 
         camF = Clamp(camF + epF, -5.0, 0.0);
         camR = Clamp(camR + epR + pwrR, -5.0, 0.0);
@@ -356,9 +360,12 @@ public class TuneGeneratorService
         toeF *= wbNorm;
         toeR *= wbNorm;
 
-        // More power on RWD → more rear toe-in for exit stability (skip drag — 0° is mandatory)
+        // More power/torque on RWD → more rear toe-in for exit stability (skip drag — 0° is mandatory)
         if (car.DriveType == Models.DriveType.RWD && track.Discipline != Discipline.Drag)
-            toeR += Math.Max(0, (car.PowerHP - PowerBaselineHP) / PowerStepHP * 0.05);
+        {
+            toeR += Math.Max(0, (car.PowerHP  - PowerBaselineHP)  / PowerStepHP * 0.05);
+            toeR += Math.Max(0, (car.TorqueNm - TorqueBaselineNm) / 500.0       * 0.03);
+        }
 
         r.ToeFront = Math.Round(Clamp(toeF, c.ToeFrontMin, c.ToeFrontMax), 1);
         r.ToeRear  = Math.Round(Clamp(toeR, c.ToeRearMin,  c.ToeRearMax),  1);
@@ -376,12 +383,9 @@ public class TuneGeneratorService
 
     private static void CalculateCaster(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
     {
-        double baseByWeight = car.TotalMass switch
-        {
-            < 1100 => 5.5,
-            < 1500 => 6.0,
-            _      => 6.5
-        };
+        // Linear interpolation: 800 kg → 5.0°, 2000 kg → 7.0°, clamped to [5.0, 7.5].
+        // Matches community anchors (light car ~5.5°, typical ~6.0°, heavy ~6.5°) without step jumps.
+        double baseByWeight = Math.Clamp(5.0 + (car.TotalMass - 800.0) / 600.0, 5.0, 7.5);
 
         double speedAdj = Math.Max(0, (effectiveMaxKmh - RefSpeedKmh) / 100.0 * 0.5);
         if (track.Discipline == Discipline.Drag)
@@ -437,8 +441,11 @@ public class TuneGeneratorService
             (_, _)                           => (26.0, 33.0, "Road AWD: F26/R33 — сбалансированные стабилизаторы (ForzaFire F22-30/R28-38).")
         };
 
-        // Track width: wider track → less roll tendency → softer ARB needed
-        double trackFactor = car.FrontTrack > 0 ? RefFrontTrackMm / car.FrontTrack : 1.0;
+        // Track width: wider track → less roll tendency → softer ARB needed (average front+rear)
+        double avgTrack   = (car.FrontTrack > 0 && car.RearTrack > 0)
+            ? (car.FrontTrack + car.RearTrack) / 2.0
+            : Math.Max(car.FrontTrack, car.RearTrack);
+        double trackFactor = avgTrack > 0 ? RefFrontTrackMm / avgTrack : 1.0;
         double arbF = baseF * massScale * trackFactor;
         double arbR = baseR * massScale * trackFactor;
 
@@ -446,14 +453,14 @@ public class TuneGeneratorService
         arbF += wdDev * 4.0;
         arbR -= wdDev * 4.0;
 
-        // Power: more power → stiffer ARB on driven axle(s) to control squat/torque steer
-        // RWD: rear only; FWD: front only; AWD: both
-        double pwrAdj = track.Discipline == Discipline.Drag
-            ? 0.0
-            : Math.Max(0, (car.PowerHP - PowerBaselineHP) / PowerStepHP * 3.0);
-        if (car.DriveType == Models.DriveType.RWD)       arbR += pwrAdj;
-        else if (car.DriveType == Models.DriveType.FWD)  arbF += pwrAdj;
-        else { arbF += pwrAdj; arbR += pwrAdj; }
+        // Power + torque → stiffer ARB on driven axle(s) to control squat/torque steer.
+        // RWD: rear only; FWD: front only; AWD: both. Drag skipped — low ARB keeps weight transfer free.
+        double pwrAdj = Math.Max(0, (car.PowerHP  - PowerBaselineHP)  / PowerStepHP * 3.0);
+        double tqAdj  = Math.Max(0, (car.TorqueNm - TorqueBaselineNm) / 300.0       * 1.5);
+        double arbAdj = track.Discipline == Discipline.Drag ? 0.0 : pwrAdj + tqAdj;
+        if (car.DriveType == Models.DriveType.RWD)       arbR += arbAdj;
+        else if (car.DriveType == Models.DriveType.FWD)  arbF += arbAdj;
+        else { arbF += arbAdj; arbR += arbAdj; }
 
         r.ARBFront = Math.Round(Clamp(arbF, c.ARBFrontMin, c.ARBFrontMax));
         r.ARBRear  = Math.Round(Clamp(arbR, c.ARBRearMin,  c.ARBRearMax));
@@ -483,12 +490,15 @@ public class TuneGeneratorService
         if (car.DriveType == Models.DriveType.RWD) { hzR += 0.15; hzF -= 0.05; }
         if (car.DriveType == Models.DriveType.FWD) { hzF += 0.15; hzR -= 0.05; }
 
-        // Power: more power → stiffer rear to control squat
-        double pwrHz = Math.Max(0, (car.PowerHP - PowerBaselineHP) / 300.0 * 0.25);
-        hzR += pwrHz;
-        // Torque: high torque causes rear squat under acceleration → stiffer rear spring
+        // Power/torque under acceleration: driven axle squats → stiffer on that axle.
+        // FWD: front dives (front-wheel drive pulls forward), RWD/AWD: rear squats.
+        double pwrHz    = Math.Max(0, (car.PowerHP - PowerBaselineHP) / 300.0 * 0.25);
         double torqueHz = Math.Min(0.4, Math.Max(0, (car.TorqueNm - TorqueBaselineNm) / 600.0 * 0.25));
-        hzR += torqueHz;
+        double squat    = pwrHz + torqueHz;
+        if (car.DriveType == Models.DriveType.FWD)
+            hzF += squat;
+        else
+            hzR += squat;
 
         // K (Н/мм) per spring = 4π²/2000 × f² × m_corner; exact constant = 0.019739 (= 4π²/2000)
         double sprF = 0.019739 * hzF * hzF * car.TotalMass * wdF;
@@ -576,6 +586,13 @@ public class TuneGeneratorService
         rhF += (avgRim - RefRimDiameterInch) * 1.5;
         rhR += (avgRim - RefRimDiameterInch) * 1.5;
 
+        // Tire profile: taller sidewall raises the car → less ride height needed to achieve same clearance.
+        // Profile 25 (racing) → +10 mm; profile 45 (baseline) → 0; profile 65 (SUV) → -10 mm.
+        double avgProfile = (car.FrontTireProfile + car.RearTireProfile) / 2.0;
+        double profileRhAdj = (ProfileBaseline - avgProfile) * 0.5;
+        rhF += profileRhAdj;
+        rhR += profileRhAdj;
+
         r.RideHeightFront = Math.Round(Clamp(rhF, c.RideHeightFrontMin, c.RideHeightFrontMax));
         r.RideHeightRear  = Math.Round(Clamp(rhR, c.RideHeightRearMin,  c.RideHeightRearMax));
         ex["RideHeight"] = $"Клиренс: П {r.RideHeightFront} / З {r.RideHeightRear} мм. {note}";
@@ -626,10 +643,13 @@ public class TuneGeneratorService
         // RWD: rear rebound slightly higher for squat control
         if (car.DriveType == Models.DriveType.RWD) rebR += 0.5;
 
-        // Power: more power → stiffer rear rebound
-        rebR += Math.Max(0, (car.PowerHP - PowerBaselineHP) / PowerStepHP * 0.5);
-        // Torque: high torque squat → stiffer rear rebound to control extension
-        rebR += Math.Max(0, (car.TorqueNm - TorqueBaselineNm) / 500.0 * 0.5);
+        // Power/torque under acceleration: driven axle squats → stiffer rebound on that axle.
+        // FWD: front dives under power; RWD/AWD: rear squats.
+        double powerReb  = Math.Max(0, (car.PowerHP  - PowerBaselineHP)  / PowerStepHP * 0.5);
+        double torqueReb = Math.Max(0, (car.TorqueNm - TorqueBaselineNm) / 500.0       * 0.5);
+        double squatReb  = powerReb + torqueReb;
+        if (car.DriveType == Models.DriveType.FWD) rebF += squatReb;
+        else                                        rebR += squatReb;
 
         double bmpF = rebF * bumpRatio;
         double bmpR = rebR * bumpRatio;
@@ -674,7 +694,7 @@ public class TuneGeneratorService
             return;
         }
 
-        double speedFactor = Math.Min(1.0, car.MaxSpeedKmh / 280.0);
+        double speedFactor = car.MaxSpeedKmh / 280.0; // scales up beyond 280 km/h; clamped by AeroMax constraints
         double pwrFactor = Math.Min(1.5, 1.0 + Math.Max(0, (car.PowerHP - PowerBaselineHP) / PowerStepHP * 0.15));
 
         var (fwFactor, rwFactor) = car.DriveType switch
@@ -697,10 +717,12 @@ public class TuneGeneratorService
                 aeroF *= 0.8; aeroR *= 0.3;
                 break;
             case Discipline.CrossCountry:
-                aeroF = car.HasFrontAero ? 30 : 0; aeroR = car.HasRearAero ? 50 : 0;
+                aeroF = car.HasFrontAero ? Clamp(c.AeroFrontMax * 0.40 * speedFactor * pwrFactor, c.AeroFrontMin, c.AeroFrontMax) : 0;
+                aeroR = car.HasRearAero  ? Clamp(c.AeroRearMax  * 0.55 * speedFactor * pwrFactor, c.AeroRearMin,  c.AeroRearMax)  : 0;
                 break;
             case Discipline.Rally:
-                aeroF = car.HasFrontAero ? 50 : 0; aeroR = car.HasRearAero ? 65 : 0;
+                aeroF = car.HasFrontAero ? Clamp(c.AeroFrontMax * 0.60 * speedFactor * pwrFactor, c.AeroFrontMin, c.AeroFrontMax) : 0;
+                aeroR = car.HasRearAero  ? Clamp(c.AeroRearMax  * 0.75 * speedFactor * pwrFactor, c.AeroRearMin,  c.AeroRearMax)  : 0;
                 break;
         }
 
@@ -857,9 +879,11 @@ public class TuneGeneratorService
             r.DiffAccel = Math.Round(Clamp(accel * rearFactor, c.DiffAccelMin, c.DiffAccelMax));
             r.DiffDecel = Math.Round(Clamp(decel * rearFactor, c.DiffDecelMin, c.DiffDecelMax));
 
-            double pwrF = Math.Max(0, (car.PowerHP - PowerBaselineHP) / PowerStepHP * 3.0);
+            double pwrF  = Math.Max(0, (car.PowerHP  - PowerBaselineHP)  / PowerStepHP * 3.0);
+            double tqF   = Math.Max(0, (car.TorqueNm - TorqueBaselineNm) / 300.0       * 1.5);
+            double adjF  = pwrF + tqF;
 
-            r.DiffFrontAccel = Math.Round(Clamp((fAccel + pwrF) * cap * frontFactor, c.DiffAccelMin, c.DiffAccelMax));
+            r.DiffFrontAccel = Math.Round(Clamp((fAccel + adjF) * cap * frontFactor, c.DiffAccelMin, c.DiffAccelMax));
             r.DiffFrontDecel = Math.Round(Clamp(fDecel * cap * frontFactor, c.DiffDecelMin, c.DiffDecelMax));
             r.CenterDiffBias = Math.Round(bias * 100);
         }
@@ -892,8 +916,9 @@ public class TuneGeneratorService
         };
         bias += discAdj;
 
-        // FWD needs more front bias
-        if (car.DriveType == Models.DriveType.FWD) bias += 4;
+        // FWD: more front bias; scales up with power since driven front wheels carry more load
+        if (car.DriveType == Models.DriveType.FWD)
+            bias += 4.0 + Math.Max(0, (car.PowerHP - PowerBaselineHP) / PowerStepHP * 1.0);
 
         bias = Clamp(bias, 45, 62);
 
@@ -906,7 +931,8 @@ public class TuneGeneratorService
         };
         // Mass: lighter cars need less pressure, heavier need more (ForzaFire: 85-115%)
         pressure += (car.TotalMass - MassBaselineKg) / 200.0 * 2.5;
-        pressure += Math.Max(0, (car.PowerHP - PowerBaselineHP) / PowerStepHP * 5.0);
+        pressure += Math.Max(0, (car.PowerHP  - PowerBaselineHP)  / PowerStepHP * 5.0);
+        pressure += Math.Max(0, (car.TorqueNm - TorqueBaselineNm) / 500.0       * 3.0);
         pressure += Math.Max(0, (effectiveMaxKmh - RefSpeedKmh) / 100.0 * 5.0);
         if (car.DriveType == Models.DriveType.AWD) pressure += 5;
         // Brake upgrade: better calipers/pads → higher effective bite
@@ -945,9 +971,9 @@ public class TuneGeneratorService
             return track.DragDistance switch
             {
                 DragDistance.Eighth  => 2,
-                DragDistance.Quarter => 2,
-                DragDistance.Half    => 3,
-                _                    => 4,
+                DragDistance.Quarter => 3,
+                DragDistance.Half    => 4,
+                _                    => 5,
             };
         }
 
@@ -958,8 +984,8 @@ public class TuneGeneratorService
         stepMin = Math.Max(0.50, stepMin);
         stepMax = Math.Clamp(stepMax, stepMin + 0.05, 0.95);
 
-        double stepIdeal = car.MaxRPM > 0
-            ? (double)car.TorquePeakRPM / car.MaxRPM + 0.12
+        double stepIdeal = car.TorquePeakRPM > 0 && car.PowerPeakRPM > 0
+            ? (double)car.TorquePeakRPM / car.PowerPeakRPM
             : (stepMin + stepMax) / 2.0;
         double step = Math.Clamp(stepIdeal, stepMin, stepMax);
 
@@ -1069,7 +1095,7 @@ public class TuneGeneratorService
 
         if (track.Discipline == Discipline.Drag)
         {
-            (first, top, note) = GetDragRatios(track.DragDistance, n);
+            (first, top, note) = GetDragRatios(track.DragDistance);
         }
         else
         {
@@ -1080,8 +1106,8 @@ public class TuneGeneratorService
             stepMin = Math.Max(0.50, stepMin);
             stepMax = Math.Clamp(stepMax, stepMin + 0.05, 0.95);
 
-            double stepIdeal = car.MaxRPM > 0
-                ? (double)car.TorquePeakRPM / car.MaxRPM + 0.12
+            double stepIdeal = car.PowerPeakRPM > 0
+                ? (double)car.TorquePeakRPM / car.PowerPeakRPM
                 : (stepMin + stepMax) / 2.0;
             double step = Math.Clamp(stepIdeal, stepMin, stepMax);
             top = first * Math.Pow(step, n - 1);
@@ -1091,11 +1117,59 @@ public class TuneGeneratorService
         first = Math.Clamp(first, GearRatioMin, GearRatioMax);
         top   = Math.Clamp(top,   GearRatioMin, first);
 
-        var ratios = new List<double>(n);
-        for (int i = 0; i < n; i++)
+        // Degressiv factor: base from discipline, then adjusted by engine power-band width.
+        // Higher = more degressiv (upper gears closer together).
+        double degFactor = track.Discipline switch
         {
-            double t = (double)i / (n - 1);
-            ratios.Add(Math.Round(Math.Clamp(first * Math.Pow(top / first, t), GearRatioMin, GearRatioMax), 2));
+            Discipline.Drift        => 1.02,
+            Discipline.Rally        => 1.05,
+            Discipline.CrossCountry => 1.05,
+            _                       => 1.04,
+        };
+
+        // Narrow power band → upper gears must be tighter → increase degFactor.
+        // TorquePeak/PowerPeak is the direct measure of useful band width: V8≈0.63 (wide), Rotary≈0.76 (narrow).
+        double bandRatio = car.PowerPeakRPM > 0 ? (double)car.TorquePeakRPM / car.PowerPeakRPM : 0.70;
+        degFactor += (bandRatio - 0.70) * 0.15;
+
+        // Aspiration: centrifugal and single-turbo (no antilag) have narrower usable band.
+        // Electric has flat torque — nearly geometric is ideal.
+        degFactor += (car.AspirationType, car.AntiLag) switch
+        {
+            (AspirationType.Centrifugal, _)      =>  0.01,
+            (AspirationType.SingleTurbo, false)  =>  0.01,
+            (AspirationType.Electric, _)         => -0.02,
+            _                                    =>  0.00,
+        };
+        if (car.FuelType == FuelType.Diesel) degFactor -= 0.01;
+
+        degFactor = Math.Clamp(degFactor, 1.01, 1.07);
+
+        var ratios = new List<double>(n);
+        if (n <= 2)
+        {
+            // 1- and 2-speed: no intermediate gears, geometric and degressiv are identical
+            for (int i = 0; i < n; i++)
+            {
+                double t = (double)i / (n - 1);
+                ratios.Add(Math.Round(Math.Clamp(first * Math.Pow(top / first, t), GearRatioMin, GearRatioMax), 2));
+            }
+        }
+        else
+        {
+            // Degressiv progression: s0^(n-1) * degFactor^((n-1)(n-2)/2) = top/first  →  solve for s0.
+            double spread  = top / first;
+            double degExp  = (n - 1) * (n - 2) / 2.0;
+            double s0      = Math.Pow(spread / Math.Pow(degFactor, degExp), 1.0 / (n - 1));
+            double ratio   = first;
+            ratios.Add(Math.Round(Math.Clamp(ratio, GearRatioMin, GearRatioMax), 2));
+            double stepCur = s0;
+            for (int i = 1; i < n; i++)
+            {
+                ratio *= stepCur;
+                ratios.Add(Math.Round(Math.Clamp(ratio, GearRatioMin, GearRatioMax), 2));
+                stepCur *= degFactor;
+            }
         }
 
         double fd = targetMs > 0 && car.MaxRPM > 0
@@ -1112,7 +1186,7 @@ public class TuneGeneratorService
             $"{effectiveMaxKmh} км/ч @ {car.MaxRPM} об/мин, P/W {pwRatio:F1} л.с./т. {note}";
     }
 
-    private static (double first, double top, string note) GetDragRatios(DragDistance dist, int gears)
+    private static (double first, double top, string note) GetDragRatios(DragDistance dist)
     {
         return dist switch
         {
