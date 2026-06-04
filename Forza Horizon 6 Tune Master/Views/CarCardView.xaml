@@ -14,27 +14,27 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="24,16,24,24">
 
-            <!-- ── Basic Info ────────────────────────────────────────────── -->
-            <TextBlock Text="ОСНОВНАЯ ИНФОРМАЦИЯ" Style="{StaticResource SectionHeader}"/>
+            <!-- ── Car Selection ─────────────────────────────────────────── -->
+            <TextBlock Text="ВЫБОР АВТОМОБИЛЯ" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="16"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="80"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Марка"  Style="{StaticResource FormLabel}" Width="60"/>
-                    <TextBox   Grid.Column="1" Text="{Binding Car.Make,  UpdateSourceTrigger=PropertyChanged}"/>
-                    <TextBlock Grid.Column="3" Text="Модель" Style="{StaticResource FormLabel}" Width="70"/>
-                    <TextBox   Grid.Column="4" Text="{Binding Car.Model, UpdateSourceTrigger=PropertyChanged}"/>
-                    <TextBlock Grid.Column="6" Text="Год"    Style="{StaticResource FormLabel}" Width="36"/>
-                    <TextBox   Grid.Column="7" Text="{Binding Car.Year,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                </Grid>
+                <StackPanel>
+                    <TextBox x:Name="CarSearchBox"
+                             Text="{Binding CarSearchText, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Начните вводить марку, модель или год..."
+                             GotFocus="CarSearchBox_GotFocus"
+                             LostFocus="CarSearchBox_LostFocus" />
+                    <ListBox x:Name="CarListBox"
+                             ItemsSource="{Binding FilteredCarDatabase}"
+                             DisplayMemberPath="DisplayName"
+                             SelectedItem="{Binding SelectedCar}"
+                             MaxHeight="180"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             SelectionChanged="CarListBox_SelectionChanged"
+                             Margin="0,6,0,0" />
+                    <TextBlock Text="{Binding SelectedCarDisplayText}"
+                               Style="{StaticResource FormLabel}"
+                               Margin="0,6,0,0" />
+                </StackPanel>
             </Border>
 
             <!-- ── Mass ─────────────────────────────────────────────────── -->

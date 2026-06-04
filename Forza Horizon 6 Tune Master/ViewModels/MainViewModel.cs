@@ -31,6 +31,7 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             NotifyCarDisplayProperties();
             OnPropertyChanged(nameof(HasCenterDiffBias));
+            OnPropertyChanged(nameof(SelectedCarDisplayText));
             OnModelChanged(null, null!);
         }
     }
@@ -80,6 +81,67 @@ public class MainViewModel : INotifyPropertyChanged
     public bool HasResult        => _tuneResult != null;
     public bool HasAWDFrontDiff  => Car.DriveType == Models.DriveType.AWD && _tuneResult?.CenterDiffBias.HasValue == true;
     public bool HasLaunchControl => _tuneResult?.LaunchControlRpm.HasValue == true;
+
+    // ── Car database ──────────────────────────────────────────────────────────
+    private readonly CarDatabaseService _carDbService = new();
+    private List<CarData> _carDatabase = new();
+
+    private bool _suppressFilter;
+
+    private CarData? _selectedCar;
+    public CarData? SelectedCar
+    {
+        get => _selectedCar;
+        set
+        {
+            if (_selectedCar == value) return;
+            _selectedCar = value;
+            if (value != null)
+            {
+                _car.Make = value.Make;
+                _car.Model = value.Model;
+                _car.Year = value.Year;
+                _suppressFilter = true;
+                CarSearchText = value.DisplayName;
+                _suppressFilter = false;
+            }
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedCarDisplayText));
+        }
+    }
+
+    private string _carSearchText = "";
+    public string CarSearchText
+    {
+        get => _carSearchText;
+        set
+        {
+            if (_carSearchText == value) return;
+            _carSearchText = value;
+            OnPropertyChanged();
+            if (!_suppressFilter) ApplyCarFilter();
+        }
+    }
+
+    private readonly ObservableCollection<CarData> _filteredCarDatabase = new();
+    public ObservableCollection<CarData> FilteredCarDatabase => _filteredCarDatabase;
+
+    private void ApplyCarFilter()
+    {
+        var query = string.IsNullOrWhiteSpace(_carSearchText)
+            ? null
+            : _carSearchText.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        _filteredCarDatabase.Clear();
+        foreach (var car in _carDatabase)
+        {
+            if (query == null || query.All(q => car.DisplayName.ToLowerInvariant().Contains(q)))
+                _filteredCarDatabase.Add(car);
+        }
+    }
+
+    public string SelectedCarDisplayText => _selectedCar?.DisplayName
+        ?? $"{_car.Year} {_car.Make} {_car.Model}".Trim();
 
     // ── Unit system ──────────────────────────────────────────────────────────
     private bool _syncingUnitSystem;
@@ -547,6 +609,8 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(HasCenterDiffBias));
             OnPropertyChanged(nameof(HasAWDFrontDiff));
         }
+        if (e.PropertyName is nameof(CarCard.Make) or nameof(CarCard.Model) or nameof(CarCard.Year))
+            OnPropertyChanged(nameof(SelectedCarDisplayText));
     }
 
     private void OnModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -610,6 +674,7 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedPowerUnitItem));
         OnPropertyChanged(nameof(SelectedSpringUnitItem));
         RefreshProfiles();
+        _ = LoadCarDatabaseAsync();
     }
 
     private void NotifyConstraintDisplayProperties()
@@ -640,6 +705,7 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(WheelbaseDisplay));
         OnPropertyChanged(nameof(FrontTrackDisplay));
         OnPropertyChanged(nameof(RearTrackDisplay));
+        OnPropertyChanged(nameof(SelectedCarDisplayText));
     }
 
     // ── Unit toggles ─────────────────────────────────────────────────────────
@@ -714,6 +780,7 @@ public class MainViewModel : INotifyPropertyChanged
             Track       = p.Track;
             Constraints = p.Constraints;
             TuneResult  = p.LastResult;
+            SelectCarFromProfile();
             StatusMessage = $"Загружен профиль «{SelectedProfile}»";
         }
         catch (Exception ex) { StatusMessage = $"Ошибка загрузки: {ex.Message}"; }
@@ -733,6 +800,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         Car = new CarCard(); Track = new TrackInfo(); Constraints = new TuningConstraints();
         TuneResult  = null;
+        SelectedCar = null;
         StatusMessage = "Новый профиль создан";
     }
 
@@ -741,6 +809,35 @@ public class MainViewModel : INotifyPropertyChanged
         Profiles = new ObservableCollection<string>(_storage.GetProfileNames());
         LoadCommand.Raise();
         DeleteProfileCommand.Raise();
+    }
+
+    // ── Car database ─────────────────────────────────────────────────────────
+    private async Task LoadCarDatabaseAsync()
+    {
+        try
+        {
+            StatusMessage = "Загрузка списка автомобилей...";
+            var cars = await _carDbService.LoadCarDatabaseAsync();
+            _carDatabase = cars;
+            ApplyCarFilter();
+            SelectCarFromProfile();
+            StatusMessage = $"Загружено {cars.Count} автомобилей";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Не удалось загрузить список авто: {ex.Message}";
+        }
+    }
+
+    private void SelectCarFromProfile()
+    {
+        if (string.IsNullOrEmpty(_car.Make) && string.IsNullOrEmpty(_car.Model))
+        {
+            SelectedCar = null;
+            return;
+        }
+        SelectedCar = _carDatabase.FirstOrDefault(c =>
+            c.Make == _car.Make && c.Model == _car.Model && c.Year == _car.Year);
     }
 
     // ── Export / Import as text ─────────────────────────────────────────────
