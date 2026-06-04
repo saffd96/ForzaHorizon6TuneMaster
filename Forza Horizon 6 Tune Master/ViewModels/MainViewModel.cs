@@ -32,6 +32,7 @@ public class MainViewModel : INotifyPropertyChanged
             NotifyCarDisplayProperties();
             OnPropertyChanged(nameof(HasCenterDiffBias));
             OnPropertyChanged(nameof(SelectedCarDisplayText));
+            ClearAiEstimatedFields();
             OnModelChanged(null, null!);
         }
     }
@@ -104,6 +105,7 @@ public class MainViewModel : INotifyPropertyChanged
                 _suppressFilter = true;
                 CarSearchText = value.DisplayName;
                 _suppressFilter = false;
+                ApplyCarFilter();
             }
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedCarDisplayText));
@@ -587,6 +589,70 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     private bool _isGenerating;
+    public bool IsGenerating
+    {
+        get => _isGenerating;
+        set
+        {
+            _isGenerating = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsBusy));
+        }
+    }
+
+    private bool _isFetchingAiSpecs;
+    public bool IsFetchingAiSpecs
+    {
+        get => _isFetchingAiSpecs;
+        set
+        {
+            _isFetchingAiSpecs = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsBusy));
+            FetchAiCarSpecsCommand.Raise();
+        }
+    }
+
+    private bool _isLoadingCars;
+    public bool IsLoadingCars
+    {
+        get => _isLoadingCars;
+        set
+        {
+            _isLoadingCars = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsBusy));
+        }
+    }
+
+    public bool IsBusy => _isGenerating || _isFetchingAiSpecs || _isLoadingCars;
+
+    private string _busyMessage = "";
+    public string BusyMessage
+    {
+        get => _busyMessage;
+        set { _busyMessage = value; OnPropertyChanged(); }
+    }
+
+    // ── AI-estimated field tracking ─────────────────────────────────────────
+    private readonly HashSet<string> _aiEstimatedFields = new();
+
+    public bool IsWheelbaseAiEstimated  => _aiEstimatedFields.Contains("Wheelbase");
+    public bool IsFrontTrackAiEstimated => _aiEstimatedFields.Contains("FrontTrack");
+    public bool IsRearTrackAiEstimated  => _aiEstimatedFields.Contains("RearTrack");
+    public bool IsCdAiEstimated         => _aiEstimatedFields.Contains("Cd");
+    public bool IsFrontalAreaAiEstimated => _aiEstimatedFields.Contains("FrontalArea");
+
+    private void ClearAiEstimatedFields()
+    {
+        _aiEstimatedFields.Clear();
+        OnPropertyChanged(nameof(IsWheelbaseAiEstimated));
+        OnPropertyChanged(nameof(IsFrontTrackAiEstimated));
+        OnPropertyChanged(nameof(IsRearTrackAiEstimated));
+        OnPropertyChanged(nameof(IsCdAiEstimated));
+        OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
+    }
+
     private DateTime _lastInputChange = DateTime.MinValue;
     private CancellationTokenSource? _debounceCts;
 
@@ -629,11 +695,12 @@ public class MainViewModel : INotifyPropertyChanged
             await Task.Delay(400, _debounceCts.Token);
             if (!_isAutoGenerate) return;
             if ((DateTime.Now - _lastInputChange).TotalMilliseconds < 350) return;
-            _isGenerating = true;
+            BusyMessage = "Расчёт тюнинга...";
+            IsGenerating = true;
             GenerateTune();
         }
         catch (OperationCanceledException) { /* cancelled */ }
-        finally { _isGenerating = false; }
+        finally { IsGenerating = false; }
     }
 
     // ── Status ───────────────────────────────────────────────────────────────
@@ -641,23 +708,27 @@ public class MainViewModel : INotifyPropertyChanged
     public string StatusMessage { get => _statusMessage; set { _statusMessage = value; OnPropertyChanged(); } }
 
     // ── Commands ─────────────────────────────────────────────────────────────
-    public RelayCommand GenerateCommand      { get; }
-    public RelayCommand SaveCommand          { get; }
-    public RelayCommand LoadCommand          { get; }
-    public RelayCommand DeleteProfileCommand { get; }
-    public RelayCommand NewProfileCommand    { get; }
-    public RelayCommand ExportTextCommand    { get; }
-    public RelayCommand ImportTextCommand    { get; }
+    public RelayCommand GenerateCommand       { get; }
+    public RelayCommand SaveCommand           { get; }
+    public RelayCommand LoadCommand           { get; }
+    public RelayCommand DeleteProfileCommand  { get; }
+    public RelayCommand NewProfileCommand     { get; }
+    public RelayCommand ExportTextCommand     { get; }
+    public RelayCommand ImportTextCommand     { get; }
+    public RelayCommand FetchAiCarSpecsCommand { get; }
+    public RelayCommand ClearCarSelectionCommand { get; }
 
     public MainViewModel()
     {
-        GenerateCommand      = new RelayCommand(GenerateTune);
-        SaveCommand          = new RelayCommand(SaveProfile);
-        LoadCommand          = new RelayCommand(LoadProfile);
-        DeleteProfileCommand = new RelayCommand(DeleteProfile);
-        NewProfileCommand    = new RelayCommand(NewProfile);
-        ExportTextCommand    = new RelayCommand(ExportText, () => HasResult);
-        ImportTextCommand    = new RelayCommand(ImportText);
+        GenerateCommand        = new RelayCommand(GenerateTune);
+        SaveCommand            = new RelayCommand(SaveProfile);
+        LoadCommand            = new RelayCommand(LoadProfile);
+        DeleteProfileCommand   = new RelayCommand(DeleteProfile);
+        NewProfileCommand      = new RelayCommand(NewProfile);
+        ExportTextCommand      = new RelayCommand(ExportText, () => HasResult);
+        ImportTextCommand      = new RelayCommand(ImportText);
+        FetchAiCarSpecsCommand = new RelayCommand(FetchAiCarSpecs, () => !IsFetchingAiSpecs);
+        ClearCarSelectionCommand = new RelayCommand(ClearCarSelection);
 
         ToggleUnitsCommand      = new RelayCommand(DoToggleUnits);
         TogglePowerUnitCommand  = new RelayCommand(DoTogglePowerUnit);
@@ -737,6 +808,8 @@ public class MainViewModel : INotifyPropertyChanged
     // ── Tune generation ──────────────────────────────────────────────────────
     private void GenerateTune()
     {
+        BusyMessage = "Расчёт тюнинга...";
+        IsGenerating = true;
         try
         {
             Car.Name = SelectedProfile ?? AutoProfileName();
@@ -747,6 +820,66 @@ public class MainViewModel : INotifyPropertyChanged
         {
             StatusMessage = $"Ошибка генерации: {ex.Message}";
             MessageBox.Show(ex.ToString(), "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            IsGenerating = false;
+        }
+    }
+
+    // ── AI car specs fetch ──────────────────────────────────────────────────
+    private async void FetchAiCarSpecs()
+    {
+        if (IsFetchingAiSpecs) return;
+        if (string.IsNullOrWhiteSpace(Car.Make) && string.IsNullOrWhiteSpace(Car.Model))
+        {
+            StatusMessage = "Сначала выберите автомобиль";
+            return;
+        }
+
+        BusyMessage = "Запрос характеристик через AI...";
+        IsFetchingAiSpecs = true;
+        try
+        {
+            var service = new AiCarSpecService();
+            var carName = $"{Car.Year} {Car.Make} {Car.Model}".Trim();
+            StatusMessage = $"Запрос характеристик {carName} через AI...";
+
+            var specs = await service.FetchCarSpecsAsync(carName);
+
+            _aiEstimatedFields.Clear();
+            if (specs.WheelbaseMm > 0) Car.Wheelbase = specs.WheelbaseMm;
+            if (specs.FrontTrackMm > 0) Car.FrontTrack = specs.FrontTrackMm;
+            if (specs.RearTrackMm > 0) Car.RearTrack = specs.RearTrackMm;
+            if (specs.DragCoefficientCd > 0) Car.Cd = specs.DragCoefficientCd;
+            if (specs.FrontalAreaM2 > 0) Car.FrontalAreaM2 = specs.FrontalAreaM2;
+            if (specs.EstimatedFields.Contains("wheelbase_mm")) _aiEstimatedFields.Add("Wheelbase");
+            if (specs.EstimatedFields.Contains("front_track_mm")) _aiEstimatedFields.Add("FrontTrack");
+            if (specs.EstimatedFields.Contains("rear_track_mm")) _aiEstimatedFields.Add("RearTrack");
+            if (specs.EstimatedFields.Contains("drag_coefficient_cd")) _aiEstimatedFields.Add("Cd");
+            if (specs.EstimatedFields.Contains("frontal_area_m2")) _aiEstimatedFields.Add("FrontalArea");
+
+            OnPropertyChanged(nameof(WheelbaseDisplay));
+            OnPropertyChanged(nameof(FrontTrackDisplay));
+            OnPropertyChanged(nameof(RearTrackDisplay));
+            OnPropertyChanged(nameof(IsWheelbaseAiEstimated));
+            OnPropertyChanged(nameof(IsFrontTrackAiEstimated));
+            OnPropertyChanged(nameof(IsRearTrackAiEstimated));
+            OnPropertyChanged(nameof(IsCdAiEstimated));
+            OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
+
+            var estimated = specs.EstimatedFields.Count > 0
+                ? $" (оценено: {string.Join(", ", specs.EstimatedFields)})"
+                : "";
+            StatusMessage = $"Характеристики {carName} получены{estimated}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Ошибка AI: {ex.Message}";
+        }
+        finally
+        {
+            IsFetchingAiSpecs = false;
         }
     }
 
@@ -812,11 +945,21 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ── Car database ─────────────────────────────────────────────────────────
+    private void ClearCarSelection()
+    {
+        SelectedCar = null;
+        _car.Make = "";
+        _car.Model = "";
+        _car.Year = 0;
+        CarSearchText = "";
+    }
+
     private async Task LoadCarDatabaseAsync()
     {
+        IsLoadingCars = true;
+        BusyMessage = "Загрузка списка автомобилей...";
         try
         {
-            StatusMessage = "Загрузка списка автомобилей...";
             var cars = await _carDbService.LoadCarDatabaseAsync();
             _carDatabase = cars;
             ApplyCarFilter();
@@ -826,6 +969,10 @@ public class MainViewModel : INotifyPropertyChanged
         catch (Exception ex)
         {
             StatusMessage = $"Не удалось загрузить список авто: {ex.Message}";
+        }
+        finally
+        {
+            IsLoadingCars = false;
         }
     }
 

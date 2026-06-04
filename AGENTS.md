@@ -56,6 +56,19 @@ Export: `[Car]`, `[Track]`, `[Constraints]`, `[Result]` sections + explanations.
 
 All labels and status messages are in Russian. If adding UI text, use Russian.
 
+## AI Car Specs via Cerebras
+
+`Services/AiCarSpecService.cs` — fetches wheelbase, track, Cd, frontal area from car name/year via Cerebras API.
+
+- API key hardcoded as `const string CerebrasApiKey`
+- Model fallback: `gpt-oss-120b` → `zai-glm-4.7`
+- `temperature: 0`, `top_p: 1`
+- Request: `POST https://api.cerebras.ai/v1/chat/completions` with `Authorization: Bearer {key}`
+- Response parsed with `JsonNamingPolicy.SnakeCaseLower` — maps `wheelbase_mm` → `WheelbaseMm`
+- Returns `AiCarSpecResponse` with `WheelbaseMm`, `FrontTrackMm`, `RearTrackMm`, `Cd`, `FrontalAreaM2`, `EstimatedFields` (HashSet of snake_case field names)
+
+`MainViewModel.FetchAiCarSpecsCommand` triggers the fetch. Busy overlay (`IsBusy` / `BusyMessage`) blocks the UI during fetch. ⚠ indicator shown for fields in `EstimatedFields`. Card layout: "ХАРАКТЕРИСТИКИ" section contains geometry + aero data + aero checkboxes; "ДЕТАЛИ" section contains upgrades only.
+
 ## Dependencies
 
-One NuGet package: `System.Text.Json 8.0.5`. `ImplicitUsings` enabled, `Nullable` enabled.
+NuGet packages: `System.Text.Json 8.0.5`. `ImplicitUsings` enabled, `Nullable` enabled.

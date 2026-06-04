@@ -63,6 +63,15 @@ public class InverseBoolToVisibilityConverter : IValueConverter
         => throw new NotImplementedException();
 }
 
+public class InverseBoolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b ? !b : value;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b ? !b : value;
+}
+
 /// <summary>
 /// Multi-value converter for unit-aware display of numeric tune values.
 /// values[0] = double (the metric base value)

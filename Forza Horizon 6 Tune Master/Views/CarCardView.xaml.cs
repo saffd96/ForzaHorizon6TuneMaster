@@ -21,6 +21,12 @@ public partial class CarCardView : UserControl
         BrakesCombo.ItemsSource         = Enum.GetValues<BrakesUpgrade>();
     }
 
+    private void ClearButton_Click(object sender, RoutedEventArgs e)
+    {
+        CarListBox.Visibility = Visibility.Visible;
+        CarSearchBox.Focus();
+    }
+
     private void CarSearchBox_GotFocus(object sender, RoutedEventArgs e)
     {
         CarListBox.Visibility = Visibility.Visible;

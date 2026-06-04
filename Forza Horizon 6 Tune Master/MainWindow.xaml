@@ -15,6 +15,7 @@
     <Window.Resources>
         <cv:EqualityConverter x:Key="Eq"/>
         <cv:EqualityVisibilityConverter x:Key="EqVis"/>
+        <cv:BoolToVisibilityConverter x:Key="BoolVis"/>
         <cv:InverseBoolToVisibilityConverter x:Key="BoolToCollapsed"/>
     </Window.Resources>
 
@@ -174,6 +175,36 @@
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="1,0,0,0">
                 <views:TuneResultView DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}"/>
+            </Border>
+        </Grid>
+
+        <!-- ══ Busy overlay ════════════════════════════════════════════ -->
+        <Grid Grid.RowSpan="3"
+              Visibility="{Binding IsBusy, Converter={StaticResource BoolVis}}"
+              ZIndex="100"
+              IsHitTestVisible="True">
+            <Rectangle Fill="#000000" Opacity="0.55"/>
+            <Border Background="{StaticResource CardBrush}"
+                    BorderBrush="{StaticResource AccentBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="40,32"
+                    Width="280"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel HorizontalAlignment="Center">
+                    <ProgressBar IsIndeterminate="True"
+                                 Width="200" Height="6"
+                                 Margin="0,0,0,20"
+                                 Foreground="{StaticResource AccentBrush}"
+                                 Background="{StaticResource ElevatedBrush}"
+                                 BorderThickness="0"/>
+                    <TextBlock Text="{Binding BusyMessage}"
+                               Foreground="{StaticResource TextBrush}"
+                               FontSize="14"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
             </Border>
         </Grid>
 

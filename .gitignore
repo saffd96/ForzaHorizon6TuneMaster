@@ -11,3 +11,6 @@
 # .NET build outputs (игнорируем ВСЕ папки bin и obj в проекте)
 [Bb]in/
 [Oo]bj/
+
+# API keys (создайте ApiKeys.cs из ApiKeys.cs.example со своим ключом)
+**/Services/ApiKeys.cs
