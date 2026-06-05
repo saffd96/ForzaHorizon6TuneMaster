@@ -281,11 +281,11 @@
                                     </Grid.RowDefinitions>
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="ПЕРЕД"
                                                Style="{StaticResource ParamLabel}"
-                                               HorizontalAlignment="Left" TextAlignment="Left"
+                                               HorizontalAlignment="Center" TextAlignment="Center"
                                                VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Grid.Row="0" Grid.Column="1"
                                                Style="{StaticResource ValueDisplay}"
-                                               HorizontalAlignment="Left" TextAlignment="Left"
+                                               HorizontalAlignment="Center" TextAlignment="Center"
                                                TextWrapping="Wrap"
                                                ToolTip="{Binding TuneResult.Explanations[Springs]}">
                                         <TextBlock.Text>
@@ -297,11 +297,11 @@
                                     </TextBlock>
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="ЗАД"
                                                Style="{StaticResource ParamLabel}"
-                                               HorizontalAlignment="Left" TextAlignment="Left"
+                                               HorizontalAlignment="Center" TextAlignment="Center"
                                                VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Grid.Row="2" Grid.Column="1"
                                                Style="{StaticResource ValueDisplay}"
-                                               HorizontalAlignment="Left" TextAlignment="Left"
+                                               HorizontalAlignment="Center" TextAlignment="Center"
                                                TextWrapping="Wrap"
                                                ToolTip="{Binding TuneResult.Explanations[Springs]}">
                                         <TextBlock.Text>
