@@ -7,6 +7,7 @@
     <UserControl.Resources>
         <cv:AspirationTypeLabelConverter      x:Key="AspLabel"/>
         <cv:PowertrainTypeLabelConverter      x:Key="PtLabel"/>
+        <cv:GenericEnumLabelConverter         x:Key="EnumLabel"/>
         <cv:BoolToVisibilityConverter         x:Key="BoolVis"/>
         <cv:InverseBoolToVisibilityConverter  x:Key="BoolToCollapsed"/>
         <cv:EnumToBoolConverter               x:Key="E2B"/>
@@ -173,11 +174,23 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Тип двигателя" Style="{StaticResource FormLabel}" Width="150"/>
                         <ComboBox  x:Name="EngineTypeCombo" Grid.Column="1"
-                                   SelectedValue="{Binding Car.EngineType}"/>
+                                   SelectedValue="{Binding Car.EngineType}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                         <TextBlock Grid.Column="3" Text="Расположение" Style="{StaticResource FormLabel}" Width="130"/>
                         <ComboBox  x:Name="EnginePositionCombo" Grid.Column="4" Width="160"
                                    HorizontalAlignment="Left"
-                                   SelectedValue="{Binding Car.EnginePosition}"/>
+                                   SelectedValue="{Binding Car.EnginePosition}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                     </Grid>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
                                 Visibility="{Binding Car.IsElectricPowertrain, Converter={StaticResource BoolToCollapsed}}">
@@ -251,7 +264,13 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Тип привода"  Style="{StaticResource FormLabel}" Width="130"/>
                         <ComboBox  x:Name="DriveTypeCombo" Grid.Column="1"
-                                   SelectedValue="{Binding Car.DriveType}"/>
+                                   SelectedValue="{Binding Car.DriveType}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                         <TextBlock Grid.Column="3" Text="Кол-во передач" Style="{StaticResource FormLabel}" Width="130"/>
                         <TextBox   Grid.Column="4" Text="{Binding Car.GearCount, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     </Grid>
@@ -309,7 +328,13 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Тип шин" Style="{StaticResource FormLabel}" Width="130"/>
                         <ComboBox  x:Name="TireTypeCombo" Width="200"
-                                   SelectedValue="{Binding Car.TireType}"/>
+                                   SelectedValue="{Binding Car.TireType}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -397,11 +422,29 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="Подвеска"     Style="{StaticResource FormLabel}" MinWidth="70"/>
-                    <ComboBox  x:Name="SuspensionCombo" Grid.Column="1" SelectedValue="{Binding Car.SuspensionUpgrade}"/>
+                    <ComboBox  x:Name="SuspensionCombo" Grid.Column="1" SelectedValue="{Binding Car.SuspensionUpgrade}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                     <TextBlock Grid.Column="3" Text="Дифференциал" Style="{StaticResource FormLabel}" MinWidth="80"/>
-                    <ComboBox  x:Name="DiffCombo"        Grid.Column="4" SelectedValue="{Binding Car.DifferentialUpgrade}"/>
+                    <ComboBox  x:Name="DiffCombo"        Grid.Column="4" SelectedValue="{Binding Car.DifferentialUpgrade}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                     <TextBlock Grid.Column="6" Text="Тормоза"      Style="{StaticResource FormLabel}" MinWidth="60"/>
-                    <ComboBox  x:Name="BrakesCombo"      Grid.Column="7" SelectedValue="{Binding Car.BrakesUpgrade}"/>
+                    <ComboBox  x:Name="BrakesCombo"      Grid.Column="7" SelectedValue="{Binding Car.BrakesUpgrade}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </Grid>
             </Border>
 

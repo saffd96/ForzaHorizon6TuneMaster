@@ -205,6 +205,96 @@ public static class NumericBehavior
 
 }
 
+public class GenericEnumLabelConverter : IValueConverter
+{
+    private static readonly Dictionary<Type, Dictionary<Enum, string>> Labels = new()
+    {
+        [typeof(EngineType)] = new()
+        {
+            [Models.EngineType.I1] = "I1 (одноцилиндровый)",
+            [Models.EngineType.I2] = "I2",
+            [Models.EngineType.I3] = "I3",
+            [Models.EngineType.I4] = "I4",
+            [Models.EngineType.I5] = "I5",
+            [Models.EngineType.I6] = "I6 (рядная шестёрка)",
+            [Models.EngineType.I8] = "I8 (рядная восьмёрка)",
+            [Models.EngineType.Boxer] = "Boxer / Flat",
+            [Models.EngineType.V6] = "V6",
+            [Models.EngineType.V8] = "V8",
+            [Models.EngineType.V10] = "V10",
+            [Models.EngineType.V12] = "V12",
+            [Models.EngineType.W12] = "W12",
+            [Models.EngineType.Rotary] = "Роторный",
+        },
+        [typeof(EnginePosition)] = new()
+        {
+            [Models.EnginePosition.Front] = "Переднее",
+            [Models.EnginePosition.Mid] = "Среднее",
+            [Models.EnginePosition.RearMid] = "Заднее-среднее",
+            [Models.EnginePosition.Rear] = "Заднее",
+        },
+        [typeof(DriveType)] = new()
+        {
+            [Models.DriveType.FWD] = "Передний (FWD)",
+            [Models.DriveType.RWD] = "Задний (RWD)",
+            [Models.DriveType.AWD] = "Полный (AWD)",
+        },
+        [typeof(TireType)] = new()
+        {
+            [Models.TireType.Stock] = "Стоковые",
+            [Models.TireType.Street] = "Уличные",
+            [Models.TireType.Sport] = "Спорт",
+            [Models.TireType.SemiSlick] = "Полуслик",
+            [Models.TireType.Slick] = "Слик",
+            [Models.TireType.Rally] = "Ралли",
+            [Models.TireType.Offroad] = "Внедорожные",
+            [Models.TireType.Drag] = "Драг",
+            [Models.TireType.Winter] = "Зимние",
+        },
+        [typeof(SuspensionUpgrade)] = new()
+        {
+            [Models.SuspensionUpgrade.Stock] = "Стоковая",
+            [Models.SuspensionUpgrade.Street] = "Уличная",
+            [Models.SuspensionUpgrade.Sport] = "Спортивная",
+            [Models.SuspensionUpgrade.Race] = "Гоночная",
+            [Models.SuspensionUpgrade.Rally] = "Раллийная",
+            [Models.SuspensionUpgrade.Drift] = "Дрифт",
+            [Models.SuspensionUpgrade.Offroad] = "Внедорожная",
+        },
+        [typeof(DifferentialUpgrade)] = new()
+        {
+            [Models.DifferentialUpgrade.Stock] = "Стоковый",
+            [Models.DifferentialUpgrade.Street] = "Уличный",
+            [Models.DifferentialUpgrade.Sport] = "Спортивный",
+            [Models.DifferentialUpgrade.Rally] = "Раллийный",
+            [Models.DifferentialUpgrade.Race] = "Гоночный",
+            [Models.DifferentialUpgrade.DriftSpec] = "Дрифт",
+            [Models.DifferentialUpgrade.Offroad] = "Внедорожный",
+        },
+        [typeof(BrakesUpgrade)] = new()
+        {
+            [Models.BrakesUpgrade.Stock] = "Стоковые",
+            [Models.BrakesUpgrade.Street] = "Уличные",
+            [Models.BrakesUpgrade.Sport] = "Спортивные",
+            [Models.BrakesUpgrade.Race] = "Гоночные",
+        },
+    };
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value == null) return "";
+        var type = value.GetType();
+        if (!type.IsEnum) return value.ToString() ?? "";
+        var enumType = Enum.GetUnderlyingType(type) != typeof(int) ? type : type;
+        if (Labels.TryGetValue(enumType, out var map) && map.TryGetValue((Enum)value, out var label))
+            return label;
+        return value.ToString() ?? "";
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        Binding.DoNothing;
+}
+
 public class PowertrainTypeLabelConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
@@ -230,9 +320,8 @@ public class AspirationTypeLabelConverter : IValueConverter
             AspirationType.TwinTurbo             => "Двойной турбонаддув",
             AspirationType.PositiveDisplacement  => "Объёмный компрессор",
             AspirationType.Centrifugal           => "Центробежный компрессор",
-            AspirationType.Electric              => "Электро",
             _                                    => value.ToString() ?? ""
-        } : "";
+        } : "—";
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         Binding.DoNothing;

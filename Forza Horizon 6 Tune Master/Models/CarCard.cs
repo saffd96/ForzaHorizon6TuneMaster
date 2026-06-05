@@ -85,15 +85,15 @@ public class CarCard : NotifyBase
         set { Set(ref _enginePosition, value); }
     }
 
-    private AspirationType _aspirationType = AspirationType.Natural;
-    public AspirationType AspirationType
+    private AspirationType? _aspirationType = Models.AspirationType.Natural;
+    public AspirationType? AspirationType
     {
         get => _aspirationType;
         set
         {
             Set(ref _aspirationType, value);
             OnPropertyChanged(nameof(ShowAntiLag));
-            if (value != AspirationType.SingleTurbo && value != AspirationType.TwinTurbo)
+            if (value is null || (value.Value != Models.AspirationType.SingleTurbo && value.Value != Models.AspirationType.TwinTurbo))
                 AntiLag = false;
         }
     }
@@ -113,7 +113,7 @@ public class CarCard : NotifyBase
     }
 
     [JsonIgnore]
-    public bool ShowAntiLag => AspirationType == AspirationType.SingleTurbo || AspirationType == AspirationType.TwinTurbo;
+    public bool ShowAntiLag => AspirationType is Models.AspirationType.SingleTurbo || AspirationType is Models.AspirationType.TwinTurbo;
 
     private PowertrainType _powertrainType = PowertrainType.ICE;
     public PowertrainType PowertrainType
@@ -121,7 +121,11 @@ public class CarCard : NotifyBase
         get => _powertrainType;
         set
         {
-            Set(ref _powertrainType, value);
+            if (Set(ref _powertrainType, value))
+            {
+                if (value == PowertrainType.Electric)
+                    AspirationType = null;
+            }
             OnPropertyChanged(nameof(IsElectricPowertrain));
             OnPropertyChanged(nameof(ShowAspiration));
             OnPropertyChanged(nameof(PowerPeakRPM));
@@ -314,21 +318,25 @@ public class CarCard : NotifyBase
     // Wing-induced drag is added in TuneGeneratorService using computed r.AeroFront/Rear.
     // Forza uses engine HP directly at wheels — no drivetrain loss (confirmed: forums.forza.net).
     [JsonIgnore]
+    public double CdABodyEstimate
+    {
+        get
+        {
+            if (Cd > 0 && FrontalAreaM2 > 0)
+                return Cd * FrontalAreaM2;
+            double avgProfile = (FrontTireProfile + RearTireProfile) / 2.0;
+            double bodyFactor = Math.Clamp(1.0 + Math.Max(0, (avgProfile - 45.0) / 20.0) * 2.0, 1.0, 3.5);
+            return (0.50 + TotalMass / 2500.0) * bodyFactor;
+        }
+    }
+
+    [JsonIgnore]
     public double MaxSpeedKmh
     {
         get
         {
-            double cdABody;
-            if (Cd > 0 && FrontalAreaM2 > 0)
-                cdABody = Cd * FrontalAreaM2;
-            else
-            {
-                double avgProfile = (FrontTireProfile + RearTireProfile) / 2.0;
-                double bodyFactor = avgProfile > 55 ? 3.0 : 1.0;
-                cdABody = (0.50 + TotalMass / 2500.0) * bodyFactor;
-            }
             double powerWatts = PowerHP * 745.7;
-            double vMaxMs     = Math.Pow(powerWatts / (0.5 * 1.225 * cdABody), 1.0 / 3.0);
+            double vMaxMs     = Math.Pow(powerWatts / (0.5 * 1.225 * CdABodyEstimate), 1.0 / 3.0);
             return Math.Round(Math.Clamp(vMaxMs * 3.6, 60.0, 600.0));
         }
         set { /* computed — no-op for backward compat with saved profiles */ }

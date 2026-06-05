@@ -24,16 +24,13 @@ public class TuneGeneratorService
     private const double SpringHzToNmm      = 0.019739;
     private const double RevLimitFraction   = 0.95;
 
-    // Returns (diffFactor, springRearFactor, damperRearFactor) based on powertrain and aspiration type.
-    // Electric BEV always uses max instant-torque factors regardless of stored AspirationType.
-    // Hybrid moderates aspiration factors by 40% (electric fill smooths power delivery spikes).
     private static (double Diff, double Spring, double Damper) GetPowerDeliveryFactors(
-        PowertrainType pt, AspirationType asp, bool antiLag = false)
+        PowertrainType pt, AspirationType? asp, bool antiLag = false)
     {
         if (pt == PowertrainType.Electric)
             return (1.20, 1.08, 1.06);
 
-        var (d, s, dm) = asp switch
+        var (d, s, dmpr) = (asp ?? AspirationType.Natural) switch
         {
             AspirationType.SingleTurbo          => antiLag ? (1.12, 1.05, 1.05) : (1.10, 1.05, 1.04),
             AspirationType.TwinTurbo            => antiLag ? (1.09, 1.04, 1.04) : (1.07, 1.04, 1.03),
@@ -45,13 +42,12 @@ public class TuneGeneratorService
 
         if (pt == PowertrainType.Hybrid)
         {
-            // Hybrid: electric motor smooths ICE torque spikes → 40% reduction in power-delivery factor amplitude
-            d  = 1.0 + (d  - 1.0) * 0.60;
-            s  = 1.0 + (s  - 1.0) * 0.60;
-            dm = 1.0 + (dm - 1.0) * 0.60;
+            d    = 1.0 + (d    - 1.0) * 0.60;
+            s    = 1.0 + (s    - 1.0) * 0.60;
+            dmpr = 1.0 + (dmpr - 1.0) * 0.60;
         }
 
-        return (d, s, dm);
+        return (d, s, dmpr);
     }
 
     // Estimates CG height (mm) from suspension, engine position, and mass.
@@ -83,11 +79,7 @@ public class TuneGeneratorService
     // Rolling resistance coefficients fitted to FH6 observed top speeds per tire type.
     private static double ComputeEffectiveMaxSpeedKmh(CarCard car, TuneResult r)
     {
-        double avgProfile = (car.FrontTireProfile + car.RearTireProfile) / 2.0;
-        double bodyFactor = Math.Clamp(1.0 + Math.Max(0, (avgProfile - 45.0) / 20.0) * 2.0, 1.0, 3.5);
-        double cdABody    = car.Cd > 0 && car.FrontalAreaM2 > 0
-            ? car.Cd * car.FrontalAreaM2
-            : (0.50 + car.TotalMass / 2500.0) * bodyFactor;
+        double cdABody = car.CdABodyEstimate;
         const double AeroDragFactor = 0.001787;
         double cdATotal = cdABody + (r.AeroFront + r.AeroRear) * AeroDragFactor;
 
@@ -131,12 +123,16 @@ public class TuneGeneratorService
         var r  = new TuneResult { Car = car, Track = track };
         var ex = r.Explanations;
 
-        // Pass 1: aero with body-only speed → effectiveMaxKmh includes wing drag penalty
         CalculateAero(car, track, c, r, ex);
         double effectiveMaxKmh = ComputeEffectiveMaxSpeedKmh(car, r);
-        // Pass 2: refine aero using the actual speed that includes its own drag (resolves circular dependency)
         CalculateAero(car, track, c, r, ex, effectiveMaxKmh);
+        double prevMaxKmh = effectiveMaxKmh;
         effectiveMaxKmh = ComputeEffectiveMaxSpeedKmh(car, r);
+        if (Math.Abs(effectiveMaxKmh - prevMaxKmh) > 1)
+        {
+            CalculateAero(car, track, c, r, ex, effectiveMaxKmh);
+            effectiveMaxKmh = ComputeEffectiveMaxSpeedKmh(car, r);
+        }
 
         CalculateTirePressure(car, track, c, r, ex);
         CalculateCamber(car, track, c, r, ex);
@@ -797,7 +793,7 @@ public class TuneGeneratorService
         {
             Models.DriveType.RWD => (0.55, 0.70),  // rear-biased for RWD stability
             Models.DriveType.FWD => (0.65, 0.55),  // slight front emphasis for FWD
-            Models.DriveType.AWD => (0.70, 0.45),  // front emphasis to mitigate AWD understeer, balanced
+            Models.DriveType.AWD => (0.65, 0.55),  // front emphasis to mitigate AWD understeer
             _                    => (0.55, 0.60)
         };
         double aeroF = car.HasFrontAero ? c.AeroFrontMax * fwFactor * speedFactor * pwrFactor : 0;
@@ -1117,7 +1113,7 @@ public class TuneGeneratorService
 
         // Estimate top gear ratio needed to hit target speed at redline (assume FD ≈ 3.5)
         double tireCirc = Math.PI * car.RearWheelDiameterInch * 0.0254;
-        double targetKmh = Math.Min(effectiveMaxKmh, 400);
+        double targetKmh = Math.Min(effectiveMaxKmh, 600);
         double targetMs = targetKmh / 3.6;
 
         double totalRatio = targetMs > 0 && car.MaxRPM > 0 && tireCirc > 0
@@ -1152,9 +1148,9 @@ public class TuneGeneratorService
         return (first, stepMin, stepMax, note);
     }
 
-    private static void ApplyAspirationStepAdjustment(AspirationType aspiration, bool antiLag, ref double stepMin, ref double stepMax)
+    private static void ApplyAspirationStepAdjustment(AspirationType? aspiration, bool antiLag, ref double stepMin, ref double stepMax)
     {
-        switch (aspiration)
+        switch (aspiration ?? AspirationType.Natural)
         {
             case AspirationType.Centrifugal:            stepMax -= 0.08; break;
             case AspirationType.SingleTurbo when !antiLag: stepMax -= 0.04; break;
@@ -1182,7 +1178,7 @@ public class TuneGeneratorService
 
         double targetKmh = track.Discipline == Discipline.Drag
             ? effectiveMaxKmh
-            : Math.Min(effectiveMaxKmh, 400);
+            : Math.Min(effectiveMaxKmh, 600);
         double targetMs = targetKmh / 3.6;
 
         // Single-speed: Gear 1 × FinalDrive = total reduction (same Forza mechanics, one gear).

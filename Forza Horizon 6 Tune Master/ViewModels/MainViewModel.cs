@@ -179,9 +179,8 @@ public class MainViewModel : INotifyPropertyChanged
             if (!_syncingUnitSystem)
             {
                 _syncingUnitSystem = true;
-                _selectedUnitSystemItem = UnitSystemOptions.FirstOrDefault(o => o.Value == value);
-                OnPropertyChanged(nameof(SelectedUnitSystemItem));
-                _syncingUnitSystem = false;
+                try { _selectedUnitSystemItem = UnitSystemOptions.FirstOrDefault(o => o.Value == value); OnPropertyChanged(nameof(SelectedUnitSystemItem)); }
+                finally { _syncingUnitSystem = false; }
             }
         }
     }
@@ -297,9 +296,8 @@ public class MainViewModel : INotifyPropertyChanged
             if (!_syncingPowerUnit)
             {
                 _syncingPowerUnit = true;
-                _selectedPowerUnitItem = PowerUnitOptions.FirstOrDefault(o => o.Value == value);
-                OnPropertyChanged(nameof(SelectedPowerUnitItem));
-                _syncingPowerUnit = false;
+                try { _selectedPowerUnitItem = PowerUnitOptions.FirstOrDefault(o => o.Value == value); OnPropertyChanged(nameof(SelectedPowerUnitItem)); }
+                finally { _syncingPowerUnit = false; }
             }
         }
     }
@@ -323,9 +321,8 @@ public class MainViewModel : INotifyPropertyChanged
             if (!_syncingSpringUnit)
             {
                 _syncingSpringUnit = true;
-                _selectedSpringUnitItem = SpringUnitOptions.FirstOrDefault(o => o.Value == value);
-                OnPropertyChanged(nameof(SelectedSpringUnitItem));
-                _syncingSpringUnit = false;
+                try { _selectedSpringUnitItem = SpringUnitOptions.FirstOrDefault(o => o.Value == value); OnPropertyChanged(nameof(SelectedSpringUnitItem)); }
+                finally { _syncingSpringUnit = false; }
             }
         }
     }
@@ -471,26 +468,29 @@ public class MainViewModel : INotifyPropertyChanged
             if (value == null || _selectedUnitSystemItem?.Value == value.Value) return;
             if (_syncingUnitSystem) return;
             _syncingUnitSystem = true;
-            _selectedUnitSystemItem = value;
-            OnPropertyChanged();
-            _measurementSystem = value.Value;
-            OnPropertyChanged(nameof(MeasurementSystem));
-            OnPropertyChanged(nameof(UseImperial));
-            OnPropertyChanged(nameof(SpeedDisplay));
-            OnPropertyChanged(nameof(MassDisplay));
-            OnPropertyChanged(nameof(TorqueDisplay));
-            OnPropertyChanged(nameof(WheelbaseDisplay));
-            OnPropertyChanged(nameof(FrontTrackDisplay));
-            OnPropertyChanged(nameof(RearTrackDisplay));
-            OnPropertyChanged(nameof(SpeedFieldLabel));
-            OnPropertyChanged(nameof(MassFieldLabel));
-            OnPropertyChanged(nameof(TorqueFieldLabel));
-            OnPropertyChanged(nameof(WheelbaseFieldLabel));
-            OnPropertyChanged(nameof(FrontTrackFieldLabel));
-            OnPropertyChanged(nameof(RearTrackFieldLabel));
-            OnPropertyChanged(nameof(UnitToggleLabel));
-            NotifyConstraintDisplayProperties();
-            _syncingUnitSystem = false;
+            try
+            {
+                _selectedUnitSystemItem = value;
+                OnPropertyChanged();
+                _measurementSystem = value.Value;
+                OnPropertyChanged(nameof(MeasurementSystem));
+                OnPropertyChanged(nameof(UseImperial));
+                OnPropertyChanged(nameof(SpeedDisplay));
+                OnPropertyChanged(nameof(MassDisplay));
+                OnPropertyChanged(nameof(TorqueDisplay));
+                OnPropertyChanged(nameof(WheelbaseDisplay));
+                OnPropertyChanged(nameof(FrontTrackDisplay));
+                OnPropertyChanged(nameof(RearTrackDisplay));
+                OnPropertyChanged(nameof(SpeedFieldLabel));
+                OnPropertyChanged(nameof(MassFieldLabel));
+                OnPropertyChanged(nameof(TorqueFieldLabel));
+                OnPropertyChanged(nameof(WheelbaseFieldLabel));
+                OnPropertyChanged(nameof(FrontTrackFieldLabel));
+                OnPropertyChanged(nameof(RearTrackFieldLabel));
+                OnPropertyChanged(nameof(UnitToggleLabel));
+                NotifyConstraintDisplayProperties();
+            }
+            finally { _syncingUnitSystem = false; }
         }
     }
 
@@ -503,14 +503,17 @@ public class MainViewModel : INotifyPropertyChanged
             if (value == null || _selectedPowerUnitItem?.Value == value.Value) return;
             if (_syncingPowerUnit) return;
             _syncingPowerUnit = true;
-            _selectedPowerUnitItem = value;
-            OnPropertyChanged();
-            _powerUnit = value.Value;
-            OnPropertyChanged(nameof(PowerUnit));
-            OnPropertyChanged(nameof(PowerDisplay));
-            OnPropertyChanged(nameof(PowerFieldLabel));
-            OnPropertyChanged(nameof(PowerUnitToggleLabel));
-            _syncingPowerUnit = false;
+            try
+            {
+                _selectedPowerUnitItem = value;
+                OnPropertyChanged();
+                _powerUnit = value.Value;
+                OnPropertyChanged(nameof(PowerUnit));
+                OnPropertyChanged(nameof(PowerDisplay));
+                OnPropertyChanged(nameof(PowerFieldLabel));
+                OnPropertyChanged(nameof(PowerUnitToggleLabel));
+            }
+            finally { _syncingPowerUnit = false; }
         }
     }
 
@@ -523,17 +526,20 @@ public class MainViewModel : INotifyPropertyChanged
             if (value == null || _selectedSpringUnitItem?.Value == value.Value) return;
             if (_syncingSpringUnit) return;
             _syncingSpringUnit = true;
-            _selectedSpringUnitItem = value;
-            OnPropertyChanged();
-            _springUnit = value.Value;
-            OnPropertyChanged(nameof(SpringUnit));
-            OnPropertyChanged(nameof(SpringUnitToggleLabel));
-            OnPropertyChanged(nameof(SpringUnitLabel));
-            OnPropertyChanged(nameof(SpringFrontMinDisplay));
-            OnPropertyChanged(nameof(SpringFrontMaxDisplay));
-            OnPropertyChanged(nameof(SpringRearMinDisplay));
-            OnPropertyChanged(nameof(SpringRearMaxDisplay));
-            _syncingSpringUnit = false;
+            try
+            {
+                _selectedSpringUnitItem = value;
+                OnPropertyChanged();
+                _springUnit = value.Value;
+                OnPropertyChanged(nameof(SpringUnit));
+                OnPropertyChanged(nameof(SpringUnitToggleLabel));
+                OnPropertyChanged(nameof(SpringUnitLabel));
+                OnPropertyChanged(nameof(SpringFrontMinDisplay));
+                OnPropertyChanged(nameof(SpringFrontMaxDisplay));
+                OnPropertyChanged(nameof(SpringRearMinDisplay));
+                OnPropertyChanged(nameof(SpringRearMaxDisplay));
+            }
+            finally { _syncingSpringUnit = false; }
         }
     }
 
@@ -670,6 +676,7 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
     }
 
+    private int _pendingGenerationId;
     private DateTime _lastInputChange = DateTime.MinValue;
     private CancellationTokenSource? _debounceCts;
 
@@ -707,11 +714,11 @@ public class MainViewModel : INotifyPropertyChanged
     {
         _debounceCts?.Cancel();
         _debounceCts = new CancellationTokenSource();
+        int myId = ++_pendingGenerationId;
         try
         {
             await Task.Delay(400, _debounceCts.Token);
-            if (!_isAutoGenerate) return;
-            if ((DateTime.Now - _lastInputChange).TotalMilliseconds < 350) return;
+            if (!_isAutoGenerate || myId != _pendingGenerationId) return;
             BusyMessage = "Расчёт тюнинга...";
             IsGenerating = true;
             GenerateTune();
@@ -742,7 +749,7 @@ public class MainViewModel : INotifyPropertyChanged
         LoadCommand            = new RelayCommand(LoadProfile);
         DeleteProfileCommand   = new RelayCommand(DeleteProfile);
         NewProfileCommand      = new RelayCommand(NewProfile);
-        FetchAiCarSpecsCommand = new RelayCommand(FetchAiCarSpecs, () => !IsFetchingAiSpecs);
+        FetchAiCarSpecsCommand = new RelayCommand(() => _ = FetchAiCarSpecsAsync(), () => !IsFetchingAiSpecs);
         ClearCarSelectionCommand = new RelayCommand(ClearCarSelection);
         RefreshCarDatabaseCommand = new RelayCommand(RefreshCarDatabase, () => !IsLoadingCars);
         ClearCacheCommand = new RelayCommand(ClearCache);
@@ -883,7 +890,8 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ── AI car specs fetch ──────────────────────────────────────────────────
-    private async void FetchAiCarSpecs()
+    private readonly AiCarSpecService _aiCarSpecService = new();
+    private async Task FetchAiCarSpecsAsync()
     {
         if (IsFetchingAiSpecs) return;
         if (string.IsNullOrWhiteSpace(Car.Make) && string.IsNullOrWhiteSpace(Car.Model))
@@ -896,11 +904,10 @@ public class MainViewModel : INotifyPropertyChanged
         IsFetchingAiSpecs = true;
         try
         {
-            var service = new AiCarSpecService();
             var carName = $"{Car.Year} {Car.Make} {Car.Model}".Trim();
             StatusMessage = $"Запрос характеристик {carName} через AI...";
 
-            var specs = await service.FetchCarSpecsAsync(carName);
+            var specs = await _aiCarSpecService.FetchCarSpecsAsync(carName);
 
             _aiEstimatedFields.Clear();
             if (specs.WheelbaseMm > 0) Car.Wheelbase = specs.WheelbaseMm;
@@ -1060,7 +1067,7 @@ public class MainViewModel : INotifyPropertyChanged
                 StatusMessage = $"Авто-обновление не удалось: {result.WebErrorMessage}";
             }
         }
-        catch { }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AutoRefresh] {ex.Message}"); }
     }
 
     private async void RefreshCarDatabase()

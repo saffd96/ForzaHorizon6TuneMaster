@@ -96,7 +96,7 @@ public partial class GearChartView : UserControl
     private double SpeedAt(int gearIdx, double rpm)
     {
         var ratios = GearRatios;
-        if (ratios == null || FinalDrive <= 0) return 0;
+        if (ratios == null || gearIdx < 0 || gearIdx >= ratios.Count || ratios[gearIdx] <= 0 || FinalDrive <= 0) return 0;
         double L = Math.PI * WheelDiameterInch * 0.0254; // tyre circumference (m)
         return rpm * L * 60.0 / (1000.0 * ratios[gearIdx] * FinalDrive);
     }

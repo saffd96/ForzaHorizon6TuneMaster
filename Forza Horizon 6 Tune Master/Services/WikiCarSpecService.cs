@@ -31,7 +31,17 @@ public class WikiCarSpecService
 
     public static void DeleteCache()
     {
-        try { if (Directory.Exists(CacheDir)) Directory.Delete(CacheDir, recursive: true); } catch { /* non-critical */ }
+        try
+        {
+            if (Directory.Exists(CacheDir))
+            {
+                var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                if (!CacheDir.StartsWith(appData, StringComparison.Ordinal))
+                    return;
+                Directory.Delete(CacheDir, recursive: true);
+            }
+        }
+        catch { /* non-critical */ }
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -122,7 +132,7 @@ public class WikiCarSpecService
         if (hasElecMotor && !hasIceEngine)
         {
             specs.EngineType = null;
-            specs.AspirationType = Models.AspirationType.Electric;
+            specs.AspirationType = null;
             specs.PowertrainType = Models.PowertrainType.Electric;
         }
 
