@@ -5,5 +5,7 @@ public class CarData
     public int Year { get; set; }
     public string Make { get; set; } = "";
     public string Model { get; set; } = "";
-    public string DisplayName => $"{Make} {Model} {Year}";
+    public string WikiPageTitle { get; set; } = "";
+    public int PI { get; set; }
+    public string DisplayName => $"{Year} {Make} {Model}".Trim();
 }

@@ -84,6 +84,8 @@ public class MainViewModel : INotifyPropertyChanged
 
     // ── Car database ──────────────────────────────────────────────────────────
     private readonly CarDatabaseService _carDbService = new();
+    private readonly WikiCarSpecService _wikiSpecService = new();
+    private CancellationTokenSource? _wikiSpecsCts;
     private List<CarData> _carDatabase = new();
 
     private bool _suppressFilter;
@@ -105,6 +107,10 @@ public class MainViewModel : INotifyPropertyChanged
                 CarSearchText = value.DisplayName;
                 _suppressFilter = false;
                 ApplyCarFilter();
+
+                _wikiSpecsCts?.Cancel();
+                _wikiSpecsCts = new CancellationTokenSource();
+                _ = FetchAndApplyWikiSpecsAsync(value, _wikiSpecsCts.Token);
             }
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedCarDisplayText));
@@ -624,7 +630,19 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool IsBusy => _isGenerating || _isFetchingAiSpecs || _isLoadingCars;
+    private bool _isLoadingCarSpecs;
+    public bool IsLoadingCarSpecs
+    {
+        get => _isLoadingCarSpecs;
+        set
+        {
+            _isLoadingCarSpecs = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsBusy));
+        }
+    }
+
+    public bool IsBusy => _isGenerating || _isFetchingAiSpecs || _isLoadingCars || _isLoadingCarSpecs;
 
     private string _busyMessage = "";
     public string BusyMessage
@@ -715,6 +733,7 @@ public class MainViewModel : INotifyPropertyChanged
     public RelayCommand FetchAiCarSpecsCommand { get; }
     public RelayCommand ClearCarSelectionCommand { get; }
     public RelayCommand RefreshCarDatabaseCommand { get; }
+    public RelayCommand ClearCacheCommand { get; }
 
     public MainViewModel()
     {
@@ -726,6 +745,7 @@ public class MainViewModel : INotifyPropertyChanged
         FetchAiCarSpecsCommand = new RelayCommand(FetchAiCarSpecs, () => !IsFetchingAiSpecs);
         ClearCarSelectionCommand = new RelayCommand(ClearCarSelection);
         RefreshCarDatabaseCommand = new RelayCommand(RefreshCarDatabase, () => !IsLoadingCars);
+        ClearCacheCommand = new RelayCommand(ClearCache);
 
         ToggleUnitsCommand      = new RelayCommand(DoToggleUnits);
         TogglePowerUnitCommand  = new RelayCommand(DoTogglePowerUnit);
@@ -821,6 +841,44 @@ public class MainViewModel : INotifyPropertyChanged
         finally
         {
             IsGenerating = false;
+        }
+    }
+
+    // ── Wiki car specs fetch (auto on car select) ────────────────────────────
+    private async Task FetchAndApplyWikiSpecsAsync(CarData car, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(car.WikiPageTitle)) return;
+
+        IsLoadingCarSpecs = true;
+        BusyMessage = "Загрузка характеристик...";
+        try
+        {
+            var specs = await _wikiSpecService.FetchSpecsAsync(car.WikiPageTitle, ct);
+            if (ct.IsCancellationRequested || specs == null) return;
+
+            if (specs.EngineType.HasValue)             Car.EngineType = specs.EngineType.Value;
+            if (specs.AspirationType.HasValue)         Car.AspirationType = specs.AspirationType.Value;
+            if (specs.PowertrainType.HasValue)         Car.PowertrainType = specs.PowertrainType.Value;
+            if (specs.PowerHP is > 0)                  Car.PowerHP = specs.PowerHP.Value;
+            if (specs.TorqueNm is > 0)                 Car.TorqueNm = specs.TorqueNm.Value;
+            if (specs.DriveType.HasValue)              Car.DriveType = specs.DriveType.Value;
+            if (specs.EnginePosition.HasValue)         Car.EnginePosition = specs.EnginePosition.Value;
+            if (specs.WeightDistributionFront is > 0)  Car.WeightDistributionFront = specs.WeightDistributionFront.Value;
+            if (specs.TotalMassKg is > 0)              Car.TotalMass = specs.TotalMassKg.Value;
+            if (specs.GearCount is > 0)                Car.GearCount = specs.GearCount.Value;
+
+            NotifyCarDisplayProperties();
+            StatusMessage = $"Характеристики {car.Make} {car.Model} загружены из Wiki";
+        }
+        catch (OperationCanceledException) { /* другой автомобиль выбран */ }
+        catch (Exception ex)
+        {
+            if (!ct.IsCancellationRequested)
+                StatusMessage = $"Wiki: не удалось загрузить характеристики — {ex.Message}";
+        }
+        finally
+        {
+            IsLoadingCarSpecs = false;
         }
     }
 
@@ -1030,6 +1088,15 @@ public class MainViewModel : INotifyPropertyChanged
             IsLoadingCars = false;
             RefreshCarDatabaseCommand.Raise();
         }
+    }
+
+    private void ClearCache()
+    {
+        CarDatabaseService.DeleteCache();
+        WikiCarSpecService.DeleteCache();
+        _carDatabase.Clear();
+        _filteredCarDatabase.Clear();
+        StatusMessage = "Кеш очищен — нажмите ↻ для повторной загрузки";
     }
 
     private void SelectCarFromProfile()

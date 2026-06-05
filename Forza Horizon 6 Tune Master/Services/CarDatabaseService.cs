@@ -14,18 +14,30 @@ public class CarDatabaseService
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "ForzaTuneMaster");
 
-    private static readonly string CachePath = Path.Combine(CacheDir, "fh6_cars_all.json");
+    private static readonly string CachePath = Path.Combine(CacheDir, "fh6_cars_fandom.json");
+    private static readonly string LegacyCachePath = Path.Combine(CacheDir, "fh6_cars_all.json");
 
-    private static readonly HttpClient Client = new()
-    {
-        Timeout = TimeSpan.FromSeconds(15)
-    };
+    private static readonly HttpClient Client = new() { Timeout = TimeSpan.FromSeconds(20) };
+
+    private static readonly Regex CommentRegex = new(
+        @"<!--\s+(.+?)\s+-->", RegexOptions.Compiled);
+
+    private static readonly Regex RowRegex = new(
+        @"\{\{CarListStatsFH6\|([^}]+)\}\}", RegexOptions.Compiled | RegexOptions.Singleline);
 
     public static bool IsCacheStale =>
         !File.Exists(CachePath) || File.GetLastWriteTime(CachePath).Date < DateTime.Today;
 
+    public static void DeleteCache()
+    {
+        try { if (File.Exists(CachePath)) File.Delete(CachePath); } catch { /* non-critical */ }
+        try { if (File.Exists(LegacyCachePath)) File.Delete(LegacyCachePath); } catch { /* non-critical */ }
+    }
+
     public Task<CarLoadResult> LoadCarDatabaseAsync()
     {
+        try { if (File.Exists(LegacyCachePath)) File.Delete(LegacyCachePath); } catch { }
+
         if (File.Exists(CachePath))
             return Task.FromResult(new CarLoadResult(LoadCache(), true, null));
 
@@ -36,7 +48,7 @@ public class CarDatabaseService
     {
         try
         {
-            var cars = await FetchFromWebAsync();
+            var cars = await FetchFromWikiAsync();
             if (cars.Count >= 5)
             {
                 SaveCache(cars);
@@ -50,98 +62,130 @@ public class CarDatabaseService
         }
     }
 
-    private static async Task<List<CarData>> FetchFromWebAsync()
+    private static async Task<List<CarData>> FetchFromWikiAsync()
     {
-        var html = await Client.GetStringAsync("https://forza.net/fh6cars");
+        const string apiUrl = "https://forza.fandom.com/api.php?action=parse&page=Forza_Horizon_6%2FCars&prop=wikitext&format=json";
+        var json = await Client.GetStringAsync(apiUrl);
 
-        var rows = Regex.Matches(html,
-            @"<tr[^>]*>\s*<td[^>]*>(.*?)</td>\s*<td[^>]*>(.*?)</td>",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.CultureInvariant);
+        using var doc = JsonDocument.Parse(json);
+        var wikitext = doc.RootElement
+            .GetProperty("parse")
+            .GetProperty("wikitext")
+            .GetProperty("*")
+            .GetString() ?? "";
 
-        var cars = new List<CarData>(rows.Count);
+        return ParseWikitext(wikitext);
+    }
+
+    private static List<CarData> ParseWikitext(string wikitext)
+    {
+        var cars = new List<CarData>(650);
         var seen = new HashSet<string>();
 
+        // Collect all token positions: section comments and car rows
+        var comments = CommentRegex.Matches(wikitext);
+        var rows = RowRegex.Matches(wikitext);
+
+        // Build a sorted list of events by position
+        // event: (position, isMake, make/rowContent)
+        var events = new List<(int pos, bool isMake, string payload)>(comments.Count + rows.Count);
+        foreach (Match m in comments)
+            events.Add((m.Index, true, m.Groups[1].Value.Trim()));
         foreach (Match m in rows)
+            events.Add((m.Index, false, m.Groups[1].Value));
+        events.Sort((a, b) => a.pos.CompareTo(b.pos));
+
+        var currentMake = "";
+        foreach (var (_, isMake, payload) in events)
         {
-            var make = WebUtility(StripTags(m.Groups[1].Value));
-            var fullName = WebUtility(StripTags(m.Groups[2].Value));
-
-            if (string.IsNullOrWhiteSpace(make) || string.IsNullOrWhiteSpace(fullName))
-                continue;
-
-            // skip header rows
-            if (make.Equals("make", StringComparison.OrdinalIgnoreCase) ||
-                make.Equals("manufacturer", StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            int year = 0;
-            string model = fullName;
-
-            var yearMatch = Regex.Match(fullName, @"^(\d{4})\s+(.*)");
-            if (yearMatch.Success)
+            if (isMake)
             {
-                year = int.Parse(yearMatch.Groups[1].Value);
-                model = yearMatch.Groups[2].Value;
+                currentMake = payload;
+                continue;
             }
 
-            model = StripMakePrefix(model, make);
+            var car = ParseCarRow(payload, currentMake);
+            if (car == null) continue;
 
-            var key = $"{year}|{make}|{model}";
+            var key = $"{car.Year}|{car.Make}|{car.Model}";
             if (seen.Add(key))
-            {
-                cars.Add(new CarData
-                {
-                    Year = year,
-                    Make = make,
-                    Model = model
-                });
-            }
+                cars.Add(car);
         }
 
         return cars;
     }
 
-    private static string StripTags(string s)
-        => Regex.Replace(s, @"<[^>]+>", "").Trim();
-
-    private static string StripMakePrefix(string model, string make)
+    private static CarData? ParseCarRow(string rowContent, string currentMake)
     {
-        if (model.StartsWith(make, StringComparison.OrdinalIgnoreCase))
+        // Split positional params (skip named params containing '=')
+        var parts = rowContent.Split('|');
+        var positional = new List<string>();
+        foreach (var p in parts)
         {
-            var rest = model[make.Length..].TrimStart('.', ' ');
-            if (rest.Length > 0) return rest;
+            if (!p.Contains('='))
+                positional.Add(p.Trim());
         }
-        return model;
-    }
 
-    private static string WebUtility(string s)
-        => s.Replace("&amp;", "&").Replace("&lt;", "<").Replace("&gt;", ">").Replace("&#39;", "'").Replace("&quot;", "\"");
+        if (positional.Count < 3) return null;
+
+        var fullName = positional[0].Trim();
+        if (string.IsNullOrWhiteSpace(fullName)) return null;
+
+        // param[2] = year, param[12] = PI
+        if (!int.TryParse(positional[2], out var year)) return null;
+
+        var pi = 0;
+        if (positional.Count > 12 && int.TryParse(positional[12], out var piParsed))
+            pi = piParsed;
+
+        // Split make and model using section comment make name
+        string make = currentMake;
+        string model;
+        if (!string.IsNullOrEmpty(make) && fullName.StartsWith(make, StringComparison.OrdinalIgnoreCase))
+        {
+            model = fullName[make.Length..].TrimStart(' ', '.', '-');
+            if (string.IsNullOrWhiteSpace(model))
+                model = fullName;
+        }
+        else
+        {
+            // Fallback: first word is make
+            var spaceIdx = fullName.IndexOf(' ');
+            if (spaceIdx < 0) return null;
+            make = fullName[..spaceIdx];
+            model = fullName[(spaceIdx + 1)..];
+        }
+
+        return new CarData
+        {
+            Year = year,
+            Make = make,
+            Model = model,
+            WikiPageTitle = fullName,
+            PI = pi
+        };
+    }
 
     private static void SaveCache(List<CarData> cars)
     {
         try
         {
             Directory.CreateDirectory(CacheDir);
-            var json = JsonSerializer.Serialize(cars);
-            File.WriteAllText(CachePath, json);
+            File.WriteAllText(CachePath, JsonSerializer.Serialize(cars));
         }
-        catch
-        {
-            // non-critical
-        }
+        catch { /* non-critical */ }
     }
 
     private static List<CarData> LoadCache()
     {
         try
         {
-            if (!File.Exists(CachePath)) return new List<CarData>();
-            var json = File.ReadAllText(CachePath);
-            return JsonSerializer.Deserialize<List<CarData>>(json) ?? new List<CarData>();
+            if (!File.Exists(CachePath)) return [];
+            return JsonSerializer.Deserialize<List<CarData>>(File.ReadAllText(CachePath)) ?? [];
         }
         catch
         {
-            return new List<CarData>();
+            return [];
         }
     }
 }

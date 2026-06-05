@@ -133,8 +133,7 @@ public class CarCard : NotifyBase
     public bool IsElectricPowertrain => PowertrainType == PowertrainType.Electric;
 
     [JsonIgnore]
-    public bool ShowAspiration => PowertrainType != PowertrainType.Electric
-                               && EngineType    != EngineType.Electric;
+    public bool ShowAspiration => PowertrainType != PowertrainType.Electric;
 
     // Computed RPM peaks — derived from engine/powertrain type characteristics
     [JsonIgnore]
@@ -146,15 +145,19 @@ public class CarCard : NotifyBase
                 return (int)Math.Round(MaxRPM * 0.45 / 100.0) * 100;
             return (int)Math.Round(MaxRPM * EngineType switch
             {
+                EngineType.I1       => 0.91,  // одноцилиндровый — пик почти на максимуме
+                EngineType.I2       => 0.89,  // двухцилиндровый — высокооборотистый
                 EngineType.I3       => 0.87,
                 EngineType.I4       => 0.85,
                 EngineType.I5       => 0.84,
                 EngineType.I6       => 0.82,
+                EngineType.I8       => 0.80,  // рядная восьмёрка — аналог V8 по характеру
                 EngineType.Boxer    => 0.87,
                 EngineType.V6       => 0.83,
                 EngineType.V8       => 0.80,
                 EngineType.V10      => 0.88,
                 EngineType.V12      => 0.82,
+                EngineType.W12      => 0.81,  // W12 близок к V12
                 EngineType.Rotary   => 0.92,
                 _                   => 0.85
             } / 100.0) * 100;
@@ -170,15 +173,19 @@ public class CarCard : NotifyBase
                 return 0;
             int peak = (int)Math.Round(MaxRPM * EngineType switch
             {
+                EngineType.I1       => 0.65,  // одноцилиндровый — момент тоже в верхах
+                EngineType.I2       => 0.60,  // двухцилиндровый
                 EngineType.I3       => 0.55,
                 EngineType.I4       => 0.58,
                 EngineType.I5       => 0.57,
                 EngineType.I6       => 0.55,
+                EngineType.I8       => 0.52,  // рядная восьмёрка — очень ровный момент
                 EngineType.Boxer    => 0.60,
                 EngineType.V6       => 0.52,
                 EngineType.V8       => 0.50,
                 EngineType.V10      => 0.62,
                 EngineType.V12      => 0.53,
+                EngineType.W12      => 0.50,  // W12 — широкий диапазон, момент низко
                 EngineType.Rotary   => 0.70,
                 _                   => 0.57
             } / 100.0) * 100;
