@@ -73,16 +73,6 @@ public sealed class LocalizationService : INotifyPropertyChanged
         CultureInfo.CurrentCulture = new CultureInfo(cultureCode);
         CultureInfo.CurrentUICulture = new CultureInfo(cultureCode);
 
-        // Update WPF XML language for proper text rendering in the selected culture
-        try
-        {
-            FrameworkElement.LanguageProperty.OverrideMetadata(
-                typeof(FrameworkElement),
-                new FrameworkPropertyMetadata(
-                    System.Windows.Markup.XmlLanguage.GetLanguage(cultureCode == "ru" ? "ru-RU" : "en-US")));
-        }
-        catch { /* can only set once, ignore subsequent calls */ }
-
         SaveLanguageSetting(cultureCode);
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item"));
         InvalidateAll();

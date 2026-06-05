@@ -165,7 +165,7 @@ public static class NumericBehavior
         for (int i = 0; i < text.Length; i++)
         {
             var c = text[i];
-            if (c is '.' or ',') { if (!sepSeen) { sepSeen = true; clean.Append(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator); } }
+            if (c is '.' or ',') { if (!sepSeen) { sepSeen = true; clean.Append('.'); } }
             else if (c == '-' && i == 0) clean.Append(c);
             else if (char.IsAsciiDigit(c)) clean.Append(c);
         }
