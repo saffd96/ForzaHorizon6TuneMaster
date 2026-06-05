@@ -19,9 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="Localization\*.json">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
+        <EmbeddedResource Include="Localization\*.json"/>
     </ItemGroup>
 
 </Project>

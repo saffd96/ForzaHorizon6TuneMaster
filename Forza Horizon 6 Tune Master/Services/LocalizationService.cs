@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using System.Windows;
 
@@ -138,22 +139,13 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
         try
         {
-            var path = Path.Combine(
-                AppContext.BaseDirectory,
-                "Localization",
-                $"{code}.json");
+            var asm = Assembly.GetExecutingAssembly();
+            var resourceName = $"Forza_Horizon_6_Tune_Master.Localization.{code}.json";
+            using var stream = asm.GetManifestResourceStream(resourceName);
+            if (stream == null) return false;
 
-            if (!File.Exists(path))
-            {
-                var alt = Path.Combine(
-                    AppDomain.CurrentDomain.BaseDirectory,
-                    "Localization",
-                    $"{code}.json");
-                if (!File.Exists(alt)) return false;
-                path = alt;
-            }
-
-            var json = File.ReadAllText(path);
+            using var reader = new StreamReader(stream);
+            var json = reader.ReadToEnd();
             var entries = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
             if (entries == null) return false;
             dict = new Dictionary<string, string>(entries, StringComparer.OrdinalIgnoreCase);
