@@ -201,6 +201,20 @@ public class CarCard : NotifyBase
         set { Set(ref _gearCount, value); }
     }
 
+    private bool _allowGearCalculation = true;
+    public bool AllowGearCalculation
+    {
+        get => _allowGearCalculation;
+        set { Set(ref _allowGearCalculation, value); }
+    }
+
+    private bool _onlyFinalDriveCalculation = false;
+    public bool OnlyFinalDriveCalculation
+    {
+        get => _onlyFinalDriveCalculation;
+        set { Set(ref _onlyFinalDriveCalculation, value); }
+    }
+
     // Tires
     private int _frontTireWidth = 235;
     public int FrontTireWidth
@@ -333,8 +347,12 @@ public class CarCard : NotifyBase
     public SuspensionUpgrade SuspensionUpgrade
     {
         get => _suspensionUpgrade;
-        set { Set(ref _suspensionUpgrade, value); }
+        set { Set(ref _suspensionUpgrade, value); OnPropertyChanged(nameof(SuspensionAllowsAdvancedTuning)); }
     }
+
+    [JsonIgnore]
+    public bool SuspensionAllowsAdvancedTuning => SuspensionUpgrade is
+        SuspensionUpgrade.Race or SuspensionUpgrade.Rally or SuspensionUpgrade.Drift or SuspensionUpgrade.Offroad;
 
     private DifferentialUpgrade _differentialUpgrade = DifferentialUpgrade.Sport;
     public DifferentialUpgrade DifferentialUpgrade

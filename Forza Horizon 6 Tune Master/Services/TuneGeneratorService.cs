@@ -329,6 +329,12 @@ public class TuneGeneratorService
 
     private static void CalculateCamber(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
     {
+        if (!car.SuspensionAllowsAdvancedTuning)
+        {
+            ex["Camber"] = "Развал: настройка недоступна (стоковая/уличная/спортивная подвеска).";
+            return;
+        }
+
         double camF, camR;
         string reason;
         switch (track.Discipline)
@@ -533,6 +539,12 @@ public class TuneGeneratorService
 
     private static void CalculateSprings(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
     {
+        if (!car.SuspensionAllowsAdvancedTuning)
+        {
+            ex["Springs"] = "Пружины: настройка недоступна (стоковая/уличная/спортивная подвеска).";
+            return;
+        }
+
         double wdF = EffectiveWtDist(car) / 100.0;
         double wdR = 1.0 - wdF;
 
@@ -609,6 +621,12 @@ public class TuneGeneratorService
 
     private static void CalculateRideHeight(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
     {
+        if (!car.SuspensionAllowsAdvancedTuning)
+        {
+            ex["RideHeight"] = "Клиренс: настройка недоступна (стоковая/уличная/спортивная подвеска).";
+            return;
+        }
+
         double rhF, rhR;
         string note;
 
@@ -819,6 +837,12 @@ public class TuneGeneratorService
 
     private static void CalculateDifferential(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
     {
+        if (car.DifferentialUpgrade == DifferentialUpgrade.Stock)
+        {
+            ex["Differential"] = "Дифференциал: стоковый — настройка недоступна.";
+            return;
+        }
+
         // Upgrade hardware fraction: scales the calculated optimal lock value, preserving
         // the relative character of each build rather than hard-clamping to a flat maximum.
         // A well-calculated 65 % on Sport diff stays ~57 %; the same on Race stays 65 %.
@@ -899,7 +923,9 @@ public class TuneGeneratorService
         decel = Math.Min(decel * hwFraction, maxDecel);
 
         r.DiffAccel = Math.Round(Clamp(accel, c.DiffAccelMin, c.DiffAccelMax));
-        r.DiffDecel = Math.Round(Clamp(decel, c.DiffDecelMin, c.DiffDecelMax));
+        r.DiffDecel = car.DifferentialUpgrade == DifferentialUpgrade.Sport
+            ? 0
+            : Math.Round(Clamp(decel, c.DiffDecelMin, c.DiffDecelMax));
 
         string aspLabel = car.AspirationType switch
         {
@@ -977,10 +1003,14 @@ public class TuneGeneratorService
 
             // Apply rearFactor to rear diff (accel already capped by maxAccel)
             r.DiffAccel = Math.Round(Clamp(accel * rearFactor, c.DiffAccelMin, c.DiffAccelMax));
-            r.DiffDecel = Math.Round(Clamp(decel * rearFactor, c.DiffDecelMin, c.DiffDecelMax));
+            r.DiffDecel = car.DifferentialUpgrade == DifferentialUpgrade.Sport
+                ? 0
+                : Math.Round(Clamp(decel * rearFactor, c.DiffDecelMin, c.DiffDecelMax));
 
             r.DiffFrontAccel = Math.Round(Clamp(Math.Min(fAccel * hwFraction, maxAccel) * frontFactor, c.DiffAccelMin, c.DiffAccelMax));
-            r.DiffFrontDecel = Math.Round(Clamp(Math.Min(fDecel * hwFraction, maxDecel) * frontFactor, c.DiffDecelMin, c.DiffDecelMax));
+            r.DiffFrontDecel = car.DifferentialUpgrade == DifferentialUpgrade.Sport
+                ? 0
+                : Math.Round(Clamp(Math.Min(fDecel * hwFraction, maxDecel) * frontFactor, c.DiffDecelMin, c.DiffDecelMax));
             r.CenterDiffBias = Math.Round(bias * 100);
         }
 
@@ -1033,9 +1063,10 @@ public class TuneGeneratorService
         // Brake upgrade: better calipers/pads → higher effective bite
         pressure += car.BrakesUpgrade switch
         {
-            BrakesUpgrade.Race  => 5.0,
-            BrakesUpgrade.Sport => 2.5,
-            _                   => 0.0
+            BrakesUpgrade.Race   => 5.0,
+            BrakesUpgrade.Sport  => 2.5,
+            BrakesUpgrade.Street => 1.0,
+            _                    => 0.0
         };
 
         r.BrakeBalance  = Math.Round(Clamp(bias,  c.BrakeBalanceMin,  c.BrakeBalanceMax));
@@ -1136,8 +1167,15 @@ public class TuneGeneratorService
 
     private static void CalculateGearing(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
     {
-        int n = Math.Max(1, Math.Min(car.GearCount, 10));
         r.RecommendedGearCount = CalcRecommendedGearCount(car, track, effectiveMaxKmh);
+
+        if (!car.AllowGearCalculation)
+        {
+            ex["FinalDrive"] = $"Расчёт передач отключён. Рек. передач: {r.RecommendedGearCount}.";
+            return;
+        }
+
+        int n = Math.Max(1, Math.Min(car.GearCount, 10));
 
         double pwRatio = car.PowerHP / (car.TotalMass / 1000.0);
         double tireCirc = Math.PI * car.RearWheelDiameterInch * 0.0254;
@@ -1176,11 +1214,18 @@ public class TuneGeneratorService
 
             g1  = Math.Round(g1,  2);
             fd1 = Math.Round(fd1, 2);
-            r.GearRatios = new List<double> { g1 };
             r.FinalDrive = fd1;
-            ex["FinalDrive"] = $"ГП {fd1}. Передача 1: {g1} (одна ступень). " +
-                $"Суммарное передаточное: {g1} × {fd1} = {g1 * fd1:F2}. " +
-                $"Цель {effectiveMaxKmh} км/ч, факт {r.ActualMaxSpeedKmh} км/ч @ {car.MaxRPM} об/мин. Рек. передач: {r.RecommendedGearCount}.";
+            if (car.OnlyFinalDriveCalculation)
+            {
+                ex["FinalDrive"] = $"ГП {fd1} (только главная пара). Рек. передач: {r.RecommendedGearCount}.";
+            }
+            else
+            {
+                r.GearRatios = new List<double> { g1 };
+                ex["FinalDrive"] = $"ГП {fd1}. Передача 1: {g1} (одна ступень). " +
+                    $"Суммарное передаточное: {g1} × {fd1} = {g1 * fd1:F2}. " +
+                    $"Цель {effectiveMaxKmh} км/ч, факт {r.ActualMaxSpeedKmh} км/ч @ {car.MaxRPM} об/мин. Рек. передач: {r.RecommendedGearCount}.";
+            }
             return;
         }
 
@@ -1275,9 +1320,15 @@ public class TuneGeneratorService
         if (track.Discipline != Discipline.Drag)
             fd *= 1.0 + Math.Max(0, (pwRatio - 150) / 200.0 * 0.05);
 
-        r.GearRatios = ratios;
         r.FinalDrive = Math.Round(Clamp(fd, c.FinalDriveMin, c.FinalDriveMax), 2);
 
+        if (car.OnlyFinalDriveCalculation)
+        {
+            ex["FinalDrive"] = $"ГП {r.FinalDrive} (только главная пара). Рек. передач: {r.RecommendedGearCount}. {note}";
+            return;
+        }
+
+        r.GearRatios = ratios;
         string gearStr = string.Join("  ", ratios.Select((g, i) => $"{i + 1}: {g:F2}"));
         double actualKmhMulti = r.ActualMaxSpeedKmh;
         ex["FinalDrive"] = $"ГП {r.FinalDrive}. Рек. передач: {r.RecommendedGearCount}. Ряд: {gearStr}. " +

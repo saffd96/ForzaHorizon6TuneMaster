@@ -248,6 +248,14 @@
                         <TextBlock Grid.Column="3" Text="Кол-во передач" Style="{StaticResource FormLabel}" Width="130"/>
                         <TextBox   Grid.Column="4" Text="{Binding Car.GearCount, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     </Grid>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                        <CheckBox Content="Рассчитывать передаточный ряд"
+                                  IsChecked="{Binding Car.AllowGearCalculation}"
+                                  Margin="0,0,20,0"/>
+                        <CheckBox Content="Только главная передача"
+                                  IsChecked="{Binding Car.OnlyFinalDriveCalculation}"
+                                  Visibility="{Binding Car.AllowGearCalculation, Converter={StaticResource BoolVis}}"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 
@@ -393,8 +401,10 @@
             <!-- ── Constraints ───────────────────────────────────────────── -->
             <TextBlock Text="ОГРАНИЧЕНИЯ ТЮНИНГА" Style="{StaticResource SectionHeader}" FontSize="13"/>
 
-            <TextBlock Text="{Binding SpringUnitLabel}" Style="{StaticResource SectionHeader}"/>
-            <Border Style="{StaticResource SectionCard}">
+            <TextBlock Text="{Binding SpringUnitLabel}" Style="{StaticResource SectionHeader}"
+                       Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource BoolVis}}"/>
+            <Border Style="{StaticResource SectionCard}"
+                    Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource BoolVis}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="130"/>
@@ -416,8 +426,10 @@
                 </Grid>
             </Border>
 
-            <TextBlock Text="{Binding RideHeightUnitLabel}" Style="{StaticResource SectionHeader}"/>
-            <Border Style="{StaticResource SectionCard}">
+            <TextBlock Text="{Binding RideHeightUnitLabel}" Style="{StaticResource SectionHeader}"
+                       Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource BoolVis}}"/>
+            <Border Style="{StaticResource SectionCard}"
+                    Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource BoolVis}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="130"/>

@@ -127,8 +127,10 @@
             </Border>
 
             <!-- ── Springs ───────────────────────────────────────────── -->
-            <TextBlock Text="{Binding SpringUnitLabel}" Style="{StaticResource SectionHeader}"/>
-            <Border Style="{StaticResource SectionCard}">
+            <TextBlock Text="{Binding SpringUnitLabel}" Style="{StaticResource SectionHeader}"
+                       Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}"/>
+            <Border Style="{StaticResource SectionCard}"
+                    Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="130"/>
@@ -151,8 +153,10 @@
             </Border>
 
             <!-- ── Ride Height ───────────────────────────────────────── -->
-            <TextBlock Text="{Binding RideHeightUnitLabel}" Style="{StaticResource SectionHeader}"/>
-            <Border Style="{StaticResource SectionCard}">
+            <TextBlock Text="{Binding RideHeightUnitLabel}" Style="{StaticResource SectionHeader}"
+                       Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}"/>
+            <Border Style="{StaticResource SectionCard}"
+                    Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="130"/>

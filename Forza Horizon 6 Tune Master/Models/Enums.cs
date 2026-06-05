@@ -26,7 +26,7 @@ public enum SuspensionUpgrade { Stock, Street, Sport, Race, Rally, Drift, Offroa
 
 public enum DifferentialUpgrade { Stock, Street, Sport, Rally, Race, DriftSpec, Offroad }
 
-public enum BrakesUpgrade { Stock, Sport, Race }
+public enum BrakesUpgrade { Stock, Street, Sport, Race }
 
 public enum AspirationType
 {
