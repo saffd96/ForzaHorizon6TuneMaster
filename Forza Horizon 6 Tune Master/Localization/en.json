@@ -176,6 +176,7 @@
 
   "MainTitle": "Forza Horizon 6 Tune Master",
   "VersionTag": "MVP v1.0",
+  "HelpSymbol": "?",
   "HelpButtonTooltip": "How to use Tune Master",
   "GenerateButton": "⚡  Generate",
   "AutoCheckbox": "✓ Auto",
@@ -267,7 +268,7 @@
   "LanguageEn": "English",
 
   "HelpStep1Title": "1 — CAR SELECTION",
-  "HelpStep1Text": "Start typing make, model or year in the search box — the list auto-filters. Select a car from the list: make, model and year fill automatically. The ↻ button refreshes the car database from the server. The ✕ button clears the selection.",
+  "HelpStep1Text": "Start typing make, model or year in the search box — the list auto-filters. Select a car from the list: make, model and year fill automatically. The ↻ button refreshes the car database from the server. The 🗑 button clears the database and spec cache — requires reload. The ✕ button clears the selection.",
   "HelpStep1Note": "If your car isn't in the database, just type make, model and year manually in the fields below. The database refreshes on startup and is cached locally.",
 
   "HelpStep2Title": "2 — CAR DATA",
@@ -279,7 +280,7 @@
   "HelpStep3Note": "Click 'AI: fetch specs' to auto-fill wheelbase, track, Cd and frontal area. Estimated values are marked with ⚠ — verify before generating. In the UPGRADES section, choose suspension, differential and brake upgrade levels — they shift parameter ranges.",
 
   "HelpStep4Title": "4 — TUNING CONSTRAINTS",
-  "HelpStep4Text": "Set allowed ranges for springs (min/max front and rear) and ride height (min/max front and rear). The generator stays within these limits. Spring and ride height sections are only visible with sufficient suspension upgrade level.",
+  "HelpStep4Text": "Set allowed ranges for springs (min/max front and rear), ride height (min/max front and rear) and center differential bias (AWD). The generator stays within these limits. Spring and ride height sections are only visible with sufficient suspension upgrade level. Center diff bias is only available for All-Wheel Drive.",
   "HelpStep4Note": "For aero, check 'Front / Rear aero kit installed' — min/max downforce fields appear. If no aero, uncheck and leave fields empty.",
 
   "HelpStep5Title": "5 — DISCIPLINE & GENERATION",
@@ -294,7 +295,7 @@
 
   "HelpStep8Title": "8 — PROFILES & UNITS",
   "HelpStep8Text": "💾 Save stores car data, constraints and tune. The name is auto-generated from make, model, year, drive type, engine type and discipline. Select a profile from the list to load immediately. + New resets all fields. 🗑 deletes the selected profile.",
-  "HelpStep8Note": "Units toggle in the top bar: Metric / Imperial, power in HP / PS / kW, spring rate in N/mm · kgf/mm · lb/in. All internal calculations use metric — conversion is for display only.",
+  "HelpStep8Note": "Units and language toggle in the top bar: Metric / Imperial, power in HP / PS / kW, spring rate in N/mm · kgf/mm · lb/in. Interface language: Русский / English. All internal calculations use metric — conversion is for display only.",
 
   "Enum_EngineType_I1": "I1 (single-cylinder)",
   "Enum_EngineType_I2": "I2",
@@ -313,7 +314,6 @@
 
   "Enum_EnginePosition_Front": "Front",
   "Enum_EnginePosition_Mid": "Mid",
-  "Enum_EnginePosition_RearMid": "Rear-mid",
   "Enum_EnginePosition_Rear": "Rear",
 
   "Enum_DriveType_FWD": "Front (FWD)",

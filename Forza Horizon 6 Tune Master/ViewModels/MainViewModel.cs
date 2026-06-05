@@ -621,7 +621,10 @@ public class MainViewModel : INotifyPropertyChanged
     {
         var t = LocalizationService.Instance;
         foreach (var o in _languageOptions)
-            o.Label = o.Code == "ru" ? $"🇷🇺 {t.T("LanguageRu")}" : $"🇬🇧 {t.T("LanguageEn")}";
+        {
+            var langKey = $"Language{char.ToUpperInvariant(o.Code[0])}{o.Code[1..]}";
+            o.Label = $"{o.Code} {t.T(langKey)}";
+        }
     }
 
     private void InvalidateAllLanguageDependent()
@@ -671,11 +674,12 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedPowerUnitItem));
         OnPropertyChanged(nameof(SelectedSpringUnitItem));
         OnPropertyChanged(nameof(SelectedLanguageItem));
-        // force enum ComboBox DataTemplates to re-render with new language
-        var tmp = _car;
+        // Force all Car-bound ComboBox DataTemplates to re-evaluate converters with new language.
+        // Direct field access + OnPropertyChanged avoids the Car setter (no event resubscribe).
+        var carrier = _car;
         _car = null!;
         OnPropertyChanged(nameof(Car));
-        _car = tmp;
+        _car = carrier;
         OnPropertyChanged(nameof(Car));
     }
 

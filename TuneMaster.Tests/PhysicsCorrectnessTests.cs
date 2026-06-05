@@ -7,7 +7,6 @@ namespace TuneMaster.Tests;
 
 /// Tests validating physical correctness fixes:
 ///   P001–P005: LaunchControl populated for Drag
-///   P006–P008: RearMid engine position heuristic
 ///   P009–P011: AWD aero balance (front/rear ratio < 3:1)
 ///   P012–P013: BrakesUpgrade effect on brake pressure
 public class PhysicsCorrectnessTests
@@ -70,41 +69,6 @@ public class PhysicsCorrectnessTests
             Assert.True(r.LaunchControlRpm <= car.MaxRPM * 0.75,
                 $"{car.AspirationType}: launch {r.LaunchControlRpm} > MaxRPM × 0.75 ({car.MaxRPM * 0.75})");
         }
-    }
-
-    // ── RearMid Engine Position ─────────────────────────────────────────────
-
-    // P006 – Gemera (RearMid engine): springs reflect rear-biased weight distribution
-    [Fact]
-    public void P006_RearMidEngineSpringRearBiasedRelativeToFront()
-    {
-        var r = Gen(CarFactory.Gemera(), CarFactory.Road());
-        // RearMid heuristic = 43% front → rear spring should be stiffer than front
-        Assert.True(r.SpringRear >= r.SpringFront,
-            $"RearMid: rear spring {r.SpringRear} should be >= front {r.SpringFront}");
-    }
-
-    // P007 – RearMid brake balance: reflects rear-heavy distribution (≤ 50%)
-    [Fact]
-    public void P007_RearMidBrakeBalanceLowerThanFrontEngine()
-    {
-        var rearMid  = CarFactory.Gemera();   // RearMid, WD=49%
-        var frontEng = CarFactory.GtrR35();   // Front engine, WD=54%
-        var r_rm = Gen(rearMid,  CarFactory.Road());
-        var r_fe = Gen(frontEng, CarFactory.Road());
-        Assert.True(r_rm.BrakeBalance <= r_fe.BrakeBalance,
-            $"RearMid brake {r_rm.BrakeBalance} should be <= Front engine {r_fe.BrakeBalance}");
-    }
-
-    // P008 – RearMid ARB: rear stiffer relative to front (weight on rear)
-    [Fact]
-    public void P008_RearMidArbRearHeavier()
-    {
-        var r = Gen(CarFactory.Gemera(), CarFactory.Road());
-        // RearMid → EffectiveWtDist=43 → wdDev=-0.14 → arbF decreases, arbR increases
-        // So rear ARB should be at least as stiff as front
-        Assert.True(r.ARBRear >= r.ARBFront,
-            $"RearMid Road: rear ARB {r.ARBRear} should be >= front {r.ARBFront}");
     }
 
     // ── AWD Aero Balance ───────────────────────────────────────────────────

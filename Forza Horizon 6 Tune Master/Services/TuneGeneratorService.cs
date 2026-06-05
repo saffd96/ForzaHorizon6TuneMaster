@@ -68,7 +68,6 @@ public class TuneGeneratorService
         h += car.EnginePosition switch
         {
             EnginePosition.Rear    => -30,
-            EnginePosition.RearMid => -20,
             EnginePosition.Mid     => -15,
             _                      => 0
         };
@@ -204,7 +203,6 @@ public class TuneGeneratorService
         {
             EnginePosition.Front   => 55,
             EnginePosition.Mid     => 48,
-            EnginePosition.RearMid => 43,
             EnginePosition.Rear    => 40,
             _                      => 50
         };
@@ -366,8 +364,8 @@ public class TuneGeneratorService
         }
 
         // Engine position bias
-        double epF = car.EnginePosition switch { EnginePosition.Front => -0.2, EnginePosition.RearMid => 0.05, EnginePosition.Rear => 0.1, _ => 0.0 };
-        double epR = car.EnginePosition switch { EnginePosition.Front => 0.1, EnginePosition.RearMid => -0.1, EnginePosition.Rear => -0.2, _ => 0.0 };
+        double epF = car.EnginePosition switch { EnginePosition.Front => -0.2, EnginePosition.Rear => 0.1, _ => 0.0 };
+        double epR = car.EnginePosition switch { EnginePosition.Front => 0.1, EnginePosition.Rear => -0.2, _ => 0.0 };
 
         // Drivetrain camber bias (ForzaFire): road only
         if (track.Discipline is Discipline.Road or Discipline.Street or Discipline.Touge)
@@ -938,7 +936,6 @@ public class TuneGeneratorService
         {
             EnginePosition.Front   => L("Enum_EnginePosition_Front"),
             EnginePosition.Mid     => L("Enum_EnginePosition_Mid"),
-            EnginePosition.RearMid => L("Enum_EnginePosition_RearMid"),
             EnginePosition.Rear    => L("Enum_EnginePosition_Rear"),
             _                      => car.EnginePosition.ToString()
         };
@@ -989,7 +986,6 @@ public class TuneGeneratorService
             {
                 EnginePosition.Front   =>  5.0,   // front-engine: more understeer tendency
                 EnginePosition.Mid     =>  0.0,
-                EnginePosition.RearMid => -5.0,   // rear-biased: rotation-oriented
                 EnginePosition.Rear    => -8.0,
                 _                      =>  0.0
             };
@@ -1287,11 +1283,17 @@ public class TuneGeneratorService
         var ratios = new List<double>(n);
         if (n <= 2)
         {
-            // 1- and 2-speed: no intermediate gears, geometric and degressiv are identical
-            for (int i = 0; i < n; i++)
+            if (n == 1)
             {
-                double t = (double)i / (n - 1);
-                ratios.Add(Math.Round(Math.Clamp(first * Math.Pow(top / first, t), GearRatioMin, GearRatioMax), 2));
+                ratios.Add(Math.Round(Math.Clamp(first, GearRatioMin, GearRatioMax), 2));
+            }
+            else
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    double t = i;
+                    ratios.Add(Math.Round(Math.Clamp(first * Math.Pow(top / first, t), GearRatioMin, GearRatioMax), 2));
+                }
             }
         }
         else

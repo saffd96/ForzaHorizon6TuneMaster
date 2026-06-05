@@ -238,7 +238,7 @@ public class SpecificCarReferenceTests
     {
         var r = Gen(CarFactory.Porsche918(), CarFactory.Road());
         Assert.True(r.SpringRear >= r.SpringFront,
-            $"Hybrid RearMid: rear spring {r.SpringRear} should be >= front {r.SpringFront}");
+            $"Hybrid Mid: rear spring {r.SpringRear} should be >= front {r.SpringFront}");
         Assert.NotNull(r.DiffFrontAccel);
         Assert.NotNull(r.CenterDiffBias);
         Assert.True(r.CenterDiffBias >= 55, $"Porsche918 center bias {r.CenterDiffBias} should be >= 55");
@@ -280,14 +280,14 @@ public class SpecificCarReferenceTests
             $"AntiLag launch {rAL.LaunchControlRpm} should be >= no-antilag {rNoAL.LaunchControlRpm}");
     }
 
-    // ── C114: McLaren 720S — Road RWD RearMid ───────────────────────────────
+    // ── C114: McLaren 720S — Road RWD Mid ────────────────────────────────────
 
     [Fact]
     public void C114_McLaren720SRoad()
     {
         var r = Gen(CarFactory.McLaren720S(), CarFactory.Road());
         Assert.True(r.SpringRear >= r.SpringFront,
-            $"RearMid RWD: rear spring {r.SpringRear} should be >= front {r.SpringFront}");
+            $"Mid RWD: rear spring {r.SpringRear} should be >= front {r.SpringFront}");
         Assert.True(r.BrakeBalance <= 52,
             $"Rear-heavy (42% front) brake balance {r.BrakeBalance} should be ≤ 52");
         Assert.InRange(r.DiffAccel, 40, 100);
@@ -306,7 +306,7 @@ public class SpecificCarReferenceTests
     {
         var r = Gen(CarFactory.McLaren720S(), CarFactory.Touge());
         Assert.True(r.SpringRear >= r.SpringFront,
-            $"RearMid Touge: rear spring {r.SpringRear} should be >= front {r.SpringFront}");
+            $"Mid Touge: rear spring {r.SpringRear} should be >= front {r.SpringFront}");
         Assert.InRange(r.Caster, 5.0, 7.0);
         Assert.InRange(r.ToeFront, -0.5, 0.0);
         Assert.InRange(r.ToeRear,   0.0, 0.4);

@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Forza_Horizon_6_Tune_Master.Models;
@@ -18,7 +17,7 @@ public partial class CarCardView : UserControl
         DriveTypeCombo.ItemsSource      = Enum.GetValues<DriveType>();
         TireTypeCombo.ItemsSource       = Enum.GetValues<TireType>();
         SuspensionCombo.ItemsSource     = Enum.GetValues<SuspensionUpgrade>();
-        DiffCombo.ItemsSource           = Enum.GetValues<DifferentialUpgrade>().Where(d => d != DifferentialUpgrade.Street).ToArray();
+        DiffCombo.ItemsSource           = Enum.GetValues<DifferentialUpgrade>();
         BrakesCombo.ItemsSource         = Enum.GetValues<BrakesUpgrade>();
     }
 

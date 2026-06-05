@@ -151,7 +151,7 @@ public class TuningConstraints : NotifyBase
     public double BrakePressureMax { get => _brakePressureMax; set => SetMaxMin(ref _brakePressureMax, value, BrakePressureMin, _brakePressureMin); }
     private double _brakePressureMax = 200;
 
-    public double FinalDriveMin { get => _finalDriveMin; set => SetMinMax(ref _finalDriveMin, value, FinalDriveMax, _finalDriveMax); }
+    public double FinalDriveMin { get => _finalDriveMin; set => SetMinMax(ref _finalDriveMin, Math.Max(value, 0.1), FinalDriveMax, _finalDriveMax); }
     private double _finalDriveMin = 2.2;
 
     public double FinalDriveMax { get => _finalDriveMax; set => SetMaxMin(ref _finalDriveMax, value, FinalDriveMin, _finalDriveMin); }

@@ -40,7 +40,7 @@ public class CarCard : NotifyBase
     public double TotalMass
     {
         get => _totalMass;
-        set { Set(ref _totalMass, value); OnPropertyChanged(nameof(MaxSpeedKmh)); }
+        set { Set(ref _totalMass, Math.Max(value, 1.0)); OnPropertyChanged(nameof(MaxSpeedKmh)); }
     }
 
     private double _weightDistributionFront = 50;

@@ -28,20 +28,18 @@
         </Grid.RowDefinitions>
 
         <!-- ══ Title Bar ════════════════════════════════════════════════ -->
-        <!-- 2-row layout: row 0 = logo + profiles, row 1 = unit toggles.
-             Fixes overflow at MinWidth=1100 where single-row approach squeezed
-             profiles into <480px (needs ~580px). -->
+        <!-- 2-row layout: row 0 = logo + units/lang (right), row 1 = profiles (centered). -->
         <Border Grid.Row="0"
                 Background="{StaticResource SurfaceBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="50"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="50"/>
                 </Grid.RowDefinitions>
 
-                <!-- Row 0: Logo | Profile management | Version -->
+                <!-- Row 0: Logo | Version + Units/Language (right) -->
                 <Grid Grid.Row="0" Margin="20,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -68,39 +66,8 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Profile Management — centered, now has full * column (~810px at min width) -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal"
-                                HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="{l:Loc ProfilesLabel}" Foreground="{StaticResource TextDimBrush}"
-                                   VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
-                        <ComboBox ItemsSource="{Binding Profiles}"
-                                  SelectedItem="{Binding SelectedProfile}"
-                                  MinWidth="140"
-                                  Background="{StaticResource ElevatedBrush}"
-                                  BorderBrush="{StaticResource BorderBrush}"
-                                  VerticalAlignment="Center"/>
-                        <Button Content="{l:Loc ProfileSave}" Style="{StaticResource SecondaryButton}"
-                                Command="{Binding SaveCommand}" Margin="6,0,0,0" Padding="10,5"/>
-                        <Button Content="{l:Loc ProfileLoad}"    Style="{StaticResource SecondaryButton}"
-                                Command="{Binding LoadCommand}" Margin="4,0,0,0" Padding="10,5"/>
-                        <Button Content="{l:Loc ProfileDelete}"   Style="{StaticResource DangerButton}"
-                                Command="{Binding DeleteProfileCommand}" Margin="4,0,0,0" Padding="10,5"/>
-                        <Button Content="{l:Loc ProfileNew}"      Style="{StaticResource SecondaryButton}"
-                                Command="{Binding NewProfileCommand}" Margin="4,0,0,0" Padding="10,5"/>
-                    </StackPanel>
-
-                    <!-- Version tag -->
-                    <TextBlock Grid.Column="2" Text="{l:Loc VersionTag}"
-                               Foreground="{StaticResource TextMutedBrush}"
-                               FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center"/>
-                </Grid>
-
-                <!-- Row 1: Unit toggles sub-bar -->
-                <Border Grid.Row="1"
-                        BorderBrush="{StaticResource BorderBrush}"
-                        BorderThickness="0,1,0,0"
-                        Padding="20,4">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Units/Language + Version (right side) -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,8">
                         <TextBlock Text="{l:Loc UnitToggleLabel}" Foreground="{StaticResource TextMutedBrush}"
                                    FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <ComboBox ItemsSource="{Binding UnitSystemOptions}"
@@ -125,12 +92,41 @@
                                   DisplayMemberPath="Label"
                                   SelectedItem="{Binding SelectedLanguageItem}"
                                   MinWidth="100"/>
-                        <Button Content="?"
+                        <Button Content="{l:Loc HelpSymbol}"
                                 Style="{StaticResource SecondaryButton}"
                                 Padding="10,3" Margin="10,0,0,0"
                                 FontWeight="Bold" FontSize="{DynamicResource FontNormal}"
                                 ToolTip="{l:Loc HelpButtonTooltip}"
                                 Click="HelpButton_Click"/>
+                        <TextBlock Text="{l:Loc VersionTag}"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Row 1: Profile management (centered) -->
+                <Border Grid.Row="1"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0,1,0,0"
+                        Padding="20,4">
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <TextBlock Text="{l:Loc ProfilesLabel}" Foreground="{StaticResource TextDimBrush}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
+                        <ComboBox ItemsSource="{Binding Profiles}"
+                                  SelectedItem="{Binding SelectedProfile}"
+                                  MinWidth="140"
+                                  Background="{StaticResource ElevatedBrush}"
+                                  BorderBrush="{StaticResource BorderBrush}"
+                                  VerticalAlignment="Center"/>
+                        <Button Content="{l:Loc ProfileSave}" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding SaveCommand}" Margin="6,0,0,0" Padding="10,5"/>
+                        <Button Content="{l:Loc ProfileLoad}"    Style="{StaticResource SecondaryButton}"
+                                Command="{Binding LoadCommand}" Margin="4,0,0,0" Padding="10,5"/>
+                        <Button Content="{l:Loc ProfileDelete}"   Style="{StaticResource DangerButton}"
+                                Command="{Binding DeleteProfileCommand}" Margin="4,0,0,0" Padding="10,5"/>
+                        <Button Content="{l:Loc ProfileNew}"      Style="{StaticResource SecondaryButton}"
+                                Command="{Binding NewProfileCommand}" Margin="4,0,0,0" Padding="10,5"/>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -160,23 +156,7 @@
                         BorderBrush="{StaticResource BorderBrush}"
                         BorderThickness="0,1,0,0"
                         Padding="12,8">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Discipline selector -->
-                        <views:TrackInfoView Grid.Column="0"/>
-
-                        <!-- Generate button (hidden when auto-generate is on) -->
-                        <Button Grid.Column="1"
-                                Content="{l:Loc GenerateButton}"
-                                Style="{StaticResource PrimaryButton}"
-                                Command="{Binding GenerateCommand}"
-                                FontSize="{DynamicResource FontNormal}" Padding="20,8"
-                                Visibility="{Binding IsAutoGenerate, Converter={StaticResource BoolToCollapsed}}"/>
-                    </Grid>
+                    <views:TrackInfoView/>
                 </Border>
             </Grid>
 

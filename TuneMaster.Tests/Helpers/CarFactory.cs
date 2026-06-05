@@ -94,7 +94,7 @@ internal static class CarFactory
     {
         TotalMass = 1401, WeightDistributionFront = 49,
         PowerHP = 2300, TorqueNm = 2750, MaxRPM = 9500,
-        DriveType = Models_DriveType.AWD, EnginePosition = EnginePosition.RearMid,
+        DriveType = Models_DriveType.AWD, EnginePosition = EnginePosition.Mid,
         AspirationType = AspirationType.TwinTurbo, PowertrainType = PowertrainType.ICE,
         EngineType = EngineType.V8, GearCount = 10,
         TireType = TireType.Drag,
@@ -203,12 +203,12 @@ internal static class CarFactory
         HasFrontAero = false, HasRearAero = false,
     };
 
-    /// Porsche 918 Spyder — Hybrid, AWD, RearMid, 887 HP
+    /// Porsche 918 Spyder — Hybrid, AWD, Mid, 887 HP
     public static CarCard Porsche918() => new()
     {
         TotalMass = 1674, WeightDistributionFront = 43,
         PowerHP = 887, TorqueNm = 1000, MaxRPM = 9150,
-        DriveType = Models_DriveType.AWD, EnginePosition = EnginePosition.RearMid,
+        DriveType = Models_DriveType.AWD, EnginePosition = EnginePosition.Mid,
         AspirationType = AspirationType.Natural, PowertrainType = PowertrainType.Hybrid,
         EngineType = EngineType.V8, GearCount = 7,
         TireType = TireType.SemiSlick, SuspensionUpgrade = SuspensionUpgrade.Race,
@@ -236,12 +236,12 @@ internal static class CarFactory
         HasFrontAero = false, HasRearAero = false,
     };
 
-    /// McLaren 720S — RWD, TwinTurbo, RearMid
+    /// McLaren 720S — RWD, TwinTurbo, Mid
     public static CarCard McLaren720S() => new()
     {
         TotalMass = 1283, WeightDistributionFront = 42,
         PowerHP = 710, TorqueNm = 770, MaxRPM = 8500,
-        DriveType = Models_DriveType.RWD, EnginePosition = EnginePosition.RearMid,
+        DriveType = Models_DriveType.RWD, EnginePosition = EnginePosition.Mid,
         AspirationType = AspirationType.TwinTurbo, PowertrainType = PowertrainType.ICE,
         EngineType = EngineType.V8, GearCount = 7,
         TireType = TireType.SemiSlick, SuspensionUpgrade = SuspensionUpgrade.Race,

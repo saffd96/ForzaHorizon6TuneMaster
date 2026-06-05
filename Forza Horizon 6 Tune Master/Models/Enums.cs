@@ -18,7 +18,7 @@ public enum DriveType { FWD, RWD, AWD }
 
 public enum EngineType { I1, I2, I3, I4, I5, I6, I8, Boxer, V6, V8, V10, V12, W12, Rotary }
 
-public enum EnginePosition { Front, Mid, RearMid, Rear }
+public enum EnginePosition { Front, Mid, Rear }
 
 public enum TireType { Stock, Street, Sport, SemiSlick, Slick, Rally, Offroad, Drag, Winter }
 
