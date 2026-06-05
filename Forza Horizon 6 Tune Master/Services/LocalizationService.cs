@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
 using System.Text.Json;
 using System.Windows;
 
@@ -140,8 +139,7 @@ public sealed class LocalizationService : INotifyPropertyChanged
         try
         {
             var path = Path.Combine(
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-                ?? AppDomain.CurrentDomain.BaseDirectory,
+                AppContext.BaseDirectory,
                 "Localization",
                 $"{code}.json");
 
