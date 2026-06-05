@@ -6,6 +6,8 @@ using Forza_Horizon_6_Tune_Master.Models;
 
 namespace Forza_Horizon_6_Tune_Master.Services;
 
+public record CarLoadResult(List<CarData> Cars, bool FromCache, string? WebErrorMessage);
+
 public class CarDatabaseService
 {
     private static readonly string CacheDir = Path.Combine(
@@ -19,23 +21,33 @@ public class CarDatabaseService
         Timeout = TimeSpan.FromSeconds(15)
     };
 
-    public async Task<List<CarData>> LoadCarDatabaseAsync()
+    public static bool IsCacheStale =>
+        !File.Exists(CachePath) || File.GetLastWriteTime(CachePath).Date < DateTime.Today;
+
+    public Task<CarLoadResult> LoadCarDatabaseAsync()
+    {
+        if (File.Exists(CachePath))
+            return Task.FromResult(new CarLoadResult(LoadCache(), true, null));
+
+        return RefreshAsync();
+    }
+
+    public async Task<CarLoadResult> RefreshAsync()
     {
         try
         {
             var cars = await FetchFromWebAsync();
-            if (cars.Count > 0)
+            if (cars.Count >= 5)
             {
                 SaveCache(cars);
-                return cars;
+                return new CarLoadResult(cars, false, null);
             }
+            throw new InvalidDataException("Получено слишком мало записей — возможно, структура страницы изменилась");
         }
-        catch
+        catch (Exception ex)
         {
-            // fall through to cache
+            return new CarLoadResult(LoadCache(), true, ex.Message);
         }
-
-        return LoadCache();
     }
 
     private static async Task<List<CarData>> FetchFromWebAsync()
@@ -43,16 +55,24 @@ public class CarDatabaseService
         var html = await Client.GetStringAsync("https://forza.net/fh6cars");
 
         var rows = Regex.Matches(html,
-            @"<tr>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*</tr>",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            @"<tr[^>]*>\s*<td[^>]*>(.*?)</td>\s*<td[^>]*>(.*?)</td>",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.CultureInvariant);
 
         var cars = new List<CarData>(rows.Count);
         var seen = new HashSet<string>();
 
         foreach (Match m in rows)
         {
-            var make = WebUtility(m.Groups[1].Value);
-            var fullName = WebUtility(m.Groups[2].Value);
+            var make = WebUtility(StripTags(m.Groups[1].Value));
+            var fullName = WebUtility(StripTags(m.Groups[2].Value));
+
+            if (string.IsNullOrWhiteSpace(make) || string.IsNullOrWhiteSpace(fullName))
+                continue;
+
+            // skip header rows
+            if (make.Equals("make", StringComparison.OrdinalIgnoreCase) ||
+                make.Equals("manufacturer", StringComparison.OrdinalIgnoreCase))
+                continue;
 
             int year = 0;
             string model = fullName;
@@ -80,6 +100,9 @@ public class CarDatabaseService
 
         return cars;
     }
+
+    private static string StripTags(string s)
+        => Regex.Replace(s, @"<[^>]+>", "").Trim();
 
     private static string StripMakePrefix(string model, string make)
     {

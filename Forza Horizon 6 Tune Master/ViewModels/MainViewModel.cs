@@ -717,6 +717,7 @@ public class MainViewModel : INotifyPropertyChanged
     public RelayCommand ImportTextCommand     { get; }
     public RelayCommand FetchAiCarSpecsCommand { get; }
     public RelayCommand ClearCarSelectionCommand { get; }
+    public RelayCommand RefreshCarDatabaseCommand { get; }
 
     public MainViewModel()
     {
@@ -729,6 +730,7 @@ public class MainViewModel : INotifyPropertyChanged
         ImportTextCommand      = new RelayCommand(ImportText);
         FetchAiCarSpecsCommand = new RelayCommand(FetchAiCarSpecs, () => !IsFetchingAiSpecs);
         ClearCarSelectionCommand = new RelayCommand(ClearCarSelection);
+        RefreshCarDatabaseCommand = new RelayCommand(RefreshCarDatabase, () => !IsLoadingCars);
 
         ToggleUnitsCommand      = new RelayCommand(DoToggleUnits);
         TogglePowerUnitCommand  = new RelayCommand(DoTogglePowerUnit);
@@ -957,14 +959,24 @@ public class MainViewModel : INotifyPropertyChanged
     private async Task LoadCarDatabaseAsync()
     {
         IsLoadingCars = true;
+        RefreshCarDatabaseCommand.Raise();
         BusyMessage = "Загрузка списка автомобилей...";
         try
         {
-            var cars = await _carDbService.LoadCarDatabaseAsync();
-            _carDatabase = cars;
+            var result = await _carDbService.LoadCarDatabaseAsync();
+            _carDatabase = result.Cars;
             ApplyCarFilter();
             SelectCarFromProfile();
-            StatusMessage = $"Загружено {cars.Count} автомобилей";
+
+            if (result.FromCache && result.WebErrorMessage != null)
+                StatusMessage = $"Загружено {result.Cars.Count} авт. из кеша — нет соединения: {result.WebErrorMessage}";
+            else if (result.FromCache)
+                StatusMessage = $"Загружено {result.Cars.Count} авт. из кеша";
+            else
+                StatusMessage = $"Загружено {result.Cars.Count} автомобилей";
+
+            if (result.FromCache && CarDatabaseService.IsCacheStale)
+                _ = AutoRefreshCarDatabaseAsync();
         }
         catch (Exception ex)
         {
@@ -973,6 +985,55 @@ public class MainViewModel : INotifyPropertyChanged
         finally
         {
             IsLoadingCars = false;
+            RefreshCarDatabaseCommand.Raise();
+        }
+    }
+
+    private async Task AutoRefreshCarDatabaseAsync()
+    {
+        await Task.Delay(500);
+        StatusMessage = "Обновление базы автомобилей...";
+        try
+        {
+            var result = await _carDbService.RefreshAsync();
+            if (!result.FromCache)
+            {
+                _carDatabase = result.Cars;
+                ApplyCarFilter();
+                StatusMessage = $"База обновлена: {result.Cars.Count} автомобилей";
+            }
+            else if (result.WebErrorMessage != null)
+            {
+                StatusMessage = $"Авто-обновление не удалось: {result.WebErrorMessage}";
+            }
+        }
+        catch { }
+    }
+
+    private async void RefreshCarDatabase()
+    {
+        IsLoadingCars = true;
+        RefreshCarDatabaseCommand.Raise();
+        BusyMessage = "Обновление базы автомобилей...";
+        try
+        {
+            var result = await _carDbService.RefreshAsync();
+            _carDatabase = result.Cars;
+            ApplyCarFilter();
+
+            if (result.FromCache && result.WebErrorMessage != null)
+                StatusMessage = $"Не удалось обновить: {result.WebErrorMessage}. Используется кеш ({result.Cars.Count} авт.)";
+            else
+                StatusMessage = $"База обновлена: {result.Cars.Count} автомобилей";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Ошибка обновления: {ex.Message}";
+        }
+        finally
+        {
+            IsLoadingCars = false;
+            RefreshCarDatabaseCommand.Raise();
         }
     }
 

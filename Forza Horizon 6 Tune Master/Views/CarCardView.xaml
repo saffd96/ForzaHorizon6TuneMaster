@@ -52,7 +52,23 @@
         <StackPanel Margin="24,16,24,24">
 
             <!-- ── Car Selection ─────────────────────────────────────────── -->
-            <TextBlock Text="ВЫБОР АВТОМОБИЛЯ" Style="{StaticResource SectionHeader}"/>
+            <Grid Margin="0,14,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="ВЫБОР АВТОМОБИЛЯ"
+                           Foreground="{StaticResource AccentBrush}"
+                           FontSize="{DynamicResource FontMicro}"
+                           FontWeight="SemiBold"
+                           FontFamily="Segoe UI"
+                           VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Content="↻"
+                        Command="{Binding RefreshCarDatabaseCommand}"
+                        Style="{StaticResource IconButton}"
+                        Width="22" Height="22"
+                        ToolTip="Обновить базу автомобилей с сайта"/>
+            </Grid>
             <Border Style="{StaticResource SectionCard}">
                 <StackPanel>
                     <Grid>
