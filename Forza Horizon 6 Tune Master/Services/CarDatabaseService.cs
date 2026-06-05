@@ -54,7 +54,7 @@ public class CarDatabaseService
                 SaveCache(cars);
                 return new CarLoadResult(cars, false, null);
             }
-            throw new InvalidDataException("Получено слишком мало записей — возможно, структура страницы изменилась");
+            throw new InvalidDataException(LocalizationService.Instance.T("CarDbTooFewRecords"));
         }
         catch (Exception ex)
         {

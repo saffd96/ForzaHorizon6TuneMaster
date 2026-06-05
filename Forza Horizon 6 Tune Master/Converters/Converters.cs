@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using Forza_Horizon_6_Tune_Master.Models;
+using Forza_Horizon_6_Tune_Master.Services;
 
 namespace Forza_Horizon_6_Tune_Master.Converters;
 
@@ -97,18 +98,19 @@ public class UnitValueConverter : IMultiValueConverter
         SpringUnit su = values[1] is SpringUnit sv ? sv : SpringUnit.KgfMm;
         PowerUnit  pu = values[1] is PowerUnit  pv ? pv : PowerUnit.HP;
 
+        var loc = LocalizationService.Instance;
         return (parameter as string) switch
         {
-            "pressure" => imp ? $"{val * 14.504:F1} psi"      : $"{val:F2} бар",
-            "spring"   => su == SpringUnit.KgfMm   ? $"{val / 9.807:F2} кгс/мм"
-                        : su == SpringUnit.LbsIn  ? $"{val * 5.710:F1} фнт/дюйм"
-                        :                           $"{val:F1} Н/мм",
-            "height"   => imp ? $"{val / 25.4:F2}\"" : $"{val:F0} мм",
-            "speed"    => imp ? $"{val * 0.6214:F0} миль/ч" : $"{val:F0} км/ч",
-            "mass"     => imp ? $"{val * 2.2046:F0} фнт"    : $"{val:F0} кг",
-            "power"    => pu == PowerUnit.KW ? $"{val * 0.7457:F0} кВт"
-                        : pu == PowerUnit.PS ? $"{val * 1.01387:F0} PS"
-                        :                      $"{val:F0} л.с.",
+            "pressure" => imp ? $"{val * 14.504:F1} {loc.T("UnitPsi")}"      : $"{val:F2} {loc.T("UnitBar")}",
+            "spring"   => su == SpringUnit.KgfMm   ? $"{val / 9.807:F2} {loc.T("UnitKgfMm")}"
+                        : su == SpringUnit.LbsIn  ? $"{val * 5.710:F1} {loc.T("UnitLbsInch")}"
+                        :                           $"{val:F1} {loc.T("UnitNmm")}",
+            "height"   => imp ? $"{val / 25.4:F2}{loc.T("UnitInch")}" : $"{val:F0} {loc.T("UnitMm")}",
+            "speed"    => imp ? $"~{val * 0.6214:F0} {loc.T("UnitMph")}" : $"~{val:F0} {loc.T("UnitKmh")}",
+            "mass"     => imp ? $"{val * 2.2046:F0} {loc.T("UnitLb")}"    : $"{val:F0} {loc.T("UnitKg")}",
+            "power"    => pu == PowerUnit.KW ? $"{val * 0.7457:F0} {loc.T("UnitKw")}"
+                        : pu == PowerUnit.PS ? $"{val * 1.01387:F0} {loc.T("UnitPs")}"
+                        :                      $"{val:F0} {loc.T("UnitHp")}",
             _          => $"{val:F1}"
         };
     }
@@ -163,7 +165,7 @@ public static class NumericBehavior
         for (int i = 0; i < text.Length; i++)
         {
             var c = text[i];
-            if (c is '.' or ',') { if (!sepSeen) { sepSeen = true; clean.Append('.'); } }
+            if (c is '.' or ',') { if (!sepSeen) { sepSeen = true; clean.Append(CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator); } }
             else if (c == '-' && i == 0) clean.Append(c);
             else if (char.IsAsciiDigit(c)) clean.Append(c);
         }
@@ -207,86 +209,15 @@ public static class NumericBehavior
 
 public class GenericEnumLabelConverter : IValueConverter
 {
-    private static readonly Dictionary<Type, Dictionary<Enum, string>> Labels = new()
-    {
-        [typeof(EngineType)] = new()
-        {
-            [Models.EngineType.I1] = "I1 (одноцилиндровый)",
-            [Models.EngineType.I2] = "I2",
-            [Models.EngineType.I3] = "I3",
-            [Models.EngineType.I4] = "I4",
-            [Models.EngineType.I5] = "I5",
-            [Models.EngineType.I6] = "I6 (рядная шестёрка)",
-            [Models.EngineType.I8] = "I8 (рядная восьмёрка)",
-            [Models.EngineType.Boxer] = "Boxer / Flat",
-            [Models.EngineType.V6] = "V6",
-            [Models.EngineType.V8] = "V8",
-            [Models.EngineType.V10] = "V10",
-            [Models.EngineType.V12] = "V12",
-            [Models.EngineType.W12] = "W12",
-            [Models.EngineType.Rotary] = "Роторный",
-        },
-        [typeof(EnginePosition)] = new()
-        {
-            [Models.EnginePosition.Front] = "Переднее",
-            [Models.EnginePosition.Mid] = "Среднее",
-            [Models.EnginePosition.RearMid] = "Заднее-среднее",
-            [Models.EnginePosition.Rear] = "Заднее",
-        },
-        [typeof(DriveType)] = new()
-        {
-            [Models.DriveType.FWD] = "Передний (FWD)",
-            [Models.DriveType.RWD] = "Задний (RWD)",
-            [Models.DriveType.AWD] = "Полный (AWD)",
-        },
-        [typeof(TireType)] = new()
-        {
-            [Models.TireType.Stock] = "Стоковые",
-            [Models.TireType.Street] = "Уличные",
-            [Models.TireType.Sport] = "Спорт",
-            [Models.TireType.SemiSlick] = "Полуслик",
-            [Models.TireType.Slick] = "Слик",
-            [Models.TireType.Rally] = "Ралли",
-            [Models.TireType.Offroad] = "Внедорожные",
-            [Models.TireType.Drag] = "Драг",
-            [Models.TireType.Winter] = "Зимние",
-        },
-        [typeof(SuspensionUpgrade)] = new()
-        {
-            [Models.SuspensionUpgrade.Stock] = "Стоковая",
-            [Models.SuspensionUpgrade.Street] = "Уличная",
-            [Models.SuspensionUpgrade.Sport] = "Спортивная",
-            [Models.SuspensionUpgrade.Race] = "Гоночная",
-            [Models.SuspensionUpgrade.Rally] = "Раллийная",
-            [Models.SuspensionUpgrade.Drift] = "Дрифт",
-            [Models.SuspensionUpgrade.Offroad] = "Внедорожная",
-        },
-        [typeof(DifferentialUpgrade)] = new()
-        {
-            [Models.DifferentialUpgrade.Stock] = "Стоковый",
-            [Models.DifferentialUpgrade.Street] = "Уличный",
-            [Models.DifferentialUpgrade.Sport] = "Спортивный",
-            [Models.DifferentialUpgrade.Rally] = "Раллийный",
-            [Models.DifferentialUpgrade.Race] = "Гоночный",
-            [Models.DifferentialUpgrade.DriftSpec] = "Дрифт",
-            [Models.DifferentialUpgrade.Offroad] = "Внедорожный",
-        },
-        [typeof(BrakesUpgrade)] = new()
-        {
-            [Models.BrakesUpgrade.Stock] = "Стоковые",
-            [Models.BrakesUpgrade.Street] = "Уличные",
-            [Models.BrakesUpgrade.Sport] = "Спортивные",
-            [Models.BrakesUpgrade.Race] = "Гоночные",
-        },
-    };
-
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value == null) return "";
         var type = value.GetType();
         if (!type.IsEnum) return value.ToString() ?? "";
-        var enumType = Enum.GetUnderlyingType(type) != typeof(int) ? type : type;
-        if (Labels.TryGetValue(enumType, out var map) && map.TryGetValue((Enum)value, out var label))
+
+        var key = $"Enum_{type.Name}_{value}";
+        var t = LocalizationService.Instance;
+        if (t.TryGet(key, out var label))
             return label;
         return value.ToString() ?? "";
     }
@@ -298,13 +229,9 @@ public class GenericEnumLabelConverter : IValueConverter
 public class PowertrainTypeLabelConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
-        value is PowertrainType pt ? pt switch
-        {
-            PowertrainType.ICE      => "ДВС (традиционный)",
-            PowertrainType.Hybrid   => "Гибрид (ДВС + электромотор)",
-            PowertrainType.Electric => "Электромобиль (BEV)",
-            _                       => value.ToString() ?? ""
-        } : "";
+        value is PowertrainType pt
+            ? LocalizationService.Instance.T($"Enum_PowertrainType_{pt}")
+            : "";
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         Binding.DoNothing;
@@ -313,15 +240,20 @@ public class PowertrainTypeLabelConverter : IValueConverter
 public class AspirationTypeLabelConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
-        value is AspirationType asp ? asp switch
-        {
-            AspirationType.Natural               => "Атмосферный",
-            AspirationType.SingleTurbo           => "Одиночная турбина",
-            AspirationType.TwinTurbo             => "Двойной турбонаддув",
-            AspirationType.PositiveDisplacement  => "Объёмный компрессор",
-            AspirationType.Centrifugal           => "Центробежный компрессор",
-            _                                    => value.ToString() ?? ""
-        } : "—";
+        value is AspirationType asp
+            ? LocalizationService.Instance.T($"Enum_AspirationType_{asp}")
+            : "—";
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        Binding.DoNothing;
+}
+
+public class DateDisplayConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is DateTime dt
+            ? dt.ToString(LocalizationService.Instance.T("ResultCreatedAtFormat"))
+            : "";
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         Binding.DoNothing;

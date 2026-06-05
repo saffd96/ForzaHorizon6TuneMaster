@@ -18,4 +18,10 @@
         <Resource Include="icon.ico"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="Localization\*.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
 </Project>

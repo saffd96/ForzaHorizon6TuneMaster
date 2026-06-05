@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
+using Forza_Horizon_6_Tune_Master.Services;
 
 namespace Forza_Horizon_6_Tune_Master;
 
@@ -14,9 +15,10 @@ public partial class App : Application
 
         DispatcherUnhandledException += (_, e) =>
         {
+            var svc = LocalizationService.Instance;
             MessageBox.Show(
-                $"Необработанная ошибка: {e.Exception.Message}",
-                "Критическая ошибка",
+                svc.T("AppErrorMessage", e.Exception.Message),
+                svc.T("CriticalErrorCaption"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             e.Handled = true;
@@ -24,11 +26,18 @@ public partial class App : Application
 
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
+            var svc = LocalizationService.Instance;
             MessageBox.Show(
-                $"Критическая ошибка: {((Exception)e.ExceptionObject).Message}",
-                "Ошибка",
+                svc.T("AppCriticalError", ((Exception)e.ExceptionObject).Message),
+                svc.T("ErrorCaption"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         };
+    }
+
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        base.OnStartup(e);
+        LocalizationService.Instance.InitializeFromSystem();
     }
 }

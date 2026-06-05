@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:views="clr-namespace:Forza_Horizon_6_Tune_Master.Views"
              xmlns:cv="clr-namespace:Forza_Horizon_6_Tune_Master.Converters"
+             xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services"
              Background="{StaticResource BgBrush}">
     <UserControl.Resources>
         <cv:NullToVisibilityConverter        x:Key="N2V"/>
@@ -10,6 +11,8 @@
         <cv:BoolToVisibilityConverter        x:Key="B2V"/>
         <cv:UnitValueConverter               x:Key="UV"/>
         <cv:AddOneConverter                  x:Key="AddOne"/>
+        <cv:DateDisplayConverter            x:Key="DateDisplay"/>
+        <cv:GenericEnumLabelConverter       x:Key="EnumLabel"/>
 
         <!-- FontSize scales live with panel width via code-behind DynamicResource -->
         <Style x:Key="ValueDisplay" TargetType="TextBlock" BasedOn="{StaticResource ValueDisplay}">
@@ -34,11 +37,11 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="⚡ ТЮНИНГ" Style="{StaticResource SubtitleText}"
+                <TextBlock Grid.Column="0" Text="{l:Loc ResultHeader}" Style="{StaticResource SubtitleText}"
                            FontSize="14" FontWeight="Bold"/>
                 <CheckBox Grid.Column="1"
                           IsChecked="{Binding IsAutoGenerate}"
-                          Content="✓ Авто"
+                          Content="{l:Loc AutoCheckbox}"
                           Foreground="{StaticResource TextDimBrush}"
                           VerticalAlignment="Center"
                           FontSize="11" Margin="0,0,8,0"/>
@@ -52,10 +55,10 @@
             <StackPanel Visibility="{Binding HasResult, Converter={StaticResource IBV}}"
                         HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="🏎" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,16"/>
-                <TextBlock Text="Тюнинг ещё не сгенерирован"
+                <TextBlock Text="{l:Loc EmptyStateText}"
                            Foreground="{StaticResource TextDimBrush}"
                            FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                <TextBlock Text="Заполните вкладки «Автомобиль» и «Режим», затем нажмите «Сгенерировать тюн»"
+                <TextBlock Text="{l:Loc EmptyStateHint}"
                            Foreground="{StaticResource TextMutedBrush}"
                            FontSize="12" HorizontalAlignment="Center"/>
             </StackPanel>
@@ -81,9 +84,9 @@
                                     <Run Text=" "/>
                                     <Run Text="{Binding TuneResult.Car.Model}"   Foreground="{StaticResource TextDimBrush}"/>
                                     <Run Text="  •  "                            Foreground="{StaticResource TextMutedBrush}"/>
-                                    <Run Text="{Binding TuneResult.Track.Discipline}" Foreground="{StaticResource AccentBrush}"/>
-                                    <Run Text="  •  "                            Foreground="{StaticResource TextMutedBrush}"/>
-                                    <Run Text="{Binding TuneResult.Car.DriveType}"    Foreground="{StaticResource CyanBrush}"/>
+                                     <Run Text="{Binding TuneResult.Track.Discipline, Converter={StaticResource EnumLabel}}" Foreground="{StaticResource AccentBrush}"/>
+                                     <Run Text="  •  "                            Foreground="{StaticResource TextMutedBrush}"/>
+                                     <Run Text="{Binding TuneResult.Car.DriveType, Converter={StaticResource EnumLabel}}"    Foreground="{StaticResource CyanBrush}"/>
                                     <Run Text="  "/>
                                     <Run Foreground="{StaticResource TextDimBrush}">
                                         <Run.Text>
@@ -95,10 +98,14 @@
                                     </Run>
                                 </TextBlock>
                             </StackPanel>
-                            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Top"
-                                       Text="{Binding TuneResult.CreatedAt, StringFormat='Сгенерировано: {0:dd.MM.yyyy  HH:mm}'}"
-                                       Foreground="{StaticResource TextMutedBrush}" FontSize="10"
-                                       TextWrapping="Wrap" TextAlignment="Right"/>
+                            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
+                                <TextBlock Text="{l:Loc ResultCreatedHeader}"
+                                           FontSize="10" Foreground="{StaticResource TextMutedBrush}"
+                                           TextWrapping="Wrap" TextAlignment="Right"/>
+                                <TextBlock Text="{Binding TuneResult.CreatedAt, Converter={StaticResource DateDisplay}}"
+                                           FontSize="10" Foreground="{StaticResource TextMutedBrush}"
+                                           TextWrapping="Wrap" TextAlignment="Right"/>
+                            </StackPanel>
                         </Grid>
                     </Border>
 
@@ -114,12 +121,12 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="🚦 LAUNCH CONTROL"
-                                           Foreground="{StaticResource AccentBrush}"
-                                           FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
+                                <TextBlock Text="{l:Loc LaunchControlHeader}"
+                                            Foreground="{StaticResource AccentBrush}"
+                                            FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
                                 <TextBlock TextWrapping="Wrap" FontSize="11"
                                            Foreground="{StaticResource TextDimBrush}"
-                                           Text="Оптимальные обороты для старта. Удержи педаль газа на этих оборотах перед спуском флага."/>
+                                            Text="{l:Loc LaunchControlHint}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" HorizontalAlignment="Center"
                                         VerticalAlignment="Center" Margin="16,0,4,0">
@@ -127,8 +134,8 @@
                                            FontSize="{DynamicResource FontHuge}" FontWeight="Bold"
                                            Foreground="{StaticResource AccentBrush}"
                                            HorizontalAlignment="Center"/>
-                                <TextBlock Text="ОБ/МИН" Style="{StaticResource ParamLabel}"
-                                           Foreground="{StaticResource AccentBrush}"/>
+                                <TextBlock Text="{l:Loc LaunchControlRpm}" Style="{StaticResource ParamLabel}"
+                                            Foreground="{StaticResource AccentBrush}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -155,7 +162,7 @@
                         <!-- Tire Pressure -->
                         <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource ParamCard}">
                             <StackPanel>
-                                <TextBlock Text="ДАВЛЕНИЕ ШИН" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{l:Loc ResultTirePressure}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -171,19 +178,19 @@
                                                 </MultiBinding>
                                             </TextBlock.Text>
                                         </TextBlock>
-                                        <TextBlock Text="ПЕРЕД" Style="{StaticResource ParamLabel}"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                                        <TextBlock Style="{StaticResource ValueDisplay}"
-                                                   ToolTip="{Binding TuneResult.Explanations[TirePressure]}">
-                                            <TextBlock.Text>
-                                                <MultiBinding Converter="{StaticResource UV}" ConverterParameter="pressure">
-                                                    <Binding Path="TuneResult.TirePressureRear"/>
-                                                    <Binding Path="UseImperial"/>
-                                                </MultiBinding>
-                                            </TextBlock.Text>
-                                        </TextBlock>
-                                        <TextBlock Text="ЗАД" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultTirePressureFront}" Style="{StaticResource ParamLabel}"/>
+                                     </StackPanel>
+                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                         <TextBlock Style="{StaticResource ValueDisplay}"
+                                                    ToolTip="{Binding TuneResult.Explanations[TirePressure]}">
+                                             <TextBlock.Text>
+                                                 <MultiBinding Converter="{StaticResource UV}" ConverterParameter="pressure">
+                                                     <Binding Path="TuneResult.TirePressureRear"/>
+                                                     <Binding Path="UseImperial"/>
+                                                 </MultiBinding>
+                                             </TextBlock.Text>
+                                         </TextBlock>
+                                         <TextBlock Text="{l:Loc ResultTirePressureRear}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -192,7 +199,7 @@
                         <!-- Geometry -->
                         <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource ParamCard}">
                             <StackPanel>
-                                <TextBlock Text="УГЛЫ КОЛЁС" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{l:Loc ResultGeometry}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
                                 <Grid Margin="0,0,0,6">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -202,17 +209,17 @@
                                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.CamberFront, StringFormat='{}{0:F1}°'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Camber]}"/>
-                                        <TextBlock Text="РАЗВАЛ П" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultCamberFront}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.CamberRear, StringFormat='{}{0:F1}°'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Camber]}"/>
-                                        <TextBlock Text="РАЗВАЛ З" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultCamberRear}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.Caster, StringFormat='{}{0:F1}°'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Caster]}"/>
-                                        <TextBlock Text="КАСТЕР" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultCaster}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                 </Grid>
                                 <Grid>
@@ -223,12 +230,12 @@
                                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.ToeFront, StringFormat='{}{0:F1}°'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Toe]}"/>
-                                        <TextBlock Text="СХОЖД. П" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultToeFront}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.ToeRear, StringFormat='{}{0:F1}°'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Toe]}"/>
-                                        <TextBlock Text="СХОЖД. З" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultToeRear}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -237,7 +244,7 @@
                         <!-- ARB -->
                         <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource ParamCard}">
                             <StackPanel>
-                                <TextBlock Text="СТАБИЛИЗАТОРЫ (ARB)" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{l:Loc ResultARB}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -246,12 +253,12 @@
                                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.ARBFront, StringFormat='{}{0:F0}'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[ARB]}"/>
-                                        <TextBlock Text="ПЕРЕД" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultARBFront}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.ARBRear, StringFormat='{}{0:F0}'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[ARB]}"/>
-                                        <TextBlock Text="ЗАД" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultARBRear}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -260,7 +267,7 @@
                         <!-- Springs + Ride Height -->
                         <Border Grid.Row="2" Grid.Column="2" Style="{StaticResource ParamCard}">
                             <StackPanel>
-                                <TextBlock Text="ПРУЖИНЫ" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{l:Loc ResultSprings}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
                                 <Grid Margin="0,0,0,4">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
@@ -271,10 +278,10 @@
                                         <RowDefinition Height="6"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="ПЕРЕД"
-                                               Style="{StaticResource ParamLabel}"
-                                               HorizontalAlignment="Center" TextAlignment="Center"
-                                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{l:Loc ResultSpringFront}"
+                                                Style="{StaticResource ParamLabel}"
+                                                HorizontalAlignment="Center" TextAlignment="Center"
+                                                VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Grid.Row="0" Grid.Column="1"
                                                Style="{StaticResource ValueDisplay}"
                                                HorizontalAlignment="Center" TextAlignment="Center"
@@ -287,10 +294,10 @@
                                             </MultiBinding>
                                         </TextBlock.Text>
                                     </TextBlock>
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="ЗАД"
-                                               Style="{StaticResource ParamLabel}"
-                                               HorizontalAlignment="Center" TextAlignment="Center"
-                                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="{l:Loc ResultSpringRear}"
+                                                Style="{StaticResource ParamLabel}"
+                                                HorizontalAlignment="Center" TextAlignment="Center"
+                                                VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Grid.Row="2" Grid.Column="1"
                                                Style="{StaticResource ValueDisplay}"
                                                HorizontalAlignment="Center" TextAlignment="Center"
@@ -304,7 +311,7 @@
                                         </TextBlock.Text>
                                     </TextBlock>
                                 </Grid>
-                                <TextBlock Text="КЛИРЕНС" Style="{StaticResource SectionHeader}" Margin="0,0,0,6"/>
+                                <TextBlock Text="{l:Loc ResultRideHeight}" Style="{StaticResource SectionHeader}" Margin="0,0,0,6"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -320,7 +327,7 @@
                                                 </MultiBinding>
                                             </TextBlock.Text>
                                         </TextBlock>
-                                        <TextBlock Text="ПЕРЕД" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultSpringFront}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Style="{StaticResource ValueDisplay}"
@@ -332,7 +339,7 @@
                                                 </MultiBinding>
                                             </TextBlock.Text>
                                         </TextBlock>
-                                        <TextBlock Text="ЗАД" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultSpringRear}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -341,7 +348,7 @@
                         <!-- Dampers: 2×2 grid (rebound top row, bump bottom row) -->
                         <Border Grid.Row="4" Grid.Column="0" Style="{StaticResource ParamCard}">
                             <StackPanel>
-                                <TextBlock Text="АМОРТИЗАТОРЫ (1–20)" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{l:Loc ResultDampers}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -356,23 +363,23 @@
                                     <StackPanel Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.ReboundFront, StringFormat='{}{0:F0}'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Dampers]}"/>
-                                        <TextBlock Text="ОТБОЙ П" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultReboundFront}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.ReboundRear, StringFormat='{}{0:F0}'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Dampers]}"/>
-                                        <TextBlock Text="ОТБОЙ З" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultReboundRear}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <!-- Bump row -->
                                     <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.BumpFront, StringFormat='{}{0:F0}'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Dampers]}"/>
-                                        <TextBlock Text="СЖАТИЕ П" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultBumpFront}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.BumpRear, StringFormat='{}{0:F0}'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Dampers]}"/>
-                                        <TextBlock Text="СЖАТИЕ З" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultBumpRear}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -381,7 +388,7 @@
                         <!-- Aero -->
                         <Border Grid.Row="4" Grid.Column="2" Style="{StaticResource ParamCard}">
                             <StackPanel>
-                                <TextBlock Text="АЭРОДИНАМИКА" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{l:Loc ResultAero}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -397,7 +404,7 @@
                                                 </MultiBinding>
                                             </TextBlock.Text>
                                         </TextBlock>
-                                        <TextBlock Text="ПЕРЕД" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultAeroFront}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Style="{StaticResource ValueDisplay}"
@@ -409,7 +416,7 @@
                                                 </MultiBinding>
                                             </TextBlock.Text>
                                         </TextBlock>
-                                        <TextBlock Text="ЗАД" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultAeroRear}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -418,10 +425,10 @@
                         <!-- Differential -->
                         <Border Grid.Row="6" Grid.Column="0" Style="{StaticResource ParamCard}">
                             <StackPanel>
-                                <TextBlock Text="ДИФФЕРЕНЦИАЛ (%)" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{l:Loc ResultDiff}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
                                 <!-- Main (rear/FWD) diff -->
-                                <TextBlock Text="Задний / основной" Foreground="{StaticResource TextDimBrush}"
-                                           FontSize="10" Margin="0,0,0,6"/>
+                                <TextBlock Text="{l:Loc ResultDiffRear}" Foreground="{StaticResource TextDimBrush}"
+                                            FontSize="10" Margin="0,0,0,6"/>
                                 <Grid Margin="0,0,0,6">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -430,28 +437,28 @@
                                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.DiffAccel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
-                                        <TextBlock Text="РАЗГОН" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultDiffAccel}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.DiffDecel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
-                                        <TextBlock Text="ТОРМОЖЕНИЕ" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultDiffDecel}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                 </Grid>
                                 <!-- AWD front diff + centre bias -->
                                 <StackPanel Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
                                     <Separator Margin="0,4"/>
-                                    <TextBlock Text="ЦЕНТР. ДИФФ (AWD)" Foreground="{StaticResource AccentBrush}"
-                                               FontSize="10" FontWeight="SemiBold" Margin="0,2,0,4"/>
+                                    <TextBlock Text="{l:Loc ResultDiffCenter}" Foreground="{StaticResource AccentBrush}"
+                                                FontSize="10" FontWeight="SemiBold" Margin="0,2,0,4"/>
                                     <StackPanel HorizontalAlignment="Center" Margin="0,0,0,4">
                                         <TextBlock Text="{Binding TuneResult.CenterDiffBias, StringFormat='{}{0:F0}%'}"
                                                    Style="{StaticResource ValueDisplay}" FontSize="18"
                                                    ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
-                                        <TextBlock Text="СМЕЩЕНИЕ ЦЕНТРА" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultDiffCenterBias}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <Separator Margin="0,4"/>
-                                    <TextBlock Text="Передний (AWD)" Foreground="{StaticResource TextDimBrush}"
-                                               FontSize="10" Margin="0,0,0,6"/>
+                                    <TextBlock Text="{l:Loc ResultDiffFront}" Foreground="{StaticResource TextDimBrush}"
+                                                FontSize="10" Margin="0,0,0,6"/>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -460,12 +467,12 @@
                                         <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                             <TextBlock Text="{Binding TuneResult.DiffFrontAccel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                        ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
-                                            <TextBlock Text="РАЗГОН" Style="{StaticResource ParamLabel}"/>
+                                            <TextBlock Text="{l:Loc ResultDiffAccel}" Style="{StaticResource ParamLabel}"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                             <TextBlock Text="{Binding TuneResult.DiffFrontDecel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                        ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
-                                            <TextBlock Text="ТОРМОЖЕНИЕ" Style="{StaticResource ParamLabel}"/>
+                                            <TextBlock Text="{l:Loc ResultDiffDecel}" Style="{StaticResource ParamLabel}"/>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
@@ -475,7 +482,7 @@
                         <!-- Brakes -->
                         <Border Grid.Row="6" Grid.Column="2" Style="{StaticResource ParamCard}">
                             <StackPanel>
-                                <TextBlock Text="ТОРМОЗА" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{l:Loc ResultBrakes}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -484,12 +491,12 @@
                                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.BrakeBalance, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Brakes]}"/>
-                                        <TextBlock Text="БАЛАНС П" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultBrakeBalance}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.BrakePressure, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Brakes]}"/>
-                                        <TextBlock Text="ДАВЛЕНИЕ" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultBrakePressure}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -498,26 +505,32 @@
                         <!-- Gearing — full width -->
                         <Border Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="3" Style="{StaticResource ParamCard}">
                             <StackPanel>
-                                <TextBlock Text="ТРАНСМИССИЯ" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{l:Loc ResultGearing}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
                                 <WrapPanel Margin="0,0,0,8">
                                     <StackPanel HorizontalAlignment="Center" Margin="0,0,24,4">
                                         <TextBlock Text="{Binding TuneResult.FinalDrive, StringFormat='{}{0:F2}'}"
                                                    Style="{StaticResource ValueDisplay}" FontSize="20"
                                                    ToolTip="{Binding TuneResult.Explanations[FinalDrive]}"/>
-                                        <TextBlock Text="ГЛАВНАЯ ПАРА" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultFinalDrive}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel HorizontalAlignment="Center" Margin="0,0,24,4">
-                                        <TextBlock Text="{Binding TuneResult.ActualMaxSpeedKmh, StringFormat='{}~{0:F0}'}"
-                                                   Style="{StaticResource ValueDisplay}" FontSize="20"
+                                        <TextBlock Style="{StaticResource ValueDisplay}" FontSize="20"
                                                    Foreground="{StaticResource CyanBrush}"
-                                                   ToolTip="~ Расчётная максимальная скорость при данных передаточных числах и оборотах"/>
-                                        <TextBlock Text="КМ/Ч (МАКС.)" Style="{StaticResource ParamLabel}"/>
+                                                   ToolTip="{l:Loc ResultMaxSpeedTooltip}">
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource UV}" ConverterParameter="speed">
+                                                    <Binding Path="TuneResult.ActualMaxSpeedKmh"/>
+                                                     <Binding Path="UseImperial"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                        <TextBlock Text="{l:Loc ResultMaxSpeed}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel HorizontalAlignment="Center" Margin="0,0,24,4">
                                         <TextBlock Text="{Binding TuneResult.RecommendedGearCount}"
                                                    Style="{StaticResource ValueDisplay}" FontSize="20"
                                                    ToolTip="{Binding TuneResult.Explanations[FinalDrive]}"/>
-                                        <TextBlock Text="РЕК. ПЕРЕДАЧ" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultRecGears}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <ItemsControl ItemsSource="{Binding TuneResult.GearRatios}"
                                                   AlternationCount="100">
@@ -532,8 +545,10 @@
                                                             ToolTip="{Binding DataContext.TuneResult.Explanations[FinalDrive], RelativeSource={RelativeSource AncestorType=UserControl}}">
                                                     <TextBlock Text="{Binding StringFormat='{}{0:F2}'}"
                                                                Style="{StaticResource ValueDisplay}" FontSize="16"/>
-                                                    <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AddOne}, StringFormat='{}Передача {0}'}"
-                                                               Style="{StaticResource ParamLabel}"/>
+                                                    <TextBlock Style="{StaticResource ParamLabel}">
+                                                        <Run Text="{l:Loc ResultGearFormat}"/>
+                                                        <Run Text="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AddOne}, Mode=OneWay}"/>
+                                                    </TextBlock>
                                                 </StackPanel>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>

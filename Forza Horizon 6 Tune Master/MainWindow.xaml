@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:Forza_Horizon_6_Tune_Master.Views"
         xmlns:cv="clr-namespace:Forza_Horizon_6_Tune_Master.Converters"
-        Title="Forza Horizon 6 Tune Master"
+        xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services"
+        Title="{l:Loc MainTitle}"
         Width="1400" Height="860"
         MinWidth="1100" MinHeight="620"
         WindowStartupLocation="CenterScreen"
@@ -61,8 +62,8 @@
                             </Canvas>
                         </Viewbox>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="FORZA HORIZON 6" Style="{StaticResource SubtitleText}"/>
-                            <TextBlock Text="TUNE MASTER" FontSize="{DynamicResource FontHeading}" FontWeight="Bold"
+                            <TextBlock Text="{l:Loc AppTitleLine1}" Style="{StaticResource SubtitleText}"/>
+                            <TextBlock Text="{l:Loc AppTitleLine2}" FontSize="{DynamicResource FontHeading}" FontWeight="Bold"
                                        Foreground="{StaticResource TextBrush}" Margin="0,-2,0,0"/>
                         </StackPanel>
                     </StackPanel>
@@ -70,7 +71,7 @@
                     <!-- Profile Management — centered, now has full * column (~810px at min width) -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal"
                                 HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="Профили:" Foreground="{StaticResource TextDimBrush}"
+                        <TextBlock Text="{l:Loc ProfilesLabel}" Foreground="{StaticResource TextDimBrush}"
                                    VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
                         <ComboBox ItemsSource="{Binding Profiles}"
                                   SelectedItem="{Binding SelectedProfile}"
@@ -78,18 +79,18 @@
                                   Background="{StaticResource ElevatedBrush}"
                                   BorderBrush="{StaticResource BorderBrush}"
                                   VerticalAlignment="Center"/>
-                        <Button Content="💾 Сохранить" Style="{StaticResource SecondaryButton}"
+                        <Button Content="{l:Loc ProfileSave}" Style="{StaticResource SecondaryButton}"
                                 Command="{Binding SaveCommand}" Margin="6,0,0,0" Padding="10,5"/>
-                        <Button Content="Загрузить"    Style="{StaticResource SecondaryButton}"
+                        <Button Content="{l:Loc ProfileLoad}"    Style="{StaticResource SecondaryButton}"
                                 Command="{Binding LoadCommand}" Margin="4,0,0,0" Padding="10,5"/>
-                        <Button Content="🗑 Удалить"   Style="{StaticResource DangerButton}"
+                        <Button Content="{l:Loc ProfileDelete}"   Style="{StaticResource DangerButton}"
                                 Command="{Binding DeleteProfileCommand}" Margin="4,0,0,0" Padding="10,5"/>
-                        <Button Content="+ Новый"      Style="{StaticResource SecondaryButton}"
+                        <Button Content="{l:Loc ProfileNew}"      Style="{StaticResource SecondaryButton}"
                                 Command="{Binding NewProfileCommand}" Margin="4,0,0,0" Padding="10,5"/>
                     </StackPanel>
 
                     <!-- Version tag -->
-                    <TextBlock Grid.Column="2" Text="MVP v1.0"
+                    <TextBlock Grid.Column="2" Text="{l:Loc VersionTag}"
                                Foreground="{StaticResource TextMutedBrush}"
                                FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center"/>
                 </Grid>
@@ -100,25 +101,35 @@
                         BorderThickness="0,1,0,0"
                         Padding="20,4">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Единицы:" Foreground="{StaticResource TextMutedBrush}"
+                        <TextBlock Text="{l:Loc UnitToggleLabel}" Foreground="{StaticResource TextMutedBrush}"
                                    FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                         <ComboBox ItemsSource="{Binding UnitSystemOptions}"
+                                  DisplayMemberPath="Label"
                                   SelectedItem="{Binding SelectedUnitSystemItem}"
                                   MinWidth="120" Margin="0,0,4,0"
-                                  ToolTip="Метрическая / Имперская система мер"/>
+                                  ToolTip="{l:Loc UnitTooltip}"/>
                         <ComboBox ItemsSource="{Binding PowerUnitOptions}"
+                                  DisplayMemberPath="Label"
                                   SelectedItem="{Binding SelectedPowerUnitItem}"
                                   MinWidth="70" Margin="0,0,4,0"
-                                  ToolTip="л.с. / PS / кВт"/>
+                                  ToolTip="{l:Loc PowerUnitTooltip}"/>
                         <ComboBox ItemsSource="{Binding SpringUnitOptions}"
+                                  DisplayMemberPath="Label"
                                   SelectedItem="{Binding SelectedSpringUnitItem}"
                                   MinWidth="100"
-                                  ToolTip="кгс/мм / Н/мм / фунт/дюйм"/>
+                                  ToolTip="{l:Loc SpringUnitTooltip}"/>
+                        <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="8,2"/>
+                        <TextBlock Text="{l:Loc LanguageLabel}" Foreground="{StaticResource TextMutedBrush}"
+                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox ItemsSource="{Binding LanguageOptions}"
+                                  DisplayMemberPath="Label"
+                                  SelectedItem="{Binding SelectedLanguageItem}"
+                                  MinWidth="100"/>
                         <Button Content="?"
                                 Style="{StaticResource SecondaryButton}"
                                 Padding="10,3" Margin="10,0,0,0"
                                 FontWeight="Bold" FontSize="{DynamicResource FontNormal}"
-                                ToolTip="Как пользоваться Tune Master"
+                                ToolTip="{l:Loc HelpButtonTooltip}"
                                 Click="HelpButton_Click"/>
                     </StackPanel>
                 </Border>
@@ -160,7 +171,7 @@
 
                         <!-- Generate button (hidden when auto-generate is on) -->
                         <Button Grid.Column="1"
-                                Content="⚡  Сгенерировать"
+                                Content="{l:Loc GenerateButton}"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding GenerateCommand}"
                                 FontSize="{DynamicResource FontNormal}" Padding="20,8"
@@ -213,7 +224,7 @@
                 Background="{StaticResource SurfaceBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,1,0,0">
-            <TextBlock Text="{Binding StatusMessage, TargetNullValue='Готов'}"
+            <TextBlock Text="{Binding StatusMessage}"
                        Foreground="{StaticResource TextDimBrush}"
                        FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center"
                        Margin="16,0"/>

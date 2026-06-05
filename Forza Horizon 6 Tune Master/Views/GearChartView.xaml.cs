@@ -85,6 +85,10 @@ public partial class GearChartView : UserControl
     {
         InitializeComponent();
         SizeChanged += (_, _) => DrawChart();
+        Forza_Horizon_6_Tune_Master.Services.LocalizationService.Instance.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == "Item") DrawChart();
+        };
     }
 
     private static void OnPropChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -188,9 +192,11 @@ public partial class GearChartView : UserControl
         }
 
         // ── axis labels ──
+        var locSvc = Forza_Horizon_6_Tune_Master.Services.LocalizationService.Instance;
+        string FormatLabel(string key, int rpm) => $"{locSvc.T(key)} {rpm / 1000}k";
         var axisLbl = new TextBlock
         {
-            Text = "Скорость, км/ч",
+            Text = locSvc.T("ChartAxisSpeed"),
             Foreground = dimLblBrush,
             FontSize = 9,
             FontFamily = lblFamily,
@@ -202,7 +208,7 @@ public partial class GearChartView : UserControl
 
         axisLbl = new TextBlock
         {
-            Text = "об/мин",
+            Text = locSvc.T("ChartAxisRPM"),
             Foreground = dimLblBrush,
             FontSize = 9,
             FontFamily = lblFamily
@@ -223,7 +229,7 @@ public partial class GearChartView : UserControl
         });
         var refLbl = new TextBlock
         {
-            Text = $"отсечка {MaxRPM / 1000}k",
+            Text = FormatLabel("ChartRevLimitLabel", MaxRPM),
             Foreground = new SolidColorBrush(Color.FromArgb(0xAA, 0xEF, 0x44, 0x44)),
             FontSize = 9,
             FontFamily = lblFamily
@@ -243,7 +249,7 @@ public partial class GearChartView : UserControl
         });
         refLbl = new TextBlock
         {
-            Text = $"Pmax {PowerPeakRPM / 1000}k",
+            Text = FormatLabel("ChartPowerPeakLabel", PowerPeakRPM),
             Foreground = new SolidColorBrush(Color.FromArgb(0x90, 0xFF, 0x5E, 0x0E)),
             FontSize = 9,
             FontFamily = lblFamily
@@ -263,7 +269,7 @@ public partial class GearChartView : UserControl
         });
         refLbl = new TextBlock
         {
-            Text = $"Mmax {TorquePeakRPM / 1000}k",
+            Text = FormatLabel("ChartTorquePeakLabel", TorquePeakRPM),
             Foreground = new SolidColorBrush(Color.FromArgb(0x90, 0x1A, 0xBC, 0xFE)),
             FontSize = 9,
             FontFamily = lblFamily

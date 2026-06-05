@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Forza_Horizon_6_Tune_Master.Services;
 
 namespace Forza_Horizon_6_Tune_Master.Models;
 
@@ -6,7 +7,7 @@ public class CarCard : NotifyBase
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
-    private string _name = "Новый профиль";
+    private string _name = LocalizationService.Instance.T("ProfileDefaultName");
     public string Name
     {
         get => _name;

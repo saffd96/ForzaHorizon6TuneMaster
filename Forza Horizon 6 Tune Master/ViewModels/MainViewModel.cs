@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -271,14 +272,14 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ── Constraint unit labels ────────────────────────────────────────────────
-    public string TirePressureUnitLabel => UseImperial ? "ДАВЛЕНИЕ ШИН (PSI)" : "ДАВЛЕНИЕ ШИН (БАР)";
+    public string TirePressureUnitLabel => UseImperial ? T("UnitPressure_Imperial") : T("UnitPressure_Metric");
     public string SpringUnitLabel => _springUnit switch
     {
-        SpringUnit.NMm   => "ПРУЖИНЫ (Н/ММ)",
-        SpringUnit.LbsIn => "ПРУЖИНЫ (ФУНТ/ДЮЙМ)",
-        _                => "ПРУЖИНЫ (КГС/ММ)"
+        SpringUnit.NMm   => T("UnitSpring_NMm"),
+        SpringUnit.LbsIn => T("UnitSpring_LbsIn"),
+        _                => T("UnitSpring_KgfMm")
     };
-    public string RideHeightUnitLabel => UseImperial ? "КЛИРЕНС (ДЮЙМ)" : "КЛИРЕНС (ММ)";
+    public string RideHeightUnitLabel => UseImperial ? T("UnitRideHeight_Imperial") : T("UnitRideHeight_Metric");
 
     private bool _syncingPowerUnit;
     private PowerUnit _powerUnit = PowerUnit.HP;
@@ -417,47 +418,50 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ── Unit-aware labels for CarCardView ────────────────────────────────────
+    private string T(string key) => LocalizationService.Instance.T(key);
+
     public string PowerFieldLabel => _powerUnit switch
     {
-        PowerUnit.KW => "Мощность (кВт)",
-        PowerUnit.PS => "Мощность (PS)",
-        _            => "Мощность (л.с.)"
+        PowerUnit.KW => T("FieldPower_KW"),
+        PowerUnit.PS => T("FieldPower_PS"),
+        _            => T("FieldPower_HP")
     };
     public string SpeedFieldLabel => _measurementSystem == UnitSystem.Imperial
-        ? "Макс. скорость (миль/ч, расч.)" : "Макс. скорость (км/ч, расч.)";
+        ? T("FieldSpeed_Imperial") : T("FieldSpeed_Metric");
     public string MassFieldLabel  => _measurementSystem == UnitSystem.Imperial
-        ? "Полная масса (фнт)" : "Полная масса (кг)";
+        ? T("FieldMass_Imperial") : T("FieldMass_Metric");
     public string TorqueFieldLabel => _measurementSystem == UnitSystem.Imperial
-        ? "Момент (фнт·фут)" : "Момент (Нм)";
+        ? T("FieldTorque_Imperial") : T("FieldTorque_Metric");
     public string WheelbaseFieldLabel => _measurementSystem == UnitSystem.Imperial
-        ? "Колёсная база (дюйм)" : "Колёсная база (мм)";
+        ? T("FieldWheelbase_Imperial") : T("FieldWheelbase_Metric");
     public string FrontTrackFieldLabel => _measurementSystem == UnitSystem.Imperial
-        ? "Колея перед (дюйм)" : "Колея перед (мм)";
+        ? T("FieldFrontTrack_Imperial") : T("FieldFrontTrack_Metric");
     public string RearTrackFieldLabel => _measurementSystem == UnitSystem.Imperial
-        ? "Колея зад (дюйм)" : "Колея зад (мм)";
+        ? T("FieldRearTrack_Imperial") : T("FieldRearTrack_Metric");
     public string MaxRPMFieldLabel => Car.PowertrainType == PowertrainType.Electric
-        ? "Макс. об/мин мотора" : "Макс. об/мин";
+        ? T("FieldMaxRPM_Electric") : T("FieldMaxRPM_ICE");
 
     // ── Unit option lists + selected items for dropdowns ─────────────────────
-    public List<UnitSystemOption> UnitSystemOptions { get; } = new()
+    private List<UnitSystemOption> _unitSystemOptions = new();
+    public List<UnitSystemOption> UnitSystemOptions
     {
-        new() { Value = UnitSystem.Metric, Label = "📐 Метрические" },
-        new() { Value = UnitSystem.Imperial, Label = "📐 Имперские" }
-    };
+        get => _unitSystemOptions;
+        set { _unitSystemOptions = value; OnPropertyChanged(); }
+    }
 
-    public List<PowerUnitOption> PowerUnitOptions { get; } = new()
+    private List<PowerUnitOption> _powerUnitOptions = new();
+    public List<PowerUnitOption> PowerUnitOptions
     {
-        new() { Value = PowerUnit.HP, Label = "⚡ л.с." },
-        new() { Value = PowerUnit.PS, Label = "⚡ PS" },
-        new() { Value = PowerUnit.KW, Label = "⚡ кВт" }
-    };
+        get => _powerUnitOptions;
+        set { _powerUnitOptions = value; OnPropertyChanged(); }
+    }
 
-    public List<SpringUnitOption> SpringUnitOptions { get; } = new()
+    private List<SpringUnitOption> _springUnitOptions = new();
+    public List<SpringUnitOption> SpringUnitOptions
     {
-        new() { Value = SpringUnit.KgfMm, Label = "Ⓜ кгс/мм" },
-        new() { Value = SpringUnit.NMm, Label = "Ⓜ Н/мм" },
-        new() { Value = SpringUnit.LbsIn, Label = "Ⓜ фунт/дюйм" }
-    };
+        get => _springUnitOptions;
+        set { _springUnitOptions = value; OnPropertyChanged(); }
+    }
 
     private UnitSystemOption? _selectedUnitSystemItem;
     public UnitSystemOption? SelectedUnitSystemItem
@@ -545,26 +549,158 @@ public class MainViewModel : INotifyPropertyChanged
 
     // ── Unit toggle labels ───────────────────────────────────────────────────
     public string UnitToggleLabel => _measurementSystem == UnitSystem.Imperial
-        ? "📐 Имперские" : "📐 Метрические";
+        ? T("UnitImperialLabel") : T("UnitMetricLabel");
 
     public string PowerUnitToggleLabel => _powerUnit switch
     {
-        PowerUnit.PS => "⚡ PS",
-        PowerUnit.KW => "⚡ кВт",
-        _            => "⚡ л.с."
+        PowerUnit.PS => $"⚡ {T("FieldPower_PS")}",
+        PowerUnit.KW => $"⚡ {T("FieldPower_KW")}",
+        _            => $"⚡ {T("FieldPower_HP")}"
     };
 
     public string SpringUnitToggleLabel => _springUnit switch
     {
-        SpringUnit.NMm   => "Ⓜ Н/мм",
-        SpringUnit.LbsIn => "Ⓜ фунт/дюйм",
-        _                => "Ⓜ кгс/мм"
+        SpringUnit.NMm   => T("SpringUnitNmmLabel"),
+        SpringUnit.LbsIn => T("SpringUnitLbsInLabel"),
+        _                => T("SpringUnitKgfMmLabel")
     };
 
     // ── Unit toggle commands ─────────────────────────────────────────────────
     public RelayCommand ToggleUnitsCommand      { get; }
     public RelayCommand TogglePowerUnitCommand  { get; }
     public RelayCommand ToggleSpringUnitCommand { get; }
+    public RelayCommand SetLanguageCommand { get; }
+
+    // ── Language ────────────────────────────────────────────────────────────
+    private bool _syncingLanguage;
+    private List<LanguageOption> _languageOptions = new()
+    {
+        new() { Code = "ru" },
+        new() { Code = "en" },
+    };
+    public List<LanguageOption> LanguageOptions
+    {
+        get => _languageOptions;
+        set { _languageOptions = value; OnPropertyChanged(); }
+    }
+
+    private LanguageOption? _selectedLanguageItem;
+    public LanguageOption? SelectedLanguageItem
+    {
+        get => _selectedLanguageItem;
+        set
+        {
+            if (value == null || _selectedLanguageItem?.Code == value.Code) return;
+            if (_syncingLanguage) return;
+            _syncingLanguage = true;
+            try
+            {
+                var prev = _selectedLanguageItem;
+                _selectedLanguageItem = value;
+                OnPropertyChanged();
+                if (!LocalizationService.Instance.SetLanguage(value.Code))
+                {
+                    _selectedLanguageItem = prev;
+                    OnPropertyChanged();
+                    StatusMessage = string.Format(LocalizationService.Instance.T("LanguageLoadError"), value.Code);
+                }
+            }
+            finally { _syncingLanguage = false; }
+        }
+    }
+
+    private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == "Item")
+        {
+            Application.Current?.Dispatcher.Invoke(InvalidateAllLanguageDependent);
+        }
+    }
+
+    private void RefreshLanguageLabels()
+    {
+        var t = LocalizationService.Instance;
+        foreach (var o in _languageOptions)
+            o.Label = o.Code == "ru" ? $"🇷🇺 {t.T("LanguageRu")}" : $"🇬🇧 {t.T("LanguageEn")}";
+    }
+
+    private void InvalidateAllLanguageDependent()
+    {
+        OnPropertyChanged(nameof(PowerFieldLabel));
+        OnPropertyChanged(nameof(SpeedFieldLabel));
+        OnPropertyChanged(nameof(MassFieldLabel));
+        OnPropertyChanged(nameof(TorqueFieldLabel));
+        OnPropertyChanged(nameof(WheelbaseFieldLabel));
+        OnPropertyChanged(nameof(FrontTrackFieldLabel));
+        OnPropertyChanged(nameof(RearTrackFieldLabel));
+        OnPropertyChanged(nameof(MaxRPMFieldLabel));
+        OnPropertyChanged(nameof(TirePressureUnitLabel));
+        OnPropertyChanged(nameof(SpringUnitLabel));
+        OnPropertyChanged(nameof(RideHeightUnitLabel));
+        OnPropertyChanged(nameof(UnitToggleLabel));
+        OnPropertyChanged(nameof(PowerUnitToggleLabel));
+        OnPropertyChanged(nameof(SpringUnitToggleLabel));
+        // Force cached status/busy messages to re-localize by resetting to empty
+        _statusMessage = "";
+        _busyMessage = "";
+        OnPropertyChanged(nameof(StatusMessage));
+        OnPropertyChanged(nameof(BusyMessage));
+        OnPropertyChanged(nameof(SelectedCarDisplayText));
+        RefreshUnitOptionLabels();
+        RefreshLanguageLabels();
+        // force tune-result multi-bindings to re-evaluate (speed via UnitValueConverter uses loc.T())
+        OnPropertyChanged(nameof(TuneResult));
+        // force all ComboBox selection boxes to re-render with new labels
+        var us = _selectedUnitSystemItem;
+        var pp = _selectedPowerUnitItem;
+        var ss = _selectedSpringUnitItem;
+        var ll = _selectedLanguageItem;
+        _selectedUnitSystemItem = null!;
+        _selectedPowerUnitItem = null!;
+        _selectedSpringUnitItem = null!;
+        _selectedLanguageItem = null!;
+        OnPropertyChanged(nameof(SelectedUnitSystemItem));
+        OnPropertyChanged(nameof(SelectedPowerUnitItem));
+        OnPropertyChanged(nameof(SelectedSpringUnitItem));
+        OnPropertyChanged(nameof(SelectedLanguageItem));
+        _selectedUnitSystemItem = us;
+        _selectedPowerUnitItem = pp;
+        _selectedSpringUnitItem = ss;
+        _selectedLanguageItem = ll;
+        OnPropertyChanged(nameof(SelectedUnitSystemItem));
+        OnPropertyChanged(nameof(SelectedPowerUnitItem));
+        OnPropertyChanged(nameof(SelectedSpringUnitItem));
+        OnPropertyChanged(nameof(SelectedLanguageItem));
+        // force enum ComboBox DataTemplates to re-render with new language
+        var tmp = _car;
+        _car = null!;
+        OnPropertyChanged(nameof(Car));
+        _car = tmp;
+        OnPropertyChanged(nameof(Car));
+    }
+
+    private void RefreshUnitOptionLabels()
+    {
+        var t = LocalizationService.Instance;
+
+        if (_unitSystemOptions != null)
+        {
+            foreach (var o in _unitSystemOptions)
+                o.Label = o.Value == UnitSystem.Metric ? t.T("UnitMetricLabel") : t.T("UnitImperialLabel");
+        }
+        if (_powerUnitOptions != null)
+        {
+            foreach (var o in _powerUnitOptions)
+                o.Label = $"⚡ {t.T(o.Value == PowerUnit.HP ? "FieldPower_HP" : o.Value == PowerUnit.PS ? "FieldPower_PS" : "FieldPower_KW")}";
+        }
+        if (_springUnitOptions != null)
+        {
+            foreach (var o in _springUnitOptions)
+                o.Label = o.Value == SpringUnit.KgfMm ? t.T("SpringUnitKgfMmLabel")
+                        : o.Value == SpringUnit.NMm ? t.T("SpringUnitNmmLabel")
+                        : t.T("SpringUnitLbsInLabel");
+        }
+    }
 
     // ── Profile management ──────────────────────────────────────────────────
     private ObservableCollection<string> _profiles = new();
@@ -719,7 +855,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             await Task.Delay(400, _debounceCts.Token);
             if (!_isAutoGenerate || myId != _pendingGenerationId) return;
-            BusyMessage = "Расчёт тюнинга...";
+            BusyMessage = T("BusyGenerating");
             IsGenerating = true;
             GenerateTune();
         }
@@ -728,8 +864,12 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ── Status ───────────────────────────────────────────────────────────────
-    private string _statusMessage = "Готов • Заполните данные автомобиля и нажмите «Сгенерировать тюн»";
-    public string StatusMessage { get => _statusMessage; set { _statusMessage = value; OnPropertyChanged(); } }
+    private string _statusMessage = "";
+    public string StatusMessage
+    {
+        get => string.IsNullOrEmpty(_statusMessage) ? T("StatusBarDefault") : _statusMessage;
+        set { _statusMessage = value; OnPropertyChanged(); }
+    }
 
     // ── Commands ─────────────────────────────────────────────────────────────
     public RelayCommand GenerateCommand       { get; }
@@ -757,10 +897,41 @@ public class MainViewModel : INotifyPropertyChanged
         ToggleUnitsCommand      = new RelayCommand(DoToggleUnits);
         TogglePowerUnitCommand  = new RelayCommand(DoTogglePowerUnit);
         ToggleSpringUnitCommand = new RelayCommand(DoToggleSpringUnit);
+        SetLanguageCommand      = new RelayCommand(() => { }); // no-op: switching handled by SelectedLanguageItem setter
 
         _car.PropertyChanged += OnModelChanged;
         _track.PropertyChanged += OnModelChanged;
         _constraints.PropertyChanged += OnModelChanged;
+
+        var svc = LocalizationService.Instance;
+        svc.PropertyChanged += OnLanguageChanged;
+        RefreshLanguageLabels();
+        var currentLang = LanguageOptions.FirstOrDefault(l => l.Code == svc.CurrentLanguage)
+            ?? LanguageOptions[0];
+        _selectedLanguageItem = currentLang;
+        OnPropertyChanged(nameof(SelectedLanguageItem));
+
+        var tInit = LocalizationService.Instance;
+        _unitSystemOptions = new()
+        {
+            new() { Value = UnitSystem.Metric, Label = tInit.T("UnitMetricLabel") },
+            new() { Value = UnitSystem.Imperial, Label = tInit.T("UnitImperialLabel") },
+        };
+        _powerUnitOptions = new()
+        {
+            new() { Value = PowerUnit.HP, Label = $"⚡ {tInit.T("FieldPower_HP")}" },
+            new() { Value = PowerUnit.PS, Label = $"⚡ {tInit.T("FieldPower_PS")}" },
+            new() { Value = PowerUnit.KW, Label = $"⚡ {tInit.T("FieldPower_KW")}" },
+        };
+        _springUnitOptions = new()
+        {
+            new() { Value = SpringUnit.KgfMm, Label = tInit.T("SpringUnitKgfMmLabel") },
+            new() { Value = SpringUnit.NMm, Label = tInit.T("SpringUnitNmmLabel") },
+            new() { Value = SpringUnit.LbsIn, Label = tInit.T("SpringUnitLbsInLabel") },
+        };
+        OnPropertyChanged(nameof(UnitSystemOptions));
+        OnPropertyChanged(nameof(PowerUnitOptions));
+        OnPropertyChanged(nameof(SpringUnitOptions));
 
         _selectedUnitSystemItem  = UnitSystemOptions[0];
         _selectedPowerUnitItem   = PowerUnitOptions[0];
@@ -770,6 +941,8 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedSpringUnitItem));
         RefreshProfiles();
         _ = LoadCarDatabaseAsync();
+
+        InvalidateAllLanguageDependent();
     }
 
     private void NotifyConstraintDisplayProperties()
@@ -832,18 +1005,19 @@ public class MainViewModel : INotifyPropertyChanged
     // ── Tune generation ──────────────────────────────────────────────────────
     private void GenerateTune()
     {
-        BusyMessage = "Расчёт тюнинга...";
+        BusyMessage = T("BusyGenerating");
         IsGenerating = true;
         try
         {
             Car.Name = SelectedProfile ?? AutoProfileName();
             TuneResult = _generator.Generate(Car, Track, Constraints);
-            StatusMessage = $"Тюнинг сгенерирован  •  {Car.Make} {Car.Model}  •  {Track.Discipline}  •  {DateTime.Now:HH:mm}";
+            var discLocalized = T($"Discipline{Track.Discipline}");
+            StatusMessage = string.Format(T("StatusTuneGenerated"), Car.Make, Car.Model, $"{discLocalized}  •  {DateTime.Now:HH:mm}");
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Ошибка генерации: {ex.Message}";
-            MessageBox.Show(ex.ToString(), "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            StatusMessage = string.Format(T("StatusGenerationError"), ex.Message);
+            MessageBox.Show(ex.ToString(), T("ErrorCaption"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -857,7 +1031,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (string.IsNullOrEmpty(car.WikiPageTitle)) return;
 
         IsLoadingCarSpecs = true;
-        BusyMessage = "Загрузка характеристик...";
+        BusyMessage = T("BusyLoadingSpecs");
         try
         {
             var specs = await _wikiSpecService.FetchSpecsAsync(car.WikiPageTitle, ct);
@@ -875,13 +1049,13 @@ public class MainViewModel : INotifyPropertyChanged
             if (specs.GearCount is > 0)                Car.GearCount = specs.GearCount.Value;
 
             NotifyCarDisplayProperties();
-            StatusMessage = $"Характеристики {car.Make} {car.Model} загружены из Wiki";
+            StatusMessage = string.Format(T("StatusSpecsLoaded"), car.Make, car.Model);
         }
         catch (OperationCanceledException) { /* другой автомобиль выбран */ }
         catch (Exception ex)
         {
             if (!ct.IsCancellationRequested)
-                StatusMessage = $"Wiki: не удалось загрузить характеристики — {ex.Message}";
+                StatusMessage = string.Format(T("StatusSpecsError"), ex.Message);
         }
         finally
         {
@@ -896,16 +1070,16 @@ public class MainViewModel : INotifyPropertyChanged
         if (IsFetchingAiSpecs) return;
         if (string.IsNullOrWhiteSpace(Car.Make) && string.IsNullOrWhiteSpace(Car.Model))
         {
-            StatusMessage = "Сначала выберите автомобиль";
+            StatusMessage = T("StatusFirstSelectCar");
             return;
         }
 
-        BusyMessage = "Запрос характеристик через AI...";
+        BusyMessage = T("BusyFetchingAi");
         IsFetchingAiSpecs = true;
         try
         {
             var carName = $"{Car.Year} {Car.Make} {Car.Model}".Trim();
-            StatusMessage = $"Запрос характеристик {carName} через AI...";
+            StatusMessage = string.Format(T("StatusAiRequested"), carName);
 
             var specs = await _aiCarSpecService.FetchCarSpecsAsync(carName);
 
@@ -931,13 +1105,13 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
 
             var estimated = specs.EstimatedFields.Count > 0
-                ? $" (оценено: {string.Join(", ", specs.EstimatedFields)})"
+                ? string.Format(T("AiSpecEstimate"), string.Join(", ", specs.EstimatedFields))
                 : "";
-            StatusMessage = $"Характеристики {carName} получены{estimated}";
+            StatusMessage = string.Format(T("StatusAiReceived"), carName, estimated);
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Ошибка AI: {ex.Message}";
+            StatusMessage = string.Format(T("StatusAiError"), ex.Message);
         }
         finally
         {
@@ -946,7 +1120,13 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ── Profile management ──────────────────────────────────────────────────
-    private string AutoProfileName() => $"{Car.Make} {Car.Model} {Car.Year} {Car.DriveType} {Car.EngineType} {Track.Discipline}";
+    private string AutoProfileName()
+    {
+        var dt = T($"Enum_DriveType_{Car.DriveType}");
+        var et = T($"Enum_EngineType_{Car.EngineType}");
+        var disc = T($"Discipline{Track.Discipline}");
+        return $"{Car.Make} {Car.Model} {Car.Year} {dt} {et} {disc}";
+    }
 
     private void SaveProfile()
     {
@@ -959,9 +1139,9 @@ public class MainViewModel : INotifyPropertyChanged
                 Car = Car, Track = Track, Constraints = Constraints, LastResult = TuneResult
             });
             RefreshProfiles();
-            StatusMessage = $"Профиль «{name}» сохранён";
+            StatusMessage = string.Format(T("StatusProfileSaved"), name);
         }
-        catch (Exception ex) { StatusMessage = $"Ошибка сохранения: {ex.Message}"; }
+        catch (Exception ex) { StatusMessage = string.Format(T("StatusSaveError"), ex.Message); }
     }
 
     private void LoadProfile()
@@ -970,25 +1150,27 @@ public class MainViewModel : INotifyPropertyChanged
         try
         {
             var p = _storage.Load(SelectedProfile);
-            if (p == null) { StatusMessage = "Профиль не найден"; return; }
+            if (p == null) { StatusMessage = T("StatusProfileNotFound"); return; }
             Car         = p.Car;
             Track       = p.Track;
             Constraints = p.Constraints;
-            TuneResult  = p.LastResult;
+            var loadedResult = p.LastResult;
+            if (loadedResult != null) loadedResult.Car = Car;
+            TuneResult  = loadedResult;
             SelectCarFromProfile();
-            StatusMessage = $"Загружен профиль «{SelectedProfile}»";
+            StatusMessage = string.Format(T("StatusProfileLoaded"), SelectedProfile);
         }
-        catch (Exception ex) { StatusMessage = $"Ошибка загрузки: {ex.Message}"; }
+        catch (Exception ex) { StatusMessage = string.Format(T("StatusLoadError"), ex.Message); }
     }
 
     private void DeleteProfile()
     {
         if (SelectedProfile == null) return;
-        if (MessageBox.Show($"Удалить профиль «{SelectedProfile}»?", "Подтверждение",
+        if (MessageBox.Show(string.Format(T("DeleteProfileConfirm"), SelectedProfile), T("DeleteProfileTitle"),
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         _storage.Delete(SelectedProfile);
         RefreshProfiles();
-        StatusMessage = "Профиль удалён";
+        StatusMessage = T("StatusProfileDeleted");
     }
 
     private void NewProfile()
@@ -996,7 +1178,7 @@ public class MainViewModel : INotifyPropertyChanged
         Car = new CarCard(); Track = new TrackInfo(); Constraints = new TuningConstraints();
         TuneResult  = null;
         SelectedCar = null;
-        StatusMessage = "Новый профиль создан";
+        StatusMessage = T("StatusProfileCreated");
     }
 
     private void RefreshProfiles()
@@ -1020,7 +1202,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         IsLoadingCars = true;
         RefreshCarDatabaseCommand.Raise();
-        BusyMessage = "Загрузка списка автомобилей...";
+        BusyMessage = T("BusyLoadingCars");
         try
         {
             var result = await _carDbService.LoadCarDatabaseAsync();
@@ -1029,18 +1211,18 @@ public class MainViewModel : INotifyPropertyChanged
             SelectCarFromProfile();
 
             if (result.FromCache && result.WebErrorMessage != null)
-                StatusMessage = $"Загружено {result.Cars.Count} авт. из кеша — нет соединения: {result.WebErrorMessage}";
+                StatusMessage = string.Format(T("StatusCarsNoConnection"), result.Cars.Count, result.WebErrorMessage);
             else if (result.FromCache)
-                StatusMessage = $"Загружено {result.Cars.Count} авт. из кеша";
+                StatusMessage = string.Format(T("StatusCarsLoadedFromCache"), result.Cars.Count);
             else
-                StatusMessage = $"Загружено {result.Cars.Count} автомобилей";
+                StatusMessage = string.Format(T("StatusCarsLoaded"), result.Cars.Count);
 
             if (result.FromCache && CarDatabaseService.IsCacheStale)
                 _ = AutoRefreshCarDatabaseAsync();
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Не удалось загрузить список авто: {ex.Message}";
+            StatusMessage = string.Format(T("CarsLoadingError"), ex.Message);
         }
         finally
         {
@@ -1052,7 +1234,7 @@ public class MainViewModel : INotifyPropertyChanged
     private async Task AutoRefreshCarDatabaseAsync()
     {
         await Task.Delay(500);
-        StatusMessage = "Обновление базы автомобилей...";
+        StatusMessage = T("BusyRefreshingCars");
         try
         {
             var result = await _carDbService.RefreshAsync();
@@ -1060,11 +1242,11 @@ public class MainViewModel : INotifyPropertyChanged
             {
                 _carDatabase = result.Cars;
                 ApplyCarFilter();
-                StatusMessage = $"База обновлена: {result.Cars.Count} автомобилей";
+                StatusMessage = string.Format(T("StatusDbRefreshed"), result.Cars.Count);
             }
             else if (result.WebErrorMessage != null)
             {
-                StatusMessage = $"Авто-обновление не удалось: {result.WebErrorMessage}";
+                StatusMessage = string.Format(T("StatusAutoUpdateFailed"), result.WebErrorMessage);
             }
         }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AutoRefresh] {ex.Message}"); }
@@ -1074,7 +1256,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         IsLoadingCars = true;
         RefreshCarDatabaseCommand.Raise();
-        BusyMessage = "Обновление базы автомобилей...";
+        BusyMessage = T("BusyRefreshingCars");
         try
         {
             var result = await _carDbService.RefreshAsync();
@@ -1082,13 +1264,13 @@ public class MainViewModel : INotifyPropertyChanged
             ApplyCarFilter();
 
             if (result.FromCache && result.WebErrorMessage != null)
-                StatusMessage = $"Не удалось обновить: {result.WebErrorMessage}. Используется кеш ({result.Cars.Count} авт.)";
+                StatusMessage = string.Format(T("StatusDbRefreshError"), result.WebErrorMessage, result.Cars.Count);
             else
-                StatusMessage = $"База обновлена: {result.Cars.Count} автомобилей";
+                StatusMessage = string.Format(T("StatusDbRefreshed"), result.Cars.Count);
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Ошибка обновления: {ex.Message}";
+            StatusMessage = string.Format(T("StatusDbUpdateError"), ex.Message);
         }
         finally
         {
@@ -1103,7 +1285,7 @@ public class MainViewModel : INotifyPropertyChanged
         WikiCarSpecService.DeleteCache();
         _carDatabase.Clear();
         _filteredCarDatabase.Clear();
-        StatusMessage = "Кеш очищен — нажмите ↻ для повторной загрузки";
+        StatusMessage = T("StatusCacheCleared");
     }
 
     private void SelectCarFromProfile()
@@ -1122,23 +1304,44 @@ public class MainViewModel : INotifyPropertyChanged
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
 }
 
-public class UnitSystemOption
+public class UnitSystemOption : NotifyBase
 {
     public UnitSystem Value { get; set; }
-    public string Label { get; set; } = "";
+
+    private string _label = "";
+    public string Label
+    {
+        get => _label;
+        set { _label = value; OnPropertyChanged(); }
+    }
+
     public override string ToString() => Label;
 }
 
-public class PowerUnitOption
+public class PowerUnitOption : NotifyBase
 {
     public PowerUnit Value { get; set; }
-    public string Label { get; set; } = "";
+
+    private string _label = "";
+    public string Label
+    {
+        get => _label;
+        set { _label = value; OnPropertyChanged(); }
+    }
+
     public override string ToString() => Label;
 }
 
-public class SpringUnitOption
+public class SpringUnitOption : NotifyBase
 {
     public SpringUnit Value { get; set; }
-    public string Label { get; set; } = "";
+
+    private string _label = "";
+    public string Label
+    {
+        get => _label;
+        set { _label = value; OnPropertyChanged(); }
+    }
+
     public override string ToString() => Label;
 }

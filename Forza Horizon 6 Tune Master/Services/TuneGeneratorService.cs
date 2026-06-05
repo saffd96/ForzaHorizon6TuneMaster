@@ -4,6 +4,8 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 public class TuneGeneratorService
 {
+    private static string L(string key) => LocalizationService.Instance.T(key);
+
     private static double Clamp(double v, double min, double max) => Math.Max(min, Math.Min(max, v));
 
     private const double GearRatioMin = 0.48;
@@ -285,35 +287,37 @@ public class TuneGeneratorService
         switch (track.Discipline)
         {
             case Discipline.Drag:
-                // Target: ~32 PSI front / ~18-20 PSI rear. Aggressive rear drop for launch grip (ForzaFire).
                 discF = 0.00; discR = -1.00;
-                reason = "Drag: нейтральное спереди (~32 PSI), мин. сзади (~18-20 PSI) для макс. зацепа на старте.";
+                reason = L("Expl_TirePressureReason_Drag");
                 break;
             case Discipline.Drift:
-                // Community: 20–26 PSI for drift. Lower both ends, rear more so.
                 discF = -0.52; discR = -0.72;
-                reason = "Drift: ~25 PSI перед / ~22 PSI зад для предсказуемого скольжения.";
+                reason = L("Expl_TirePressureReason_Drift");
                 break;
-            case Discipline.Rally or Discipline.CrossCountry:
+            case Discipline.Rally:
                 discF = -0.20; discR = -0.20;
-                reason = "Грунт/внедорожье: пониженное давление для максимального пятна контакта.";
+                reason = L("Expl_TirePressureReason_Rally");
+                break;
+            case Discipline.CrossCountry:
+                discF = -0.20; discR = -0.20;
+                reason = L("Expl_TirePressureReason_CrossCountry");
                 break;
             case Discipline.Touge:
                 discF = -0.05; discR = -0.03;
-                reason = "Тоге: чуть мягче базы для сцепления в горных поворотах.";
+                reason = L("Expl_TirePressureReason_Touge");
                 break;
             case Discipline.Street:
                 discR = 0.05;
-                reason = "Стрит: стандартное давление, небольшой запас сзади для манёвров.";
+                reason = L("Expl_TirePressureReason_Street");
                 break;
             default:
-                reason = "Давление по умолчанию для асфальтовых дисциплин.";
+                reason = L("Expl_TirePressureReason_Road");
                 break;
         }
 
         r.TirePressureFront = Math.Round(Clamp(tpF + discF, c.TirePressureFrontMin, c.TirePressureFrontMax), 2);
         r.TirePressureRear  = Math.Round(Clamp(tpR + discR, c.TirePressureRearMin,  c.TirePressureRearMax),  2);
-        ex["TirePressure"] = $"Давление: П {r.TirePressureFront:F2} / З {r.TirePressureRear:F2} бар. {reason}";
+        ex["TirePressure"] = string.Format(L("Expl_TirePressure_Fmt"), r.TirePressureFront, r.TirePressureRear, reason);
     }
 
     // ── Camber ───────────────────────────────────────────────────────────────
@@ -327,7 +331,7 @@ public class TuneGeneratorService
     {
         if (!car.SuspensionAllowsAdvancedTuning)
         {
-            ex["Camber"] = "Развал: настройка недоступна (стоковая/уличная/спортивная подвеска).";
+            ex["Camber"] = L("Expl_Camber_Disabled");
             return;
         }
 
@@ -337,27 +341,27 @@ public class TuneGeneratorService
         {
             case Discipline.Drag:
                 camF = -0.2; camR = 0.0;
-                reason = "Drag: минимальный развал — максимальное пятно контакта на старте.";
+                reason = L("Expl_CamberReason_Drag");
                 break;
             case Discipline.Drift:
                 camF = -5.0; camR = -1.0;
-                reason = "Drift: агрессивный передний развал для контроля при больших углах поворота.";
+                reason = L("Expl_CamberReason_Drift");
                 break;
             case Discipline.Rally:
                 camF = -1.0; camR = -0.6;
-                reason = "Ралли: умеренный развал — плоское пятно контакта на грунте.";
+                reason = L("Expl_CamberReason_Rally");
                 break;
             case Discipline.CrossCountry:
                 camF = -0.5; camR = -0.5;
-                reason = "CC: минимальный развал — максимальный контакт на неровностях.";
+                reason = L("Expl_CamberReason_CrossCountry");
                 break;
             case Discipline.Touge:
                 camF = -2.0; camR = -1.0;
-                reason = "Тоге: усиленный развал для точного входа в крутые повороты.";
+                reason = L("Expl_CamberReason_Touge");
                 break;
             default:
                 camF = -1.5; camR = -0.8;
-                reason = "Дорога: классический отрицательный развал для компенсации крена в повороте.";
+                reason = L("Expl_CamberReason_Road");
                 break;
         }
 
@@ -389,7 +393,7 @@ public class TuneGeneratorService
 
         r.CamberFront = Math.Round(Clamp(camF, c.CamberFrontMin, c.CamberFrontMax), 1);
         r.CamberRear  = Math.Round(Clamp(camR, c.CamberRearMin,  c.CamberRearMax),  1);
-        ex["Camber"] = $"Развал: П {r.CamberFront}° / З {r.CamberRear}°. {reason}";
+        ex["Camber"] = string.Format(L("Expl_Camber_Fmt"), r.CamberFront, r.CamberRear, reason);
     }
 
     // ── Toe ──────────────────────────────────────────────────────────────────
@@ -430,9 +434,9 @@ public class TuneGeneratorService
         r.ToeFront = Math.Round(Clamp(toeF, c.ToeFrontMin, c.ToeFrontMax), 1);
         r.ToeRear  = Math.Round(Clamp(toeR, c.ToeRearMin,  c.ToeRearMax),  1);
 
-        string fd = r.ToeFront < 0 ? "расхождение" : r.ToeFront > 0 ? "схождение" : "0";
-        string rd = r.ToeRear  > 0 ? "схождение"   : r.ToeRear  < 0 ? "расхождение" : "0";
-        ex["Toe"] = $"Схождение: П {r.ToeFront}° ({fd}), З {r.ToeRear}° ({rd}).";
+        string fd = r.ToeFront < 0 ? L("Expl_Toe_Out") : r.ToeFront > 0 ? L("Expl_Toe_In") : L("Expl_Toe_Zero");
+        string rd = r.ToeRear  > 0 ? L("Expl_Toe_In")   : r.ToeRear  < 0 ? L("Expl_Toe_Out") : L("Expl_Toe_Zero");
+        ex["Toe"] = string.Format(L("Expl_Toe_Fmt"), r.ToeFront, fd, r.ToeRear, rd);
     }
 
     // ── Caster ───────────────────────────────────────────────────────────────
@@ -462,9 +466,11 @@ public class TuneGeneratorService
 
         double caster = Clamp(baseByWeight + speedAdj + discAdj, c.CasterMin, c.CasterMax);
         r.Caster = Math.Round(caster, 1);
-        ex["Caster"] = $"{r.Caster}° — " +
-            $"{(r.Caster >= 6.5 ? "увеличенный — самовозврат и стабильность на скорости" : "стандартный")}. " +
-            $"Масса {car.TotalMass} кг, макс. {effectiveMaxKmh} км/ч.";
+        ex["Caster"] = string.Format(L("Expl_Caster_Fmt"),
+            r.Caster,
+            r.Caster >= 6.5 ? L("Expl_Caster_High") : L("Expl_Caster_Std"),
+            car.TotalMass,
+            effectiveMaxKmh);
     }
 
     // ── ARB ──────────────────────────────────────────────────────────────────
@@ -483,23 +489,23 @@ public class TuneGeneratorService
         double wdDev = (wd - 50) / 50.0; // -1..+1
 
         // Base discipline values at refMass (from community reference tunes)
-        (double baseF, double baseR, string note) = (track.Discipline, car.DriveType) switch
+        (double baseF, double baseR, string arbNoteKey) = (track.Discipline, car.DriveType) switch
         {
-            (Discipline.Drag, _)             => (2.0, 18.0, "Drag: мин. перед для переноса веса; жёсткий зад для платформы."),
-            (Discipline.Drift, Models.DriveType.RWD) => (5.0, 22.0, "Drift: мягкий перед для завязки; умеренный зад для удержания угла (ForzaFire R20-25)."),
-            (Discipline.Drift, _)            => (20.0, 40.0, "Drift AWD: умеренные стабилизаторы."),
-            (Discipline.Rally, _)            => (14.0, 12.0, "Ралли: мягкие — независимая работа колёс на грунте."),
-            (Discipline.CrossCountry, _)     => (10.0, 10.0, "CC: мин. жёсткость для артикуляции подвески."),
-            (Discipline.Touge, Models.DriveType.RWD) => (30.0, 26.0, "Тоге RWD: жёстче для точного управления."),
-            (Discipline.Touge, Models.DriveType.FWD) => (10.0, 32.0, "Тоге FWD: мягкий перед для зацепа, жёсткий зад для ротации."),
-            (Discipline.Touge, _)            => (34.0, 28.0, "Тоге AWD: сбалансированные."),
-            (Discipline.Street, Models.DriveType.RWD) => (28.0, 24.0, "Стрит RWD: средняя жёсткость."),
-            (Discipline.Street, Models.DriveType.FWD) => (10.0, 30.0, "Стрит FWD: мягкий перед для зацепа, жёстче зад против сноса."),
-            (_, Models.DriveType.RWD)        => (28.0, 20.0, "Road RWD: перед жёстче зада для точного входа (ForzaFire F18-28/R12-20)."),
-            // FWD: soft front for grip, stiff rear for rotation — prevents understeer (forzafire.com)
-            (_, Models.DriveType.FWD)        => (12.0, 28.0, "Road FWD: мягкий перед (зацеп), жёстче зад (ротация)."),
-            (_, _)                           => (26.0, 33.0, "Road AWD: F26/R33 — сбалансированные стабилизаторы (ForzaFire F22-30/R28-38).")
+            (Discipline.Drag, _)             => (2.0, 18.0, "Expl_ARBNote_Drag"),
+            (Discipline.Drift, Models.DriveType.RWD) => (5.0, 22.0, "Expl_ARBNote_DriftRWD"),
+            (Discipline.Drift, _)            => (20.0, 40.0, "Expl_ARBNote_DriftAWD"),
+            (Discipline.Rally, _)            => (14.0, 12.0, "Expl_ARBNote_Rally"),
+            (Discipline.CrossCountry, _)     => (10.0, 10.0, "Expl_ARBNote_CrossCountry"),
+            (Discipline.Touge, Models.DriveType.RWD) => (30.0, 26.0, "Expl_ARBNote_TougeRWD"),
+            (Discipline.Touge, Models.DriveType.FWD) => (10.0, 32.0, "Expl_ARBNote_TougeFWD"),
+            (Discipline.Touge, _)            => (34.0, 28.0, "Expl_ARBNote_TougeAWD"),
+            (Discipline.Street, Models.DriveType.RWD) => (28.0, 24.0, "Expl_ARBNote_StreetRWD"),
+            (Discipline.Street, Models.DriveType.FWD) => (10.0, 30.0, "Expl_ARBNote_StreetFWD"),
+            (_, Models.DriveType.RWD)        => (28.0, 20.0, "Expl_ARBNote_RoadRWD"),
+            (_, Models.DriveType.FWD)        => (12.0, 28.0, "Expl_ARBNote_RoadFWD"),
+            (_, _)                           => (26.0, 33.0, "Expl_ARBNote_RoadAWD")
         };
+        string note = L(arbNoteKey);
 
         // Track width: wider track → less roll tendency → softer ARB needed (average front+rear)
         double avgTrack   = (car.FrontTrack > 0 && car.RearTrack > 0)
@@ -527,8 +533,7 @@ public class TuneGeneratorService
         r.ARBFront = Math.Round(Clamp(arbF, c.ARBFrontMin, c.ARBFrontMax));
         r.ARBRear  = Math.Round(Clamp(arbR, c.ARBRearMin,  c.ARBRearMax));
         double cgH_arb = EstimateCGHeight(car);
-        ex["ARB"] = $"Стаб.: П {r.ARBFront} / З {r.ARBRear} (диап. 1–65). " +
-            $"{car.DriveType}, колея {car.FrontTrack} мм, ЦМ ~{cgH_arb:F0} мм. {note}";
+        ex["ARB"] = string.Format(L("Expl_ARB_Fmt"), r.ARBFront, r.ARBRear, note);
     }
 
     // ── Springs ──────────────────────────────────────────────────────────────
@@ -537,7 +542,7 @@ public class TuneGeneratorService
     {
         if (!car.SuspensionAllowsAdvancedTuning)
         {
-            ex["Springs"] = "Пружины: настройка недоступна (стоковая/уличная/спортивная подвеска).";
+            ex["Springs"] = L("Expl_Springs_Disabled");
             return;
         }
 
@@ -608,8 +613,7 @@ public class TuneGeneratorService
 
         r.SpringFront = Clamp(Math.Round(sprF), c.SpringFrontMin, c.SpringFrontMax);
         r.SpringRear  = Clamp(Math.Round(sprR), c.SpringRearMin,  c.SpringRearMax);
-        ex["Springs"] = $"Пружины: П {r.SpringFront} / З {r.SpringRear} Н/мм " +
-            $"({hzF:F2}/{hzR:F2} Гц, подвеска {car.SuspensionUpgrade}).";
+        ex["Springs"] = string.Format(L("Expl_Springs_Fmt"), r.SpringFront, r.SpringRear, hzF, hzR, L($"Enum_SuspensionUpgrade_{car.SuspensionUpgrade}"));
     }
 
     // ── Ride Height ──────────────────────────────────────────────────────────
@@ -619,7 +623,7 @@ public class TuneGeneratorService
     {
         if (!car.SuspensionAllowsAdvancedTuning)
         {
-            ex["RideHeight"] = "Клиренс: настройка недоступна (стоковая/уличная/спортивная подвеска).";
+            ex["RideHeight"] = L("Expl_RideHeight_Disabled");
             return;
         }
 
@@ -640,26 +644,24 @@ public class TuneGeneratorService
         switch (track.Discipline)
         {
             case Discipline.Drag:
-                // Community consensus (ForzaFire, fh6tune): minimum clearance for aero, low CG and stability.
-                // Slight rear rake (+3 mm) biases weight transfer rearward at launch without raising CG.
                 rhF = 65; rhR = 68;
-                note = "Drag: минимальный клиренс — аэродинамика, низкий ЦТ; небольшой задний реек для переноса веса на старте.";
+                note = L("Expl_RideHeightNote_Drag");
                 break;
             case Discipline.Drift:
                 rhF = 80; rhR = 88;
-                note = "Drift: низкий клиренс для устойчивости в скольжении.";
+                note = L("Expl_RideHeightNote_Drift");
                 break;
             case Discipline.Rally:
                 rhF = 130; rhR = 140;
-                note = "Ралли: высокий клиренс для проезда неровностей.";
+                note = L("Expl_RideHeightNote_Rally");
                 break;
             case Discipline.CrossCountry:
                 rhF = 170; rhR = 180;
-                note = "CC: макс. клиренс для прыжков и ухабов.";
+                note = L("Expl_RideHeightNote_CrossCountry");
                 break;
             default:
                 rhF = 68; rhR = 74;
-                note = "Дорога: минимальный клиренс для низкого ЦТ.";
+                note = L("Expl_RideHeightNote_Road");
                 break;
         }
 
@@ -685,7 +687,7 @@ public class TuneGeneratorService
 
         r.RideHeightFront = Math.Round(Clamp(rhF, c.RideHeightFrontMin, c.RideHeightFrontMax));
         r.RideHeightRear  = Math.Round(Clamp(rhR, c.RideHeightRearMin,  c.RideHeightRearMax));
-        ex["RideHeight"] = $"Клиренс: П {r.RideHeightFront} / З {r.RideHeightRear} мм. {note}";
+        ex["RideHeight"] = string.Format(L("Expl_RideHeight_Fmt"), r.RideHeightFront, r.RideHeightRear, note);
     }
 
     // ── Dampers ──────────────────────────────────────────────────────────────
@@ -767,9 +769,10 @@ public class TuneGeneratorService
         r.ReboundRear  = Math.Round(Clamp(rebR, c.ReboundRearMin,  c.ReboundRearMax));
         r.BumpFront    = Math.Round(Clamp(bmpF, c.BumpFrontMin,    c.BumpFrontMax));
         r.BumpRear     = Math.Round(Clamp(bmpR, c.BumpRearMin,     c.BumpRearMax));
-        ex["Dampers"] = $"Отбой: П {r.ReboundFront} / З {r.ReboundRear}, " +
-            $"сжатие: П {r.BumpFront} / З {r.BumpRear}. " +
-            $"(сжатие/отбой: П {(rebF > 0 ? bmpF / rebF * 100 : 0):F0}%, З {(rebR > 0 ? bmpR / rebR * 100 : 0):F0}%)";
+        ex["Dampers"] = string.Format(L("Expl_Dampers_Fmt"),
+            r.ReboundFront, r.ReboundRear, r.BumpFront, r.BumpRear,
+            rebF > 0 ? bmpF / rebF * 100 : 0,
+            rebR > 0 ? bmpR / rebR * 100 : 0);
     }
 
     // ── Aero ─────────────────────────────────────────────────────────────────
@@ -781,7 +784,7 @@ public class TuneGeneratorService
         if (!car.HasFrontAero && !car.HasRearAero)
         {
             r.AeroFront = 0; r.AeroRear = 0;
-            ex["Aero"] = "Аэродинамические элементы не установлены.";
+            ex["Aero"] = L("Expl_Aero_None");
             return;
         }
 
@@ -820,8 +823,7 @@ public class TuneGeneratorService
 
         r.AeroFront = Math.Round(Clamp(aeroF, c.AeroFrontMin, c.AeroFrontMax));
         r.AeroRear  = Math.Round(Clamp(aeroR, c.AeroRearMin,  c.AeroRearMax));
-        ex["Aero"] = $"Прижим: П {r.AeroFront} / З {r.AeroRear} кг. " +
-            $"{car.MaxSpeedKmh} км/ч, {car.PowerHP} л.с.";
+        ex["Aero"] = string.Format(L("Expl_Aero_Fmt"), r.AeroFront, r.AeroRear, car.MaxSpeedKmh, car.PowerHP);
     }
 
     // ── Differential ────────────────────────────────────────────────────────
@@ -835,7 +837,7 @@ public class TuneGeneratorService
     {
         if (car.DifferentialUpgrade == DifferentialUpgrade.Stock)
         {
-            ex["Differential"] = "Дифференциал: стоковый — настройка недоступна.";
+            ex["Differential"] = L("Expl_Differential_Stock");
             return;
         }
 
@@ -925,22 +927,22 @@ public class TuneGeneratorService
 
         string aspLabel = car.AspirationType switch
         {
-            AspirationType.SingleTurbo          => car.AntiLag ? "антилаг" : "одиноч. турбо",
-            AspirationType.TwinTurbo            => "двойн. турбо",
-            AspirationType.PositiveDisplacement => "объём. компр.",
-            AspirationType.Centrifugal          => "центроб. компр.",
-            AspirationType.Electric             => "электро",
-            _                                   => "атмосф."
+            AspirationType.SingleTurbo          => L("Enum_AspirationType_SingleTurbo"),
+            AspirationType.TwinTurbo            => L("Enum_AspirationType_TwinTurbo"),
+            AspirationType.PositiveDisplacement => L("Enum_AspirationType_PositiveDisplacement"),
+            AspirationType.Centrifugal          => L("Enum_AspirationType_Centrifugal"),
+            AspirationType.Electric             => L("Enum_AspirationType_Electric"),
+            _                                   => L("Enum_AspirationType_Natural")
         };
         string engPosLabel = car.EnginePosition switch
         {
-            EnginePosition.Front   => "переднее",
-            EnginePosition.Mid     => "среднее",
-            EnginePosition.RearMid => "заднее-среднее",
-            EnginePosition.Rear    => "заднее",
+            EnginePosition.Front   => L("Enum_EnginePosition_Front"),
+            EnginePosition.Mid     => L("Enum_EnginePosition_Mid"),
+            EnginePosition.RearMid => L("Enum_EnginePosition_RearMid"),
+            EnginePosition.Rear    => L("Enum_EnginePosition_Rear"),
             _                      => car.EnginePosition.ToString()
         };
-        string diag = $"{car.PowerHP} л.с. ({aspLabel}), двиг. {engPosLabel}, база {car.Wheelbase} мм.";
+        string diag = string.Format(L("Expl_Differential_DiagFmt"), car.PowerHP, aspLabel, engPosLabel, car.Wheelbase);
 
         if (car.DriveType == Models.DriveType.AWD)
         {
@@ -1010,11 +1012,10 @@ public class TuneGeneratorService
             r.CenterDiffBias = Math.Round(bias * 100);
         }
 
-        ex["Differential"] = $"Осн. дифф.: разгон {r.DiffAccel}%, торм. {r.DiffDecel}%." +
-            (r.DiffFrontAccel.HasValue
-                ? $" Передний: разгон {r.DiffFrontAccel}%, торм. {r.DiffFrontDecel}%, центр {r.CenterDiffBias}% (зад)."
-                : "") +
-            $" {diag}";
+        if (r.DiffFrontAccel.HasValue)
+            ex["Differential"] = string.Format(L("Expl_Differential_AWDFmt"), r.DiffAccel, r.DiffDecel, r.DiffFrontAccel, r.DiffFrontDecel, r.CenterDiffBias, diag);
+        else
+            ex["Differential"] = string.Format(L("Expl_Differential_Fmt"), r.DiffAccel, r.DiffDecel, diag);
     }
 
     // ── Brakes ──────────────────────────────────────────────────────────────
@@ -1070,11 +1071,11 @@ public class TuneGeneratorService
 
         string reason = track.Discipline switch
         {
-            Discipline.Drift   => "Сдвиг назад — занос при торможении.",
-            Discipline.Drag    => "Сдвиг назад — минимум вмешательства на старте.",
-            _                  => "Соответствует развесовке."
+            Discipline.Drift   => L("Expl_BrakesReason_Drift"),
+            Discipline.Drag    => L("Expl_BrakesReason_Drag"),
+            _                  => L("Expl_BrakesReason_Default")
         };
-        ex["Brakes"] = $"Тормоза: баланс {r.BrakeBalance}% (П), давление {r.BrakePressure}%. {reason}";
+        ex["Brakes"] = string.Format(L("Expl_Brakes_Fmt"), r.BrakeBalance, r.BrakePressure, reason);
     }
 
     // ── Gearing ──────────────────────────────────────────────────────────────
@@ -1130,14 +1131,15 @@ public class TuneGeneratorService
     private static (double first, double stepMin, double stepMax, string note) GetDisciplineGearParams(
         Discipline discipline, double pwRatio, FuelType fuelType)
     {
-        (double first, double stepMin, double stepMax, string note) = discipline switch
+        (double first, double stepMin, double stepMax, string noteKey) = discipline switch
         {
-            Discipline.Drift        => (3.0, 0.70, 0.88, "Удлинённые передачи для контроля в заносе."),
-            Discipline.Rally        => (4.0, 0.68, 0.78, "Короткий ряд для быстрого разгона на грунте."),
-            Discipline.CrossCountry => (4.5, 0.66, 0.75, "Макс. ускорение на бездорожье."),
-            Discipline.Touge        => (3.8, 0.70, 0.84, "Короткие передачи для горных серпантинов."),
-            _                       => (3.5, 0.68, 0.82, "Ряд под дорожные дисциплины.")
+            Discipline.Drift        => (3.0, 0.70, 0.88, "Expl_GearNote_Drift"),
+            Discipline.Rally        => (4.0, 0.68, 0.78, "Expl_GearNote_Rally"),
+            Discipline.CrossCountry => (4.5, 0.66, 0.75, "Expl_GearNote_CrossCountry"),
+            Discipline.Touge        => (3.8, 0.70, 0.84, "Expl_GearNote_Touge"),
+            _                       => (3.5, 0.68, 0.82, "Expl_GearNote_Road")
         };
+        string note = L(noteKey);
 
         // Continuous P/W adjustment — higher P/W → longer first gear to keep engine in power band longer
         first += Math.Clamp((pwRatio - 150.0) / 100.0 * 0.30, -0.45, 0.50);
@@ -1167,7 +1169,7 @@ public class TuneGeneratorService
 
         if (!car.AllowGearCalculation)
         {
-            ex["FinalDrive"] = $"Расчёт передач отключён. Рек. передач: {r.RecommendedGearCount}.";
+            ex["FinalDrive"] = string.Format(L("Expl_FinalDrive_NoCalc"), r.RecommendedGearCount);
             return;
         }
 
@@ -1213,14 +1215,13 @@ public class TuneGeneratorService
             r.FinalDrive = fd1;
             if (car.OnlyFinalDriveCalculation)
             {
-                ex["FinalDrive"] = $"ГП {fd1} (только главная пара). Рек. передач: {r.RecommendedGearCount}.";
+                ex["FinalDrive"] = string.Format(L("Expl_FinalDrive_OnlyFD"), fd1, r.RecommendedGearCount);
             }
             else
             {
                 r.GearRatios = new List<double> { g1 };
-                ex["FinalDrive"] = $"ГП {fd1}. Передача 1: {g1} (одна ступень). " +
-                    $"Суммарное передаточное: {g1} × {fd1} = {g1 * fd1:F2}. " +
-                    $"Цель {effectiveMaxKmh} км/ч, факт {r.ActualMaxSpeedKmh} км/ч @ {car.MaxRPM} об/мин. Рек. передач: {r.RecommendedGearCount}.";
+                ex["FinalDrive"] = string.Format(L("Expl_FinalDrive_SingleGear"),
+                    fd1, g1, g1, fd1, g1 * fd1, effectiveMaxKmh, r.ActualMaxSpeedKmh, car.MaxRPM, r.RecommendedGearCount);
             }
             return;
         }
@@ -1320,15 +1321,15 @@ public class TuneGeneratorService
 
         if (car.OnlyFinalDriveCalculation)
         {
-            ex["FinalDrive"] = $"ГП {r.FinalDrive} (только главная пара). Рек. передач: {r.RecommendedGearCount}. {note}";
+            ex["FinalDrive"] = string.Format(L("Expl_FinalDrive_OnlyFD"), r.FinalDrive, r.RecommendedGearCount) + " " + note;
             return;
         }
 
         r.GearRatios = ratios;
         string gearStr = string.Join("  ", ratios.Select((g, i) => $"{i + 1}: {g:F2}"));
         double actualKmhMulti = r.ActualMaxSpeedKmh;
-        ex["FinalDrive"] = $"ГП {r.FinalDrive}. Рек. передач: {r.RecommendedGearCount}. Ряд: {gearStr}. " +
-            $"Цель {effectiveMaxKmh} км/ч, факт {actualKmhMulti} км/ч @ {car.MaxRPM} об/мин, P/W {pwRatio:F1} л.с./т. {note}";
+        ex["FinalDrive"] = string.Format(L("Expl_FinalDrive_MultiGear"),
+            r.FinalDrive, r.RecommendedGearCount, gearStr, effectiveMaxKmh, actualKmhMulti, car.MaxRPM, note);
 
         // Validate RPM drop after each shift — warn if engine falls below torque peak on any shift
         if (car.MaxRPM > 0 && car.TorquePeakRPM > 0 && car.PowerPeakRPM > 0 && ratios.Count > 1)
@@ -1340,10 +1341,10 @@ public class TuneGeneratorService
             {
                 double rpmAfterShift = shiftRpm * ratios[i + 1] / ratios[i];
                 if (rpmAfterShift < minSafeRpm)
-                    dropWarnings.Add($"{i + 1}→{i + 2}: {rpmAfterShift:F0} об/мин");
+                    dropWarnings.Add($"{i + 1}→{i + 2}: {rpmAfterShift:F0} {L("Expl_RpmAbbr")}");
             }
             if (dropWarnings.Count > 0)
-                ex["FinalDrive"] += $" ⚠ Обороты ниже зоны тяги (< {minSafeRpm:F0}) при переключении: {string.Join(", ", dropWarnings)}.";
+                ex["FinalDrive"] += string.Format(L("Expl_FinalDrive_Warning"), minSafeRpm, string.Join(", ", dropWarnings));
         }
     }
 
@@ -1370,15 +1371,8 @@ public class TuneGeneratorService
             DragDistance.Mile    => 0.85,
             _                    => 1.30
         };
-        string distLabel = dist switch
-        {
-            DragDistance.Eighth  => "1/8 мили",
-            DragDistance.Quarter => "1/4 мили",
-            DragDistance.Half    => "1/2 мили",
-            DragDistance.Mile    => "миля",
-            _                    => "1/4 мили"
-        };
-        string note = $"{distLabel}: первая {first:F2} (TQ/масса {tqPerKg:F2} Нм/кг, {car.DriveType}).";
+        string distLabel = L($"Expl_DragDistStr_{(int)dist}");
+        string note = string.Format(L("Expl_DragNote"), distLabel, first, tqPerKg, L($"Enum_DriveType_{car.DriveType}"));
         return (first, top, note);
     }
 }

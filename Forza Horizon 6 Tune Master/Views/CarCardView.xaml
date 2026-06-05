@@ -1,9 +1,10 @@
 <UserControl x:Class="Forza_Horizon_6_Tune_Master.Views.CarCardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:cv="clr-namespace:Forza_Horizon_6_Tune_Master.Converters"
-             xmlns:m="clr-namespace:Forza_Horizon_6_Tune_Master.Models"
-             Background="{StaticResource BgBrush}">
+                 xmlns:cv="clr-namespace:Forza_Horizon_6_Tune_Master.Converters"
+                 xmlns:m="clr-namespace:Forza_Horizon_6_Tune_Master.Models"
+                 xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services"
+                 Background="{StaticResource BgBrush}">
     <UserControl.Resources>
         <cv:AspirationTypeLabelConverter      x:Key="AspLabel"/>
         <cv:PowertrainTypeLabelConverter      x:Key="PtLabel"/>
@@ -54,7 +55,7 @@
 
             <!-- ── Car Selection ─────────────────────────────────────────── -->
             <StackPanel Orientation="Horizontal" Margin="0,6,0,6">
-                <TextBlock Text="ВЫБОР АВТОМОБИЛЯ"
+                <TextBlock Text="{l:Loc CarSelection}"
                            Foreground="{StaticResource AccentBrush}"
                            FontSize="{DynamicResource FontMicro}"
                            FontWeight="SemiBold"
@@ -64,14 +65,14 @@
                         Style="{StaticResource IconButton}"
                         Width="24" Height="24"
                         Margin="6,0,0,0"
-                        ToolTip="Обновить базу автомобилей с сайта">
+                        ToolTip="{l:Loc RefreshDbTooltip}">
                     <TextBlock Text="↻" FontSize="16" Margin="0,-4,0,0"/>
                 </Button>
                 <Button Command="{Binding ClearCacheCommand}"
                         Style="{StaticResource IconButton}"
                         Width="24" Height="24"
                         Margin="4,0,0,0"
-                        ToolTip="Очистить кеш базы и характеристик (потребует повторной загрузки)">
+                        ToolTip="{l:Loc ClearCacheTooltip}">
                     <TextBlock Text="🗑" FontSize="13" Margin="0,-1,0,0"/>
                 </Button>
             </StackPanel>
@@ -84,7 +85,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBox Grid.Column="0" x:Name="CarSearchBox"
                                  Text="{Binding CarSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Начните вводить марку, модель или год..."
+                                 ToolTip="{l:Loc CarSearchPlaceholder}"
                                  GotFocus="CarSearchBox_GotFocus"
                                  LostFocus="CarSearchBox_LostFocus" />
                         <Button Grid.Column="1" Content="✕"
@@ -93,7 +94,7 @@
                                 Width="30" Height="30"
                                 Margin="6,0,0,0"
                                 Click="ClearButton_Click"
-                                ToolTip="Очистить выбор"/>
+                                ToolTip="{l:Loc CarSearchClearTooltip}"/>
                     </Grid>
                     <ListBox x:Name="CarListBox"
                              ItemsSource="{Binding FilteredCarDatabase}"
@@ -107,7 +108,7 @@
             </Border>
 
             <!-- ── Mass ─────────────────────────────────────────────────── -->
-            <TextBlock Text="МАССА И РАЗВЕСОВКА" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Text="{l:Loc SectionMass}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -120,13 +121,13 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="{Binding MassFieldLabel}"    Style="{StaticResource FormLabel}" Width="170"/>
                     <TextBox   Grid.Column="1" Text="{Binding MassDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                    <TextBlock Grid.Column="3" Text="Развесовка перед (%)" Style="{StaticResource FormLabel}" Width="180"/>
+                    <TextBlock Grid.Column="3" Text="{l:Loc WeightDistLabel}" Style="{StaticResource FormLabel}" Width="180"/>
                     <TextBox   Grid.Column="4" Text="{Binding Car.WeightDistributionFront, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                 </Grid>
             </Border>
 
             <!-- ── Engine ───────────────────────────────────────────────── -->
-            <TextBlock Text="ДВИГАТЕЛЬ" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Text="{l:Loc SectionEngine}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
                 <StackPanel>
                     <Grid Margin="0,0,0,8">
@@ -135,7 +136,7 @@
                             <ColumnDefinition Width="220"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Тип силовой установки" Style="{StaticResource FormLabel}" Width="200"/>
+                        <TextBlock Grid.Column="0" Text="{l:Loc PowertrainTypeLabel}" Style="{StaticResource FormLabel}" Width="200"/>
                         <ComboBox  x:Name="PowertrainTypeCombo" Grid.Column="1"
                                    SelectedValue="{Binding Car.PowertrainType}">
                             <ComboBox.ItemTemplate>
@@ -172,7 +173,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Тип двигателя" Style="{StaticResource FormLabel}" Width="150"/>
+                        <TextBlock Grid.Column="0" Text="{l:Loc EngineTypeLabel}" Style="{StaticResource FormLabel}" Width="150"/>
                         <ComboBox  x:Name="EngineTypeCombo" Grid.Column="1"
                                    SelectedValue="{Binding Car.EngineType}">
                             <ComboBox.ItemTemplate>
@@ -181,7 +182,7 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock Grid.Column="3" Text="Расположение" Style="{StaticResource FormLabel}" Width="130"/>
+                        <TextBlock Grid.Column="3" Text="{l:Loc EnginePositionLabel}" Style="{StaticResource FormLabel}" Width="130"/>
                         <ComboBox  x:Name="EnginePositionCombo" Grid.Column="4" Width="160"
                                    HorizontalAlignment="Left"
                                    SelectedValue="{Binding Car.EnginePosition}">
@@ -194,12 +195,12 @@
                     </Grid>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
                                 Visibility="{Binding Car.IsElectricPowertrain, Converter={StaticResource BoolToCollapsed}}">
-                        <TextBlock Text="Тип топлива" Style="{StaticResource FormLabel}" Width="150"/>
-                        <RadioButton Content="Бензин / Газ" Margin="0,0,16,0"
+                        <TextBlock Text="{l:Loc FuelTypeLabel}" Style="{StaticResource FormLabel}" Width="150"/>
+                        <RadioButton Content="{l:Loc FuelGasoline}" Margin="0,0,16,0"
                                      GroupName="FuelType"
                                      IsChecked="{Binding Car.FuelType, Converter={StaticResource E2B},
                                                  ConverterParameter={x:Static m:FuelType.Gasoline}}"/>
-                        <RadioButton Content="Дизель"
+                        <RadioButton Content="{l:Loc FuelDiesel}"
                                      GroupName="FuelType"
                                      IsChecked="{Binding Car.FuelType, Converter={StaticResource E2B},
                                                  ConverterParameter={x:Static m:FuelType.Diesel}}"/>
@@ -211,7 +212,7 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Наддув" Style="{StaticResource FormLabel}" Width="150"/>
+                        <TextBlock Grid.Column="0" Text="{l:Loc AspirationLabel}" Style="{StaticResource FormLabel}" Width="150"/>
                         <ComboBox  x:Name="AspirationCombo" Grid.Column="1"
                                    SelectedItem="{Binding Car.AspirationType}">
                             <ComboBox.ItemTemplate>
@@ -221,7 +222,7 @@
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                     </Grid>
-                    <CheckBox Content="Антилаг"
+                    <CheckBox Content="{l:Loc AntiLagLabel}"
                               IsChecked="{Binding Car.AntiLag}"
                               Visibility="{Binding Car.ShowAntiLag, Converter={StaticResource BoolVis}}"
                               Margin="150,0,0,8"/>
@@ -234,23 +235,27 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="Пик мощности (расч.):"
+                            <TextBlock Grid.Column="0" Text="{l:Loc PowerPeakLabel}"
                                        Foreground="{StaticResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding Car.PowerPeakRPM, StringFormat='{}{0} об/мин'}"
-                                       Foreground="{StaticResource CyanBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="2" Text="Пик момента (расч.):"
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Car.PowerPeakRPM}" Foreground="{StaticResource CyanBrush}" FontWeight="SemiBold"/>
+                                <TextBlock Text=" " Foreground="{StaticResource CyanBrush}" FontWeight="SemiBold"/>
+                                <TextBlock Text="{l:Loc UnitRPM}" Foreground="{StaticResource CyanBrush}" FontWeight="SemiBold"/>
+                            </StackPanel>
+                            <TextBlock Grid.Column="2" Text="{l:Loc TorquePeakLabel}"
                                        Foreground="{StaticResource TextDimBrush}" FontSize="11" VerticalAlignment="Center" Margin="24,0,8,0"/>
-                            <TextBlock Grid.Column="3"
-                                       Text="{Binding Car.TorquePeakRPM, StringFormat='{}{0} об/мин'}"
-                                       Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Car.TorquePeakRPM}" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
+                                <TextBlock Text=" " Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
+                                <TextBlock Text="{l:Loc UnitRPM}" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
+                            </StackPanel>
                         </Grid>
                     </Border>
                 </StackPanel>
             </Border>
 
             <!-- ── Transmission ─────────────────────────────────────────── -->
-            <TextBlock Text="ТРАНСМИССИЯ" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Text="{l:Loc SectionTransmission}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
                 <StackPanel>
                     <Grid Margin="0,0,0,8">
@@ -262,7 +267,7 @@
                             <ColumnDefinition Width="80"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Тип привода"  Style="{StaticResource FormLabel}" Width="130"/>
+                        <TextBlock Grid.Column="0" Text="{l:Loc DriveTypeLabel}"  Style="{StaticResource FormLabel}" Width="130"/>
                         <ComboBox  x:Name="DriveTypeCombo" Grid.Column="1"
                                    SelectedValue="{Binding Car.DriveType}">
                             <ComboBox.ItemTemplate>
@@ -271,14 +276,14 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock Grid.Column="3" Text="Кол-во передач" Style="{StaticResource FormLabel}" Width="130"/>
+                        <TextBlock Grid.Column="3" Text="{l:Loc GearCountLabel}" Style="{StaticResource FormLabel}" Width="130"/>
                         <TextBox   Grid.Column="4" Text="{Binding Car.GearCount, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     </Grid>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
-                        <CheckBox Content="Рассчитывать передаточный ряд"
+                        <CheckBox Content="{l:Loc CalcGearsLabel}"
                                   IsChecked="{Binding Car.AllowGearCalculation}"
                                   Margin="0,0,20,0"/>
-                        <CheckBox Content="Только главная передача"
+                        <CheckBox Content="{l:Loc OnlyFinalLabel}"
                                   IsChecked="{Binding Car.OnlyFinalDriveCalculation}"
                                   Visibility="{Binding Car.AllowGearCalculation, Converter={StaticResource BoolVis}}"/>
                     </StackPanel>
@@ -286,7 +291,7 @@
             </Border>
 
             <!-- ── Tires ────────────────────────────────────────────────── -->
-            <TextBlock Text="ШИНЫ И КОЛЁСА" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Text="{l:Loc SectionTires}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
                 <StackPanel>
                     <Grid Margin="0,0,0,8">
@@ -300,11 +305,11 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="70"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Шина ПЕРЕД — ширина" Style="{StaticResource FormLabel}" Width="175"/>
+                        <TextBlock Grid.Column="0" Text="{l:Loc FrontTireWidthLabel}" Style="{StaticResource FormLabel}" Width="175"/>
                         <TextBox   Grid.Column="1" Text="{Binding Car.FrontTireWidth,   UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        <TextBlock Grid.Column="3" Text="Профиль"  Style="{StaticResource FormLabel}" Width="70"/>
+                        <TextBlock Grid.Column="3" Text="{l:Loc FrontTireProfileLabel}" Style="{StaticResource FormLabel}" Width="70"/>
                         <TextBox   Grid.Column="4" Text="{Binding Car.FrontTireProfile, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        <TextBlock Grid.Column="6" Text="Диск (дюйм)"  Style="{StaticResource FormLabel}" Width="95"/>
+                        <TextBlock Grid.Column="6" Text="{l:Loc FrontRimLabel}" Style="{StaticResource FormLabel}" Width="95"/>
                         <TextBox   Grid.Column="7" Text="{Binding Car.FrontRimDiameter, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     </Grid>
                     <Grid Margin="0,0,0,8">
@@ -318,15 +323,15 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="70"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Шина ЗАД — ширина"   Style="{StaticResource FormLabel}" Width="175"/>
+                        <TextBlock Grid.Column="0" Text="{l:Loc RearTireWidthLabel}"   Style="{StaticResource FormLabel}" Width="175"/>
                         <TextBox   Grid.Column="1" Text="{Binding Car.RearTireWidth,    UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        <TextBlock Grid.Column="3" Text="Профиль"  Style="{StaticResource FormLabel}" Width="70"/>
+                        <TextBlock Grid.Column="3" Text="{l:Loc RearTireProfileLabel}" Style="{StaticResource FormLabel}" Width="70"/>
                         <TextBox   Grid.Column="4" Text="{Binding Car.RearTireProfile,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        <TextBlock Grid.Column="6" Text="Диск (дюйм)"  Style="{StaticResource FormLabel}" Width="95"/>
+                        <TextBlock Grid.Column="6" Text="{l:Loc RearRimLabel}" Style="{StaticResource FormLabel}" Width="95"/>
                         <TextBox   Grid.Column="7" Text="{Binding Car.RearRimDiameter,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     </Grid>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Тип шин" Style="{StaticResource FormLabel}" Width="130"/>
+                        <TextBlock Text="{l:Loc TireTypeLabel}" Style="{StaticResource FormLabel}" Width="130"/>
                         <ComboBox  x:Name="TireTypeCombo" Width="200"
                                    SelectedValue="{Binding Car.TireType}">
                             <ComboBox.ItemTemplate>
@@ -340,8 +345,8 @@
             </Border>
 
             <!-- ── Car specs ─────────────────────────────────────────────── -->
-            <TextBlock Text="ХАРАКТЕРИСТИКИ" Style="{StaticResource SectionHeader}"/>
-            <Button Content="AI: подобрать характеристики (Cx, база, колея, фронт. площадь)"
+            <TextBlock Text="{l:Loc SectionCarSpecs}" Style="{StaticResource SectionHeader}"/>
+            <Button Content="{l:Loc AiFetchButton}"
                     Command="{Binding FetchAiCarSpecsCommand}"
                     IsEnabled="{Binding IsFetchingAiSpecs, Converter={StaticResource InvBool}}"
                     Style="{StaticResource PrimaryButton}"
@@ -368,17 +373,17 @@
                         <TextBox   Grid.Column="1" Text="{Binding WheelbaseDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                         <TextBlock Grid.Column="2" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
                                    Visibility="{Binding IsWheelbaseAiEstimated, Converter={StaticResource BoolVis}}"
-                                   ToolTip="Значение рассчитано AI, может быть неточным" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                   ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="4,0,0,0"/>
                         <TextBlock Grid.Column="4" Text="{Binding FrontTrackFieldLabel}"   Style="{StaticResource FormLabel}" MinWidth="100"/>
                         <TextBox   Grid.Column="5" Text="{Binding FrontTrackDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                         <TextBlock Grid.Column="6" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
                                    Visibility="{Binding IsFrontTrackAiEstimated, Converter={StaticResource BoolVis}}"
-                                   ToolTip="Значение рассчитано AI, может быть неточным" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                   ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="4,0,0,0"/>
                         <TextBlock Grid.Column="8" Text="{Binding RearTrackFieldLabel}"     Style="{StaticResource FormLabel}" MinWidth="90"/>
                         <TextBox   Grid.Column="9" Text="{Binding RearTrackDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                         <TextBlock Grid.Column="10" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
                                    Visibility="{Binding IsRearTrackAiEstimated, Converter={StaticResource BoolVis}}"
-                                   ToolTip="Значение рассчитано AI, может быть неточным" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                   ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="4,0,0,0"/>
                     </Grid>
                     <Grid Margin="0,10,0,0">
                         <Grid.ColumnDefinitions>
@@ -391,24 +396,24 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Cx (коэф. лобового сопр.)" Style="{StaticResource FormLabel}" Width="210"
-                                   ToolTip="Коэффициент лобового сопротивления кузова. При заполнении обоих полей заменяет оценку по массе/профилю. Типичные значения: спорткар 0.28–0.36, SUV 0.38–0.50."/>
+                        <TextBlock Grid.Column="0" Text="{l:Loc CdLabel}" Style="{StaticResource FormLabel}" Width="210"
+                                   ToolTip="{l:Loc CdTooltip}"/>
                         <TextBox   Grid.Column="1" Text="{Binding Car.Cd, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                         <TextBlock Grid.Column="2" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
                                    Visibility="{Binding IsCdAiEstimated, Converter={StaticResource BoolVis}}"
-                                   ToolTip="Значение рассчитано AI, может быть неточным" VerticalAlignment="Center" Margin="2,0,0,0"/>
-                        <TextBlock Grid.Column="4" Text="Площадь фронта (м²)" Style="{StaticResource FormLabel}" Width="170"
-                                   ToolTip="Площадь лобового сечения кузова. Типичные значения: спорткар 1.8–2.1, SUV 2.5–3.2."/>
+                                   ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+                        <TextBlock Grid.Column="4" Text="{l:Loc FrontalAreaLabel}" Style="{StaticResource FormLabel}" Width="170"
+                                   ToolTip="{l:Loc FrontalAreaTooltip}"/>
                         <TextBox   Grid.Column="5" Text="{Binding Car.FrontalAreaM2, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                         <TextBlock Grid.Column="6" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
                                    Visibility="{Binding IsFrontalAreaAiEstimated, Converter={StaticResource BoolVis}}"
-                                   ToolTip="Значение рассчитано AI, может быть неточным" VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                   ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="2,0,0,0"/>
                     </Grid>
                 </StackPanel>
             </Border>
 
             <!-- ── Upgrades ────────────────────────────────────────────────── -->
-            <TextBlock Text="ДЕТАЛИ" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Text="{l:Loc SectionUpgrades}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -421,7 +426,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Подвеска"     Style="{StaticResource FormLabel}" MinWidth="70"/>
+                    <TextBlock Grid.Column="0" Text="{l:Loc SuspensionLabel}"     Style="{StaticResource FormLabel}" MinWidth="70"/>
                     <ComboBox  x:Name="SuspensionCombo" Grid.Column="1" SelectedValue="{Binding Car.SuspensionUpgrade}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -429,7 +434,7 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                    <TextBlock Grid.Column="3" Text="Дифференциал" Style="{StaticResource FormLabel}" MinWidth="80"/>
+                    <TextBlock Grid.Column="3" Text="{l:Loc DiffLabel}" Style="{StaticResource FormLabel}" MinWidth="80"/>
                     <ComboBox  x:Name="DiffCombo"        Grid.Column="4" SelectedValue="{Binding Car.DifferentialUpgrade}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -437,7 +442,7 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                    <TextBlock Grid.Column="6" Text="Тормоза"      Style="{StaticResource FormLabel}" MinWidth="60"/>
+                    <TextBlock Grid.Column="6" Text="{l:Loc BrakesLabel}"      Style="{StaticResource FormLabel}" MinWidth="60"/>
                     <ComboBox  x:Name="BrakesCombo"      Grid.Column="7" SelectedValue="{Binding Car.BrakesUpgrade}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -449,7 +454,7 @@
             </Border>
 
             <!-- ── Constraints ───────────────────────────────────────────── -->
-            <TextBlock Text="ОГРАНИЧЕНИЯ ТЮНИНГА" Style="{StaticResource SectionHeader}" FontSize="13"/>
+            <TextBlock Text="{l:Loc SectionTuningConstraints}" Style="{StaticResource SectionHeader}" FontSize="13"/>
 
             <TextBlock Text="{Binding SpringUnitLabel}" Style="{StaticResource SectionHeader}"
                        Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource BoolVis}}"/>
@@ -467,10 +472,10 @@
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="*" MinWidth="65"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Перед — мин / макс" Style="{StaticResource FormLabel}" MinWidth="130"/>
-                    <TextBox   Grid.Column="1" Text="{Binding SpringFrontMinDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                        <TextBlock Grid.Column="0" Text="{l:Loc FrontMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
+                        <TextBox   Grid.Column="1" Text="{Binding SpringFrontMinDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     <TextBox   Grid.Column="3" Text="{Binding SpringFrontMaxDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                    <TextBlock Grid.Column="5" Text="Зад — мин / макс"   Style="{StaticResource FormLabel}" MinWidth="130"/>
+                    <TextBlock Grid.Column="5" Text="{l:Loc RearMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
                     <TextBox   Grid.Column="6" Text="{Binding SpringRearMinDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     <TextBox   Grid.Column="8" Text="{Binding SpringRearMaxDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                 </Grid>
@@ -492,23 +497,23 @@
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="*" MinWidth="65"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Перед — мин / макс" Style="{StaticResource FormLabel}" MinWidth="130"/>
-                    <TextBox   Grid.Column="1" Text="{Binding RideHeightFrontMinDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                        <TextBlock Grid.Column="0" Text="{l:Loc FrontMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
+                        <TextBox   Grid.Column="1" Text="{Binding RideHeightFrontMinDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     <TextBox   Grid.Column="3" Text="{Binding RideHeightFrontMaxDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                    <TextBlock Grid.Column="5" Text="Зад — мин / макс"   Style="{StaticResource FormLabel}" MinWidth="130"/>
+                    <TextBlock Grid.Column="5" Text="{l:Loc RearMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
                     <TextBox   Grid.Column="6" Text="{Binding RideHeightRearMinDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     <TextBox   Grid.Column="8" Text="{Binding RideHeightRearMaxDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                 </Grid>
             </Border>
 
-            <TextBlock Text="АЭРОДИНАМИКА (ограничения)" Style="{StaticResource SectionHeader}"/>
+            <TextBlock Text="{l:Loc SectionAeroConstraints}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                        <CheckBox Content="Передний аэро-пакет установлен"
+                        <CheckBox Content="{l:Loc FrontAeroLabel}"
                                   IsChecked="{Binding Car.HasFrontAero}"
                                   Margin="0,0,32,0"/>
-                        <CheckBox Content="Задний аэро-пакет установлен"
+                        <CheckBox Content="{l:Loc RearAeroLabel}"
                                   IsChecked="{Binding Car.HasRearAero}"/>
                     </StackPanel>
                     <Grid Margin="0,0,0,6" Visibility="{Binding Car.HasFrontAero, Converter={StaticResource BoolVis}}">
@@ -519,7 +524,7 @@
                             <ColumnDefinition Width="*" MinWidth="65"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Перед Мин / Макс" Style="{StaticResource FormLabel}" MinWidth="130"/>
+                        <TextBlock Grid.Column="0" Text="{l:Loc AeroFrontMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
                         <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroFrontMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                         <TextBox   Grid.Column="3" Text="{Binding Constraints.AeroFrontMax, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     </Grid>
@@ -531,7 +536,7 @@
                             <ColumnDefinition Width="*" MinWidth="65"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Зад Мин / Макс" Style="{StaticResource FormLabel}" MinWidth="130"/>
+                        <TextBlock Grid.Column="0" Text="{l:Loc AeroRearMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
                         <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroRearMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                         <TextBox   Grid.Column="3" Text="{Binding Constraints.AeroRearMax, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     </Grid>

@@ -28,11 +28,11 @@ public class AiCarSpecService
         var apiKey = ApiKeys.Cerebras;
         if (string.IsNullOrEmpty(apiKey))
             throw new InvalidOperationException(
-                "API-ключ Cerebras не настроен. Создайте Services/ApiKeys.cs по образцу ApiKeys.cs.example и вставьте ключ.");
+                LocalizationService.Instance.T("AiApiKeyMissing"));
 
         var prompt = $@"{carName}.
 
-Верни только JSON:
+Return only JSON:
 
 {{
   ""wheelbase_mm"": number,
@@ -43,12 +43,12 @@ public class AiCarSpecService
   ""estimated_fields"": []
 }}
 
-Требования:
-- Используй заводские характеристики, если они доступны.
-- Если точное значение не найдено, оцени его по надежным источникам, аналогичным моделям или инженерным расчетам.
-- Все оценочные поля перечисли в массиве estimated_fields.
-- Значения только в указанных единицах измерения.
-- Без пояснений, комментариев, markdown и дополнительного текста.";
+Requirements:
+- Use factory specs where available.
+- If exact value is not found, estimate from reliable sources, similar models, or engineering calculations.
+- List all estimated fields in the estimated_fields array.
+- Values only in the specified units.
+- No explanations, comments, markdown, or extra text.";
 
         List<Exception> errors = [];
         foreach (var model in Models)
@@ -65,7 +65,7 @@ public class AiCarSpecService
         }
 
         throw new AggregateException(
-            "Все модели AI недоступны. Проверьте подключение к Cerebras.", errors);
+            LocalizationService.Instance.T("AiAllModelsFailed"), errors);
     }
 
     private static async Task<AiCarSpecsResponse> CallModelAsync(string model, string apiKey, string prompt)
@@ -117,6 +117,7 @@ public class AiCarSpecService
         else
             System.Diagnostics.Debug.WriteLine($"[AiCarSpec] Deserialize returned null ({model})");
 
-        return result ?? throw new InvalidOperationException($"Модель {model} вернула непарсируемый ответ");
+        return result ?? throw new InvalidOperationException(
+            string.Format(LocalizationService.Instance.T("AiResponseParseError"), model));
     }
 }
