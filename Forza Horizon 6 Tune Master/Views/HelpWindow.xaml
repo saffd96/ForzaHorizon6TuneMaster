@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Справка — Tune Master"
-        Width="580" Height="740"
-        MinWidth="440" MinHeight="520"
+        Width="600" Height="800"
+        MinWidth="460" MinHeight="540"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         Background="{StaticResource BgBrush}"
@@ -38,127 +38,154 @@
                       Padding="20,16">
             <StackPanel>
 
-                <!-- Step 1 -->
+                <!-- Step 1: Car selection -->
                 <Border Background="{StaticResource CardBrush}"
                         BorderBrush="{StaticResource AccentBrush}"
                         BorderThickness="3,0,0,0"
                         CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
                     <StackPanel>
-                        <TextBlock Text="1 — ДАННЫЕ АВТОМОБИЛЯ"
+                        <TextBlock Text="1 — ВЫБОР АВТОМОБИЛЯ"
                                    Foreground="{StaticResource AccentBrush}"
                                    FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                         <TextBlock TextWrapping="Wrap" FontSize="13"
-                                   Text="Заполните левую панель: марка, модель, год, масса, распределение веса, мощность, момент, максимальные обороты. Укажите тип двигателя, расположение, наддув и тип привода — они влияют на расчёт пружин, дифференциала и ряда передач."/>
+                                   Text="Начните вводить марку, модель или год в строке поиска — список автоматически фильтруется. Выберите авто из списка: марка, модель и год заполнятся сами. Кнопка «↻» обновляет базу данных автомобилей с сервера. Кнопка «✕» сбрасывает выбор."/>
                         <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"
                                    Foreground="{StaticResource TextDimBrush}"
-                                   Text="Тип топлива (Бензин / Дизель) — влияет на пик крутящего момента и ряд передач. Дизель получает более короткую первую передачу и плотный ряд, так как его рабочий диапазон оборотов у́же."/>
+                                   Text="Если нужного авто нет в базе — просто введите марку, модель и год вручную в полях ниже. База обновляется при запуске и кэшируется локально."/>
                     </StackPanel>
                 </Border>
 
-                <!-- Step 2 -->
+                <!-- Step 2: Car data -->
                 <Border Background="{StaticResource CardBrush}"
                         BorderBrush="{StaticResource CyanBrush}"
                         BorderThickness="3,0,0,0"
                         CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
                     <StackPanel>
-                        <TextBlock Text="2 — ОГРАНИЧЕНИЯ ТЮНИНГА"
+                        <TextBlock Text="2 — ДАННЫЕ АВТОМОБИЛЯ"
                                    Foreground="{StaticResource CyanBrush}"
                                    FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                         <TextBlock TextWrapping="Wrap" FontSize="13"
-                                   Text="В нижней части левой панели задайте допустимые диапазоны для пружин, дорожного просвета и аэродинамики. Генератор не выйдет за эти границы. Если аэро-пакет не установлен — оставьте аэро-ограничения на нулях."/>
+                                   Text="Заполните секцию МАССА И РАЗВЕСОВКА (полная масса + процент на передние колёса). В секции ДВИГАТЕЛЬ укажите тип силовой установки (ДВС / Гибрид / Электро), мощность, момент, максимальные обороты, тип и расположение мотора, наддув, тип топлива и антилаг."/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"
+                                   Foreground="{StaticResource TextDimBrush}"
+                                   Text="В секции ТРАНСМИССИЯ задайте тип привода и количество передач. Флаг «Рассчитывать передаточный ряд» включает расчёт ступеней; «Только главная передача» считает лишь финальное передаточное. Дизель получает короткую первую передачу и плотный ряд — у него узкий рабочий диапазон оборотов."/>
                     </StackPanel>
                 </Border>
 
-                <!-- Step 3 -->
+                <!-- Step 3: Tires, specs, upgrades -->
                 <Border Background="{StaticResource CardBrush}"
                         BorderBrush="{StaticResource AccentBrush}"
                         BorderThickness="3,0,0,0"
                         CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
                     <StackPanel>
-                        <TextBlock Text="3 — ВЫБЕРИТЕ ДИСЦИПЛИНУ"
+                        <TextBlock Text="3 — ШИНЫ, ХАРАКТЕРИСТИКИ, ДЕТАЛИ"
                                    Foreground="{StaticResource AccentBrush}"
                                    FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                         <TextBlock TextWrapping="Wrap" FontSize="13"
-                                   Text="В нижней панели выберите режим: Шоссе, Тоуге, Дрифт, Дрэг, Ралли, Бездорожье, Вышибала или Улица. Каждая дисциплина использует свои формулы жёсткости, геометрии и ряда передач. Для дрэга укажите дистанцию (⅛, ¼, ½ мили или миля)."/>
+                                   Text="В секции ШИНЫ И КОЛЁСА укажите ширину, профиль и диаметр диска для передней и задней оси, а также тип шин — они влияют на расчёт давления и жёсткости."/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"
+                                   Foreground="{StaticResource TextDimBrush}"
+                                   Text="Кнопка «AI: подобрать характеристики» автоматически заполняет колёсную базу, колею, коэффициент Cx и площадь фронта по названию авто. Оценённые значения помечаются ⚠ — проверьте их перед генерацией. В секции ДЕТАЛИ выберите уровень апгрейда подвески, дифференциала и тормозов — они сдвигают допустимые диапазоны параметров."/>
                     </StackPanel>
                 </Border>
 
-                <!-- Step 4 -->
+                <!-- Step 4: Constraints -->
                 <Border Background="{StaticResource CardBrush}"
                         BorderBrush="{StaticResource CyanBrush}"
                         BorderThickness="3,0,0,0"
                         CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
                     <StackPanel>
-                        <TextBlock Text="4 — ГЕНЕРАЦИЯ ТЮНИНГА"
+                        <TextBlock Text="4 — ОГРАНИЧЕНИЯ ТЮНИНГА"
                                    Foreground="{StaticResource CyanBrush}"
                                    FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                         <TextBlock TextWrapping="Wrap" FontSize="13"
-                                   Text="Нажмите «⚡ Сгенерировать» внизу. Включите «✓ Авто» в шапке правой панели — тюнинг будет пересчитываться мгновенно при любом изменении данных."/>
+                                   Text="Задайте допустимые диапазоны для пружин (мин/макс перед и зад) и дорожного просвета (мин/макс перед и зад). Генератор не выйдет за эти границы. Секции пружин и клиренса видны только при достаточном уровне апгрейда подвески."/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"
+                                   Foreground="{StaticResource TextDimBrush}"
+                                   Text="Для аэродинамики отметьте флажки «Передний / Задний аэро-пакет установлен» — откроются поля мин/макс прижимной силы. Если аэро не установлено — флажки снять, поля не трогать."/>
                     </StackPanel>
                 </Border>
 
-                <!-- Step 5 -->
+                <!-- Step 5: Discipline + Generate -->
                 <Border Background="{StaticResource CardBrush}"
                         BorderBrush="{StaticResource AccentBrush}"
                         BorderThickness="3,0,0,0"
                         CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
                     <StackPanel>
-                        <TextBlock Text="5 — ПРОСМОТР РЕЗУЛЬТАТОВ"
+                        <TextBlock Text="5 — ДИСЦИПЛИНА И ГЕНЕРАЦИЯ"
                                    Foreground="{StaticResource AccentBrush}"
                                    FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                         <TextBlock TextWrapping="Wrap" FontSize="13"
-                                   Text="Правая панель показывает все параметры: давление шин, геометрия, ARB, пружины, клиренс, амортизаторы, аэро, дифференциал, тормоза и трансмиссия. Наведи курсор на любое значение — всплывающая подсказка объяснит физику расчёта."/>
+                                   Text="На вкладке «Режим» выберите дисциплину: Шоссе, Тоуге, Дрифт, Дрэг, Ралли, Бездорожье, Вышибала или Улица. Каждая дисциплина использует свои формулы жёсткости, геометрии и ряда передач. Для дрэга также укажите дистанцию (⅛, ¼, ½ мили или миля)."/>
                         <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"
                                    Foreground="{StaticResource TextDimBrush}"
-                                   Text="График передач внизу показывает скоростной диапазон каждой ступени. Вертикальные линии — пик мощности (оранжевый) и пик момента (голубой). Идеально, когда переходы между передачами перекрываются с рабочей зоной мотора."/>
+                                   Text="Нажмите «⚡ Сгенерировать» внизу. Или включите флажок «✓ Авто» в шапке правой панели — тюнинг будет пересчитываться автоматически при любом изменении данных (с задержкой ~400 мс)."/>
                     </StackPanel>
                 </Border>
 
-                <!-- Step 6: Launch Control -->
+                <!-- Step 6: Results -->
+                <Border Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource CyanBrush}"
+                        BorderThickness="3,0,0,0"
+                        CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="6 — ПРОСМОТР РЕЗУЛЬТАТОВ"
+                                   Foreground="{StaticResource CyanBrush}"
+                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="13"
+                                   Text="Правая панель показывает все параметры тюнинга:"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="8,4,0,0"
+                                   Text="• ДАВЛЕНИЕ ШИН — перед и зад в бар / PSI"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="8,2,0,0"
+                                   Text="• УГЛЫ КОЛЁС — развал перед/зад, кастер, схождение перед/зад"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="8,2,0,0"
+                                   Text="• СТАБИЛИЗАТОРЫ (ARB) — жёсткость поперечного стабилизатора перед/зад"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="8,2,0,0"
+                                   Text="• ПРУЖИНЫ + КЛИРЕНС — жёсткость и высота кузова перед/зад"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="8,2,0,0"
+                                   Text="• АМОРТИЗАТОРЫ — отбой и сжатие перед/зад (шкала 1–20)"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="8,2,0,0"
+                                   Text="• АЭРОДИНАМИКА — прижимная сила перед/зад"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="8,2,0,0"
+                                   Text="• ДИФФЕРЕНЦИАЛ — разгон/торможение + центральный дифф и передний дифф (AWD)"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="8,2,0,0"
+                                   Text="• ТОРМОЗА — баланс (% перед) и давление"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="8,2,0,0"
+                                   Text="• ТРАНСМИССИЯ — главная пара, расчётная макс. скорость, передаточные числа"/>
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"
+                                   Foreground="{StaticResource TextDimBrush}"
+                                   Text="Наведи курсор на любое значение — всплывающая подсказка объяснит физику расчёта. График передач внизу показывает скоростной диапазон каждой ступени; вертикальные линии — пик мощности (оранжевый) и момента (голубой)."/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Step 7: Launch Control -->
                 <Border Background="{StaticResource ElevatedBrush}"
                         BorderBrush="{StaticResource AccentBrush}"
                         BorderThickness="3,0,0,0"
                         CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
                     <StackPanel>
-                        <TextBlock Text="6 — LAUNCH CONTROL (ДРЭГ)"
+                        <TextBlock Text="7 — LAUNCH CONTROL (ДРЭГ)"
                                    Foreground="{StaticResource AccentBrush}"
                                    FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                         <TextBlock TextWrapping="Wrap" FontSize="13"
-                                   Text="В режиме дрэга отображаются оптимальные обороты для старта. Удержи газ на этих оборотах перед флагом. Расчёт учитывает тип наддува, пик момента, тип привода и тип топлива: дизель получает пониженные обороты старта из-за раннего пика момента."/>
+                                   Text="В режиме дрэга над основными параметрами появляется блок «🚦 LAUNCH CONTROL» с оптимальными оборотами для старта. Удержи педаль газа на этих оборотах перед спуском флага. Расчёт учитывает тип наддува, пик момента, тип привода и тип топлива: дизель получает пониженные обороты старта из-за раннего пика момента."/>
                     </StackPanel>
                 </Border>
 
-                <!-- Step 7: Profiles -->
+                <!-- Step 8: Profiles + Units -->
                 <Border Background="{StaticResource CardBrush}"
                         BorderBrush="{StaticResource CyanBrush}"
                         BorderThickness="3,0,0,0"
                         CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
                     <StackPanel>
-                        <TextBlock Text="7 — ПРОФИЛИ"
+                        <TextBlock Text="8 — ПРОФИЛИ И ЕДИНИЦЫ"
                                    Foreground="{StaticResource CyanBrush}"
                                    FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                         <TextBlock TextWrapping="Wrap" FontSize="13"
-                                   Text="«💾 Сохранить» — сохраняет всё: параметры авто, ограничения и тюнинг. Имя формируется автоматически из марки, модели, года и дисциплины. Выбери профиль из списка — он загрузится сразу. «+ Новый» сбрасывает поля к значениям по умолчанию."/>
+                                   Text="«💾 Сохранить» сохраняет параметры авто, ограничения и тюнинг. Имя формируется автоматически из марки, модели, года, типа привода, типа мотора и дисциплины. Выбери профиль из списка — он загрузится сразу. «+ Новый» сбрасывает все поля к значениям по умолчанию. Кнопка «🗑» удаляет выбранный профиль."/>
                         <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"
                                    Foreground="{StaticResource TextDimBrush}"
-                                   Text="Имя активного профиля отображается в заголовке карточки тюнинга справа. При новом тюне без сохранённого профиля показывается автосгенерированное имя."/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Step 8: Export + Units -->
-                <Border Background="{StaticResource CardBrush}"
-                        BorderBrush="{StaticResource AccentBrush}"
-                        BorderThickness="3,0,0,0"
-                        CornerRadius="4" Padding="14,10" Margin="0,0,0,10">
-                    <StackPanel>
-                        <TextBlock Text="8 — ЭКСПОРТ, ИМПОРТ И ЕДИНИЦЫ"
-                                   Foreground="{StaticResource AccentBrush}"
-                                   FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
-                        <TextBlock TextWrapping="Wrap" FontSize="13"
-                                   Text="«💾 Экспорт» сохраняет тюнинг как текстовый файл для публикации в Forza-сообществе. «📂 Импорт» загружает параметры авто из текстового файла и пересчитывает тюн."/>
-                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"
-                                   Foreground="{StaticResource TextDimBrush}"
-                                   Text="Единицы переключаются в верхней панели: Метрические / Имперские, мощность в л.с. / PS / кВт, жёсткость пружин в кгс/мм · Н/мм · фунт/дюйм. Все внутренние расчёты ведутся в метрических единицах — конвертация только для отображения."/>
+                                   Text="Единицы переключаются в верхней панели: Метрические / Имперские, мощность в л.с. / PS / кВт, жёсткость пружин в Н/мм · кгс/мм · фунт/дюйм. Все внутренние расчёты ведутся в метрических единицах — конвертация только для отображения."/>
                     </StackPanel>
                 </Border>
 
