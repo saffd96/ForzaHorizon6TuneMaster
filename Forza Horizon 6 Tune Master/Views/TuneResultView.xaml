@@ -33,23 +33,15 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="⚡ ТЮНИНГ" Style="{StaticResource SubtitleText}"
                            FontSize="14" FontWeight="Bold"/>
-                <Button Grid.Column="1" Content="📂 Импорт" Style="{StaticResource SecondaryButton}"
-                        Command="{Binding ImportTextCommand}"
-                        Height="26" Padding="8,3" FontSize="11" Margin="0,0,4,0"/>
-                <Button Grid.Column="2" Content="💾 Экспорт" Style="{StaticResource SecondaryButton}"
-                        Command="{Binding ExportTextCommand}"
-                        Height="26" Padding="8,3" FontSize="11" Margin="0,0,8,0"/>
-                <CheckBox Grid.Column="3"
+                <CheckBox Grid.Column="1"
                           IsChecked="{Binding IsAutoGenerate}"
                           Content="✓ Авто"
                           Foreground="{StaticResource TextDimBrush}"
                           VerticalAlignment="Center"
-                          FontSize="11"/>
+                          FontSize="11" Margin="0,0,8,0"/>
             </Grid>
         </Border>
 
