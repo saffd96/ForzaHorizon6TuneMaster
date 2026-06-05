@@ -21,15 +21,24 @@ public class AiCarSpecService
         Timeout = TimeSpan.FromSeconds(30)
     };
 
-    private static readonly string[] Models = ["gpt-oss-120b", "zai-glm-4.7"];
+    private record ProviderEntry(string Url, string Model, string ApiKey);
+
+    private static List<ProviderEntry> BuildProviders()
+    {
+        var list = new List<ProviderEntry>
+        {
+            new("https://api.cerebras.ai/v1/chat/completions", "gpt-oss-120b", ApiKeys.Cerebras),
+            new("https://api.cerebras.ai/v1/chat/completions", "zai-glm-4.7",  ApiKeys.Cerebras),
+        };
+
+        if (!string.IsNullOrEmpty(ApiKeys.OpenRouter))
+            list.Add(new("https://openrouter.ai/api/v1/chat/completions", "openrouter/auto", ApiKeys.OpenRouter!));
+
+        return list;
+    }
 
     public async Task<AiCarSpecsResponse> FetchCarSpecsAsync(string carName)
     {
-        var apiKey = ApiKeys.Cerebras;
-        if (string.IsNullOrEmpty(apiKey))
-            throw new InvalidOperationException(
-                LocalizationService.Instance.T("AiApiKeyMissing"));
-
         var prompt = $@"{carName}.
 
 Return only JSON:
@@ -50,16 +59,17 @@ Requirements:
 - Values only in the specified units.
 - No explanations, comments, markdown, or extra text.";
 
+        var providers = BuildProviders();
         List<Exception> errors = [];
-        foreach (var model in Models)
+        foreach (var p in providers)
         {
             try
             {
-                return await CallModelAsync(model, apiKey, prompt);
+                return await CallModelAsync(p.Url, p.Model, p.ApiKey, prompt);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[AiCarSpec] Model '{model}' failed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[AiCarSpec] Provider '{p.Model}' failed: {ex.Message}");
                 errors.Add(ex);
             }
         }
@@ -68,7 +78,7 @@ Requirements:
             LocalizationService.Instance.T("AiAllModelsFailed"), errors);
     }
 
-    private static async Task<AiCarSpecsResponse> CallModelAsync(string model, string apiKey, string prompt)
+    private static async Task<AiCarSpecsResponse> CallModelAsync(string url, string model, string apiKey, string prompt)
     {
         var requestBody = JsonSerializer.Serialize(new
         {
@@ -81,7 +91,7 @@ Requirements:
             }
         });
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.cerebras.ai/v1/chat/completions");
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Add("Authorization", $"Bearer {apiKey}");
         request.Content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
