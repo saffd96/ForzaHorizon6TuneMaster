@@ -22,6 +22,9 @@ public class TuneGeneratorService
     private const double ProfileBaseline    = 45;
     private const double RefFrontTrackMm    = 1550;
     private const double RefSpeedKmh        = 200;
+    private const double RefTireWidth        = 275; // reference width in mm for pressure adjustment
+    // 0.85 = base log slope — multiplied by massWeight (0.3–1.0) for weight-class sensitivity
+    private const double MassLogFactor       = 0.85;
     // 4π²/2000 = 0.019739 — includes ÷1000 (N/m→N/mm) and ÷2 (motion-ratio/half-axle calibration for FH6)
     private const double SpringHzToNmm      = 0.019739;
     private const double RevLimitFraction   = 0.95;
@@ -219,7 +222,7 @@ public class TuneGeneratorService
     private static void CalculateTirePressure(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
     {
         // Tire-type base (bar). Source: ForzaFire FH6 tires guide (forzafire.com)
-        // Slick=32.5 PSI, SemiSlick=32.0, Sport=31.5, Stock/Street=31.0, Rally=29.5, Offroad=29.0
+        // Slick=32.5 PSI, SemiSlick=32.0, Sport=30.0, Stock/Street=31.0, Rally=29.5, Offroad=29.0
         double baseBar = car.TireType switch
         {
             TireType.Slick     => 2.24, // 32.5 PSI
@@ -234,65 +237,109 @@ public class TuneGeneratorService
             _                  => 2.14
         };
 
-        // Mass: +0.05 bar per 200 kg over 1400
-        double massAdj = (car.TotalMass - MassBaselineKg) / 200.0 * 0.05;
+        // Mass: log scaling with weight-class sensitivity
+        // Light cars (<1000kg): ~0.3x — minimal pressure drop for being light
+        // Heavy cars (>2300kg): ~1.0x — full log effect for SUVs
+        double massRatio = car.TotalMass / MassBaselineKg;
+        double massWeight = 0.30 + 0.70 * Math.Clamp((car.TotalMass - 900) / 1400, 0, 1);
+        double massAdj = Math.Log(massRatio) * MassLogFactor * massWeight;
 
-        // Weight distribution: heavier end gets more pressure
+        // Weight distribution: nonlinear — soft deadzone near 50%, amplification at extremes
+        // FH6 behaviour: 50/50 to 55/45 barely changes grip balance, 70/30+ dramatically does
         double wd = EffectiveWtDist(car);
         double wdDev = (wd - 50) / 50.0;
-        double wdAdjF = wdDev * 0.25;
-        double wdAdjR = -wdDev * 0.25;
+        double wdNonlinear = Math.Sign(wdDev) * Math.Pow(Math.Abs(wdDev), 1.5);
+        double wdAdjF = wdNonlinear * 0.62;
+        double wdAdjR = -wdNonlinear * 0.62;
 
         // Profile: lower profile → stiffer sidewall → slightly higher pressure
         double profile = (car.FrontTireProfile + car.RearTireProfile) / 2.0;
         double profileAdj = Math.Clamp((ProfileBaseline - profile) * 0.004, -0.15, 0.15);
 
-        // Rim diameter: bigger rim → lower sidewall → slightly higher pressure
-        double rim = (car.FrontRimDiameter + car.RearRimDiameter) / 2.0;
-        double rimAdj = Math.Clamp((rim - RefRimDiameterInch) * 0.02, -0.10, 0.15);
+        // Rim diameter: negligible in FH6 (profile covers sidewall stiffness)
+        double rimAdj = 0;
 
-        // Power-based adjustments
-        // RWD: more power needs lower rear pressure for traction, slightly higher front for stability
-        // FWD: more power needs lower front pressure for traction
-        // AWD: balanced increase both axles
-        // Drag skipped — rear pressure is intentionally minimised for maximum launch grip
+        // Tire width: tanh saturation — diminishing returns at extreme widths
+        // Drive-type weighting: RWD cares more about rear width, FWD about front
+        double frontWidthWeight = car.DriveType == DriveType.FWD ? 1.30 : car.DriveType == DriveType.RWD ? 0.80 : 1.00;
+        double rearWidthWeight  = car.DriveType == DriveType.RWD ? 1.30 : car.DriveType == DriveType.FWD ? 0.80 : 1.00;
+        double widthAdjF = Math.Tanh((RefTireWidth - car.FrontTireWidth) / 100.0 * 0.5) * 0.10 * frontWidthWeight;
+        double widthAdjR = Math.Tanh((RefTireWidth - car.RearTireWidth)  / 100.0 * 0.5) * 0.10 * rearWidthWeight;
+
+        // Power-to-weight: split curve — below/above baseline behave differently
+        // Below 1.0: gentle linear (underpowered cars need minimal adjustment)
+        // Above 1.0: tanh saturation (powerful cars get diminishing returns)
+        // Drag skipped — handled by discipline override below
         double powerAdjF = 0, powerAdjR = 0;
         if (track.Discipline != Discipline.Drag)
         {
-            double hpOver = Math.Max(0, car.PowerHP  - PowerBaselineHP);
-            double tqOver = Math.Max(0, car.TorqueNm - TorqueBaselineNm);
+            double ptwRatio = car.PowerHP / car.TotalMass / (PowerBaselineHP / MassBaselineKg);
+            double ptwFactor = ptwRatio < 1.0
+                ? (ptwRatio - 1.0) * 0.30
+                : Math.Tanh((ptwRatio - 1.0) * 1.5) * 0.85;
             if (car.DriveType == Models.DriveType.RWD)
             {
-                powerAdjR = -(hpOver / 300.0 * 0.06) - (tqOver / 600.0 * 0.03);
-                powerAdjF =   hpOver / 300.0 * 0.03;
+                powerAdjR = -ptwFactor * 0.15;
+                powerAdjF =  ptwFactor * 0.07;
             }
             else if (car.DriveType == Models.DriveType.FWD)
             {
-                powerAdjF = -(hpOver / 300.0 * 0.06) - (tqOver / 600.0 * 0.03);
-                powerAdjR =   hpOver / 300.0 * 0.03;
+                powerAdjF = -ptwFactor * 0.15;
+                powerAdjR =  ptwFactor * 0.07;
             }
             else
             {
-                powerAdjF = hpOver / 300.0 * 0.03 - tqOver / 600.0 * 0.015;
-                powerAdjR = hpOver / 300.0 * 0.03 - tqOver / 600.0 * 0.015;
+                powerAdjF = ptwFactor * 0.05;
+                powerAdjR = ptwFactor * 0.05;
             }
         }
 
-        double tpF = baseBar + massAdj + wdAdjF + profileAdj + rimAdj + powerAdjF;
-        double tpR = baseBar + massAdj + wdAdjR + profileAdj + rimAdj + powerAdjR;
+        double tpF = baseBar + massAdj + wdAdjF + profileAdj + rimAdj + widthAdjF + powerAdjF;
+        double tpR = baseBar + massAdj + wdAdjR + profileAdj + rimAdj + widthAdjR + powerAdjR;
 
         double discF = 0, discR = 0;
         string reason;
         switch (track.Discipline)
         {
             case Discipline.Drag:
-                discF = 0.00; discR = -1.00;
+            {
+                // Drag: rear pressure drops for launch grip, scaled by PTW and mass
+                // High PTW → already launches well → less reduction
+                // Heavy → more weight transfer benefit → more reduction
+                double dragPtw = car.PowerHP / car.TotalMass;
+                double dragPtwFactor = Math.Clamp((dragPtw - 100) / 400, 0, 1);
+                double dragMassFactor = Math.Clamp((car.TotalMass - 1000) / 1000, 0, 1);
+                discR = -0.50 - dragMassFactor * 0.60 + dragPtwFactor * 0.20;
                 reason = L("Expl_TirePressureReason_Drag");
                 break;
+            }
             case Discipline.Drift:
-                discF = -0.52; discR = -0.72;
+            {
+                // Drift: adjustment varies with base grip level
+                // High-grip builds (sticky tires + wide + low PTW) need more rear pressure to slide
+                // Low-grip builds already slide easily → milder adjustment
+                double tireGrip = car.TireType switch
+                {
+                    TireType.Slick     => 1.00,
+                    TireType.SemiSlick => 0.80,
+                    TireType.Sport     => 0.60,
+                    TireType.Street    => 0.50,
+                    TireType.Stock     => 0.40,
+                    TireType.Rally     => 0.30,
+                    TireType.Offroad   => 0.20,
+                    TireType.Drag      => 0.70,
+                    _                  => 0.50
+                };
+                double avgWidth = (car.FrontTireWidth + car.RearTireWidth) / 2.0;
+                double widthFactor = (avgWidth - 205) / 200;
+                double ptwActual = car.PowerHP / car.TotalMass;
+                double ptwFactor = Math.Clamp((ptwActual - 100) / 400, 0, 1);
+                double gripMod = Math.Clamp(tireGrip * 0.60 + widthFactor * 0.30 - ptwFactor * 0.20, 0, 1);
+                discF = -0.05 + gripMod * 0.02;
+                discR =  0.05 + gripMod * 0.12;
                 reason = L("Expl_TirePressureReason_Drift");
                 break;
+            }
             case Discipline.Rally:
                 discF = -0.20; discR = -0.20;
                 reason = L("Expl_TirePressureReason_Rally");
@@ -302,7 +349,7 @@ public class TuneGeneratorService
                 reason = L("Expl_TirePressureReason_CrossCountry");
                 break;
             case Discipline.Touge:
-                discF = -0.05; discR = -0.03;
+                discF = -0.12; discR = -0.10;
                 reason = L("Expl_TirePressureReason_Touge");
                 break;
             case Discipline.Street:

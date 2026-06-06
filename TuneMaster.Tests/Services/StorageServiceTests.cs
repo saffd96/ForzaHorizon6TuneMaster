@@ -3,9 +3,27 @@ using Forza_Horizon_6_Tune_Master.Services;
 
 namespace TuneMaster.Tests.Services;
 
-public class StorageServiceTests
+[Collection("StorageService")]
+public class StorageServiceTests : IDisposable
 {
     private readonly StorageService _storage = new();
+    private readonly List<string> _existingNames;
+
+    public StorageServiceTests()
+    {
+        _existingNames = _storage.GetProfileNames();
+    }
+
+    public void Dispose()
+    {
+        foreach (var name in _storage.GetProfileNames())
+        {
+            if (!_existingNames.Contains(name))
+            {
+                _storage.Delete(name);
+            }
+        }
+    }
 
     [Fact]
     public void SaveAndLoad_Roundtrip_ViaGetProfileNames()
@@ -237,3 +255,6 @@ public class StorageServiceTests
         Assert.Equal("Make2", l2.Car.Make);
     }
 }
+
+[CollectionDefinition("StorageService", DisableParallelization = true)]
+public class StorageServiceTestCollection { }
