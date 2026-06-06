@@ -47,7 +47,8 @@
   "CarSearchPlaceholder": "Start typing make, model or year...",
   "CarSearchClearTooltip": "Clear selection",
   "RefreshDbTooltip": "Refresh car database from website",
-  "ClearCacheTooltip": "Clear database & spec cache (requires reload)",
+  "ClearCacheTooltip": "Clear database cache (requires reload)",
+  "ClearAiCacheTooltip": "Clear AI spec cache",
 
   "SectionMass": "MASS & BALANCE",
   "SectionEngine": "ENGINE",
@@ -500,7 +501,7 @@
   "Expl_RpmAbbr": "RPM",
 
   "AiApiKeyMissing": "Cerebras API key not configured. Create Services/ApiKeys.cs from ApiKeys.cs.example and insert the key.",
-  "AiAllModelsFailed": "All AI models unavailable. Check Cerebras connection.",
+  "AiAllModelsFailed": "All AI models unavailable.",
   "AiResponseParseError": "Model {0} returned unparseable response",
 
   "CarDbTooFewRecords": "Too few records received — the page structure may have changed",

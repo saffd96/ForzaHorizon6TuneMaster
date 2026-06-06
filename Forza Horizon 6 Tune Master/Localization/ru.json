@@ -47,7 +47,8 @@
   "CarSearchPlaceholder": "Начните вводить марку, модель или год...",
   "CarSearchClearTooltip": "Очистить выбор",
   "RefreshDbTooltip": "Обновить базу автомобилей с сайта",
-  "ClearCacheTooltip": "Очистить кеш базы и характеристик (потребует повторной загрузки)",
+  "ClearCacheTooltip": "Очистить кеш базы (потребует повторной загрузки)",
+  "ClearAiCacheTooltip": "Очистить кеш AI-характеристик",
 
   "SectionMass": "МАССА И РАЗВЕСОВКА",
   "SectionEngine": "ДВИГАТЕЛЬ",
@@ -500,7 +501,7 @@
   "Expl_RpmAbbr": "об/мин",
 
   "AiApiKeyMissing": "API-ключ Cerebras не настроен. Создайте Services/ApiKeys.cs по образцу ApiKeys.cs.example и вставьте ключ.",
-  "AiAllModelsFailed": "Все модели AI недоступны. Проверьте подключение к Cerebras.",
+  "AiAllModelsFailed": "Все модели AI недоступны.",
   "AiResponseParseError": "Модель {0} вернула непарсируемый ответ",
 
   "CarDbTooFewRecords": "Получено слишком мало записей — возможно, структура страницы изменилась",

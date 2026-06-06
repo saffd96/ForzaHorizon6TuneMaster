@@ -893,6 +893,7 @@ public class MainViewModel : INotifyPropertyChanged
     public RelayCommand ClearCarSelectionCommand { get; }
     public RelayCommand RefreshCarDatabaseCommand { get; }
     public RelayCommand ClearCacheCommand { get; }
+    public RelayCommand ClearAiCacheCommand { get; }
 
     public MainViewModel()
     {
@@ -905,6 +906,7 @@ public class MainViewModel : INotifyPropertyChanged
         ClearCarSelectionCommand = new RelayCommand(ClearCarSelection);
         RefreshCarDatabaseCommand = new RelayCommand(RefreshCarDatabase, () => !IsLoadingCars);
         ClearCacheCommand = new RelayCommand(ClearCache);
+        ClearAiCacheCommand = new RelayCommand(ClearAiCache);
 
         ToggleUnitsCommand      = new RelayCommand(DoToggleUnits);
         TogglePowerUnitCommand  = new RelayCommand(DoTogglePowerUnit);
@@ -1131,7 +1133,8 @@ public class MainViewModel : INotifyPropertyChanged
             var estimated = specs.EstimatedFields.Count > 0
                 ? string.Format(T("AiSpecEstimate"), string.Join(", ", specs.EstimatedFields))
                 : "";
-            StatusMessage = string.Format(T("StatusAiReceived"), carName, estimated);
+            var rawValues = $"WB={specs.WheelbaseMm} Trk={specs.FrontTrackMm}/{specs.RearTrackMm} Cd={specs.DragCoefficientCd} A={specs.FrontalAreaM2}m²";
+            StatusMessage = $"{string.Format(T("StatusAiReceived"), carName, estimated)} [{rawValues}]";
         }
         catch (Exception ex)
         {
@@ -1178,6 +1181,7 @@ public class MainViewModel : INotifyPropertyChanged
             Car         = p.Car;
             Track       = p.Track;
             Constraints = p.Constraints;
+            NotifyConstraintDisplayProperties();
             var loadedResult = p.LastResult;
             if (loadedResult != null) loadedResult.Car = Car;
             TuneResult  = loadedResult;
@@ -1202,6 +1206,7 @@ public class MainViewModel : INotifyPropertyChanged
     private void NewProfile()
     {
         Car = new CarCard(); Track = new TrackInfo(); Constraints = new TuningConstraints();
+        NotifyConstraintDisplayProperties();
         TuneResult  = null;
         SelectedCar = null;
         StatusMessage = T("StatusProfileCreated");
@@ -1311,6 +1316,12 @@ public class MainViewModel : INotifyPropertyChanged
         WikiCarSpecService.DeleteCache();
         _carDatabase.Clear();
         _filteredCarDatabase.Clear();
+        StatusMessage = T("StatusCacheCleared");
+    }
+
+    private void ClearAiCache()
+    {
+        AiCarSpecService.DeleteCache();
         StatusMessage = T("StatusCacheCleared");
     }
 

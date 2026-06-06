@@ -25,6 +25,7 @@ public class TuneGeneratorService
     // 4π²/2000 = 0.019739 — includes ÷1000 (N/m→N/mm) and ÷2 (motion-ratio/half-axle calibration for FH6)
     private const double SpringHzToNmm      = 0.019739;
     private const double RevLimitFraction   = 0.95;
+    private const double TargetSpeedCapKmh  = 700;
 
     private static (double Diff, double Spring, double Damper) GetPowerDeliveryFactors(
         PowertrainType pt, AspirationType? asp, bool antiLag = false)
@@ -116,7 +117,7 @@ public class TuneGeneratorService
             v = Math.Max(v - step, 1.0);
             if (Math.Abs(step) < 1e-4) break;
         }
-        return Math.Round(Math.Clamp(v * 3.6, 60.0, 600.0));
+        return Math.Round(Math.Clamp(v * 3.6, 60.0, TargetSpeedCapKmh));
     }
 
     public TuneResult Generate(CarCard car, TrackInfo track, TuningConstraints c)
@@ -1110,7 +1111,7 @@ public class TuneGeneratorService
 
         // Estimate top gear ratio needed to hit target speed at redline (assume FD ≈ 3.5)
         double tireCirc = Math.PI * car.RearWheelDiameterInch * 0.0254;
-        double targetKmh = Math.Min(effectiveMaxKmh, 600);
+        double targetKmh = Math.Min(effectiveMaxKmh, TargetSpeedCapKmh);
         double targetMs = targetKmh / 3.6;
 
         double totalRatio = targetMs > 0 && car.MaxRPM > 0 && tireCirc > 0
@@ -1174,9 +1175,9 @@ public class TuneGeneratorService
         double pwRatio = car.PowerHP / (car.TotalMass / 1000.0);
         double tireCirc = Math.PI * car.RearWheelDiameterInch * 0.0254;
 
-        double targetKmh = track.Discipline == Discipline.Drag
-            ? effectiveMaxKmh
-            : Math.Min(effectiveMaxKmh, 600);
+double targetKmh = track.Discipline == Discipline.Drag
+    ? effectiveMaxKmh
+    : Math.Min(effectiveMaxKmh, TargetSpeedCapKmh);
         double targetMs = targetKmh / 3.6;
 
         // Single-speed: Gear 1 × FinalDrive = total reduction (same Forza mechanics, one gear).

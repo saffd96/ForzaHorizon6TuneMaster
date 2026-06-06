@@ -75,6 +75,13 @@
                         ToolTip="{l:Loc ClearCacheTooltip}">
                     <TextBlock Text="🗑" FontSize="13" Margin="0,-1,0,0"/>
                 </Button>
+                <Button Command="{Binding ClearAiCacheCommand}"
+                        Style="{StaticResource IconButton}"
+                        Width="24" Height="24"
+                        Margin="4,0,0,0"
+                        ToolTip="{l:Loc ClearAiCacheTooltip}">
+                    <TextBlock Text="🤖" FontSize="13" Margin="0,-1,0,0"/>
+                </Button>
             </StackPanel>
             <Border Style="{StaticResource SectionCard}">
                 <StackPanel>
@@ -346,70 +353,81 @@
 
             <!-- ── Car specs ─────────────────────────────────────────────── -->
             <TextBlock Text="{l:Loc SectionCarSpecs}" Style="{StaticResource SectionHeader}"/>
-            <Button Content="{l:Loc AiFetchButton}"
-                    Command="{Binding FetchAiCarSpecsCommand}"
-                    IsEnabled="{Binding IsFetchingAiSpecs, Converter={StaticResource InvBool}}"
-                    Style="{StaticResource PrimaryButton}"
-                    HorizontalAlignment="Left"
-                    Padding="14,6"
-                    Margin="0,0,0,8" />
             <Border Style="{StaticResource SectionCard}">
-                <StackPanel>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="12"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="12"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{Binding WheelbaseFieldLabel}" Style="{StaticResource FormLabel}" MinWidth="100"/>
-                        <TextBox   Grid.Column="1" Text="{Binding WheelbaseDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        <TextBlock Grid.Column="2" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
-                                   Visibility="{Binding IsWheelbaseAiEstimated, Converter={StaticResource BoolVis}}"
-                                   ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="4,0,0,0"/>
-                        <TextBlock Grid.Column="4" Text="{Binding FrontTrackFieldLabel}"   Style="{StaticResource FormLabel}" MinWidth="100"/>
-                        <TextBox   Grid.Column="5" Text="{Binding FrontTrackDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        <TextBlock Grid.Column="6" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
-                                   Visibility="{Binding IsFrontTrackAiEstimated, Converter={StaticResource BoolVis}}"
-                                   ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="4,0,0,0"/>
-                        <TextBlock Grid.Column="8" Text="{Binding RearTrackFieldLabel}"     Style="{StaticResource FormLabel}" MinWidth="90"/>
-                        <TextBox   Grid.Column="9" Text="{Binding RearTrackDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        <TextBlock Grid.Column="10" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
-                                   Visibility="{Binding IsRearTrackAiEstimated, Converter={StaticResource BoolVis}}"
-                                   ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="4,0,0,0"/>
-                    </Grid>
-                    <Grid Margin="0,10,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="16"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{l:Loc CdLabel}" Style="{StaticResource FormLabel}" Width="210"
-                                   ToolTip="{l:Loc CdTooltip}"/>
-                        <TextBox   Grid.Column="1" Text="{Binding Car.Cd, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        <TextBlock Grid.Column="2" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
-                                   Visibility="{Binding IsCdAiEstimated, Converter={StaticResource BoolVis}}"
-                                   ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="2,0,0,0"/>
-                        <TextBlock Grid.Column="4" Text="{l:Loc FrontalAreaLabel}" Style="{StaticResource FormLabel}" Width="170"
-                                   ToolTip="{l:Loc FrontalAreaTooltip}"/>
-                        <TextBox   Grid.Column="5" Text="{Binding Car.FrontalAreaM2, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        <TextBlock Grid.Column="6" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
-                                   Visibility="{Binding IsFrontalAreaAiEstimated, Converter={StaticResource BoolVis}}"
-                                   ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="2,0,0,0"/>
-                    </Grid>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding WheelbaseFieldLabel}" Style="{StaticResource FormLabel}" MinWidth="70"/>
+                            <TextBox   Grid.Column="1" Text="{Binding WheelbaseDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                            <TextBlock Grid.Column="2" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
+                                       Visibility="{Binding IsWheelbaseAiEstimated, Converter={StaticResource BoolVis}}"
+                                       ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                            <TextBlock Grid.Column="4" Text="{Binding FrontTrackFieldLabel}"   Style="{StaticResource FormLabel}" MinWidth="70"/>
+                            <TextBox   Grid.Column="5" Text="{Binding FrontTrackDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                            <TextBlock Grid.Column="6" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
+                                       Visibility="{Binding IsFrontTrackAiEstimated, Converter={StaticResource BoolVis}}"
+                                       ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                            <TextBlock Grid.Column="8" Text="{Binding RearTrackFieldLabel}"     Style="{StaticResource FormLabel}" MinWidth="60"/>
+                            <TextBox   Grid.Column="9" Text="{Binding RearTrackDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                            <TextBlock Grid.Column="10" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
+                                       Visibility="{Binding IsRearTrackAiEstimated, Converter={StaticResource BoolVis}}"
+                                       ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                        </Grid>
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{l:Loc CdLabel}" Style="{StaticResource FormLabel}" Width="140"
+                                       ToolTip="{l:Loc CdTooltip}"/>
+                            <TextBox   Grid.Column="1" Text="{Binding Car.Cd, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                            <TextBlock Grid.Column="2" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
+                                       Visibility="{Binding IsCdAiEstimated, Converter={StaticResource BoolVis}}"
+                                       ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+                            <TextBlock Grid.Column="4" Text="{l:Loc FrontalAreaLabel}" Style="{StaticResource FormLabel}" Width="120"
+                                       ToolTip="{l:Loc FrontalAreaTooltip}"/>
+                            <TextBox   Grid.Column="5" Text="{Binding Car.FrontalAreaM2, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                            <TextBlock Grid.Column="6" Text="⚠" Foreground="{StaticResource AccentBrush}" FontSize="14"
+                                       Visibility="{Binding IsFrontalAreaAiEstimated, Converter={StaticResource BoolVis}}"
+                                       ToolTip="{l:Loc AiEstimatedTooltip}" VerticalAlignment="Center" Margin="2,0,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                    <Button Grid.Column="1"
+                            Content="AI"
+                            Command="{Binding FetchAiCarSpecsCommand}"
+                            IsEnabled="{Binding IsFetchingAiSpecs, Converter={StaticResource InvBool}}"
+                            Style="{StaticResource PrimaryButton}"
+                            Padding="0"
+                            FontSize="20" FontWeight="Bold"
+                            VerticalAlignment="Stretch"
+                            Width="{Binding RelativeSource={RelativeSource Self}, Path=ActualHeight}"
+                            MinWidth="50"
+                            Margin="12,0,0,0"
+                            ToolTip="{l:Loc AiFetchButton}" />
+                </Grid>
             </Border>
 
             <!-- ── Upgrades ────────────────────────────────────────────────── -->

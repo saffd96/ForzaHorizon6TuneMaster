@@ -21,6 +21,10 @@ public class AiCarSpecService
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "ForzaTuneMaster", "specs_cache");
 
+    private static readonly string OverridesPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "ForzaTuneMaster", "specs_overrides.json");
+
     private static readonly JsonSerializerOptions CacheJsonOptions = new()
     {
         WriteIndented = true,
@@ -31,6 +35,45 @@ public class AiCarSpecService
     {
         Timeout = TimeSpan.FromSeconds(30)
     };
+
+    private static Dictionary<string, AiCarSpecsResponse>? _overrides;
+
+    private static Dictionary<string, AiCarSpecsResponse> LoadOverrides()
+    {
+        if (_overrides != null) return _overrides;
+        _overrides = new Dictionary<string, AiCarSpecsResponse>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            if (File.Exists(OverridesPath))
+            {
+                var raw = File.ReadAllText(OverridesPath);
+                var parsed = JsonSerializer.Deserialize<Dictionary<string, AiCarSpecsResponse>>(raw, CacheJsonOptions);
+                if (parsed != null)
+                    _overrides = parsed;
+            }
+        }
+        catch { }
+        return _overrides;
+    }
+
+    private static void ApplyOverrides(string carName, AiCarSpecsResponse result)
+    {
+        var overrides = LoadOverrides();
+        if (overrides.TryGetValue(carName, out var ov) && ov != null)
+        {
+            if (ov.DragCoefficientCd > 0) { result.DragCoefficientCd = ov.DragCoefficientCd; result.EstimatedFields.Remove("drag_coefficient_cd"); }
+            if (ov.FrontalAreaM2 > 0) { result.FrontalAreaM2 = ov.FrontalAreaM2; result.EstimatedFields.Remove("frontal_area_m2"); }
+            if (ov.WheelbaseMm > 0) { result.WheelbaseMm = ov.WheelbaseMm; result.EstimatedFields.Remove("wheelbase_mm"); }
+            if (ov.FrontTrackMm > 0) { result.FrontTrackMm = ov.FrontTrackMm; result.EstimatedFields.Remove("front_track_mm"); }
+            if (ov.RearTrackMm > 0) { result.RearTrackMm = ov.RearTrackMm; result.EstimatedFields.Remove("rear_track_mm"); }
+        }
+    }
+
+    public static void DeleteCache()
+    {
+        try { if (Directory.Exists(SpecsCacheDir)) Directory.Delete(SpecsCacheDir, recursive: true); } catch { }
+        try { Directory.CreateDirectory(SpecsCacheDir); } catch { }
+    }
 
     static AiCarSpecService()
     {
@@ -52,7 +95,11 @@ public class AiCarSpecService
             {
                 cached = JsonSerializer.Deserialize<AiCarSpecsResponse>(
                     File.ReadAllText(path), CacheJsonOptions);
-                return cached != null;
+                if (cached != null)
+                {
+                    ApplyOverrides(carName, cached);
+                    return true;
+                }
             }
             catch { }
         }
@@ -74,14 +121,11 @@ public class AiCarSpecService
 
     private static List<ProviderEntry> BuildProviders()
     {
-        var list = new List<ProviderEntry>
-        {
-            new("https://api.cerebras.ai/v1/chat/completions", "gpt-oss-120b", ApiKeys.Cerebras),
-            new("https://api.cerebras.ai/v1/chat/completions", "zai-glm-4.7",  ApiKeys.Cerebras),
-        };
+        var list = new List<ProviderEntry>();
 
-        if (!string.IsNullOrEmpty(ApiKeys.OpenRouter))
-            list.Add(new("https://openrouter.ai/api/v1/chat/completions", "openrouter/auto", ApiKeys.OpenRouter!));
+        list.Add(new("https://openrouter.ai/api/v1/chat/completions", "openrouter/auto", ApiKeys.OpenRouter!));
+        list.Add(new("https://api.cerebras.ai/v1/chat/completions", "gpt-oss-120b", ApiKeys.Cerebras));
+        list.Add(new("https://api.cerebras.ai/v1/chat/completions", "zai-glm-4.7", ApiKeys.Cerebras));
 
         return list;
     }
@@ -94,7 +138,7 @@ public class AiCarSpecService
             return cached!;
         }
 
-        var prompt = $@"{carName}.
+        var prompt = $@"Search in google ONLY valid JSON for {carName}.
 
 Return only JSON:
 
@@ -109,10 +153,10 @@ Return only JSON:
 
 Requirements:
 - Use factory specs where available.
-- If exact value is not found, estimate from reliable sources, similar models, or engineering calculations.
-- List all estimated fields in the estimated_fields array.
-- Values only in the specified units.
-- No explanations, comments, markdown, or extra text.";
+- Prefer official factory/Forza data over estimates.
+- If exact values are unavailable, cross-reference multiple sources (similar-year vehicles, same chassis/platform, engineering estimates) and list ALL estimated fields.
+- Output ONLY the JSON object — no markdown, no code fences, no explanations.
+- Use the exact units: mm for lengths, m² for area, dimensionless for Cd.";
 
         var providers = BuildProviders();
         List<Exception> errors = [];
@@ -121,6 +165,7 @@ Requirements:
             try
             {
                 var result = await CallModelAsync(p.Url, p.Model, p.ApiKey, prompt);
+                ApplyOverrides(carName, result);
                 SaveCache(carName, result);
                 return result;
             }
@@ -140,7 +185,7 @@ Requirements:
         var requestBody = JsonSerializer.Serialize(new
         {
             model,
-            temperature = 0,
+            temperature = 0.1,
             top_p = 1,
             messages = new[]
             {

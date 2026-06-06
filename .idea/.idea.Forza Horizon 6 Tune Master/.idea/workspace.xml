@@ -8,14 +8,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6f5aca4a-8e95-4953-8a4a-45b281d20313" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AGENTS.md" beforeDir="false" afterPath="$PROJECT_DIR$/AGENTS.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/AiCarSpecService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/AiCarSpecService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/LocalizationService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/LocalizationService.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/MainViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/MainViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/bin/Debug/net8.0-windows/Forza Horizon 6 Tune Master.dll" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/bin/Debug/net8.0-windows/Forza Horizon 6 Tune Master.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/bin/Debug/net8.0-windows/Forza Horizon 6 Tune Master.exe" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/bin/Debug/net8.0-windows/Forza Horizon 6 Tune Master.exe" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/bin/Debug/net8.0-windows/Forza Horizon 6 Tune Master.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/bin/Debug/net8.0-windows/Forza Horizon 6 Tune Master.pdb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/bin/Debug/net8.0-windows/TuneMaster.Tests.dll" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/bin/Debug/net8.0-windows/TuneMaster.Tests.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/bin/Debug/net8.0-windows/TuneMaster.Tests.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/bin/Debug/net8.0-windows/TuneMaster.Tests.pdb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/TuneMaster.Tests.AssemblyInfo.cs" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/TuneMaster.Tests.AssemblyInfo.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/TuneMaster.Tests.AssemblyInfoInputs.cache" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/TuneMaster.Tests.AssemblyInfoInputs.cache" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/TuneMaster.Tests.csproj.AssemblyReference.cache" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/TuneMaster.Tests.csproj.AssemblyReference.cache" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/obj/rider.project.restore.info" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/obj/rider.project.restore.info" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/TuneMaster.Tests.csproj.FileListAbsolute.txt" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/TuneMaster.Tests.csproj.FileListAbsolute.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/TuneMaster.Tests.dll" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/TuneMaster.Tests.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/TuneMaster.Tests.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/TuneMaster.Tests.pdb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/ref/TuneMaster.Tests.dll" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/ref/TuneMaster.Tests.dll" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/refint/TuneMaster.Tests.dll" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/obj/Debug/net8.0-windows/refint/TuneMaster.Tests.dll" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

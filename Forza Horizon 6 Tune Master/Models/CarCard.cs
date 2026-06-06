@@ -5,6 +5,7 @@ namespace Forza_Horizon_6_Tune_Master.Models;
 
 public class CarCard : NotifyBase
 {
+    private const double MaxSpeedClampKmh = 700.0;
     public Guid Id { get; set; } = Guid.NewGuid();
 
     private string _name = LocalizationService.Instance.T("ProfileDefaultName");
@@ -338,7 +339,7 @@ public class CarCard : NotifyBase
         {
             double powerWatts = PowerHP * 745.7;
             double vMaxMs     = Math.Pow(powerWatts / (0.5 * 1.225 * CdABodyEstimate), 1.0 / 3.0);
-            return Math.Round(Math.Clamp(vMaxMs * 3.6, 60.0, 600.0));
+            return Math.Round(Math.Clamp(vMaxMs * 3.6, 60.0, MaxSpeedClampKmh));
         }
         set { /* computed — no-op for backward compat with saved profiles */ }
     }
