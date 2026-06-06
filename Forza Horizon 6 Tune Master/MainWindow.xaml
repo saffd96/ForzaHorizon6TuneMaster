@@ -199,6 +199,31 @@
             </Border>
         </Grid>
 
+        <!-- ══ AI Spec Status overlay ═══════════════════════════════════ -->
+        <Grid Grid.RowSpan="3"
+              Visibility="{Binding HasAiSpecStatus, Converter={StaticResource BoolVis}}"
+              ZIndex="99"
+              IsHitTestVisible="True"
+              PreviewMouseDown="AiSpecStatusOverlay_PreviewMouseDown">
+            <Rectangle Fill="#000000" Opacity="0.55"/>
+            <Border Background="{StaticResource CardBrush}"
+                    BorderBrush="{StaticResource AccentBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="40,32"
+                    Width="360"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding AiSpecStatusMessage}"
+                               Foreground="{StaticResource TextBrush}"
+                               FontSize="14" FontWeight="SemiBold"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
         <!-- ══ Status Bar ══════════════════════════════════════════════ -->
         <Border Grid.Row="2"
                 Background="{StaticResource SurfaceBrush}"

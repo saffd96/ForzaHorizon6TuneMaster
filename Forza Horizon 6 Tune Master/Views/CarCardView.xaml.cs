@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Animation;
 using Forza_Horizon_6_Tune_Master.Models;
 
 namespace Forza_Horizon_6_Tune_Master.Views;
@@ -42,5 +43,25 @@ public partial class CarCardView : UserControl
     {
         if (CarListBox.SelectedItem != null)
             CarListBox.Visibility = Visibility.Collapsed;
+    }
+
+    public void FlashCarSelection()
+    {
+        var accent = (System.Windows.Media.Brush)FindResource("AccentBrush");
+        var defaultBg = CarSelectionCard.Background;
+
+        var anim = new System.Windows.Media.Animation.ObjectAnimationUsingKeyFrames
+        {
+            Duration = TimeSpan.FromSeconds(1.5),
+            FillBehavior = System.Windows.Media.Animation.FillBehavior.Stop
+        };
+        anim.KeyFrames.Add(new System.Windows.Media.Animation.DiscreteObjectKeyFrame(accent,    KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.00))));
+        anim.KeyFrames.Add(new System.Windows.Media.Animation.DiscreteObjectKeyFrame(defaultBg, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.25))));
+        anim.KeyFrames.Add(new System.Windows.Media.Animation.DiscreteObjectKeyFrame(accent,    KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.50))));
+        anim.KeyFrames.Add(new System.Windows.Media.Animation.DiscreteObjectKeyFrame(defaultBg, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(0.75))));
+        anim.KeyFrames.Add(new System.Windows.Media.Animation.DiscreteObjectKeyFrame(accent,    KeyTime.FromTimeSpan(TimeSpan.FromSeconds(1.00))));
+        anim.KeyFrames.Add(new System.Windows.Media.Animation.DiscreteObjectKeyFrame(defaultBg, KeyTime.FromTimeSpan(TimeSpan.FromSeconds(1.25))));
+
+        CarSelectionCard.BeginAnimation(System.Windows.Controls.Border.BackgroundProperty, anim);
     }
 }

@@ -34,6 +34,7 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(HasCenterDiffBias));
             OnPropertyChanged(nameof(SelectedCarDisplayText));
             ClearAiEstimatedFields();
+            ClearAiSpecStatus();
             OnModelChanged(null, null!);
         }
     }
@@ -102,6 +103,7 @@ public class MainViewModel : INotifyPropertyChanged
             _selectedCar = value;
             if (value != null)
             {
+                if (!_isLoadingProfile) { ClearAiEstimatedFields(); ClearAiSpecStatus(); }
                 _car.Make = value.Make;
                 _car.Model = value.Model;
                 _car.Year = value.Year;
@@ -805,14 +807,32 @@ public class MainViewModel : INotifyPropertyChanged
         set { _busyMessage = value; OnPropertyChanged(); }
     }
 
+    // ── AI spec status overlay ──────────────────────────────────────────────
+    private string _aiSpecStatusMessage = "";
+    public string AiSpecStatusMessage
+    {
+        get => _aiSpecStatusMessage;
+        set { _aiSpecStatusMessage = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasAiSpecStatus)); }
+    }
+    public bool HasAiSpecStatus => !string.IsNullOrEmpty(_aiSpecStatusMessage);
+    public bool NeedsCarSelectionHighlight { get; private set; }
+
+    public void ClearAiSpecStatus()
+    {
+        NeedsCarSelectionHighlight = false;
+        AiSpecStatusMessage = "";
+    }
+
     // ── AI-estimated field tracking ─────────────────────────────────────────
     private readonly HashSet<string> _aiEstimatedFields = new();
+    private bool _isSettingAiSpecs;
 
     public bool IsWheelbaseAiEstimated  => _aiEstimatedFields.Contains("Wheelbase");
     public bool IsFrontTrackAiEstimated => _aiEstimatedFields.Contains("FrontTrack");
     public bool IsRearTrackAiEstimated  => _aiEstimatedFields.Contains("RearTrack");
     public bool IsCdAiEstimated         => _aiEstimatedFields.Contains("Cd");
     public bool IsFrontalAreaAiEstimated => _aiEstimatedFields.Contains("FrontalArea");
+    public bool HasAnyAiEstimatedField => _aiEstimatedFields.Count > 0;
 
     private void ClearAiEstimatedFields()
     {
@@ -822,6 +842,7 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(IsRearTrackAiEstimated));
         OnPropertyChanged(nameof(IsCdAiEstimated));
         OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
+        OnPropertyChanged(nameof(HasAnyAiEstimatedField));
     }
 
     private int _pendingGenerationId;
@@ -849,6 +870,23 @@ public class MainViewModel : INotifyPropertyChanged
         }
         if (e.PropertyName is nameof(CarCard.Make) or nameof(CarCard.Model) or nameof(CarCard.Year))
             OnPropertyChanged(nameof(SelectedCarDisplayText));
+
+        if (!_isSettingAiSpecs)
+        {
+            bool removed = false;
+            if (e.PropertyName == nameof(CarCard.Wheelbase) && _aiEstimatedFields.Remove("Wheelbase"))
+            { removed = true; OnPropertyChanged(nameof(IsWheelbaseAiEstimated)); }
+            else if (e.PropertyName == nameof(CarCard.FrontTrack) && _aiEstimatedFields.Remove("FrontTrack"))
+            { removed = true; OnPropertyChanged(nameof(IsFrontTrackAiEstimated)); }
+            else if (e.PropertyName == nameof(CarCard.RearTrack) && _aiEstimatedFields.Remove("RearTrack"))
+            { removed = true; OnPropertyChanged(nameof(IsRearTrackAiEstimated)); }
+            else if (e.PropertyName == nameof(CarCard.Cd) && _aiEstimatedFields.Remove("Cd"))
+            { removed = true; OnPropertyChanged(nameof(IsCdAiEstimated)); }
+            else if (e.PropertyName == nameof(CarCard.FrontalAreaM2) && _aiEstimatedFields.Remove("FrontalArea"))
+            { removed = true; OnPropertyChanged(nameof(IsFrontalAreaAiEstimated)); }
+            if (removed)
+                OnPropertyChanged(nameof(HasAnyAiEstimatedField));
+        }
     }
 
     private void OnModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -890,6 +928,7 @@ public class MainViewModel : INotifyPropertyChanged
     public RelayCommand DeleteProfileCommand  { get; }
     public RelayCommand NewProfileCommand     { get; }
     public RelayCommand FetchAiCarSpecsCommand { get; }
+    public RelayCommand DismissAiSpecStatusCommand { get; }
     public RelayCommand ClearCarSelectionCommand { get; }
     public RelayCommand RefreshCarDatabaseCommand { get; }
     public RelayCommand ClearCacheCommand { get; }
@@ -903,6 +942,7 @@ public class MainViewModel : INotifyPropertyChanged
         DeleteProfileCommand   = new RelayCommand(DeleteProfile);
         NewProfileCommand      = new RelayCommand(NewProfile);
         FetchAiCarSpecsCommand = new RelayCommand(() => _ = FetchAiCarSpecsAsync(), () => !IsFetchingAiSpecs);
+        DismissAiSpecStatusCommand = new RelayCommand(() => AiSpecStatusMessage = "");
         ClearCarSelectionCommand = new RelayCommand(ClearCarSelection);
         RefreshCarDatabaseCommand = new RelayCommand(RefreshCarDatabase, () => !IsLoadingCars);
         ClearCacheCommand = new RelayCommand(ClearCache);
@@ -960,9 +1000,8 @@ public class MainViewModel : INotifyPropertyChanged
         if (savedSu != null && Enum.TryParse<SpringUnit>(savedSu, out var su)) SpringUnit = su;
 
         RefreshProfiles();
-        _ = LoadCarDatabaseAsync();
-
         InvalidateAllLanguageDependent();
+        _ = LoadCarDatabaseAsync();
     }
 
     private void NotifyConstraintDisplayProperties()
@@ -1056,8 +1095,8 @@ public class MainViewModel : INotifyPropertyChanged
     {
         if (string.IsNullOrEmpty(car.WikiPageTitle)) return;
 
-        IsLoadingCarSpecs = true;
         BusyMessage = T("BusyLoadingSpecs");
+        IsLoadingCarSpecs = true;
         try
         {
             var specs = await _wikiSpecService.FetchSpecsAsync(car.WikiPageTitle, ct);
@@ -1094,8 +1133,11 @@ public class MainViewModel : INotifyPropertyChanged
     private async Task FetchAiCarSpecsAsync()
     {
         if (IsFetchingAiSpecs) return;
+        ClearAiSpecStatus();
         if (string.IsNullOrWhiteSpace(Car.Make) && string.IsNullOrWhiteSpace(Car.Model))
         {
+            NeedsCarSelectionHighlight = true;
+            AiSpecStatusMessage = T("StatusFirstSelectCar");
             StatusMessage = T("StatusFirstSelectCar");
             return;
         }
@@ -1109,12 +1151,14 @@ public class MainViewModel : INotifyPropertyChanged
 
             var specs = await _aiCarSpecService.FetchCarSpecsAsync(carName);
 
+            _isSettingAiSpecs = true;
             _aiEstimatedFields.Clear();
             if (specs.WheelbaseMm > 0) { Car.Wheelbase = specs.WheelbaseMm; _aiEstimatedFields.Add("Wheelbase"); }
             if (specs.FrontTrackMm > 0) { Car.FrontTrack = specs.FrontTrackMm; _aiEstimatedFields.Add("FrontTrack"); }
             if (specs.RearTrackMm > 0) { Car.RearTrack = specs.RearTrackMm; _aiEstimatedFields.Add("RearTrack"); }
             if (specs.DragCoefficientCd > 0) { Car.Cd = specs.DragCoefficientCd; _aiEstimatedFields.Add("Cd"); }
             if (specs.FrontalAreaM2 > 0) { Car.FrontalAreaM2 = specs.FrontalAreaM2; _aiEstimatedFields.Add("FrontalArea"); }
+            _isSettingAiSpecs = false;
 
             OnPropertyChanged(nameof(WheelbaseDisplay));
             OnPropertyChanged(nameof(FrontTrackDisplay));
@@ -1124,6 +1168,7 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(IsRearTrackAiEstimated));
             OnPropertyChanged(nameof(IsCdAiEstimated));
             OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
+            OnPropertyChanged(nameof(HasAnyAiEstimatedField));
 
             var estimated = specs.EstimatedFields.Count > 0
                 ? string.Format(T("AiSpecEstimate"), string.Join(", ", specs.EstimatedFields))
@@ -1133,6 +1178,7 @@ public class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
+            AiSpecStatusMessage = string.Format(T("StatusAiError"), ex.Message);
             StatusMessage = string.Format(T("StatusAiError"), ex.Message);
         }
         finally
@@ -1189,6 +1235,7 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(IsRearTrackAiEstimated));
             OnPropertyChanged(nameof(IsCdAiEstimated));
             OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
+            OnPropertyChanged(nameof(HasAnyAiEstimatedField));
             _isLoadingProfile = true;
             SelectCarFromProfile();
             _isLoadingProfile = false;
@@ -1235,9 +1282,9 @@ public class MainViewModel : INotifyPropertyChanged
 
     private async Task LoadCarDatabaseAsync()
     {
+        BusyMessage = T("BusyLoadingCars");
         IsLoadingCars = true;
         RefreshCarDatabaseCommand.Raise();
-        BusyMessage = T("BusyLoadingCars");
         try
         {
             var result = await _carDbService.LoadCarDatabaseAsync();
@@ -1289,9 +1336,9 @@ public class MainViewModel : INotifyPropertyChanged
 
     private async void RefreshCarDatabase()
     {
+        BusyMessage = T("BusyRefreshingCars");
         IsLoadingCars = true;
         RefreshCarDatabaseCommand.Raise();
-        BusyMessage = T("BusyRefreshingCars");
         try
         {
             var result = await _carDbService.RefreshAsync();

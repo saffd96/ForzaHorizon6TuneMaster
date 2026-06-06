@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media;
 using Forza_Horizon_6_Tune_Master.ViewModels;
 using Forza_Horizon_6_Tune_Master.Views;
 
@@ -11,6 +13,56 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = new MainViewModel();
         SizeChanged += OnSizeChanged;
+    }
+
+    private void AiSpecStatusOverlay_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            bool highlight = vm.NeedsCarSelectionHighlight;
+            vm.DismissAiSpecStatusCommand.Execute(null);
+            if (highlight)
+            {
+                ScrollToCarSelection();
+                FlashCarSelection();
+            }
+        }
+    }
+
+    private void ScrollToCarSelection()
+    {
+        var sv = FindScrollViewer(this);
+        sv?.ScrollToHome();
+    }
+
+    private void FlashCarSelection()
+    {
+        var carView = FindVisualChild<CarCardView>(this);
+        carView?.FlashCarSelection();
+    }
+
+    private static System.Windows.Controls.ScrollViewer? FindScrollViewer(DependencyObject parent)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is System.Windows.Controls.ScrollViewer sv) return sv;
+            var found = FindScrollViewer(child);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T t) return t;
+            var found = FindVisualChild<T>(child);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     private void HelpButton_Click(object sender, RoutedEventArgs e)
