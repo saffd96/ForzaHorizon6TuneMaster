@@ -1110,16 +1110,11 @@ public class MainViewModel : INotifyPropertyChanged
             var specs = await _aiCarSpecService.FetchCarSpecsAsync(carName);
 
             _aiEstimatedFields.Clear();
-            if (specs.WheelbaseMm > 0) Car.Wheelbase = specs.WheelbaseMm;
-            if (specs.FrontTrackMm > 0) Car.FrontTrack = specs.FrontTrackMm;
-            if (specs.RearTrackMm > 0) Car.RearTrack = specs.RearTrackMm;
-            if (specs.DragCoefficientCd > 0) Car.Cd = specs.DragCoefficientCd;
-            if (specs.FrontalAreaM2 > 0) Car.FrontalAreaM2 = specs.FrontalAreaM2;
-            if (specs.EstimatedFields.Contains("wheelbase_mm")) _aiEstimatedFields.Add("Wheelbase");
-            if (specs.EstimatedFields.Contains("front_track_mm")) _aiEstimatedFields.Add("FrontTrack");
-            if (specs.EstimatedFields.Contains("rear_track_mm")) _aiEstimatedFields.Add("RearTrack");
-            if (specs.EstimatedFields.Contains("drag_coefficient_cd")) _aiEstimatedFields.Add("Cd");
-            if (specs.EstimatedFields.Contains("frontal_area_m2")) _aiEstimatedFields.Add("FrontalArea");
+            if (specs.WheelbaseMm > 0) { Car.Wheelbase = specs.WheelbaseMm; _aiEstimatedFields.Add("Wheelbase"); }
+            if (specs.FrontTrackMm > 0) { Car.FrontTrack = specs.FrontTrackMm; _aiEstimatedFields.Add("FrontTrack"); }
+            if (specs.RearTrackMm > 0) { Car.RearTrack = specs.RearTrackMm; _aiEstimatedFields.Add("RearTrack"); }
+            if (specs.DragCoefficientCd > 0) { Car.Cd = specs.DragCoefficientCd; _aiEstimatedFields.Add("Cd"); }
+            if (specs.FrontalAreaM2 > 0) { Car.FrontalAreaM2 = specs.FrontalAreaM2; _aiEstimatedFields.Add("FrontalArea"); }
 
             OnPropertyChanged(nameof(WheelbaseDisplay));
             OnPropertyChanged(nameof(FrontTrackDisplay));
@@ -1163,7 +1158,8 @@ public class MainViewModel : INotifyPropertyChanged
             Car.Name = name;
             _storage.Save(name, new SavedProfile
             {
-                Car = Car, Track = Track, Constraints = Constraints, LastResult = TuneResult
+                Car = Car, Track = Track, Constraints = Constraints, LastResult = TuneResult,
+                AiEstimatedFields = _aiEstimatedFields.ToList()
             });
             RefreshProfiles();
             StatusMessage = string.Format(T("StatusProfileSaved"), name);
@@ -1183,8 +1179,16 @@ public class MainViewModel : INotifyPropertyChanged
             Constraints = p.Constraints;
             NotifyConstraintDisplayProperties();
             var loadedResult = p.LastResult;
-            if (loadedResult != null) loadedResult.Car = Car;
+            if (loadedResult != null) { loadedResult.Car = Car; loadedResult.Track = Track; }
             TuneResult  = loadedResult;
+            _aiEstimatedFields.Clear();
+            foreach (var f in p.AiEstimatedFields)
+                _aiEstimatedFields.Add(f);
+            OnPropertyChanged(nameof(IsWheelbaseAiEstimated));
+            OnPropertyChanged(nameof(IsFrontTrackAiEstimated));
+            OnPropertyChanged(nameof(IsRearTrackAiEstimated));
+            OnPropertyChanged(nameof(IsCdAiEstimated));
+            OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
             _isLoadingProfile = true;
             SelectCarFromProfile();
             _isLoadingProfile = false;

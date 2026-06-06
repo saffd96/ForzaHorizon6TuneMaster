@@ -10,6 +10,7 @@ public class SavedProfile
     public TrackInfo Track { get; set; } = new();
     public TuningConstraints Constraints { get; set; } = new();
     public TuneResult? LastResult { get; set; }
+    public List<string> AiEstimatedFields { get; set; } = new();
 }
 
 public class StorageService

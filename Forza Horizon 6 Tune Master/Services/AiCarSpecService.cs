@@ -138,7 +138,7 @@ public class AiCarSpecService
             return cached!;
         }
 
-        var prompt = $@"Search in google ONLY valid JSON for {carName}.
+        var prompt = $@"Search in google for {carName}.
 
 Return only JSON:
 
@@ -154,7 +154,9 @@ Return only JSON:
 Requirements:
 - Use factory specs where available.
 - Prefer official factory/Forza data over estimates.
-- If exact values are unavailable, cross-reference multiple sources (similar-year vehicles, same chassis/platform, engineering estimates) and list ALL estimated fields.
+- If exact values are unavailable, cross-reference multiple sources (similar-year vehicles, same chassis/platform, engineering estimates) and list ALL estimated fields in ""estimated_fields"".
+- For **frontal_area_m2**: if no exact value found, search for the vehicle's width and height (in mm or m), then calculate: FrontalArea = Width_m × Height_m × 0.85 (typical reduction factor for passenger cars). Use actual width (mirrors excluded) and roofline height. List ""frontal_area_m2"" in estimated_fields.
+- For **drag_coefficient_cd**: if no exact value found, search for Cd of sibling models (same platform, generation, body style — e.g., sedan, hatchback, SUV). If unavailable, estimate from body-style typical range (sedan ~0.26–0.31, hatchback ~0.30–0.36, SUV ~0.33–0.40, sports car ~0.30–0.38, supercar ~0.32–0.36). List ""drag_coefficient_cd"" in estimated_fields.
 - Output ONLY the JSON object — no markdown, no code fences, no explanations.
 - Use the exact units: mm for lengths, m² for area, dimensionless for Cd.";
 
@@ -185,7 +187,7 @@ Requirements:
         var requestBody = JsonSerializer.Serialize(new
         {
             model,
-            temperature = 0.1,
+            temperature = 0,
             top_p = 1,
             messages = new[]
             {
