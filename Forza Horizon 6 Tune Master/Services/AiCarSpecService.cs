@@ -1,3 +1,4 @@
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -16,10 +17,58 @@ public class AiCarSpecsResponse
 
 public class AiCarSpecService
 {
+    private static readonly string SpecsCacheDir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "ForzaTuneMaster", "specs_cache");
+
+    private static readonly JsonSerializerOptions CacheJsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+    };
+
     private static readonly HttpClient Client = new()
     {
         Timeout = TimeSpan.FromSeconds(30)
     };
+
+    static AiCarSpecService()
+    {
+        try { Directory.CreateDirectory(SpecsCacheDir); } catch { }
+    }
+
+    private static string GetCachePath(string carName)
+    {
+        var safeName = string.Join("_", carName.Split(Path.GetInvalidFileNameChars()));
+        return Path.Combine(SpecsCacheDir, $"{safeName}.json");
+    }
+
+    private static bool TryGetCached(string carName, out AiCarSpecsResponse? cached)
+    {
+        var path = GetCachePath(carName);
+        if (File.Exists(path) && File.GetLastWriteTime(path).Date >= DateTime.Today)
+        {
+            try
+            {
+                cached = JsonSerializer.Deserialize<AiCarSpecsResponse>(
+                    File.ReadAllText(path), CacheJsonOptions);
+                return cached != null;
+            }
+            catch { }
+        }
+        cached = null;
+        return false;
+    }
+
+    private static void SaveCache(string carName, AiCarSpecsResponse specs)
+    {
+        try
+        {
+            File.WriteAllText(GetCachePath(carName),
+                JsonSerializer.Serialize(specs, CacheJsonOptions));
+        }
+        catch { }
+    }
 
     private record ProviderEntry(string Url, string Model, string ApiKey);
 
@@ -39,6 +88,12 @@ public class AiCarSpecService
 
     public async Task<AiCarSpecsResponse> FetchCarSpecsAsync(string carName)
     {
+        if (TryGetCached(carName, out var cached))
+        {
+            System.Diagnostics.Debug.WriteLine($"[AiCarSpec] Cache hit for '{carName}'");
+            return cached!;
+        }
+
         var prompt = $@"{carName}.
 
 Return only JSON:
@@ -65,7 +120,9 @@ Requirements:
         {
             try
             {
-                return await CallModelAsync(p.Url, p.Model, p.ApiKey, prompt);
+                var result = await CallModelAsync(p.Url, p.Model, p.ApiKey, prompt);
+                SaveCache(carName, result);
+                return result;
             }
             catch (Exception ex)
             {

@@ -90,6 +90,7 @@ public class MainViewModel : INotifyPropertyChanged
     private List<CarData> _carDatabase = new();
 
     private bool _suppressFilter;
+    private bool _isLoadingProfile;
 
     private CarData? _selectedCar;
     public CarData? SelectedCar
@@ -111,7 +112,8 @@ public class MainViewModel : INotifyPropertyChanged
 
                 _wikiSpecsCts?.Cancel();
                 _wikiSpecsCts = new CancellationTokenSource();
-                _ = FetchAndApplyWikiSpecsAsync(value, _wikiSpecsCts.Token);
+                if (!_isLoadingProfile)
+                    _ = FetchAndApplyWikiSpecsAsync(value, _wikiSpecsCts.Token);
             }
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedCarDisplayText));
@@ -183,6 +185,7 @@ public class MainViewModel : INotifyPropertyChanged
                 try { _selectedUnitSystemItem = UnitSystemOptions.FirstOrDefault(o => o.Value == value); OnPropertyChanged(nameof(SelectedUnitSystemItem)); }
                 finally { _syncingUnitSystem = false; }
             }
+            SaveUnitSettings();
         }
     }
 
@@ -300,6 +303,7 @@ public class MainViewModel : INotifyPropertyChanged
                 try { _selectedPowerUnitItem = PowerUnitOptions.FirstOrDefault(o => o.Value == value); OnPropertyChanged(nameof(SelectedPowerUnitItem)); }
                 finally { _syncingPowerUnit = false; }
             }
+            SaveUnitSettings();
         }
     }
 
@@ -325,6 +329,7 @@ public class MainViewModel : INotifyPropertyChanged
                 try { _selectedSpringUnitItem = SpringUnitOptions.FirstOrDefault(o => o.Value == value); OnPropertyChanged(nameof(SelectedSpringUnitItem)); }
                 finally { _syncingSpringUnit = false; }
             }
+            SaveUnitSettings();
         }
     }
 
@@ -493,6 +498,7 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(RearTrackFieldLabel));
                 OnPropertyChanged(nameof(UnitToggleLabel));
                 NotifyConstraintDisplayProperties();
+                SaveUnitSettings();
             }
             finally { _syncingUnitSystem = false; }
         }
@@ -516,6 +522,7 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(PowerDisplay));
                 OnPropertyChanged(nameof(PowerFieldLabel));
                 OnPropertyChanged(nameof(PowerUnitToggleLabel));
+                SaveUnitSettings();
             }
             finally { _syncingPowerUnit = false; }
         }
@@ -542,6 +549,7 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(SpringFrontMaxDisplay));
                 OnPropertyChanged(nameof(SpringRearMinDisplay));
                 OnPropertyChanged(nameof(SpringRearMaxDisplay));
+                SaveUnitSettings();
             }
             finally { _syncingSpringUnit = false; }
         }
@@ -943,6 +951,12 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedUnitSystemItem));
         OnPropertyChanged(nameof(SelectedPowerUnitItem));
         OnPropertyChanged(nameof(SelectedSpringUnitItem));
+
+        var (savedMs, savedPu, savedSu) = LocalizationService.Instance.LoadUnitSettings();
+        if (savedMs != null && Enum.TryParse<UnitSystem>(savedMs, out var ms)) MeasurementSystem = ms;
+        if (savedPu != null && Enum.TryParse<PowerUnit>(savedPu, out var pu)) PowerUnit = pu;
+        if (savedSu != null && Enum.TryParse<SpringUnit>(savedSu, out var su)) SpringUnit = su;
+
         RefreshProfiles();
         _ = LoadCarDatabaseAsync();
 
@@ -978,6 +992,12 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(FrontTrackDisplay));
         OnPropertyChanged(nameof(RearTrackDisplay));
         OnPropertyChanged(nameof(SelectedCarDisplayText));
+    }
+
+    // ── Unit persistence ──────────────────────────────────────────────────────
+    private void SaveUnitSettings()
+    {
+        LocalizationService.Instance.SaveUnitSettings(_measurementSystem, _powerUnit, _springUnit);
     }
 
     // ── Unit toggles ─────────────────────────────────────────────────────────
@@ -1161,7 +1181,9 @@ public class MainViewModel : INotifyPropertyChanged
             var loadedResult = p.LastResult;
             if (loadedResult != null) loadedResult.Car = Car;
             TuneResult  = loadedResult;
+            _isLoadingProfile = true;
             SelectCarFromProfile();
+            _isLoadingProfile = false;
             StatusMessage = string.Format(T("StatusProfileLoaded"), SelectedProfile);
         }
         catch (Exception ex) { StatusMessage = string.Format(T("StatusLoadError"), ex.Message); }

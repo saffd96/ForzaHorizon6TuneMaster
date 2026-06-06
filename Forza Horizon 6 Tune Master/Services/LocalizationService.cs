@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Windows;
+using Forza_Horizon_6_Tune_Master.Models;
 
 namespace Forza_Horizon_6_Tune_Master.Services;
 
@@ -99,13 +100,7 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
     private void SaveLanguageSetting(string code)
     {
-        try
-        {
-            var dir = Path.GetDirectoryName(SettingsPath);
-            if (dir != null) Directory.CreateDirectory(dir);
-            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(new { Language = code }));
-        }
-        catch { /* best effort */ }
+        SaveSettings(("Language", code));
     }
 
     private string? LoadLanguageSetting()
@@ -121,6 +116,61 @@ public sealed class LocalizationService : INotifyPropertyChanged
         {
             return null;
         }
+    }
+
+    public void SaveUnitSettings(UnitSystem measurement, PowerUnit power, SpringUnit spring)
+    {
+        SaveSettings(
+            ("MeasurementSystem", measurement.ToString()),
+            ("PowerUnit", power.ToString()),
+            ("SpringUnit", spring.ToString())
+        );
+    }
+
+    public (string? measurement, string? power, string? spring) LoadUnitSettings()
+    {
+        try
+        {
+            if (!File.Exists(SettingsPath)) return (null, null, null);
+            var json = File.ReadAllText(SettingsPath);
+            var data = JsonSerializer.Deserialize<Dictionary<string, string?>>(json);
+            if (data == null) return (null, null, null);
+            data.TryGetValue("MeasurementSystem", out var ms);
+            data.TryGetValue("PowerUnit", out var pu);
+            data.TryGetValue("SpringUnit", out var su);
+            return (ms, pu, su);
+        }
+        catch
+        {
+            return (null, null, null);
+        }
+    }
+
+    private void SaveSettings(params (string key, string? value)[] pairs)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(SettingsPath);
+            if (dir != null) Directory.CreateDirectory(dir);
+
+            var data = new Dictionary<string, string?>();
+            if (File.Exists(SettingsPath))
+            {
+                try
+                {
+                    var existing = JsonSerializer.Deserialize<Dictionary<string, string?>>(
+                        File.ReadAllText(SettingsPath));
+                    if (existing != null) data = existing;
+                }
+                catch { }
+            }
+
+            foreach (var (key, value) in pairs)
+                if (value != null) data[key] = value;
+
+            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(data));
+        }
+        catch { /* best effort */ }
     }
 
     private bool LoadLanguage(string code, out Dictionary<string, string> dict)
