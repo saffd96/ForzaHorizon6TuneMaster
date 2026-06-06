@@ -50,7 +50,7 @@ public class StorageService
     public List<string> GetProfileNames()
     {
         return Directory.GetFiles(ProfilesDir, "*.json")
-            .Select(f => Path.GetFileNameWithoutExtension(f).Replace("_", " "))
+            .Select(f => Path.GetFileNameWithoutExtension(f))
             .OrderBy(n => n)
             .ToList();
     }

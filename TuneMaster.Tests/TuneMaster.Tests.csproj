@@ -1,27 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>TuneMaster.Tests</RootNamespace>
     <Nullable>enable</Nullable>
-
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
     <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
   </ItemGroup>
-
   <ItemGroup>
-    <Using Include="Xunit" />
+    <ProjectReference Include="..\Forza Horizon 6 Tune Master\Forza Horizon 6 Tune Master.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Forza Horizon 6 Tune Master\Forza Horizon 6 Tune Master.csproj"/>
-  </ItemGroup>
-
 </Project>
