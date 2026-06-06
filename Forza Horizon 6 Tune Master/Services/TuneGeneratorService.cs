@@ -529,8 +529,8 @@ public class TuneGeneratorService
             arbR += rollAdj;
         }
 
-        r.ARBFront = Math.Round(Clamp(arbF, c.ARBFrontMin, c.ARBFrontMax));
-        r.ARBRear  = Math.Round(Clamp(arbR, c.ARBRearMin,  c.ARBRearMax));
+        r.ARBFront = Math.Round(Clamp(arbF, c.ARBFrontMin, c.ARBFrontMax), 1);
+        r.ARBRear  = Math.Round(Clamp(arbR, c.ARBRearMin,  c.ARBRearMax), 1);
         double cgH_arb = EstimateCGHeight(car);
         ex["ARB"] = string.Format(L("Expl_ARB_Fmt"), r.ARBFront, r.ARBRear, note);
     }
@@ -764,10 +764,10 @@ public class TuneGeneratorService
         rebR *= aspDamper;
         bmpR *= aspDamper;
 
-        r.ReboundFront = Math.Round(Clamp(rebF, c.ReboundFrontMin, c.ReboundFrontMax));
-        r.ReboundRear  = Math.Round(Clamp(rebR, c.ReboundRearMin,  c.ReboundRearMax));
-        r.BumpFront    = Math.Round(Clamp(bmpF, c.BumpFrontMin,    c.BumpFrontMax));
-        r.BumpRear     = Math.Round(Clamp(bmpR, c.BumpRearMin,     c.BumpRearMax));
+        r.ReboundFront = Math.Round(Clamp(rebF, c.ReboundFrontMin, c.ReboundFrontMax), 1);
+        r.ReboundRear  = Math.Round(Clamp(rebR, c.ReboundRearMin,  c.ReboundRearMax), 1);
+        r.BumpFront    = Math.Round(Clamp(bmpF, c.BumpFrontMin,    c.BumpFrontMax), 1);
+        r.BumpRear     = Math.Round(Clamp(bmpR, c.BumpRearMin,     c.BumpRearMax), 1);
         ex["Dampers"] = string.Format(L("Expl_Dampers_Fmt"),
             r.ReboundFront, r.ReboundRear, r.BumpFront, r.BumpRear,
             rebF > 0 ? bmpF / rebF * 100 : 0,

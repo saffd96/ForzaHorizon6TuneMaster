@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Forza_Horizon_6_Tune_Master.ViewModels;
@@ -82,5 +83,22 @@ public partial class MainWindow : Window
         res["ValueFontSize"] = compact ? 18.0 : 22.0;
         res["FontTitle"]     = compact ? 20.0 : 24.0;
         res["FontHuge"]      = compact ? 26.0 : 32.0;
+    }
+
+    private void ProfileSearchBox_GotFocus(object sender, RoutedEventArgs e)
+    {
+        ProfileDropdownPopup.IsOpen = true;
+    }
+
+    private void ProfileSearchBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (!ProfileListBox.IsKeyboardFocusWithin)
+            ProfileDropdownPopup.IsOpen = false;
+    }
+
+    private void ProfileListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ProfileListBox.SelectedItem != null)
+            ProfileDropdownPopup.IsOpen = false;
     }
 }

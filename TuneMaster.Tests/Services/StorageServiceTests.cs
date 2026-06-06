@@ -3,20 +3,9 @@ using Forza_Horizon_6_Tune_Master.Services;
 
 namespace TuneMaster.Tests.Services;
 
-public class StorageServiceTests : IDisposable
+public class StorageServiceTests
 {
     private readonly StorageService _storage = new();
-
-    public void Dispose()
-    {
-        try
-        {
-            var names = _storage.GetProfileNames();
-            foreach (var n in names)
-                _storage.Delete(n);
-        }
-        catch { }
-    }
 
     [Fact]
     public void SaveAndLoad_Roundtrip_ViaGetProfileNames()

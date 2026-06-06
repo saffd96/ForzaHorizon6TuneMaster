@@ -728,7 +728,38 @@ public class MainViewModel : INotifyPropertyChanged
         {
             _selectedProfile = value;
             OnPropertyChanged();
+            ProfileSearchText = value ?? "";
             if (value != null) LoadProfile();
+        }
+    }
+
+    private string _profileSearchText = "";
+    public string ProfileSearchText
+    {
+        get => _profileSearchText;
+        set
+        {
+            if (_profileSearchText == value) return;
+            _profileSearchText = value;
+            OnPropertyChanged();
+            ApplyProfileFilter();
+        }
+    }
+
+    private readonly ObservableCollection<string> _filteredProfiles = new();
+    public ObservableCollection<string> FilteredProfiles => _filteredProfiles;
+
+    private void ApplyProfileFilter()
+    {
+        var query = string.IsNullOrWhiteSpace(_profileSearchText)
+            ? null
+            : _profileSearchText.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        _filteredProfiles.Clear();
+        foreach (var profile in _profiles)
+        {
+            if (query == null || query.All(q => profile.ToLowerInvariant().Contains(q)))
+                _filteredProfiles.Add(profile);
         }
     }
 
@@ -1193,7 +1224,7 @@ public class MainViewModel : INotifyPropertyChanged
         var dt = T($"Enum_DriveType_{Car.DriveType}");
         var et = T($"Enum_EngineType_{Car.EngineType}");
         var disc = T($"Discipline{Track.Discipline}");
-        return $"{Car.Make} {Car.Model} {Car.Year} {dt} {et} {disc}";
+        return $"{Car.Year} {Car.Make} {Car.Model} {dt} {et} {disc}".Trim();
     }
 
     private void SaveProfile()
@@ -1260,12 +1291,15 @@ public class MainViewModel : INotifyPropertyChanged
         NotifyConstraintDisplayProperties();
         TuneResult  = null;
         SelectedCar = null;
+        SelectedProfile = null;
+        ProfileSearchText = "";
         StatusMessage = T("StatusProfileCreated");
     }
 
     private void RefreshProfiles()
     {
         Profiles = new ObservableCollection<string>(_storage.GetProfileNames());
+        ApplyProfileFilter();
         LoadCommand.Raise();
         DeleteProfileCommand.Raise();
     }
