@@ -122,10 +122,16 @@ public class AiCarSpecService
     private static List<ProviderEntry> BuildProviders()
     {
         var list = new List<ProviderEntry>();
+        var orKey = ApiKeys.OpenRouter!;
+        var cbKey = ApiKeys.Cerebras;
 
-        list.Add(new("https://openrouter.ai/api/v1/chat/completions", "openrouter/auto", ApiKeys.OpenRouter!));
-        list.Add(new("https://api.cerebras.ai/v1/chat/completions", "gpt-oss-120b", ApiKeys.Cerebras));
-        list.Add(new("https://api.cerebras.ai/v1/chat/completions", "zai-glm-4.7", ApiKeys.Cerebras));
+        list.Add(new("https://openrouter.ai/api/v1/chat/completions", "openrouter/auto", orKey));
+        list.Add(new("https://openrouter.ai/api/v1/chat/completions", "google/gemini-2.0-flash-001", orKey));
+        list.Add(new("https://openrouter.ai/api/v1/chat/completions", "deepseek/deepseek-chat", orKey));
+        list.Add(new("https://openrouter.ai/api/v1/chat/completions", "mistralai/mistral-small-3.1-24b", orKey));
+        list.Add(new("https://openrouter.ai/api/v1/chat/completions", "nvidia/nemotron-3.5-content-safety:free", orKey));
+        list.Add(new("https://api.cerebras.ai/v1/chat/completions", "gpt-oss-120b", cbKey));
+        list.Add(new("https://api.cerebras.ai/v1/chat/completions", "zai-glm-4.7", cbKey));
 
         return list;
     }
@@ -161,7 +167,6 @@ Requirements:
 - Use the exact units: mm for lengths, m² for area, dimensionless for Cd.";
 
         var providers = BuildProviders();
-        List<Exception> errors = [];
         foreach (var p in providers)
         {
             try
@@ -174,12 +179,11 @@ Requirements:
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[AiCarSpec] Provider '{p.Model}' failed: {ex.Message}");
-                errors.Add(ex);
             }
         }
 
-        throw new AggregateException(
-            LocalizationService.Instance.T("AiAllModelsFailed"), errors);
+        System.Diagnostics.Debug.WriteLine($"[AiCarSpec] All providers failed for '{carName}'");
+        return new AiCarSpecsResponse();
     }
 
     private static async Task<AiCarSpecsResponse> CallModelAsync(string url, string model, string apiKey, string prompt)
@@ -219,10 +223,23 @@ Requirements:
         clean = clean.Trim();
         System.Diagnostics.Debug.WriteLine($"[AiCarSpec] Extracted content ({model}): {clean}");
 
-        var result = JsonSerializer.Deserialize<AiCarSpecsResponse>(clean, new JsonSerializerOptions
+        var opts = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-        });
+        };
+
+        var result = TryDeserialize(clean, opts);
+        if (result == null)
+        {
+            var braceStart = clean.IndexOf('{');
+            var braceEnd = clean.LastIndexOf('}');
+            if (braceStart >= 0 && braceEnd > braceStart)
+            {
+                var extracted = clean[braceStart..(braceEnd + 1)];
+                System.Diagnostics.Debug.WriteLine($"[AiCarSpec] Retry with extracted JSON ({model}): {extracted}");
+                result = TryDeserialize(extracted, opts);
+            }
+        }
 
         if (result != null)
             System.Diagnostics.Debug.WriteLine(
@@ -233,5 +250,11 @@ Requirements:
 
         return result ?? throw new InvalidOperationException(
             string.Format(LocalizationService.Instance.T("AiResponseParseError"), model));
+    }
+
+    private static AiCarSpecsResponse? TryDeserialize(string json, JsonSerializerOptions opts)
+    {
+        try { return JsonSerializer.Deserialize<AiCarSpecsResponse>(json, opts); }
+        catch (JsonException) { return null; }
     }
 }
