@@ -1433,8 +1433,8 @@ public class TuneGeneratorService
         {
             return track.DragDistance switch
             {
-                DragDistance.Eighth  => 2,
-                DragDistance.Quarter => 3,
+                DragDistance.Eighth  => 4,
+                DragDistance.Quarter => 4,
                 DragDistance.Half    => 4,
                 _                    => 5,
             };
