@@ -1062,7 +1062,7 @@ public class TuneGeneratorService
         // Base rebound for reference car, per discipline. Unified road base=15 — mass scaling handles weight.
         double baseReb = track.Discipline switch
         {
-            Discipline.Drag          => 10.0,
+            Discipline.Drag          => 8.0,
             Discipline.Drift         => 4.0,
             Discipline.Rally         => 9.0,
             Discipline.CrossCountry  => 8.0,
@@ -1090,7 +1090,7 @@ public class TuneGeneratorService
         if (car.DriveType == Models.DriveType.RWD) rebR += 0.5;
 
         // Power/torque under acceleration: driven axle squats → stiffer rebound on that axle.
-        // FWD: front dives under power; RWD/AWD: rear squats.
+        // FWD: front lifts under power; RWD/AWD: rear squats.
         double powerReb  = Math.Max(0, (car.PowerHP  - PowerBaselineHP)  / PowerStepHP * 0.5);
         double torqueReb = Math.Max(0, (car.TorqueNm - TorqueBaselineNm) / 500.0       * 0.5);
         double squatReb  = powerReb + torqueReb;
@@ -1100,16 +1100,20 @@ public class TuneGeneratorService
         double bmpF = rebF * bumpRatio;
         double bmpR = rebR * bumpRatio;
 
-        // Suspension upgrade range modifier
-        double suspMul = car.SuspensionUpgrade switch
+        // Suspension upgrade range modifier: only for offroad disciplines
+        double suspMul = track.Discipline switch
         {
-            SuspensionUpgrade.Race    => 1.10,
-            SuspensionUpgrade.Sport   => 1.00,
-            SuspensionUpgrade.Rally   => 1.05,
-            SuspensionUpgrade.Drift   => 0.95,
-            SuspensionUpgrade.Street  => 0.90,
-            SuspensionUpgrade.Offroad => 0.85,
-            _                         => 0.85
+            Discipline.Rally or Discipline.CrossCountry => car.SuspensionUpgrade switch
+            {
+                SuspensionUpgrade.Race    => 1.10,
+                SuspensionUpgrade.Sport   => 1.00,
+                SuspensionUpgrade.Rally   => 1.05,
+                SuspensionUpgrade.Drift   => 0.95,
+                SuspensionUpgrade.Street  => 0.90,
+                SuspensionUpgrade.Offroad => 0.85,
+                _                         => 0.85
+            },
+            _ => 1.0
         };
         rebF *= suspMul; rebR *= suspMul;
         bmpF *= suspMul; bmpR *= suspMul;
