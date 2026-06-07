@@ -102,8 +102,10 @@
             </Border>
 
             <!-- ── ARB ───────────────────────────────────────────────── -->
-            <TextBlock Text="{l:Loc SectionARB}" Style="{StaticResource SectionHeader}" Visibility="Collapsed"/>
-            <Border Style="{StaticResource SectionCard}" Visibility="Collapsed">
+            <TextBlock Text="{l:Loc SectionARB}" Style="{StaticResource SectionHeader}"
+                       Visibility="{Binding Car.HasAnyARB, Converter={StaticResource B2V}}"/>
+            <Border Style="{StaticResource SectionCard}"
+                    Visibility="{Binding Car.HasAnyARB, Converter={StaticResource B2V}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="130"/>

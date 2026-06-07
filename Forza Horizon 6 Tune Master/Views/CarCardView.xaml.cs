@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using Forza_Horizon_6_Tune_Master.Models;
+using Forza_Horizon_6_Tune_Master.ViewModels;
 
 namespace Forza_Horizon_6_Tune_Master.Views;
 
@@ -43,6 +44,19 @@ public partial class CarCardView : UserControl
     {
         if (CarListBox.SelectedItem != null)
             CarListBox.Visibility = Visibility.Collapsed;
+    }
+
+    private void SuspensionCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm && vm.Car.SuspensionAllowsAdvancedTuning)
+        {
+            Dispatcher.BeginInvoke(new Action(() => RideHeightRearEndBox?.BringIntoView()));
+        }
+    }
+
+    private void AeroCheckBox_Checked(object sender, RoutedEventArgs e)
+    {
+        Dispatcher.BeginInvoke(new Action(() => AeroEndBox?.BringIntoView()));
     }
 
     public void FlashCarSelection()

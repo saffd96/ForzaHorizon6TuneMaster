@@ -92,6 +92,8 @@
   "BrakesLabel": "Brakes",
   "FrontAeroLabel": "Front aero kit installed",
   "RearAeroLabel": "Rear aero kit installed",
+  "FrontARBLabel": "Front anti-roll bar installed",
+  "RearARBLabel": "Rear anti-roll bar installed",
   "AeroFrontLabel": "Front Min / Max",
   "AeroRearLabel": "Rear Min / Max",
   "AiFetchButton": "AI: fetch specs (Cx, wheelbase, track, frontal area)",

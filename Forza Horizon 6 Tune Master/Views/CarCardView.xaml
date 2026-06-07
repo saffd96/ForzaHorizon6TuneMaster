@@ -198,6 +198,7 @@
                         <TextBlock Grid.Column="3" Text="{l:Loc EnginePositionLabel}" Style="{StaticResource FormLabel}" Width="130"/>
                         <ComboBox  x:Name="EnginePositionCombo" Grid.Column="4" Width="160"
                                    HorizontalAlignment="Left"
+                                   IsEnabled="False"
                                    SelectedValue="{Binding Car.EnginePosition}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
@@ -426,48 +427,59 @@
             <!-- ── Upgrades ────────────────────────────────────────────────── -->
             <TextBlock Text="{l:Loc SectionUpgrades}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="{l:Loc SuspensionLabel}"     Style="{StaticResource FormLabel}" MinWidth="70"/>
-                    <ComboBox  x:Name="SuspensionCombo" Grid.Column="1" SelectedValue="{Binding Car.SuspensionUpgrade}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                    <TextBlock Grid.Column="3" Text="{l:Loc DiffLabel}" Style="{StaticResource FormLabel}" MinWidth="80"/>
-                    <ComboBox  x:Name="DiffCombo"        Grid.Column="4" SelectedValue="{Binding Car.DifferentialUpgrade}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                    <TextBlock Grid.Column="6" Text="{l:Loc BrakesLabel}"      Style="{StaticResource FormLabel}" MinWidth="60"/>
-                    <ComboBox  x:Name="BrakesCombo"      Grid.Column="7" SelectedValue="{Binding Car.BrakesUpgrade}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </Grid>
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{l:Loc SuspensionLabel}"     Style="{StaticResource FormLabel}" MinWidth="70"/>
+                        <ComboBox  x:Name="SuspensionCombo" Grid.Column="1" SelectedValue="{Binding Car.SuspensionUpgrade}"
+                                   SelectionChanged="SuspensionCombo_SelectionChanged">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBlock Grid.Column="3" Text="{l:Loc DiffLabel}" Style="{StaticResource FormLabel}" MinWidth="80"/>
+                        <ComboBox  x:Name="DiffCombo"        Grid.Column="4" SelectedValue="{Binding Car.DifferentialUpgrade}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBlock Grid.Column="6" Text="{l:Loc BrakesLabel}"      Style="{StaticResource FormLabel}" MinWidth="60"/>
+                        <ComboBox  x:Name="BrakesCombo"      Grid.Column="7" SelectedValue="{Binding Car.BrakesUpgrade}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Grid>
+                </StackPanel>
             </Border>
 
             <!-- ── Constraints ───────────────────────────────────────────── -->
             <TextBlock Text="{l:Loc SectionTuningConstraints}" Style="{StaticResource SectionHeader}" FontSize="13"/>
 
-            <TextBlock Text="{Binding SpringUnitLabel}" Style="{StaticResource SectionHeader}"
+            <StackPanel Orientation="Horizontal" Margin="0,6,0,12">
+                <CheckBox Content="{l:Loc FrontARBLabel}"
+                          IsChecked="{Binding Car.HasFrontARB}"
+                          Margin="0,0,32,0"/>
+                <CheckBox Content="{l:Loc RearARBLabel}"
+                          IsChecked="{Binding Car.HasRearARB}"/>
+            </StackPanel>
+
+            <TextBlock x:Name="SpringSectionHeader" Text="{Binding SpringUnitLabel}" Style="{StaticResource SectionHeader}"
                        Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource BoolVis}}"/>
             <Border Style="{StaticResource SectionCard}"
                     Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource BoolVis}}">
@@ -513,21 +525,23 @@
                     <TextBox   Grid.Column="3" Text="{Binding RideHeightFrontMaxDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     <TextBlock Grid.Column="5" Text="{l:Loc RearMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
                     <TextBox   Grid.Column="6" Text="{Binding RideHeightRearMinDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                    <TextBox   Grid.Column="8" Text="{Binding RideHeightRearMaxDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                    <TextBox x:Name="RideHeightRearEndBox" Grid.Column="8" Text="{Binding RideHeightRearMaxDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                 </Grid>
             </Border>
 
-            <TextBlock Text="{l:Loc SectionAeroConstraints}" Style="{StaticResource SectionHeader}"/>
+            <TextBlock x:Name="AeroSectionHeader" Text="{l:Loc SectionAeroConstraints}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                         <CheckBox Content="{l:Loc FrontAeroLabel}"
                                   IsChecked="{Binding Car.HasFrontAero}"
+                                  Checked="AeroCheckBox_Checked"
                                   Margin="0,0,32,0"/>
                         <CheckBox Content="{l:Loc RearAeroLabel}"
-                                  IsChecked="{Binding Car.HasRearAero}"/>
+                                  IsChecked="{Binding Car.HasRearAero}"
+                                  Checked="AeroCheckBox_Checked"/>
                     </StackPanel>
-                    <Grid Margin="0,0,0,6" Visibility="{Binding Car.HasFrontAero, Converter={StaticResource BoolVis}}">
+                    <Grid x:Name="AeroFrontGrid" Margin="0,0,0,6" Visibility="{Binding Car.HasFrontAero, Converter={StaticResource BoolVis}}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" MinWidth="130"/>
                             <ColumnDefinition Width="*" MinWidth="65"/>
@@ -539,7 +553,7 @@
                         <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroFrontMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                         <TextBox   Grid.Column="3" Text="{Binding Constraints.AeroFrontMax, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     </Grid>
-                    <Grid Visibility="{Binding Car.HasRearAero, Converter={StaticResource BoolVis}}">
+                    <Grid x:Name="AeroRearGrid" Visibility="{Binding Car.HasRearAero, Converter={StaticResource BoolVis}}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" MinWidth="130"/>
                             <ColumnDefinition Width="*" MinWidth="65"/>
@@ -549,7 +563,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{l:Loc AeroRearMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
                         <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroRearMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        <TextBox   Grid.Column="3" Text="{Binding Constraints.AeroRearMax, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                        <TextBox x:Name="AeroEndBox" Grid.Column="3" Text="{Binding Constraints.AeroRearMax, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     </Grid>
                 </StackPanel>
             </Border>

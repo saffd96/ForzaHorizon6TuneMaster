@@ -895,10 +895,14 @@ public class TuneGeneratorService
             arbR += rollAdj;
         }
 
-        r.ARBFront = Math.Round(Clamp(arbF, c.ARBFrontMin, c.ARBFrontMax), 1);
-        r.ARBRear  = Math.Round(Clamp(arbR, c.ARBRearMin,  c.ARBRearMax), 1);
-        double cgH_arb = EstimateCGHeight(car);
-        ex["ARB"] = string.Format(L("Expl_ARB_Fmt"), r.ARBFront, r.ARBRear, note);
+        bool hasFront = car.HasFrontARB;
+        bool hasRear  = car.HasRearARB;
+        if (hasFront)
+            r.ARBFront = Math.Round(Clamp(arbF, c.ARBFrontMin, c.ARBFrontMax), 1);
+        if (hasRear)
+            r.ARBRear  = Math.Round(Clamp(arbR, c.ARBRearMin,  c.ARBRearMax), 1);
+        if (hasFront || hasRear)
+            ex["ARB"] = string.Format(L("Expl_ARB_Fmt"), r.ARBFront, r.ARBRear, note);
     }
 
     // ── Springs ──────────────────────────────────────────────────────────────

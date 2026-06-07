@@ -359,6 +359,24 @@ public class CarCard : NotifyBase
         set { Set(ref _hasRearAero, value); }
     }
 
+    // ARB (anti-roll bars)
+    private bool _hasFrontARB;
+    public bool HasFrontARB
+    {
+        get => _hasFrontARB;
+        set { Set(ref _hasFrontARB, value); OnPropertyChanged(nameof(HasAnyARB)); }
+    }
+
+    private bool _hasRearARB;
+    public bool HasRearARB
+    {
+        get => _hasRearARB;
+        set { Set(ref _hasRearARB, value); OnPropertyChanged(nameof(HasAnyARB)); }
+    }
+
+    [JsonIgnore]
+    public bool HasAnyARB => HasFrontARB || HasRearARB;
+
     // Upgrades
     private SuspensionUpgrade _suspensionUpgrade = SuspensionUpgrade.Sport;
     public SuspensionUpgrade SuspensionUpgrade

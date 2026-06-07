@@ -6,10 +6,17 @@ namespace Forza_Horizon_6_Tune_Master.Models;
 public class TuningConstraints : NotifyBase
 {
     private void SetMinMax(ref double minField, double minValue, double maxValue, double maxField, [CallerMemberName] string? p = null)
-        => Set(ref minField, Math.Min(minValue, maxField), p);
+    {
+        if (minValue > maxField)
+            Set(ref maxField, minValue, MaxPropertyName(p));
+        Set(ref minField, minValue, p);
+    }
 
     private void SetMaxMin(ref double maxField, double maxValue, double minValue, double minField, [CallerMemberName] string? p = null)
         => Set(ref maxField, Math.Max(maxValue, minField), p);
+
+    private static string? MaxPropertyName(string? minProp)
+        => minProp?.EndsWith("Min") == true ? minProp[..^3] + "Max" : null;
 
     [JsonPropertyOrder(1)]
     public double TirePressureFrontMin { get => _tirePressureFrontMin; set => SetMinMax(ref _tirePressureFrontMin, value, TirePressureFrontMax, _tirePressureFrontMax); }
