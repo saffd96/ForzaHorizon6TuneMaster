@@ -839,6 +839,20 @@ public class TuneGeneratorService
         double wd = EffectiveWtDist(car);
         double wdDev = (wd - 50) / 50.0; // -1..+1
 
+        // Weight distribution sensitivity varies by discipline & drive type
+        double wdWeight = (track.Discipline, car.DriveType) switch
+        {
+            (Discipline.Drag, _)             => 0.0,
+            (Discipline.Drift, _)            => 2.0,
+            (Discipline.Rally, _)            => 6.0,
+            (Discipline.CrossCountry, _)     => 5.0,
+            (Discipline.Touge, _)            => 5.0,
+            (Discipline.Street, Models.DriveType.FWD) => 5.0,
+            (Discipline.Street, _)           => 4.0,
+            (_, Models.DriveType.FWD)        => 5.0,
+            (_, _)                           => 4.0
+        };
+
         // Base discipline values at refMass (from community reference tunes)
         (double baseF, double baseR, string arbNoteKey) = (track.Discipline, car.DriveType) switch
         {
@@ -867,8 +881,8 @@ public class TuneGeneratorService
         double arbR = baseR * massScale * trackFactor;
 
         // Weight distribution: shift after trackFactor so offset isn't scaled
-        arbF += wdDev * 4.0;
-        arbR -= wdDev * 4.0;
+        arbF += wdDev * wdWeight;
+        arbR -= wdDev * wdWeight;
 
         // CG height → roll moment → ARB stiffness correction.
         // Conservative magnitude (-3..+8) — FH6 already smooths some CG effects internally.
