@@ -916,7 +916,7 @@ public class TuneGeneratorService
 
         (double hzF, double hzR) = track.Discipline switch
         {
-            Discipline.Drag         => (2.0, 4.5),
+            Discipline.Drag         => (1.5, 2.5),
             Discipline.Drift        => (1.8, 2.2),
             Discipline.Rally        => (1.5, 1.7),
             Discipline.CrossCountry => (1.3, 1.5),
@@ -954,20 +954,22 @@ public class TuneGeneratorService
         sprF *= cgFactor * trackRollF;
         sprR *= cgFactor * trackRollF;
 
-        // Suspension upgrade multiplier.
-        // Rally/CC disciplines already use soft Hz targets — Rally upgrade keeps them neutral (0.85)
-        // rather than halving again (0.55). On road disciplines, 0.55 correctly softens road springs.
+        // Suspension upgrade multiplier — only for Rally/CrossCountry.
+        // On-road disciplines (Road, Street, Drag, Drift, Touge) use 1.0
+        // so that the Hz targets are preserved rather than softened by upgrade type.
         bool offRoadDisc = track.Discipline is Discipline.Rally or Discipline.CrossCountry;
-        double suspMul = car.SuspensionUpgrade switch
-        {
-            SuspensionUpgrade.Race    => 1.10,
-            SuspensionUpgrade.Sport   => 1.00,
-            SuspensionUpgrade.Street  => 0.88,
-            SuspensionUpgrade.Rally   => offRoadDisc ? 0.85 : 0.55,
-            SuspensionUpgrade.Drift   => 0.85,
-            SuspensionUpgrade.Offroad => offRoadDisc ? 0.80 : 0.50,
-            _                         => 0.72
-        };
+        double suspMul = offRoadDisc
+            ? car.SuspensionUpgrade switch
+            {
+                SuspensionUpgrade.Race    => 1.10,
+                SuspensionUpgrade.Sport   => 1.00,
+                SuspensionUpgrade.Street  => 0.88,
+                SuspensionUpgrade.Rally   => 0.85,
+                SuspensionUpgrade.Drift   => 0.85,
+                SuspensionUpgrade.Offroad => 0.80,
+                _                         => 0.72
+            }
+            : 1.0;
         sprF *= suspMul;
         sprR *= suspMul;
 
@@ -992,8 +994,19 @@ public class TuneGeneratorService
             return;
         }
 
-        double rhF, rhR;
-        string note;
+        // Base ride height as fraction of the allowed range [min, max].
+        // This keeps values adaptive per car rather than hardcoding mm.
+        (double rhFFactor, double rhRFactor, string note) = track.Discipline switch
+        {
+            Discipline.Drag         => (0.05, 0.80, L("Expl_RideHeightNote_Drag")),
+            Discipline.Drift        => (0.15, 0.19, L("Expl_RideHeightNote_Drift")),
+            Discipline.Rally        => (0.40, 0.45, L("Expl_RideHeightNote_Rally")),
+            Discipline.CrossCountry => (0.60, 0.65, L("Expl_RideHeightNote_CrossCountry")),
+            _                       => (0.09, 0.12, L("Expl_RideHeightNote_Road"))
+        };
+
+        double rhF = c.RideHeightFrontMin + (c.RideHeightFrontMax - c.RideHeightFrontMin) * rhFFactor;
+        double rhR = c.RideHeightRearMin  + (c.RideHeightRearMax  - c.RideHeightRearMin)  * rhRFactor;
 
         double suspOff = car.SuspensionUpgrade switch
         {
@@ -1005,30 +1018,6 @@ public class TuneGeneratorService
             SuspensionUpgrade.Offroad => 25,
             _                         => 0
         };
-
-        switch (track.Discipline)
-        {
-            case Discipline.Drag:
-                rhF = 65; rhR = 68;
-                note = L("Expl_RideHeightNote_Drag");
-                break;
-            case Discipline.Drift:
-                rhF = 80; rhR = 88;
-                note = L("Expl_RideHeightNote_Drift");
-                break;
-            case Discipline.Rally:
-                rhF = 130; rhR = 140;
-                note = L("Expl_RideHeightNote_Rally");
-                break;
-            case Discipline.CrossCountry:
-                rhF = 170; rhR = 180;
-                note = L("Expl_RideHeightNote_CrossCountry");
-                break;
-            default:
-                rhF = 68; rhR = 74;
-                note = L("Expl_RideHeightNote_Road");
-                break;
-        }
 
         rhF += suspOff;
         rhR += suspOff;
