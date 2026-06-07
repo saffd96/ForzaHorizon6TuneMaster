@@ -14,6 +14,27 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = new MainViewModel();
         SizeChanged += OnSizeChanged;
+        StateChanged += OnWindowStateChanged;
+    }
+
+    private void OnWindowStateChanged(object? sender, EventArgs e)
+    {
+        if (WindowState == WindowState.Minimized)
+        {
+            ProfileDropdownPopup.IsOpen = false;
+            CloseAllComboBoxDropDowns(this);
+        }
+    }
+
+    private static void CloseAllComboBoxDropDowns(DependencyObject parent)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is ComboBox cb)
+                cb.IsDropDownOpen = false;
+            CloseAllComboBoxDropDowns(child);
+        }
     }
 
     private void AiSpecStatusOverlay_PreviewMouseDown(object sender, MouseButtonEventArgs e)
