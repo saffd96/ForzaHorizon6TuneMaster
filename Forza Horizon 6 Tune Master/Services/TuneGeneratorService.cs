@@ -1164,10 +1164,10 @@ public class TuneGeneratorService
         switch (track.Discipline)
         {
             case Discipline.Drag:
-                aeroF = 0; aeroR = car.HasRearAero ? 15 : 0;
+                aeroF = 0; aeroR = car.HasRearAero ? c.AeroRearMin + (c.AeroRearMax - c.AeroRearMin) * 0.10 : 0;
                 break;
             case Discipline.Drift:
-                aeroF *= 0.8; aeroR *= 0.3;
+                aeroF *= 0.35; aeroR *= 0.3;
                 break;
             case Discipline.CrossCountry:
                 aeroF = car.HasFrontAero ? Clamp(c.AeroFrontMax * 0.40 * speedFactor * pwrFactor, c.AeroFrontMin, c.AeroFrontMax) : 0;
