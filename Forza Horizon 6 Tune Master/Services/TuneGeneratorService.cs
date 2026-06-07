@@ -25,6 +25,34 @@ public class TuneGeneratorService
     private const double RefTireWidth        = 275; // reference width in mm for pressure adjustment
     // 0.85 = base log slope — multiplied by massWeight (0.3–1.0) for weight-class sensitivity
     private const double MassLogFactor       = 0.85;
+
+    // ── Camber calibration constants ──
+    private const double CamberPhysicsLayerCapNominal   = 1.5;
+    private const double CamberTuningLayerCapNominal    = 1.0;
+    private const double CamberMaxTotalDeviationNominal = 3.0;
+
+
+    // Power/torque → camber
+    private const double CamberPowerSigmoidK         = 0.025;
+    private const double CamberTorqueSigmoidK        = 0.008;
+    private const double CamberPowerMaxAdj           = 0.40;
+    private const double CamberTorqueMaxAdj          = 0.25;
+
+    // Load: separate factors (weight dist, CG, speed)
+    private const double CamberWtSensitivity         = 0.40;
+    private const double CamberCgFactorScale          = 0.30;
+    private const double CamberSpeedScaleK            = 0.15;
+
+    // Aero: saturation + class scale
+    private const double CamberAeroMaxAdj             = 0.15;
+    private const double CamberAeroSaturationRef      = 150.0;
+
+    // Braking penalty (additive after normalization)
+    private const double CamberBrakingThreshold        = 3.0;
+    private const double CamberBrakingPenalty           = 0.20;
+
+    // Drift: continuous assist
+    private const double CamberDriftRangeMax            = 1.0;
     // 4π²/2000 = 0.019739 — includes ÷1000 (N/m→N/mm) and ÷2 (motion-ratio/half-axle calibration for FH6)
     private const double SpringHzToNmm      = 0.019739;
     private const double RevLimitFraction   = 0.95;
@@ -140,8 +168,8 @@ public class TuneGeneratorService
         }
 
         CalculateTirePressure(car, track, c, r, ex);
-        CalculateCamber(car, track, c, r, ex);
-        CalculateToe(car, track, c, r, ex);
+        CalculateCamber(car, track, c, r, ex, effectiveMaxKmh);
+        CalculateToe(car, track, c, r, ex, effectiveMaxKmh);
         CalculateCaster(car, track, c, r, ex, effectiveMaxKmh);
         CalculateARB(car, track, c, r, ex);
         CalculateSprings(car, track, c, r, ex);
@@ -367,115 +395,396 @@ public class TuneGeneratorService
     }
 
     // ── Camber ───────────────────────────────────────────────────────────────
-    // Community ranges (forzafire):
-    //   Road:  Front -1.0° to -2.0°, Rear -0.5° to -1.0°
-    //   Drift: Front -3.0° to -5.0°, Rear -1.0°
-    //   Dirt:  Front -0.8° to -1.2°, Rear -0.5° to -0.8°
-    //   CC:    Front -0.5°,         Rear -0.5°
+    // Architecture:
+    //   Physics → base discipline + tire grip (dynamic) + load/speed + aero     [capped per layer]
+    //   Tuning  → power/grip + AWD/stability + engine/wt + drift               [capped per layer]
+    //   Balance → penalty → normalize → clamp
 
-    private static void CalculateCamber(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
+    // Dynamic caps from car mass/PTW (🔴 #3)
+    private static (double physicsCap, double tuningCap, double totalCap) GetDynamicCamberCaps(CarCard car)
+    {
+        double massRatio = Math.Clamp(car.TotalMass / 1500.0, 0.7, 1.3);
+        double ptw = car.PowerHP / car.TotalMass;
+        double ptwRatio = Math.Clamp(ptw / 0.2, 0.7, 1.3);
+        double physicsCap = CamberPhysicsLayerCapNominal * massRatio;
+        double tuningCap  = CamberTuningLayerCapNominal * ptwRatio;
+        double totalCap   = CamberMaxTotalDeviationNominal * Math.Sqrt(massRatio * ptwRatio);
+        return (physicsCap, tuningCap, totalCap);
+    }
+
+    // Hard squash: values exceeding cap are projected onto cap boundary
+    private static (double f, double r) SoftSquashCamber(double f, double r, double cap)
+    {
+        double mag = Math.Sqrt(f * f + r * r);
+        if (mag > cap)
+        {
+            double scale = cap / mag;
+            return (f * scale, r * scale);
+        }
+        return (f, r);
+    }
+
+    // CG reference normalised by mass/class (🟡 #8)
+    private static double GetCamberCgReference(CarCard car)
+    {
+        return 350 + Math.Clamp((car.TotalMass - 900) / 1400, 0, 1) * 140;
+    }
+
+    // Aero effect class scaling (🟡 #9)
+    private static double GetCamberAeroClassScale(CarCard car)
+    {
+        return 1.0 / Math.Clamp(car.TotalMass / 1500.0, 0.7, 1.4);
+    }
+
+    private static void CalculateCamber(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r,
+        Dictionary<string, string> ex, double effectiveMaxKmh)
     {
         if (!car.SuspensionAllowsAdvancedTuning)
         {
+            r.CamberFront = 0;
+            r.CamberRear = 0;
             ex["Camber"] = L("Expl_Camber_Disabled");
             return;
         }
 
-        double camF, camR;
-        string reason;
-        switch (track.Discipline)
+        string reason = L(GetCamberReasonKey(track.Discipline));
+        double baseF = GetCamberBaseF(track.Discipline);
+        double baseR = GetCamberBaseR(track.Discipline);
+
+        var (physicsCap, tuningCap, totalCap) = GetDynamicCamberCaps(car);
+
+        // ── Physics layer (tire + load + aero) ──
+        var grip = GetTireGripModel(car.TireType, track.Discipline);
+
+        double physF = 0, physR = 0;
+        var (tireF, tireR) = GetCamberTireAdjustment(grip, track.Discipline);
+        physF += tireF; physR += tireR;
+
+        var (loadF, loadR) = GetCamberLoadAdjustment(car, track.Discipline, grip, effectiveMaxKmh);
+        physF += loadF; physR += loadR;
+
+        var (aeroF, aeroR) = GetCamberAeroAdjustment(car, r);
+        physF += aeroF; physR += aeroR;
+
+        (physF, physR) = SoftSquashCamber(physF, physR, physicsCap);
+
+        // ── Tuning layer (power + AWD + engine) ──
+        double tuneF = 0, tuneR = 0;
+
+        double powerScale = GetGripPowerScale(grip);
+        var (pwrF, pwrR) = GetCamberPowerAdjustment(car, track.Discipline, powerScale);
+        tuneF += pwrF; tuneR += pwrR;
+
+        if (car.DriveType == DriveType.AWD)
         {
-            case Discipline.Drag:
-                camF = -0.2; camR = 0.0;
-                reason = L("Expl_CamberReason_Drag");
-                break;
-            case Discipline.Drift:
-                camF = -5.0; camR = -1.0;
-                reason = L("Expl_CamberReason_Drift");
-                break;
-            case Discipline.Rally:
-                camF = -1.0; camR = -0.6;
-                reason = L("Expl_CamberReason_Rally");
-                break;
-            case Discipline.CrossCountry:
-                camF = -0.5; camR = -0.5;
-                reason = L("Expl_CamberReason_CrossCountry");
-                break;
-            case Discipline.Touge:
-                camF = -2.0; camR = -1.0;
-                reason = L("Expl_CamberReason_Touge");
-                break;
-            default:
-                camF = -1.5; camR = -0.8;
-                reason = L("Expl_CamberReason_Road");
-                break;
+            var (awdF, awdR) = GetCamberAWDAdjustment(car, track.Discipline, grip);
+            tuneF += awdF; tuneR += awdR;
         }
 
-        // Engine position bias
-        double epF = car.EnginePosition switch { EnginePosition.Front => -0.2, EnginePosition.Rear => 0.1, _ => 0.0 };
-        double epR = car.EnginePosition switch { EnginePosition.Front => 0.1, EnginePosition.Rear => -0.2, _ => 0.0 };
+        var (epF, epR) = GetCamberEnginePositionAdjustment(car);
+        tuneF += epF; tuneR += epR;
 
-        // Drivetrain camber bias (ForzaFire): road only
-        if (track.Discipline is Discipline.Road or Discipline.Street or Discipline.Touge)
+        // Drift: now in tuning layer (same constraint system)
+        if (track.Discipline == Discipline.Drift)
         {
-            camF += car.DriveType switch { DriveType.RWD => -0.3, DriveType.FWD => 0.3, _ => 0.0 };
-            camR += car.DriveType switch { DriveType.RWD => 0.2, DriveType.FWD => -0.2, _ => 0.0 };
+            var (driftF, driftR) = GetCamberDriftAdjustment(car, grip);
+            tuneF += driftF;
+            tuneR += driftR;
         }
 
-        // AWD: additional rear camber for corner exit grip
-        if (car.DriveType == Models.DriveType.AWD && track.Discipline is Discipline.Road or Discipline.Street or Discipline.Touge)
-            camR += -0.2;
+        (tuneF, tuneR) = SoftSquashCamber(tuneF, tuneR, tuningCap);
 
-        // Power + torque → more rear camber for exit grip (not for drag/CC where flat patch is priority)
-        double pwrR = 0.0;
-        if (track.Discipline is not Discipline.Drag and not Discipline.CrossCountry)
-        {
-            pwrR -= Math.Max(0, (car.PowerHP  - PowerBaselineHP)  / PowerStepHP * 0.15);
-            pwrR -= Math.Max(0, (car.TorqueNm - TorqueBaselineNm) / 500.0       * 0.08);
-        }
+        // Combine physics + tuning
+        double camF = baseF + physF + tuneF;
+        double camR = baseR + physR + tuneR;
 
-        camF = Clamp(camF + epF, -5.0, 0.0);
-        camR = Clamp(camR + epR + pwrR, -5.0, 0.0);
+        // ── Braking penalty (modifies camber directly, then normalize ensures caps) ──
+        double braking = 0;
+        if (camF < -CamberBrakingThreshold)
+            braking += -(camF + CamberBrakingThreshold) * CamberBrakingPenalty;
+        if (camR < -CamberBrakingThreshold)
+            braking += -(camR + CamberBrakingThreshold) * CamberBrakingPenalty;
+        double brakingPenalty = -braking * 0.3;
+        camF += brakingPenalty;
+        camR += brakingPenalty;
 
         r.CamberFront = Math.Round(Clamp(camF, c.CamberFrontMin, c.CamberFrontMax), 1);
         r.CamberRear  = Math.Round(Clamp(camR, c.CamberRearMin,  c.CamberRearMax),  1);
         ex["Camber"] = string.Format(L("Expl_Camber_Fmt"), r.CamberFront, r.CamberRear, reason);
     }
 
+    // ── Helper: dynamic tire grip model (🔴 #1) ──
+    // Returns (baseGrip, thermalSensitivity, wearResistance) as dimensionless 0..1 values.
+    private static (double grip, double thermal, double wear) GetTireGripModel(TireType tire, Discipline disc)
+    {
+        bool offRoad = disc is Discipline.Rally or Discipline.CrossCountry;
+        double grip = tire switch
+        {
+            TireType.Slick     => 1.00,
+            TireType.SemiSlick => 0.90,
+            TireType.Sport     => 0.80,
+            TireType.Street    => 0.70,
+            TireType.Stock     => 0.60,
+            TireType.Winter    => 0.55,
+            TireType.Rally     => 0.75,
+            TireType.Offroad   => 0.65,
+            TireType.Drag      => 0.85,
+            _                  => 0.70
+        };
+        double thermal = tire switch // higher = more sensitive to temp (narrow operating window)
+        {
+            TireType.Slick     => 0.30,
+            TireType.SemiSlick => 0.20,
+            TireType.Sport     => 0.10,
+            TireType.Street    => 0.05,
+            TireType.Stock     => 0.05,
+            TireType.Winter    => 0.40,
+            TireType.Rally     => 0.15,
+            TireType.Offroad   => 0.10,
+            TireType.Drag      => 0.25,
+            _                  => 0.10
+        };
+        double wear = tire switch // higher = wears faster under camber
+        {
+            TireType.Slick     => 0.40,
+            TireType.SemiSlick => 0.30,
+            TireType.Sport     => 0.20,
+            TireType.Street    => 0.12,
+            TireType.Stock     => 0.08,
+            TireType.Winter    => 0.25,
+            TireType.Rally     => 0.15,
+            TireType.Offroad   => 0.10,
+            TireType.Drag      => 0.20,
+            _                  => 0.12
+        };
+        if (offRoad) { grip *= 0.85; thermal *= 0.5; } // loose surface reduces tire-dependent effects
+        return (grip, thermal, wear);
+    }
+
+    // Grip-dependent power scale — how much camber the tire can use for power (🔴 #5)
+    private static double GetGripPowerScale((double grip, double thermal, double wear) grip)
+    {
+        // Higher grip = tire can support more camber for power delivery
+        return 0.5 + grip.grip * 0.5; // 0.5 (Stock) .. 1.0 (Slick)
+    }
+
+    private static double GetCamberBaseF(Discipline d) => d switch
+    {
+        Discipline.Drag         => -0.2,
+        Discipline.Drift        => -2.5,
+        Discipline.Rally        => -0.8,
+        Discipline.CrossCountry => -0.4,
+        Discipline.Touge        => -1.8,
+        _                       => -1.3
+    };
+
+    private static double GetCamberBaseR(Discipline d) => d switch
+    {
+        Discipline.Drag         => 0.0,
+        Discipline.Drift        => -0.8,
+        Discipline.Rally        => -0.5,
+        Discipline.CrossCountry => -0.4,
+        Discipline.Touge        => -0.8,
+        _                       => -0.7
+    };
+
+    private static string GetCamberReasonKey(Discipline d) => d switch
+    {
+        Discipline.Drag         => "Expl_CamberReason_Drag",
+        Discipline.Drift        => "Expl_CamberReason_Drift",
+        Discipline.Rally        => "Expl_CamberReason_Rally",
+        Discipline.CrossCountry => "Expl_CamberReason_CrossCountry",
+        Discipline.Touge        => "Expl_CamberReason_Touge",
+        _                       => "Expl_CamberReason_Road"
+    };
+
+    // Tire compound: additive thermal/wear (simpler, more predictable)
+    private static (double f, double r) GetCamberTireAdjustment(
+        (double grip, double thermal, double wear) grip, Discipline disc)
+    {
+        bool offRoad = disc is Discipline.Rally or Discipline.CrossCountry;
+        double adj = (grip.grip - 0.7) * 0.5 - grip.thermal * 0.08 - grip.wear * 0.05;
+        if (offRoad) adj *= 0.5;
+        return (adj, adj);
+    }
+
+    // Load: separate weight dist, CG, speed factors (simpler, separate concerns)
+    private static (double f, double r) GetCamberLoadAdjustment(CarCard car, Discipline disc,
+        (double grip, double thermal, double wear) grip, double effectiveMaxKmh)
+    {
+        double wdF = EffectiveWtDist(car) / 100.0;
+        double wdDev = wdF - 0.5;
+
+        double camF = -wdDev * CamberWtSensitivity;
+        double camR =  wdDev * CamberWtSensitivity;
+
+        // CG height → body roll → more camber
+        double cgH = EstimateCGHeight(car);
+        double cgRef = GetCamberCgReference(car);
+        double cgFactor = (cgH - cgRef) / cgRef * CamberCgFactorScale;
+        camF += cgFactor; camR += cgFactor;
+
+        // Speed: less camber needed at high speed (aero loads suspension)
+        double speedFactor = Math.Clamp((effectiveMaxKmh - 120.0) / 300.0, 0, 1);
+        camF -= speedFactor * CamberSpeedScaleK;
+        camR -= speedFactor * CamberSpeedScaleK;
+
+        // Drivetrain squat: driven axle needs less static camber
+        if (disc is Discipline.Road or Discipline.Street or Discipline.Touge)
+        {
+            if (car.DriveType == DriveType.RWD)
+            {
+                camF += -0.20; camR += 0.10;
+            }
+            else if (car.DriveType == DriveType.FWD)
+            {
+                camF += 0.15; camR += -0.15;
+            }
+            else
+            {
+                camF += -0.05; camR += -0.05;
+            }
+        }
+
+        return (camF, camR);
+    }
+
+    // Aero: tanh saturation + class scale only (🟠 #6 simplified)
+    private static (double f, double r) GetCamberAeroAdjustment(CarCard car, TuneResult r)
+    {
+        double aeroTotal = (car.HasFrontAero ? r.AeroFront : 0) + (car.HasRearAero ? r.AeroRear : 0);
+        if (aeroTotal <= 0) return (0, 0);
+        double saturation = Math.Tanh(aeroTotal / CamberAeroSaturationRef);
+        double classScale = GetCamberAeroClassScale(car);
+        double adj = -saturation * CamberAeroMaxAdj * classScale;
+        return (adj, adj);
+    }
+
+    // Power/torque with sigmoid × grip capacity scaling (🔴 #5)
+    private static (double f, double r) GetCamberPowerAdjustment(CarCard car, Discipline disc, double gripPowerScale)
+    {
+        if (disc is Discipline.Drag or Discipline.CrossCountry)
+            return (0, 0);
+
+        double pwrExcess = Math.Max(0, car.PowerHP - PowerBaselineHP);
+        double trqExcess = Math.Max(0, car.TorqueNm - TorqueBaselineNm);
+
+        // Torque curve: rpm spread proxy for power band width (🟡 #7)
+        // Small spread = peaky engine → more camber help for drivability
+        // Large spread = broad torque → less camber needed
+        double torqueCurveFactor = 1.0;
+        if (car.TorquePeakRPM > 0 && car.PowerPeakRPM > 0)
+        {
+            double spread = (double)(car.PowerPeakRPM - car.TorquePeakRPM) / car.PowerPeakRPM;
+            torqueCurveFactor = 1.0 + Math.Max(0, (0.30 - spread)) * 1.2; // 1.0 (broad) .. 1.36 (peaky)
+        }
+
+        double pwrAdj = Math.Tanh(pwrExcess * CamberPowerSigmoidK) * CamberPowerMaxAdj * gripPowerScale;
+        double trqAdj = Math.Tanh(trqExcess * CamberTorqueSigmoidK) * CamberTorqueMaxAdj * torqueCurveFactor * gripPowerScale;
+        double total = -(pwrAdj + trqAdj);
+
+        return car.DriveType switch
+        {
+            DriveType.RWD => (total * 0.30, total * 0.70),
+            DriveType.FWD => (total * 0.70, total * 0.30),
+            _             => (total * 0.50, total * 0.50)
+        };
+    }
+
+    // AWD as stability vs grip trade-off (🔴 #4)
+    private static (double f, double r) GetCamberAWDAdjustment(CarCard car,
+        Discipline disc, (double grip, double thermal, double wear) grip)
+    {
+        // AWD inherently understeers → mitigate with slightly more front camber.
+        // But too much front camber on AWD causes unstable rear → limit by grip.
+        if (disc is Discipline.Road or Discipline.Street or Discipline.Touge)
+        {
+            double ptwFactor = Math.Clamp((car.PowerHP / car.TotalMass) / 0.35, 0, 1);
+            double frontAdj = -0.08 - ptwFactor * 0.06; // more front camber with power
+            double rearAdj  =  0.04 + ptwFactor * 0.04; // slightly less rear camber for stability
+            return (frontAdj * grip.grip, rearAdj * grip.grip);
+        }
+        if (disc is Discipline.Rally or Discipline.CrossCountry)
+            return (-0.10, 0.05); // AWD offroad: front bias for turn-in
+        return (0, 0);
+    }
+
+    // Engine position → yaw inertia effect (per-layout values)
+    private static (double f, double r) GetCamberEnginePositionAdjustment(CarCard car)
+    {
+        return car.EnginePosition switch
+        {
+            EnginePosition.Front => (-0.12,  0.06),
+            EnginePosition.Rear  => ( 0.06, -0.12),
+            _                    => ( 0.0,   0.0)
+        };
+    }
+
+    // Drift: tuning layer input (same constraint system, smaller values)
+    private static (double f, double r) GetCamberDriftAdjustment(CarCard car,
+        (double grip, double thermal, double wear) grip)
+    {
+        double ptw = car.PowerHP / car.TotalMass;
+        double ptwFactor = Math.Clamp((ptw * 1000 - 100) / 300, 0, 1);
+
+        double assistFactor = car.DriveType switch
+        {
+            DriveType.AWD => 0.6 - Math.Clamp(ptw / 0.5, 0, 0.2),
+            DriveType.FWD => 1.1 + Math.Clamp(ptw / 0.5, 0, 0.2),
+            _             => 1.0
+        };
+
+        double driftF = (-0.5 - ptwFactor * 0.3) * assistFactor;
+        double driftR = (-0.15 - ptwFactor * 0.1) * assistFactor;
+
+        double tireFactor = -(grip.grip - 0.5) * 0.3;
+        driftF += tireFactor;
+        driftR += tireFactor * 0.5;
+
+        return (driftF, driftR);
+    }
+
+    // Normalize total deviation from base (#7)
     // ── Toe ──────────────────────────────────────────────────────────────────
     // Community: default 0.0°, slight front toe-out (-0.1° to -0.2°) for turn-in,
     // rear toe-in (+0.1° to +0.3°) for stability (forzafire, forza.guide).
 
-    private static void CalculateToe(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
+    private static void CalculateToe(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
     {
-        double toeF, toeR;
-        double wbNorm = Math.Min(car.Wheelbase / RefWheelbaseMm, 1.2);
+        double wbRatio = Math.Min(car.Wheelbase / RefWheelbaseMm, 1.2);
+        double massFactor = Math.Clamp(car.TotalMass / 1500.0, 0.7, 1.3);
 
-        switch (track.Discipline)
+        (double baseF, double baseR) = car.DriveType switch
         {
-            case Discipline.Drag:
-                toeF = 0.0; toeR = 0.0; break;
-            case Discipline.Drift:
-                toeF = -0.5; toeR = 0.5; break;
-            case Discipline.Rally:
-                toeF = -0.2; toeR = 0.1; break;  // грунт/гравий: больше расхождения для реакции
-            case Discipline.CrossCountry:
-                toeF = -0.1; toeR = 0.3; break;  // бездорожье: меньше расхождения, больше схождения для устойчивости
-            case Discipline.Touge:
-                toeF = car.DriveType == Models.DriveType.RWD ? -0.2 : -0.1;
-                toeR = car.DriveType == Models.DriveType.FWD ? 0.2 : 0.1;
-                break;
-            default:
-                toeF = car.DriveType == Models.DriveType.RWD ? -0.15 : -0.1;
-                toeR = car.DriveType == Models.DriveType.FWD ? 0.2 : 0.1;
-                break;
-        }
+            Models.DriveType.RWD => (-0.15, 0.15),
+            Models.DriveType.FWD => (-0.10, 0.18),
+            _                    => (-0.08, 0.12)
+        };
 
-        toeF *= wbNorm;
-        toeR *= wbNorm;
+        baseF *= wbRatio * massFactor;
+        baseR *= wbRatio * massFactor;
 
-        // Note: wheelbase effect on toe is already handled by wbNorm scaling above.
-        // A separate wheelbase adj here would double-count it, especially for RWD.
+        (double discMulF, double discMulR) = (track.Discipline, car.DriveType) switch
+        {
+            (Discipline.Drag, _)                          => (0.0, 0.0),
+            (Discipline.Drift, _)                         => (2.5, 2.5),
+            (Discipline.Rally, _)                         => (1.3, 0.9),
+            (Discipline.CrossCountry, _)                  => (0.8, 1.5),
+            (Discipline.Touge, Models.DriveType.RWD)      => (1.4, 1.0),
+            (Discipline.Touge, Models.DriveType.FWD)      => (1.2, 1.2),
+            (Discipline.Touge, _)                         => (1.4, 1.1),
+            _                                             => (1.0, 1.0)
+        };
+
+        double toeF = baseF * discMulF;
+        double toeR = baseR * discMulR;
+
+        double speedFactor = Math.Clamp((effectiveMaxKmh - 120.0) / 200.0, 0, 1);
+        toeF *= (1.0 - speedFactor * 0.15);
+        toeR *= (1.0 - speedFactor * 0.15);
+
+        toeF = Math.Tanh(toeF / 0.5) * 0.5;
+        toeR = Math.Tanh(toeR / 0.5) * 0.5;
 
         r.ToeFront = Math.Round(Clamp(toeF, c.ToeFrontMin, c.ToeFrontMax), 1);
         r.ToeRear  = Math.Round(Clamp(toeR, c.ToeRearMin,  c.ToeRearMax),  1);
@@ -493,24 +802,20 @@ public class TuneGeneratorService
 
     private static void CalculateCaster(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
     {
-        // Linear interpolation: 800 kg → 5.0°, 2000 kg → 7.0°, clamped to [5.0, 7.5].
-        // Matches community anchors (light car ~5.5°, typical ~6.0°, heavy ~6.5°) without step jumps.
         double baseByWeight = Math.Clamp(5.0 + (car.TotalMass - 800.0) / 600.0, 5.0, 7.5);
 
-        double speedAdj = Math.Max(0, (effectiveMaxKmh - RefSpeedKmh) / 100.0 * 0.5);
-        if (track.Discipline == Discipline.Drag)
-            speedAdj = Math.Min(speedAdj, 0.3); // drag: light steering preferred, cap speed bonus
-
-        double discAdj = track.Discipline switch
+        double discMul = track.Discipline switch
         {
-            Discipline.Drag          => -0.5,
-            Discipline.Drift         => -1.0, // light steering for drift initiation (community: 5–6°)
-            Discipline.Rally         => -0.5,
-            Discipline.CrossCountry  => -0.3, // offroad needs self-centering; softer than road, not as light as drift
-            _                        => 0.0
+            Discipline.Drag         => 0.90,
+            Discipline.Drift        => 0.85,
+            Discipline.Rally        => 0.92,
+            Discipline.CrossCountry => 0.95,
+            _                       => 1.0
         };
 
-        double caster = Clamp(baseByWeight + speedAdj + discAdj, c.CasterMin, c.CasterMax);
+        double speedWeightFactor = Math.Max(0, (effectiveMaxKmh - RefSpeedKmh) / 100.0 * 0.3 * (car.TotalMass / 1500.0));
+
+        double caster = Math.Clamp(baseByWeight * discMul + speedWeightFactor, c.CasterMin, c.CasterMax);
         r.Caster = Math.Round(caster, 1);
         ex["Caster"] = string.Format(L("Expl_Caster_Fmt"),
             r.Caster,
