@@ -1393,8 +1393,6 @@ public class TuneGeneratorService
         if (car.DriveType == Models.DriveType.FWD)
             bias += 4.0;
 
-        bias = Clamp(bias, 45, 62);
-
         double pressure = track.Discipline switch
         {
             Discipline.Drift  => 85,
@@ -1407,14 +1405,6 @@ public class TuneGeneratorService
         pressure += (car.TotalMass - MassBaselineKg) / 200.0 * 2.5;
         pressure += Math.Max(0, (effectiveMaxKmh - RefSpeedKmh) / 100.0 * 5.0);
         if (car.DriveType == Models.DriveType.AWD) pressure += 5;
-        // Brake upgrade: better calipers/pads → higher effective bite
-        pressure += car.BrakesUpgrade switch
-        {
-            BrakesUpgrade.Race   => 5.0,
-            BrakesUpgrade.Sport  => 2.5,
-            BrakesUpgrade.Street => 1.0,
-            _                    => 0.0
-        };
 
         r.BrakeBalance  = Math.Round(Clamp(bias,  c.BrakeBalanceMin,  c.BrakeBalanceMax));
         r.BrakePressure = Math.Round(Clamp(pressure, c.BrakePressureMin, c.BrakePressureMax));
