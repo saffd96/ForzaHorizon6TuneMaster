@@ -409,18 +409,18 @@ public class TuneGeneratorServiceTests
     }
 
     [Fact]
-    public void Generate_SportUpgrade_DiffDecelZero()
+    public void Generate_SportUpgrade_DiffDecelNonZero()
     {
         var car = CarFactory.DefaultCar();
         car.DifferentialUpgrade = DifferentialUpgrade.Sport;
 
         var result = _sut.Generate(car, CarFactory.DefaultTrack(), CarFactory.RelaxedConstraints());
 
-        Assert.Equal(0, result.DiffDecel);
+        Assert.True(result.DiffDecel > 0, $"Sport diff Decel should be > 0, got {result.DiffDecel}");
         if (car.DriveType == DriveType.AWD)
         {
             Assert.NotNull(result.DiffFrontDecel);
-            Assert.Equal(0, result.DiffFrontDecel!.Value);
+            Assert.True(result.DiffFrontDecel!.Value > 0);
         }
     }
 

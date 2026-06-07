@@ -1222,7 +1222,7 @@ public class TuneGeneratorService
             case Discipline.Drag:
                 (accel, decel) = car.DriveType switch
                 {
-                    Models.DriveType.RWD => (70.0, 20.0),
+                    Models.DriveType.RWD => (100.0, 20.0),
                     Models.DriveType.AWD => (85.0, 0.0),
                     _                    => (80.0, 10.0)
                 };
@@ -1275,13 +1275,11 @@ public class TuneGeneratorService
         // Aspiration: sudden/peak power delivery → more accel lock to prevent wheelspin
         accel *= GetPowerDeliveryFactors(car.PowertrainType, car.AspirationType, car.AntiLag).Diff;
 
-        accel = Math.Min(accel * hwFraction, maxAccel);
-        decel = Math.Min(decel * hwFraction, maxDecel);
+        accel = Math.Min(accel, maxAccel);
+        decel = Math.Min(decel, maxDecel);
 
         r.DiffAccel = Math.Round(Clamp(accel, c.DiffAccelMin, c.DiffAccelMax));
-        r.DiffDecel = car.DifferentialUpgrade == DifferentialUpgrade.Sport
-            ? 0
-            : Math.Round(Clamp(decel, c.DiffDecelMin, c.DiffDecelMax));
+        r.DiffDecel = Math.Round(Clamp(decel, c.DiffDecelMin, c.DiffDecelMax));
 
         string aspLabel = car.AspirationType switch
         {
@@ -1357,14 +1355,10 @@ public class TuneGeneratorService
 
             // Apply rearFactor to rear diff (accel already capped by maxAccel)
             r.DiffAccel = Math.Round(Clamp(accel * rearFactor, c.DiffAccelMin, c.DiffAccelMax));
-            r.DiffDecel = car.DifferentialUpgrade == DifferentialUpgrade.Sport
-                ? 0
-                : Math.Round(Clamp(decel * rearFactor, c.DiffDecelMin, c.DiffDecelMax));
+            r.DiffDecel = Math.Round(Clamp(decel * rearFactor, c.DiffDecelMin, c.DiffDecelMax));
 
-            r.DiffFrontAccel = Math.Round(Clamp(Math.Min(fAccel * hwFraction, maxAccel) * frontFactor, c.DiffAccelMin, c.DiffAccelMax));
-            r.DiffFrontDecel = car.DifferentialUpgrade == DifferentialUpgrade.Sport
-                ? 0
-                : Math.Round(Clamp(Math.Min(fDecel * hwFraction, maxDecel) * frontFactor, c.DiffDecelMin, c.DiffDecelMax));
+            r.DiffFrontAccel = Math.Round(Clamp(Math.Min(fAccel, maxAccel) * frontFactor, c.DiffAccelMin, c.DiffAccelMax));
+            r.DiffFrontDecel = Math.Round(Clamp(Math.Min(fDecel, maxDecel) * frontFactor, c.DiffDecelMin, c.DiffDecelMax));
             r.CenterDiffBias = Math.Round(bias * 100);
         }
 
