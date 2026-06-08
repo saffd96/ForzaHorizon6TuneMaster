@@ -213,4 +213,29 @@ public sealed class LocalizationService : INotifyPropertyChanged
     {
         return !_current.ContainsKey(key) && _fallback.ContainsKey(key);
     }
+
+    public bool IsFirstRun()
+    {
+        try
+        {
+            if (!File.Exists(SettingsPath)) return true;
+            var json = File.ReadAllText(SettingsPath);
+            using var doc = JsonDocument.Parse(json);
+            return !doc.RootElement.TryGetProperty("FirstRunCompleted", out var prop) || prop.GetString() != "true";
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    public void SetFirstRunCompleted()
+    {
+        SaveSettings(("FirstRunCompleted", "true"));
+    }
+
+    public void ClearFirstRunCompleted()
+    {
+        SaveSettings(("FirstRunCompleted", "false"));
+    }
 }

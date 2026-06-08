@@ -237,9 +237,11 @@
   "LaunchControlHint": "Optimal launch RPM. Hold throttle at this RPM before the green light.",
   "LaunchControlRpm": "RPM",
 
-  "HelpWindowTitle": "Help — Tune Master",
+  "HelpWindowTitle": "Guide — Tune Master",
   "HelpTitle": "How to use Tune Master",
   "HelpClose": "OK — Close",
+  "HelpDontShowAgain": "Don't show on startup",
+  "HelpProgressLabel": "8 steps • Quick guide to Tune Master",
 
   "FieldPower": "Power",
   "FieldSpeed": "Max speed",
@@ -271,34 +273,34 @@
   "LanguageEn": "English",
 
   "HelpStep1Title": "1 — CAR SELECTION",
-  "HelpStep1Text": "Start typing make, model or year in the search box — the list auto-filters. Select a car from the list: make, model and year fill automatically. The ↻ button refreshes the car database from the server. The 🗑 button clears the database and spec cache — requires reload. The ✕ button clears the selection.",
-  "HelpStep1Note": "If your car isn't in the database, just type make, model and year manually in the fields below. The database refreshes on startup and is cached locally.",
+  "HelpStep1Text": "Start typing make, model or year in the search box — the car list auto-filters. Select a car from the dropdown: make, model and year fill in automatically. If your car isn't in the database, just enter the data manually in the fields below.\n\n• ↻ button — refreshes the car database from the Forza server\n• 🗑 button — clears database and spec cache (requires reload)\n• ✕ button — clears the current selection\n\nThe car database loads automatically on startup and is cached locally. Load status is shown in the bottom status bar.",
+  "HelpStep1Note": "Tip: after selecting a car from the database, only make, model and year are filled. Mass, power and other specs must be entered manually or use AI fetch (step 3).",
 
   "HelpStep2Title": "2 — CAR DATA",
-  "HelpStep2Text": "Fill in MASS & BALANCE (total mass + front weight distribution %). In the ENGINE section, set powertrain type (ICE / Hybrid / Electric), power, torque, max RPM, engine type and position, aspiration, fuel type and anti-lag.",
-  "HelpStep2Note": "In TRANSMISSION, set drive type and gear count. Check 'Calculate gear ratios' to compute gear steps; 'Final drive only' calculates just the final drive. Diesel gets short first gear and tight spacing due to its narrow power band.",
+  "HelpStep2Text": "Fill in the essential car specifications:\n\n• MASS & BALANCE — total mass (kg) and front weight distribution (%).\n• ENGINE — powertrain type (ICE / Hybrid / Electric), power, peak torque, max RPM, engine type and position, aspiration, fuel type and anti-lag.\n• TRANSMISSION — drive type (FWD / RWD / AWD), gear count (1–10).\n\nFor electric vehicles (BEV), aspiration, fuel type and anti-lag fields auto-hide. Hybrids inherit ICE parameters.",
+  "HelpStep2Note": "Check 'Calculate gear ratios' to compute all gear steps. 'Final drive only' calculates just the final drive ratio. Diesel gets short first gear and tight spacing due to its narrow power band. Peak power and torque are calculated automatically from entered data.",
 
   "HelpStep3Title": "3 — TIRES, SPECS, UPGRADES",
-  "HelpStep3Text": "In TIRES & WHEELS, set front and rear tire width, profile, rim diameter, and tire type — these affect pressure and stiffness calculations.",
-  "HelpStep3Note": "Click 'AI: fetch specs' to auto-fill wheelbase, track, Cd and frontal area. Estimated values are marked with ⚠ — verify before generating. In the UPGRADES section, choose suspension, differential and brake upgrade levels — they shift parameter ranges.",
+  "HelpStep3Text": "In TIRES & WHEELS, set front and rear tire width, profile, rim diameter and tire type. Tire type affects base pressure (Slick: 2.24 bar, Sport: 2.07, Offroad: 2.00, etc.) and sidewall stiffness.\n\nClick 'AI: fetch specs' to auto-fill wheelbase, track, Cd and frontal area via API. Estimated values are marked with ⚠ — verify before generating.",
+  "HelpStep3Note": "In UPGRADES, choose suspension, differential and brake upgrade levels:\n• Suspension: Sport+ enables spring and ride height tuning. Race gives the widest range.\n• Differential: Sport+ enables lock tuning.\n• Brakes: affects system pressure.",
 
   "HelpStep4Title": "4 — TUNING CONSTRAINTS",
-  "HelpStep4Text": "Set allowed ranges for springs (min/max front and rear), ride height (min/max front and rear) and center differential bias (AWD). The generator stays within these limits. Spring and ride height sections are only visible with sufficient suspension upgrade level. Center diff bias is only available for All-Wheel Drive.",
-  "HelpStep4Note": "For aero, check 'Front / Rear aero kit installed' — min/max downforce fields appear. If no aero, uncheck and leave fields empty.",
+  "HelpStep4Text": "Set allowed ranges that the generator must stay within:\n\n• SPRINGS — front/rear stiffness (N/mm or kgf/mm). Based on mass and weight distribution.\n• RIDE HEIGHT — front/rear ground clearance (mm). Affects center of gravity.\n• AERO — front/rear downforce range. Only available with aero kit installed (checkboxes in UPGRADES).\n• DIFFERENTIAL — accel/decel lock (%). For AWD also center diff bias.",
+  "HelpStep4Note": "Spring and ride height sections are visible only with Sport / Race / Rally / Drift / Offroad suspension. Center diff bias (0% = front, 100% = rear) is only for AWD. If no aero kit is installed, uncheck and leave fields empty.",
 
   "HelpStep5Title": "5 — DISCIPLINE & GENERATION",
-  "HelpStep5Text": "In the Discipline tab, choose: Road, Touge, Drift, Drag, Rally, Cross Country, Eliminator or Street. Each discipline uses its own stiffness, geometry and gear ratio formulas. For drag, also set distance (⅛, ¼, ½ mile or mile).",
-  "HelpStep5Note": "Click ⚡ Generate at the bottom. Or check ✓ Auto in the right panel header — the tune auto-recalculates on any data change (~400 ms debounce).",
+  "HelpStep5Text": "Choose a discipline — it determines target spring frequencies, wheel geometry, gear ratios and tire pressure:\n\n• Road — tarmac, balanced handling\n• Touge — mountain passes, precise corner entry\n• Drift — controlled oversteer, angle and slide\n• Drag — straight line, max launch\n• Rally — mixed surface, soft suspension\n• Cross Country — off-road, max travel\n• Eliminator — battle royale, all-round\n• Street — urban, speed and maneuverability\n\nFor Drag, also set the distance (⅛, ¼, ½ mile or mile).",
+  "HelpStep5Note": "Click ⚡ Generate at the bottom of the left panel. Or check ✓ Auto in the right panel header — the tune auto-recalculates on any data change (~400 ms debounce). Generation status is shown in the status bar and overlay.",
 
   "HelpStep6Title": "6 — VIEWING RESULTS",
-  "HelpStep6Text": "The right panel shows all tune parameters:",
+  "HelpStep6Text": "The right panel displays all generated tune parameters, organized into sections:",
 
   "HelpStep7Title": "7 — LAUNCH CONTROL (DRAG)",
-  "HelpStep7Text": "In Drag mode, a Launch Control block appears above the main parameters with optimal launch RPM. Hold throttle at this RPM before the green light. Calculation accounts for aspiration type, torque peak, drive type and fuel type: diesel gets lower launch RPM due to early torque peak.",
+  "HelpStep7Text": "In Drag mode, a Launch Control block appears above the main parameters with optimal launch RPM. Hold throttle at this RPM before the green light.\n\nCalculation accounts for: aspiration type (turbos need pre-spooling), torque peak (lower peak = lower launch RPM), drive type (AWD can launch at higher RPM), fuel type (diesel gets lower RPM due to early torque peak).",
 
   "HelpStep8Title": "8 — PROFILES & UNITS",
-  "HelpStep8Text": "💾 Save stores car data, constraints and tune. The name is auto-generated from make, model, year, drive type, engine type and discipline. Select a profile from the list to load immediately. + New resets all fields. 🗑 deletes the selected profile.",
-  "HelpStep8Note": "Units and language toggle in the top bar: Metric / Imperial, power in HP / PS / kW, spring rate in N/mm · kgf/mm · lb/in. Interface language: Русский / English. All internal calculations use metric — conversion is for display only.",
+  "HelpStep8Text": "Profiles let you save and load full tune configurations:\n\n• 💾 Save — stores car data, constraints and tune. Name auto-generated: Make_Model_Year_Drive_Discipline.\n• Load — select a profile from the list to load immediately.\n• + New — resets all fields to defaults.\n• 🗑 Delete — removes the selected profile.\n\nProfiles are stored as JSON files in %APPDATA%\\ForzaTuneMaster\\profiles\\.",
+  "HelpStep8Note": "Units and language toggle in the top bar:\n• Metric / Imperial — affects all unit displays\n• Power: HP / PS / kW\n• Spring rate: N/mm · kgf/mm · lb/in\n• Interface language: Русский / English\n\nAll internal calculations use SI (metric) units — imperial conversion is for display only.",
 
   "Enum_EngineType_I1": "I1 (single-cylinder)",
   "Enum_EngineType_I2": "I2",

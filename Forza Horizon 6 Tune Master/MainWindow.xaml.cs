@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Forza_Horizon_6_Tune_Master.Services;
 using Forza_Horizon_6_Tune_Master.ViewModels;
 using Forza_Horizon_6_Tune_Master.Views;
 
@@ -15,6 +16,14 @@ public partial class MainWindow : Window
         DataContext = new MainViewModel();
         SizeChanged += OnSizeChanged;
         StateChanged += OnWindowStateChanged;
+        Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnLoaded;
+        if (LocalizationService.Instance.IsFirstRun())
+            new HelpWindow { Owner = this }.ShowDialog();
     }
 
     private void OnWindowStateChanged(object? sender, EventArgs e)
