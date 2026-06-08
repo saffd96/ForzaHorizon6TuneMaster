@@ -518,6 +518,21 @@
 
   "LanguageLoadError": "Failed to load language file for '{0}'",
 
+  "FeedbackSymbol": "✉",
+  "FeedbackButtonTooltip": "Feedback & suggestions",
+  "FeedbackWindowTitle": "Feedback & suggestions",
+  "FeedbackTitle": "Feedback & suggestions",
+  "FeedbackDescription": "Found a bug? Have an idea to improve the app? Write to me — I'll definitely read it!",
+  "FeedbackDirectLabel": "✉ Or send an email directly:",
+  "FeedbackDirectHint": "Click to copy",
+
+  "FeedbackTextLabel": "Your feedback or suggestion:",
+  "FeedbackEmailLabel": "Your Email (optional):",
+  "FeedbackEmailPlaceholder": "email@example.com",
+  "FeedbackSendButton": "✉ Send",
+  "FeedbackCancelButton": "Cancel",
+  "FeedbackSentMessage": "Thank you! The email will be sent through your mail client.\n\nIf the app didn't open, click the email in the card above — it will be copied to your clipboard.",
+
   "DonateSymbol": "❤",
   "DonateButtonTooltip": "Support the project",
   "DonateWindowTitle": "Support — Tune Master",
@@ -527,6 +542,8 @@
   "DonateThankYou": "Thank you for your support! ❤",
   "DonateClose": "Close",
 
-  "HelpDonateText": "Like the app? Hit the ❤ button in the top bar to support the project."
+  "HelpDonateText": "Like the app? Hit the ❤ button in the top bar to support the project.",
+
+  "HelpFeedbackText": "Found a bug or have an idea? Click the ✉ button in the top bar to write to me directly."
 
 }

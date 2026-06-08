@@ -1,0 +1,269 @@
+<Window x:Class="Forza_Horizon_6_Tune_Master.Views.FeedbackWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services"
+        Title="{l:Loc FeedbackWindowTitle}"
+        Width="640" Height="640"
+        MinWidth="520" MinHeight="520"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="{StaticResource BgBrush}"
+        WindowStyle="SingleBorderWindow">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="24,20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Icon with accent circle -->
+                <Border Grid.Column="0"
+                        Background="{StaticResource ElevatedBrush}"
+                        BorderBrush="{StaticResource AccentBrush}"
+                        BorderThickness="1"
+                        CornerRadius="22"
+                        Width="44" Height="44"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="{l:Loc FeedbackSymbol}"
+                               FontSize="20"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+
+                <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{l:Loc FeedbackTitle}"
+                               FontSize="18" FontWeight="Bold"
+                               Foreground="{StaticResource TextBrush}"/>
+                    <TextBlock Text="{l:Loc FeedbackDescription}"
+                               FontSize="{DynamicResource FontSmall}"
+                               Foreground="{StaticResource TextDimBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="24,18">
+            <StackPanel>
+
+                <!-- Direct email card -->
+                <Border Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="#FF5E0E"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="18,16"
+                        Margin="0,0,0,20">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#FF5E0E" Opacity="0.15" BlurRadius="12" ShadowDepth="0"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0"
+                                   Text="{l:Loc FeedbackDirectLabel}"
+                                   FontSize="{DynamicResource FontSmall}"
+                                   Foreground="{StaticResource TextDimBrush}"
+                                   Margin="0,0,0,10"/>
+
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Email display + copyable area -->
+                            <Border Grid.Column="0"
+                                    Background="{StaticResource ElevatedBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="14,10"
+                                    Cursor="Hand"
+                                    PreviewMouseDown="DirectEmail_MouseDown">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                                <Setter Property="Background" Value="#2A3050"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="📧"
+                                               FontSize="16"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,10,0"/>
+                                    <TextBlock Grid.Column="1"
+                                               x:Name="DirectEmailText"
+                                               Text="saffdtune@gmail.com"
+                                               FontSize="{DynamicResource FontNormal}"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource AccentBrush}"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Copy button -->
+                            <Border Grid.Column="1"
+                                    Background="{StaticResource ElevatedBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="12,10"
+                                    Margin="8,0,0,0"
+                                    Cursor="Hand"
+                                    ToolTip="{l:Loc FeedbackDirectHint}"
+                                    PreviewMouseDown="DirectEmail_MouseDown">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                                <Setter Property="Background" Value="#2A3050"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="📋"
+                                           FontSize="16"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- Feedback text -->
+                <TextBlock Text="{l:Loc FeedbackTextLabel}"
+                           FontSize="{DynamicResource FontSmall}"
+                           Foreground="{StaticResource TextDimBrush}"
+                           Margin="0,0,0,6"/>
+                <TextBox x:Name="FeedbackTextBox"
+                         TextWrapping="Wrap"
+                         AcceptsReturn="True"
+                         MinHeight="110"
+                         MaxLength="2000"
+                         Padding="12,10"
+                         FontSize="{DynamicResource FontNormal}"
+                         Background="{StaticResource ElevatedBrush}"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}"
+                         BorderThickness="1"
+                         VerticalScrollBarVisibility="Auto"
+                         VerticalContentAlignment="Top"
+                         CaretBrush="{StaticResource AccentBrush}"/>
+                <TextBlock Text="макс. 2000 символов"
+                           FontSize="{DynamicResource FontXSmall}"
+                           Foreground="{StaticResource TextMutedBrush}"
+                           HorizontalAlignment="Right"
+                           Margin="0,4,0,0"/>
+
+                <!-- Email -->
+                <TextBlock Text="{l:Loc FeedbackEmailLabel}"
+                           FontSize="{DynamicResource FontSmall}"
+                           Foreground="{StaticResource TextDimBrush}"
+                           Margin="0,14,0,6"/>
+                <TextBox x:Name="EmailTextBox"
+                         MaxLength="254"
+                         Padding="12,10"
+                         FontSize="{DynamicResource FontNormal}"
+                         Background="{StaticResource ElevatedBrush}"
+                         Foreground="{StaticResource TextBrush}"
+                         BorderBrush="{StaticResource BorderBrush}"
+                         BorderThickness="1"
+                         CaretBrush="{StaticResource AccentBrush}"/>
+                <TextBlock Text="макс. 254 символа"
+                           FontSize="{DynamicResource FontXSmall}"
+                           Foreground="{StaticResource TextMutedBrush}"
+                           HorizontalAlignment="Right"
+                           Margin="0,4,0,0"/>
+
+                <!-- Sent confirmation -->
+                <Border x:Name="SentPanel"
+                        Visibility="Collapsed"
+                        Background="#112E7D32"
+                        BorderBrush="#2E7D32"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16,14"
+                        Margin="0,16,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0"
+                                Background="#1A22C55E"
+                                CornerRadius="14"
+                                Width="28" Height="28"
+                                VerticalAlignment="Top"
+                                Margin="0,0,12,0">
+                            <TextBlock Text="✓"
+                                       FontSize="16" FontWeight="Bold"
+                                       Foreground="{StaticResource SuccessBrush}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Grid.Column="1"
+                                   Text="{l:Loc FeedbackSentMessage}"
+                                   TextWrapping="Wrap"
+                                   FontSize="{DynamicResource FontSmall}"
+                                   Foreground="{StaticResource TextBrush}"
+                                   LineHeight="20"/>
+                    </Grid>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <Border Grid.Row="2"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="24,12">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="CancelButton"
+                        Content="{l:Loc FeedbackCancelButton}"
+                        Style="{StaticResource SecondaryButton}"
+                        Padding="20,7"
+                        Margin="0,0,8,0"
+                        IsCancel="True"
+                        Click="CancelButton_Click"/>
+                <Button x:Name="SendButton"
+                        Content="{l:Loc FeedbackSendButton}"
+                        Style="{StaticResource PrimaryButton}"
+                        Padding="20,7"
+                        IsDefault="True"
+                        Click="SendButton_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

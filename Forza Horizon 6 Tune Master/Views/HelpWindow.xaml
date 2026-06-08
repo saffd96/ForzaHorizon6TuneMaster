@@ -23,7 +23,7 @@
                 Background="{StaticResource SurfaceBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,0,0,1"
-                Padding="24,18">
+                Padding="24,20">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -31,12 +31,15 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Step badge -->
+                <!-- Step badge with glow -->
                 <Border Grid.Column="0"
                         Background="{StaticResource AccentBrush}"
                         CornerRadius="20"
                         Width="44" Height="44"
                         VerticalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#FF5E0E" Opacity="0.3" BlurRadius="10" ShadowDepth="0"/>
+                    </Border.Effect>
                     <TextBlock Text="8"
                                FontSize="18" FontWeight="Bold"
                                Foreground="#FFFFFF"
@@ -72,17 +75,20 @@
                       Background="{StaticResource BgBrush}">
             <StackPanel>
 
-                <!-- Step 1: Car selection -->
+                <!-- Step 1 -->
                 <Border Background="{StaticResource CardBrush}"
-                        CornerRadius="8" Padding="0" Margin="0,0,0,14">
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10" Padding="0" Margin="0,0,0,14">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="48"/>
+                            <ColumnDefinition Width="50"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0"
                                 Background="{StaticResource AccentBrush}"
-                                CornerRadius="8,0,0,8">
+                                CornerRadius="10,0,0,10"
+                                BorderThickness="0">
                             <TextBlock Text="1"
                                        FontSize="22" FontWeight="Bold"
                                        Foreground="#FFFFFF"
@@ -94,26 +100,34 @@
                                        Foreground="{StaticResource AccentBrush}"
                                        FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
                             <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep1Text}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="0,10,0,0"
-                                       Foreground="{StaticResource TextDimBrush}"
-                                       Text="{l:Loc HelpStep1Note}"/>
+                            <Border Background="{StaticResource ElevatedBrush}"
+                                    CornerRadius="6"
+                                    Padding="12,10"
+                                    Margin="0,10,0,0">
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                           Foreground="{StaticResource TextDimBrush}"
+                                           Text="{l:Loc HelpStep1Note}"/>
+                            </Border>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- Step 2: Car data -->
+                <!-- Step 2 -->
                 <Border Background="{StaticResource CardBrush}"
-                        CornerRadius="8" Padding="0" Margin="0,0,0,14">
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10" Padding="0" Margin="0,0,0,14">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="48"/>
+                            <ColumnDefinition Width="50"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0"
                                 Background="{StaticResource CyanBrush}"
-                                CornerRadius="8,0,0,8">
+                                CornerRadius="10,0,0,10"
+                                BorderThickness="0">
                             <TextBlock Text="2"
                                        FontSize="22" FontWeight="Bold"
                                        Foreground="#FFFFFF"
@@ -125,26 +139,34 @@
                                        Foreground="{StaticResource CyanBrush}"
                                        FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
                             <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep2Text}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="0,10,0,0"
-                                       Foreground="{StaticResource TextDimBrush}"
-                                       Text="{l:Loc HelpStep2Note}"/>
+                            <Border Background="{StaticResource ElevatedBrush}"
+                                    CornerRadius="6"
+                                    Padding="12,10"
+                                    Margin="0,10,0,0">
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                           Foreground="{StaticResource TextDimBrush}"
+                                           Text="{l:Loc HelpStep2Note}"/>
+                            </Border>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- Step 3: Tires, specs, upgrades -->
+                <!-- Step 3 -->
                 <Border Background="{StaticResource CardBrush}"
-                        CornerRadius="8" Padding="0" Margin="0,0,0,14">
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10" Padding="0" Margin="0,0,0,14">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="48"/>
+                            <ColumnDefinition Width="50"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0"
                                 Background="{StaticResource AccentBrush}"
-                                CornerRadius="8,0,0,8">
+                                CornerRadius="10,0,0,10"
+                                BorderThickness="0">
                             <TextBlock Text="3"
                                        FontSize="22" FontWeight="Bold"
                                        Foreground="#FFFFFF"
@@ -156,26 +178,34 @@
                                        Foreground="{StaticResource AccentBrush}"
                                        FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
                             <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep3Text}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="0,10,0,0"
-                                       Foreground="{StaticResource TextDimBrush}"
-                                       Text="{l:Loc HelpStep3Note}"/>
+                            <Border Background="{StaticResource ElevatedBrush}"
+                                    CornerRadius="6"
+                                    Padding="12,10"
+                                    Margin="0,10,0,0">
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                           Foreground="{StaticResource TextDimBrush}"
+                                           Text="{l:Loc HelpStep3Note}"/>
+                            </Border>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- Step 4: Constraints -->
+                <!-- Step 4 -->
                 <Border Background="{StaticResource CardBrush}"
-                        CornerRadius="8" Padding="0" Margin="0,0,0,14">
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10" Padding="0" Margin="0,0,0,14">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="48"/>
+                            <ColumnDefinition Width="50"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0"
                                 Background="{StaticResource CyanBrush}"
-                                CornerRadius="8,0,0,8">
+                                CornerRadius="10,0,0,10"
+                                BorderThickness="0">
                             <TextBlock Text="4"
                                        FontSize="22" FontWeight="Bold"
                                        Foreground="#FFFFFF"
@@ -187,26 +217,34 @@
                                        Foreground="{StaticResource CyanBrush}"
                                        FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
                             <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep4Text}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="0,10,0,0"
-                                       Foreground="{StaticResource TextDimBrush}"
-                                       Text="{l:Loc HelpStep4Note}"/>
+                            <Border Background="{StaticResource ElevatedBrush}"
+                                    CornerRadius="6"
+                                    Padding="12,10"
+                                    Margin="0,10,0,0">
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                           Foreground="{StaticResource TextDimBrush}"
+                                           Text="{l:Loc HelpStep4Note}"/>
+                            </Border>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- Step 5: Discipline + Generate -->
+                <!-- Step 5 -->
                 <Border Background="{StaticResource CardBrush}"
-                        CornerRadius="8" Padding="0" Margin="0,0,0,14">
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10" Padding="0" Margin="0,0,0,14">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="48"/>
+                            <ColumnDefinition Width="50"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0"
                                 Background="{StaticResource AccentBrush}"
-                                CornerRadius="8,0,0,8">
+                                CornerRadius="10,0,0,10"
+                                BorderThickness="0">
                             <TextBlock Text="5"
                                        FontSize="22" FontWeight="Bold"
                                        Foreground="#FFFFFF"
@@ -218,26 +256,34 @@
                                        Foreground="{StaticResource AccentBrush}"
                                        FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
                             <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep5Text}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="0,10,0,0"
-                                       Foreground="{StaticResource TextDimBrush}"
-                                       Text="{l:Loc HelpStep5Note}"/>
+                            <Border Background="{StaticResource ElevatedBrush}"
+                                    CornerRadius="6"
+                                    Padding="12,10"
+                                    Margin="0,10,0,0">
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                           Foreground="{StaticResource TextDimBrush}"
+                                           Text="{l:Loc HelpStep5Note}"/>
+                            </Border>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- Step 6: Results -->
+                <!-- Step 6 -->
                 <Border Background="{StaticResource CardBrush}"
-                        CornerRadius="8" Padding="0" Margin="0,0,0,14">
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10" Padding="0" Margin="0,0,0,14">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="48"/>
+                            <ColumnDefinition Width="50"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0"
                                 Background="{StaticResource CyanBrush}"
-                                CornerRadius="8,0,0,8">
+                                CornerRadius="10,0,0,10"
+                                BorderThickness="0">
                             <TextBlock Text="6"
                                        FontSize="22" FontWeight="Bold"
                                        Foreground="#FFFFFF"
@@ -249,53 +295,63 @@
                                        Foreground="{StaticResource CyanBrush}"
                                        FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
                             <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep6Text}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="8,6,0,0"
-                                       Text="{l:Loc HelpStep6Line1}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="8,2,0,0"
-                                       Text="{l:Loc HelpStep6Line2}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="8,2,0,0"
-                                       Text="{l:Loc HelpStep6Line3}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="8,2,0,0"
-                                       Text="{l:Loc HelpStep6Line4}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="8,2,0,0"
-                                       Text="{l:Loc HelpStep6Line5}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="8,2,0,0"
-                                       Text="{l:Loc HelpStep6Line6}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="8,2,0,0"
-                                       Text="{l:Loc HelpStep6Line7}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="8,2,0,0"
-                                       Text="{l:Loc HelpStep6Line8}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="8,2,0,0"
-                                       Text="{l:Loc HelpStep6Line9}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="0,10,0,0"
-                                       Foreground="{StaticResource TextDimBrush}"
-                                       Text="{l:Loc HelpStep6Line10}"/>
+                            <Border Background="{StaticResource SurfaceBrush}"
+                                    CornerRadius="6"
+                                    Padding="14,12"
+                                    Margin="0,8,0,0">
+                                <StackPanel>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                               Text="{l:Loc HelpStep6Line1}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                               Margin="0,2,0,0"
+                                               Text="{l:Loc HelpStep6Line2}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                               Margin="0,2,0,0"
+                                               Text="{l:Loc HelpStep6Line3}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                               Margin="0,2,0,0"
+                                               Text="{l:Loc HelpStep6Line4}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                               Margin="0,2,0,0"
+                                               Text="{l:Loc HelpStep6Line5}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                               Margin="0,2,0,0"
+                                               Text="{l:Loc HelpStep6Line6}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                               Margin="0,2,0,0"
+                                               Text="{l:Loc HelpStep6Line7}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                               Margin="0,2,0,0"
+                                               Text="{l:Loc HelpStep6Line8}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                               Margin="0,2,0,0"
+                                               Text="{l:Loc HelpStep6Line9}"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                               Margin="0,8,0,0"
+                                               Foreground="{StaticResource TextDimBrush}"
+                                               Text="{l:Loc HelpStep6Line10}"/>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- Step 7: Launch Control -->
-                <Border Background="{StaticResource ElevatedBrush}"
-                        CornerRadius="8" Padding="0" Margin="0,0,0,14">
+                <!-- Step 7 -->
+                <Border Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10" Padding="0" Margin="0,0,0,14">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="48"/>
+                            <ColumnDefinition Width="50"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0"
                                 Background="{StaticResource AccentBrush}"
-                                CornerRadius="8,0,0,8">
+                                CornerRadius="10,0,0,10"
+                                BorderThickness="0">
                             <TextBlock Text="7"
                                        FontSize="22" FontWeight="Bold"
                                        Foreground="#FFFFFF"
@@ -307,22 +363,26 @@
                                        Foreground="{StaticResource AccentBrush}"
                                        FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
                             <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep7Text}"/>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- Step 8: Profiles + Units -->
+                <!-- Step 8 -->
                 <Border Background="{StaticResource CardBrush}"
-                        CornerRadius="8" Padding="0" Margin="0,0,0,14">
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10" Padding="0" Margin="0,0,0,14">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="48"/>
+                            <ColumnDefinition Width="50"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0"
                                 Background="{StaticResource CyanBrush}"
-                                CornerRadius="8,0,0,8">
+                                CornerRadius="10,0,0,10"
+                                BorderThickness="0">
                             <TextBlock Text="8"
                                        FontSize="22" FontWeight="Bold"
                                        Foreground="#FFFFFF"
@@ -334,24 +394,86 @@
                                        Foreground="{StaticResource CyanBrush}"
                                        FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
                             <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep8Text}"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
-                                       Margin="0,10,0,0"
-                                       Foreground="{StaticResource TextDimBrush}"
-                                       Text="{l:Loc HelpStep8Note}"/>
+                            <Border Background="{StaticResource ElevatedBrush}"
+                                    CornerRadius="6"
+                                    Padding="12,10"
+                                    Margin="0,10,0,0">
+                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                           Foreground="{StaticResource TextDimBrush}"
+                                           Text="{l:Loc HelpStep8Note}"/>
+                            </Border>
                         </StackPanel>
                     </Grid>
                 </Border>
 
-                <!-- Donate mention -->
-                <Border Background="{StaticResource CardBrush}"
-                        BorderBrush="{StaticResource BorderBrush}"
-                        BorderThickness="1" CornerRadius="8"
-                        Padding="16,12" Margin="0,8,0,0">
-                    <TextBlock Text="{l:Loc HelpDonateText}"
-                               TextWrapping="Wrap" FontSize="13" LineHeight="20"
-                               Foreground="{StaticResource TextDimBrush}"/>
-                </Border>
+                <!-- Bottom cards row -->
+                <Grid Margin="0,4,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Donate -->
+                    <Border Grid.Column="0"
+                            Background="{StaticResource CardBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="10"
+                            Padding="16,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Background="#2AFF5E0E"
+                                    CornerRadius="14"
+                                    Width="28" Height="28"
+                                    VerticalAlignment="Top"
+                                    Margin="0,0,10,0">
+                                <TextBlock Text="❤"
+                                           FontSize="14"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Grid.Column="1"
+                                       Text="{l:Loc HelpDonateText}"
+                                       TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                       Foreground="{StaticResource TextDimBrush}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Feedback -->
+                    <Border Grid.Column="2"
+                            Background="{StaticResource CardBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1" CornerRadius="10"
+                            Padding="16,14">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0"
+                                    Background="#2A1ABCFE"
+                                    CornerRadius="14"
+                                    Width="28" Height="28"
+                                    VerticalAlignment="Top"
+                                    Margin="0,0,10,0">
+                                <TextBlock Text="✉"
+                                           FontSize="14"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Grid.Column="1"
+                                       Text="{l:Loc HelpFeedbackText}"
+                                       TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                       Foreground="{StaticResource TextDimBrush}"/>
+                        </Grid>
+                    </Border>
+                </Grid>
 
             </StackPanel>
         </ScrollViewer>

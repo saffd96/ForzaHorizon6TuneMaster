@@ -125,6 +125,12 @@
                                 FontWeight="Bold" FontSize="{DynamicResource FontNormal}"
                                 ToolTip="{l:Loc HelpButtonTooltip}"
                                 Click="HelpButton_Click"/>
+                        <Button Content="{l:Loc FeedbackSymbol}"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="10,3" Margin="6,0,0,0"
+                                FontWeight="Bold" FontSize="{DynamicResource FontNormal}"
+                                ToolTip="{l:Loc FeedbackButtonTooltip}"
+                                Click="FeedbackButton_Click"/>
                         <TextBlock Text="{l:Loc VersionTag}"
                                    Foreground="{StaticResource TextMutedBrush}"
                                    FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="20,0,0,0"/>

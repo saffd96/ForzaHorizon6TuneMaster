@@ -106,6 +106,11 @@ public partial class MainWindow : Window
         new HelpWindow { Owner = this }.ShowDialog();
     }
 
+    private void FeedbackButton_Click(object sender, RoutedEventArgs e)
+    {
+        new FeedbackWindow { Owner = this }.ShowDialog();
+    }
+
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
         bool compact = ActualWidth < 1200;

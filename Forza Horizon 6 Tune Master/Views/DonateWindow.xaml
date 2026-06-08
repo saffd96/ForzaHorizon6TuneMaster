@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services"
         Title="{l:Loc DonateWindowTitle}"
-        Width="560" Height="680"
-        MinWidth="480" MinHeight="560"
+        Width="600" Height="720"
+        MinWidth="520" MinHeight="600"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         Background="{StaticResource BgBrush}"
@@ -22,11 +22,40 @@
                 Background="{StaticResource SurfaceBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,0,0,1"
-                Padding="24,18">
-            <TextBlock Text="{l:Loc DonateTitle}"
-                       FontSize="{DynamicResource FontHeading}"
-                       FontWeight="SemiBold"
-                       Foreground="{StaticResource TextBrush}"/>
+                Padding="24,20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Background="{StaticResource ElevatedBrush}"
+                        BorderBrush="{StaticResource DangerBrush}"
+                        BorderThickness="1"
+                        CornerRadius="22"
+                        Width="44" Height="44"
+                        VerticalAlignment="Center">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#EF4444" Opacity="0.2" BlurRadius="8" ShadowDepth="0"/>
+                    </Border.Effect>
+                    <TextBlock Text="❤"
+                               FontSize="22"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+
+                <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{l:Loc DonateTitle}"
+                               FontSize="18" FontWeight="Bold"
+                               Foreground="{StaticResource TextBrush}"/>
+                    <TextBlock Text="{l:Loc DonateDescription}"
+                               FontSize="{DynamicResource FontSmall}"
+                               Foreground="{StaticResource TextDimBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <!-- Content -->
@@ -34,37 +63,44 @@
                       VerticalScrollBarVisibility="Auto"
                       Padding="24,18">
             <StackPanel>
-                <TextBlock Text="{l:Loc DonateDescription}"
-                           FontSize="{DynamicResource FontNormal}"
-                           Foreground="{StaticResource TextBrush}"
-                           TextWrapping="Wrap"
-                           Margin="0,0,0,18"/>
 
-                <!-- QR Code -->
+                <!-- QR Code card -->
                 <Border Background="{StaticResource SurfaceBrush}"
                         BorderBrush="{StaticResource BorderBrush}"
                         BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="16"
-                        Margin="0,0,0,18"
+                        CornerRadius="12"
+                        Padding="20"
+                        Margin="0,0,0,20"
                         HorizontalAlignment="Center">
-                    <Image Source="/Assets/dalink-qr-code.png"
-                           Width="240"
-                           Height="240"
-                           Stretch="Uniform"/>
+                    <Border.Effect>
+                        <DropShadowEffect Color="#000000" Opacity="0.3" BlurRadius="16" ShadowDepth="4"/>
+                    </Border.Effect>
+                    <Border Background="{StaticResource CardBrush}"
+                            BorderBrush="{StaticResource ElevatedBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16">
+                        <Image Source="/Assets/dalink-qr-code.png"
+                               Width="220"
+                               Height="220"
+                               Stretch="Uniform"/>
+                    </Border>
                 </Border>
 
                 <!-- Donation link -->
                 <TextBlock Text="{l:Loc DonateLinkLabel}"
                            FontSize="{DynamicResource FontSmall}"
-                           Foreground="{StaticResource TextMutedBrush}"
-                           Margin="0,0,0,6"/>
+                           Foreground="{StaticResource TextDimBrush}"
+                           Margin="0,0,0,8"/>
 
                 <Border Background="{StaticResource SurfaceBrush}"
-                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderBrush="{StaticResource AccentBrush}"
                         BorderThickness="1"
-                        CornerRadius="6"
-                        Padding="12,8">
+                        CornerRadius="8"
+                        Padding="14,10">
+                    <Border.Effect>
+                        <DropShadowEffect Color="#FF5E0E" Opacity="0.1" BlurRadius="8" ShadowDepth="0"/>
+                    </Border.Effect>
                     <TextBlock FontSize="{DynamicResource FontNormal}"
                                Foreground="{StaticResource AccentBrush}"
                                TextWrapping="Wrap"
@@ -79,13 +115,38 @@
                     </TextBlock>
                 </Border>
 
-                <TextBlock Text="{l:Loc DonateThankYou}"
-                           FontSize="{DynamicResource FontNormal}"
-                           Foreground="{StaticResource TextMutedBrush}"
-                           TextWrapping="Wrap"
-                           FontStyle="Italic"
-                           Margin="0,18,0,0"
-                           HorizontalAlignment="Center"/>
+                <!-- Thank you -->
+                <Border Background="{StaticResource ElevatedBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="20,16"
+                        Margin="0,24,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0"
+                                Background="#2AFF5E0E"
+                                CornerRadius="14"
+                                Width="28" Height="28"
+                                VerticalAlignment="Top"
+                                Margin="0,0,12,0">
+                            <TextBlock Text="❤"
+                                       FontSize="14"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Grid.Column="1"
+                                   Text="{l:Loc DonateThankYou}"
+                                   FontSize="{DynamicResource FontNormal}"
+                                   Foreground="{StaticResource TextDimBrush}"
+                                   TextWrapping="Wrap"
+                                   FontStyle="Italic"/>
+                    </Grid>
+                </Border>
+
             </StackPanel>
         </ScrollViewer>
 
@@ -97,7 +158,7 @@
                 Padding="24,12">
             <Button Content="{l:Loc DonateClose}"
                     Style="{StaticResource SecondaryButton}"
-                    Padding="24,6"
+                    Padding="24,7"
                     HorizontalAlignment="Right"
                     IsDefault="True"
                     Click="CloseButton_Click"/>

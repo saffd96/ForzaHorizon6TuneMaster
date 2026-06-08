@@ -148,7 +148,7 @@
                                       HorizontalScrollBarVisibility="Hidden"
                                       VerticalScrollBarVisibility="Hidden"
                                       Margin="{TemplateBinding Padding}"
-                                      VerticalAlignment="Center"/>
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsFocused" Value="True">

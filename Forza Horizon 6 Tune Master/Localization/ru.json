@@ -518,6 +518,21 @@
 
   "LanguageLoadError": "Не удалось загрузить файл языка для '{0}'",
 
+  "FeedbackSymbol": "✉",
+  "FeedbackButtonTooltip": "Отзывы и пожелания",
+  "FeedbackWindowTitle": "Отзывы и пожелания",
+  "FeedbackTitle": "Отзывы и пожелания",
+  "FeedbackDescription": "Нашли баг? Есть идея как улучшить программу? Напишите мне — я обязательно прочитаю!",
+  "FeedbackDirectLabel": "✉ Или отправьте письмо напрямую:",
+  "FeedbackDirectHint": "Нажмите чтобы скопировать",
+
+  "FeedbackTextLabel": "Ваш отзыв или пожелание:",
+  "FeedbackEmailLabel": "Ваш Email (необязательно):",
+  "FeedbackEmailPlaceholder": "email@example.com",
+  "FeedbackSendButton": "✉ Отправить",
+  "FeedbackCancelButton": "Отмена",
+  "FeedbackSentMessage": "Спасибо! Письмо будет отправлено через вашу почтовую программу.\n\nЕсли приложение не открылось, нажмите на email в карточке выше — он скопируется в буфер обмена.",
+
   "DonateSymbol": "❤",
   "DonateButtonTooltip": "Поддержать проект",
   "DonateWindowTitle": "Поддержка — Tune Master",
@@ -527,6 +542,8 @@
   "DonateThankYou": "Спасибо за вашу поддержку! ❤",
   "DonateClose": "Закрыть",
 
-  "HelpDonateText": "Нравится программа? Нажми ❤ в верхней панели — поддержи проект."
+  "HelpDonateText": "Нравится программа? Нажми ❤ в верхней панели — поддержи проект.",
+
+  "HelpFeedbackText": "Нашли баг или есть идея? Нажми ✉ в верхней панели — напишите мне напрямую."
 
 }
