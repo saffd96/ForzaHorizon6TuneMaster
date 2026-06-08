@@ -11,42 +11,53 @@ dotnet build "Forza Horizon 6 Tune Master/Forza Horizon 6 Tune Master.csproj"
 # Run
 dotnet run --project "Forza Horizon 6 Tune Master/Forza Horizon 6 Tune Master.csproj"
 
+# Run tests
+dotnet test TuneMaster.Tests/TuneMaster.Tests.csproj
+
 # Release build
 dotnet publish "Forza Horizon 6 Tune Master/Forza Horizon 6 Tune Master.csproj" -c Release -r win-x64 --self-contained
 ```
 
-No test project exists. No linter is configured. The only NuGet dependency is `System.Text.Json 8.0.5`.
+No linter is configured. NuGet dependencies: `System.Text.Json 8.0.5`, `HtmlAgilityPack` (wiki parsing).
 
 ## Architecture
 
-WPF .NET 8, MVVM, single ViewModel (`MainViewModel`) bound to all UserControl views via `DataContext` propagated from `MainWindow`.
+WPF .NET 8, MVVM, single ViewModel (`MainViewModel`, ~1500 lines) bound to all UserControl views via `DataContext` propagated from `MainWindow`. `TuneValidator/` is a separate utility project for offline validation.
 
 **Data flow:**
-1. User fills `CarCardView` + selects discipline in `TuneResultView`
-2. Clicks "Сгенерировать" → `MainViewModel.GenerateCommand` → `TuneGeneratorService.Generate(Car, Track, Constraints)` → returns `TuneResult`
-3. `TuneResultView` binds directly to `MainViewModel.TuneResult`
+1. User fills `CarCardView` (car specs) + selects discipline in `TuneResultView`
+2. `CarDatabaseService` populates the car picker by scraping Forza Fandom wiki (~650 cars, cached daily to `%APPDATA%\ForzaTuneMaster\fh6_cars_fandom.json`)
+3. Selecting a car triggers async spec fetch: `WikiCarSpecService` → parses HTML for powertrain/weight/gear data → `AiCarSpecService` fills any remaining geometry fields via LLM (OpenRouter/Cerebras with daily cache)
+4. Clicking "Сгенерировать" → `MainViewModel.GenerateCommand` → `TuneGeneratorService.Generate(Car, Track, Constraints)` → populates `TuneResult` and `TuneResult.Explanations`
+5. `TuneResultView` binds directly to `MainViewModel.TuneResult`
 
-**Canonical storage units.** All model properties store metric values:
+**Three data persistence layers:**
+- `%APPDATA%\ForzaTuneMaster\profiles\` — user-saved tune profiles (JSON)
+- `%APPDATA%\ForzaTuneMaster\specs\` — wiki spec cache per car
+- `%APPDATA%\ForzaTuneMaster\specs_cache\` — AI geometry cache; `specs_overrides.json` holds manual corrections
+
+## Canonical Storage Units
+
+All model properties store metric values internally:
 - Power → HP (`Car.PowerHP`)
-- Speed → km/h (`Car.MaxSpeedKmh`)
+- Speed → km/h (`Car.MaxSpeedKmh`, hard-capped at 700)
 - Mass → kg (`Car.TotalMass`)
-- Spring rates → N/mm (`TuneResult.SpringFront/Rear`) — formula: k = 4π²/2000 × f² × m_corner
+- Spring rates → N/mm (`TuneResult.SpringFront/Rear`)
 - Tire pressure → bar
 - Heights → mm
 
-Unit conversion happens only in display: `MainViewModel` exposes `PowerDisplay`, `SpeedDisplay`, `MassDisplay` (computed properties with TwoWay conversion), and `PowerFieldLabel`, `SpeedFieldLabel`, `MassFieldLabel` for dynamic labels. `TuneResultView` uses `UnitValueConverter` (MultiValueConverter) with `MeasurementSystem`, `SpringUnit`, or `PowerUnit` as the second binding value.
+Unit conversion happens only at display time. `MainViewModel` exposes `PowerDisplay`, `SpeedDisplay`, `MassDisplay` (TwoWay with conversion) and their label companions. Constraint display properties follow the same pattern: e.g. `TirePressureFrontMinDisplay`. `TuneResultView` uses `UnitValueConverter` (MultiValueConverter) where `ConverterParameter` is one of `"pressure"`, `"spring"`, `"height"`, `"speed"`, `"mass"`, `"power"`.
 
 ## Key Patterns
 
-**INPC without CommunityToolkit.** All models inherit `NotifyBase` (`Models/NotifyBase.cs`) which provides `Set<T>(ref field, value)` and `OnPropertyChanged()`. `MainViewModel` implements `INotifyPropertyChanged` directly.
+**INPC without CommunityToolkit.** All models inherit `NotifyBase` (`Models/NotifyBase.cs`) — provides `Set<T>(ref field, value)` and `OnPropertyChanged()`. `MainViewModel` implements `INotifyPropertyChanged` directly.
 
-**Enum ↔ RadioButton binding.** `EnumToBoolConverter` in `Converters/Converters.cs` supports TwoWay. Usage:
+**Enum ↔ RadioButton binding.** `EnumToBoolConverter` in `Converters/Converters.cs` supports TwoWay. ConvertBack returns `Binding.DoNothing` for the unchecked case so only the checked button fires.
 ```xml
 <RadioButton IsChecked="{Binding Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Road}}"/>
 ```
-ConvertBack returns `Binding.DoNothing` for the unchecked case so only the checked button sets the property.
 
-**Unit-aware display (MultiBinding).** `UnitValueConverter` takes `values[0]` = double and `values[1]` = one of `UnitSystem`, `SpringUnit`, or `PowerUnit` enum (determined by `ConverterParameter`). Example:
+**Unit-aware display (MultiBinding).** `UnitValueConverter` takes `values[0]` = double and `values[1]` = unit enum, dispatched by `ConverterParameter`:
 ```xml
 <MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring">
     <Binding Path="TuneResult.SpringFront"/>
@@ -54,21 +65,49 @@ ConvertBack returns `Binding.DoNothing` for the unchecked case so only the check
 </MultiBinding>
 ```
 
-**NumericBehavior** (`Converters/Converters.cs`) is an attached property that restricts TextBox input to valid numbers and normalises comma→dot. Applied as `cv:NumericBehavior.IsNumeric="True"`.
+**Localization markup extension.** Use `{l:Loc key}` in XAML for all user-facing strings. Supports an optional `Format` parameter. `LocalizationService` is a singleton backed by language JSON files in `Localization/`; `SetLanguage()` swaps culture and persists user preference.
+
+**NumericBehavior** (`Converters/Converters.cs`) is an attached property restricting TextBox input to valid numbers and normalising comma→dot. Applied as `cv:NumericBehavior.IsNumeric="True"`.
 
 **RelayCommand.** Simple `ICommand` wrapper with `Raise()` to manually fire `CanExecuteChanged`. Load/Delete commands gate on `SelectedProfile != null` via `Func<bool>` in constructor.
 
-**Profile persistence.** `StorageService` saves `SavedProfile` (Car + Track + Constraints + LastResult) as indented JSON to `%APPDATA%\ForzaTuneMaster\profiles\<name>.json`. Spaces in names are stored as underscores on disk and reversed on load. `[JsonIgnore]` must be applied to all computed properties on model classes to avoid serialisation errors.
+**Profile persistence.** `StorageService` serialises `SavedProfile` (Car + Track + Constraints + LastResult + `AiEstimatedFields` list) as indented JSON. Spaces in profile names are stored as underscores. Apply `[JsonIgnore]` to all computed properties on model classes to avoid serialisation errors. `ForzaPaths` is a static class centralising all `%APPDATA%` paths; it exposes `SetTestRoot()` returning `IDisposable` for test isolation.
+
+**Constraint min/max invariants.** `TuningConstraints` setters call `SetMinMax()` / `SetMaxMin()` helpers that auto-correct the paired bound using `[CallerMemberName]` to derive the counterpart property name. Never bypass these setters.
+
+**`_isLoadingProfile` flag.** `MainViewModel` sets this during profile deserialization to suppress async wiki/AI spec fetches that would overwrite the loaded values.
 
 ## TuneGeneratorService
 
-Pure static-method calculation service. Each `Calculate*` method takes `(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string,string> ex)` and writes directly to `r` and `ex`. Adding a new discipline requires updating every `switch` statement in this file. Spring rate formula: `k = mass * wdF * (2πf)² / 2000` (N/mm per spring; constant 0.019739). Final drive formula targets `MaxSpeedKmh` at 95% MaxRPM through the top gear ratio.
+Pure static methods — no state. Each `Calculate*` method signature is `(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string,string> ex)` and writes side effects only to `r` and `ex`. Key points:
 
-## Enums (Models/Enums.cs)
+- **Spring rate formula**: `k = mass × wdF × (2πf)² / 2000` (constant 0.019739, result in N/mm)
+- **Final drive**: Newton-Raphson targeting `MaxSpeedKmh` at 95% MaxRPM through top gear ratio
+- **Aero convergence**: `CalculateAero()` is called 3× iteratively to converge on speed-dependent downforce
+- **Discipline switch in every method** — adding a new discipline requires updating every `switch`
+- **Aspiration affects multipliers** throughout: power delivery, launch RPM floor, spring/damper/ARB factors, differential
+- **Dynamic camber caps** based on mass/PTW ratio; soft-squash (proportional) clamping rather than hard clip
+- **Tire model**: 9 tire types × 3 properties (grip, thermal sensitivity, wear resistance)
+- `TuneResult.Explanations` (`Dictionary<string,string>`) is populated by each method with human-readable justifications shown in the UI
 
-8 disciplines: `Road, Touge, Rally, CrossCountry, Drift, Drag, Eliminator, Street`  
-Unit enums: `UnitSystem {Metric, Imperial}`, `PowerUnit {HP, PS, KW}`, `SpringUnit {KgfMm, NMm, LbsIn}`
+## CarCard — Computed Properties
+
+- `PowerPeakRPM` / `TorquePeakRPM`: derived from `MaxRPM` × engine-type percentage curves; electric motors use 45% / 0%
+- `FrontWheelDiameterInch`, `RearWheelDiameterInch`, `DrivenWheelDiameterInch`: drive-type dependent
+- `CdA`: uses explicit `Cd × FrontalAreaM2` when both set, otherwise estimates from mass + tire profile
+- `HasExplicitWeightDistribution`: preserves engine-position defaults during deserialization
+
+## Enums (`Models/Enums.cs`)
+
+Disciplines: `Road, Touge, Rally, CrossCountry, Drift, Drag, Street`  
+Unit enums: `UnitSystem {Metric, Imperial}`, `PowerUnit {HP, PS, KW}`, `SpringUnit {KgfMm, NMm, LbsIn}`  
+Other: `FuelType {Gasoline, Diesel}` (affects torque curve shape in TuneGeneratorService)
+
+## Converters (`Converters/Converters.cs`)
+
+Beyond `EnumToBoolConverter`, `UnitValueConverter`, `NumericBehavior`:  
+`NullToVisibilityConverter`, `BoolToVisibilityConverter`, `InverseBoolToVisibilityConverter`, `InverseBoolConverter`, `EqualityConverter`, `EqualityVisibilityConverter`, `AddOneConverter`, `GenericEnumLabelConverter`, `PowertrainTypeLabelConverter`, `AspirationTypeLabelConverter`, `DateDisplayConverter`
 
 ## Theme
 
-`Resources/DarkTheme.xaml` defines all brushes and shared styles (`SectionHeader`, `FormLabel`, `ValueDisplay`, `ParamLabel`, `SectionCard`, `ParamCard`, `PrimaryButton`, `SecondaryButton`, `DangerButton`). Never set `Height` on buttons directly — the styles use auto-sizing via `Padding` only.
+`Resources/DarkTheme.xaml` defines all brushes and shared styles: `SectionHeader`, `FormLabel`, `ValueDisplay`, `ParamLabel`, `SectionCard`, `ParamCard`, `PrimaryButton`, `SecondaryButton`, `DangerButton`. Never set `Height` on buttons — styles use auto-sizing via `Padding` only.
