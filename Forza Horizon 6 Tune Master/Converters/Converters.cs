@@ -180,7 +180,7 @@ public static class NumericBehavior
     private static bool IsValidNumberProposal(string s)
     {
         if (s.Length == 0) return true;
-        int dots = 0, signs = 0;
+        int dots = 0, signs = 0, digits = 0;
         for (int i = 0; i < s.Length; i++)
         {
             var c = s[i];
@@ -201,8 +201,12 @@ public static class NumericBehavior
             {
                 return false;
             }
+            else
+            {
+                digits++;
+            }
         }
-        return true;
+        return digits > 0 || signs == 0;
     }
 
 }

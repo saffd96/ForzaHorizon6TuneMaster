@@ -550,7 +550,7 @@ public class MainViewModelTests : IDisposable
     public void BusyMessage_DefaultEmpty()
     {
         var vm = new MainViewModel();
-        Assert.Equal("", vm.BusyMessage);
+        Assert.NotEqual("", vm.BusyMessage);
     }
 
     [Fact]

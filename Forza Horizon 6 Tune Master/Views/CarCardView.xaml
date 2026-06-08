@@ -196,16 +196,27 @@
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                         <TextBlock Grid.Column="3" Text="{l:Loc EnginePositionLabel}" Style="{StaticResource FormLabel}" Width="130"/>
-                        <ComboBox  x:Name="EnginePositionCombo" Grid.Column="4" Width="160"
-                                   HorizontalAlignment="Left"
-                                   IsEnabled="False"
-                                   SelectedValue="{Binding Car.EnginePosition}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                        <StackPanel Grid.Column="4" Orientation="Horizontal">
+                            <Border Visibility="{Binding HasSelectedCar, Converter={StaticResource BoolVis}}"
+                                    Background="{StaticResource SurfaceBrush}"
+                                    BorderThickness="1" BorderBrush="{StaticResource BorderBrush}"
+                                    CornerRadius="4" Padding="10,5" MinWidth="140">
+                                <TextBlock x:Name="EnginePositionText"
+                                           Text="{Binding Car.EnginePosition, Converter={StaticResource EnumLabel}}"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource TextDimBrush}"/>
+                            </Border>
+                            <ComboBox x:Name="EnginePositionCombo"
+                                      Visibility="{Binding HasSelectedCar, Converter={StaticResource BoolToCollapsed}}"
+                                      SelectedValue="{Binding Car.EnginePosition}"
+                                      MinWidth="140">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
                     </Grid>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
                                 Visibility="{Binding Car.IsElectricPowertrain, Converter={StaticResource BoolToCollapsed}}">
@@ -468,16 +479,17 @@
                 </StackPanel>
             </Border>
 
-            <!-- ── Constraints ───────────────────────────────────────────── -->
-            <TextBlock Text="{l:Loc SectionTuningConstraints}" Style="{StaticResource SectionHeader}" FontSize="13"/>
-
-            <StackPanel Orientation="Horizontal" Margin="0,6,0,12">
-                <CheckBox Content="{l:Loc FrontARBLabel}"
-                          IsChecked="{Binding Car.HasFrontARB}"
-                          Margin="0,0,32,0"/>
-                <CheckBox Content="{l:Loc RearARBLabel}"
-                          IsChecked="{Binding Car.HasRearARB}"/>
-            </StackPanel>
+            <!-- ── Stabilizers ─────────────────────────────────────────── -->
+            <TextBlock Text="{l:Loc SectionARB}" Style="{StaticResource SectionHeader}" FontSize="13"/>
+            <Border Style="{StaticResource SectionCard}">
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox Content="{l:Loc FrontARBLabel}"
+                              IsChecked="{Binding Car.HasFrontARB}"
+                              Margin="0,0,32,0"/>
+                    <CheckBox Content="{l:Loc RearARBLabel}"
+                              IsChecked="{Binding Car.HasRearARB}"/>
+                </StackPanel>
+            </Border>
 
             <TextBlock x:Name="SpringSectionHeader" Text="{Binding SpringUnitLabel}" Style="{StaticResource SectionHeader}"
                        Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource BoolVis}}"/>

@@ -59,7 +59,7 @@
   "SectionTuningConstraints": "ОГРАНИЧЕНИЯ ТЮНИНГА",
   "SectionAeroConstraints": "АЭРОДИНАМИКА (ограничения)",
   "SectionAlignment": "ГЕОМЕТРИЯ ПОДВЕСКИ",
-  "SectionARB": "СТАБИЛИЗАТОРЫ ПОПЕРЕЧНОЙ УСТОЙЧИВОСТИ (1–65)",
+  "SectionARB": "Стабилизаторы поперечной устойчивости",
   "SectionDampers": "АМОРТИЗАТОРЫ (1–20)",
   "SectionDiff": "ДИФФЕРЕНЦИАЛ (%)",
   "SectionAero": "АЭРОДИНАМИКА",

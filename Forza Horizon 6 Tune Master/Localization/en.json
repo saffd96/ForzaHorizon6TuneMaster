@@ -59,7 +59,7 @@
   "SectionTuningConstraints": "TUNING CONSTRAINTS",
   "SectionAeroConstraints": "AERO (constraints)",
   "SectionAlignment": "ALIGNMENT",
-  "SectionARB": "ANTI-ROLL BARS (1–65)",
+  "SectionARB": "Anti-roll bars",
   "SectionDampers": "DAMPERS (1–20)",
   "SectionDiff": "DIFFERENTIAL (%)",
   "SectionAero": "AERODYNAMICS",

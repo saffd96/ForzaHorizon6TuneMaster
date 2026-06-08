@@ -1,7 +1,9 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using Forza_Horizon_6_Tune_Master.Models;
+using Forza_Horizon_6_Tune_Master.Services;
 using Forza_Horizon_6_Tune_Master.ViewModels;
 
 namespace Forza_Horizon_6_Tune_Master.Views;
@@ -21,6 +23,38 @@ public partial class CarCardView : UserControl
         SuspensionCombo.ItemsSource     = Enum.GetValues<SuspensionUpgrade>();
         DiffCombo.ItemsSource           = Enum.GetValues<DifferentialUpgrade>();
         BrakesCombo.ItemsSource         = Enum.GetValues<BrakesUpgrade>();
+
+        LocalizationService.Instance.PropertyChanged += OnLocalizationChanged;
+    }
+
+    private void OnLocalizationChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != "Item") return;
+        Dispatcher.Invoke(RefreshAllEnumCombos);
+    }
+
+    private void RefreshAllEnumCombos()
+    {
+        RefreshComboSource(PowertrainTypeCombo, Enum.GetValues<PowertrainType>());
+        RefreshComboSource(EngineTypeCombo,     Enum.GetValues<EngineType>());
+        RefreshComboSource(EnginePositionCombo, Enum.GetValues<EnginePosition>());
+        RefreshComboSource(AspirationCombo,     Enum.GetValues<AspirationType>());
+        RefreshComboSource(DriveTypeCombo,      Enum.GetValues<DriveType>());
+        RefreshComboSource(TireTypeCombo,       Enum.GetValues<TireType>());
+        RefreshComboSource(SuspensionCombo,     Enum.GetValues<SuspensionUpgrade>());
+        RefreshComboSource(DiffCombo,           Enum.GetValues<DifferentialUpgrade>());
+        RefreshComboSource(BrakesCombo,         Enum.GetValues<BrakesUpgrade>());
+
+        EnginePositionText.GetBindingExpression(TextBlock.TextProperty)?.UpdateTarget();
+    }
+
+    private static void RefreshComboSource(ComboBox combo, Array items)
+    {
+        var value = combo.SelectedValue;
+        combo.ItemsSource = null;
+        combo.ItemsSource = items;
+        if (value is not null)
+            combo.SelectedValue = value;
     }
 
     private void ClearButton_Click(object sender, RoutedEventArgs e)

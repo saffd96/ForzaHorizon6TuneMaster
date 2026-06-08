@@ -37,6 +37,8 @@ public static class CarFactory
         FrontalAreaM2 = 0,
         HasFrontAero = true,
         HasRearAero = true,
+        HasFrontARB = true,
+        HasRearARB = true,
         SuspensionUpgrade = SuspensionUpgrade.Race,
         DifferentialUpgrade = DifferentialUpgrade.Race,
         BrakesUpgrade = BrakesUpgrade.Race,

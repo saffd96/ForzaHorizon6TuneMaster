@@ -119,8 +119,10 @@ public class MainViewModel : INotifyPropertyChanged
             }
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedCarDisplayText));
+            OnPropertyChanged(nameof(HasSelectedCar));
         }
     }
+    public bool HasSelectedCar => _selectedCar != null;
 
     private string _carSearchText = "";
     public string CarSearchText
@@ -661,9 +663,7 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedCarDisplayText));
         RefreshUnitOptionLabels();
         RefreshLanguageLabels();
-        // force tune-result multi-bindings to re-evaluate (speed via UnitValueConverter uses loc.T())
-        OnPropertyChanged(nameof(TuneResult));
-        // force all ComboBox selection boxes to re-render with new labels
+        // Force all ComboBox selection boxes to re-render with new labels
         var us = _selectedUnitSystemItem;
         var pp = _selectedPowerUnitItem;
         var ss = _selectedSpringUnitItem;
@@ -684,13 +684,13 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedPowerUnitItem));
         OnPropertyChanged(nameof(SelectedSpringUnitItem));
         OnPropertyChanged(nameof(SelectedLanguageItem));
-        // Force all Car-bound ComboBox DataTemplates to re-evaluate converters with new language.
-        // Direct field access + OnPropertyChanged avoids the Car setter (no event resubscribe).
-        var carrier = _car;
-        _car = null!;
-        OnPropertyChanged(nameof(Car));
-        _car = carrier;
-        OnPropertyChanged(nameof(Car));
+        // Force all TuneResult-bound converters to re-evaluate with new language.
+        // Safe — TuneResultView has no TwoWay bindings (no data loss).
+        var tr = _tuneResult;
+        _tuneResult = null!;
+        OnPropertyChanged(nameof(TuneResult));
+        _tuneResult = tr;
+        OnPropertyChanged(nameof(TuneResult));
     }
 
     private void RefreshUnitOptionLabels()

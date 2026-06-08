@@ -170,26 +170,49 @@ public class NumericBehaviorTests
         Assert.False(IsValidNumberProposal(input));
     }
 
+    private static void RunOnSta(Action action)
+    {
+        Exception? ex = null;
+        var thread = new Thread(() =>
+        {
+            try { action(); }
+            catch (Exception e) { ex = e; }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (ex != null) throw ex;
+    }
+
     [Fact]
     public void SetIsNumeric_OnTextBox_DoesNotThrow()
     {
-        var tb = new TextBox();
-        NumericBehavior.SetIsNumeric(tb, true);
-        Assert.True(NumericBehavior.GetIsNumeric(tb));
+        RunOnSta(() =>
+        {
+            var tb = new TextBox();
+            NumericBehavior.SetIsNumeric(tb, true);
+            Assert.True(NumericBehavior.GetIsNumeric(tb));
+        });
     }
 
     [Fact]
     public void SetIsNumeric_OnNonTextBox_DoesNotThrow()
     {
-        var btn = new System.Windows.Controls.Button();
-        NumericBehavior.SetIsNumeric(btn, true);
-        Assert.True(NumericBehavior.GetIsNumeric(btn));
+        RunOnSta(() =>
+        {
+            var btn = new System.Windows.Controls.Button();
+            NumericBehavior.SetIsNumeric(btn, true);
+            Assert.True(NumericBehavior.GetIsNumeric(btn));
+        });
     }
 
     [Fact]
     public void SetIsNumeric_DefaultIsFalse()
     {
-        var tb = new TextBox();
-        Assert.False(NumericBehavior.GetIsNumeric(tb));
+        RunOnSta(() =>
+        {
+            var tb = new TextBox();
+            Assert.False(NumericBehavior.GetIsNumeric(tb));
+        });
     }
 }

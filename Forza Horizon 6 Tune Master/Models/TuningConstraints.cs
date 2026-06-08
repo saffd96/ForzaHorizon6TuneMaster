@@ -5,7 +5,7 @@ namespace Forza_Horizon_6_Tune_Master.Models;
 
 public class TuningConstraints : NotifyBase
 {
-    private void SetMinMax(ref double minField, double minValue, double maxValue, double maxField, [CallerMemberName] string? p = null)
+    private void SetMinMax(ref double minField, double minValue, ref double maxField, [CallerMemberName] string? p = null)
     {
         if (minValue > maxField)
             Set(ref maxField, minValue, MaxPropertyName(p));
@@ -19,7 +19,7 @@ public class TuningConstraints : NotifyBase
         => minProp?.EndsWith("Min") == true ? minProp[..^3] + "Max" : null;
 
     [JsonPropertyOrder(1)]
-    public double TirePressureFrontMin { get => _tirePressureFrontMin; set => SetMinMax(ref _tirePressureFrontMin, value, TirePressureFrontMax, _tirePressureFrontMax); }
+    public double TirePressureFrontMin { get => _tirePressureFrontMin; set => SetMinMax(ref _tirePressureFrontMin, value, ref _tirePressureFrontMax); }
     private double _tirePressureFrontMin = 1.0;
 
     [JsonPropertyOrder(0)]
@@ -27,7 +27,7 @@ public class TuningConstraints : NotifyBase
     private double _tirePressureFrontMax = 3.8;
 
     [JsonPropertyOrder(1)]
-    public double TirePressureRearMin { get => _tirePressureRearMin; set => SetMinMax(ref _tirePressureRearMin, value, TirePressureRearMax, _tirePressureRearMax); }
+    public double TirePressureRearMin { get => _tirePressureRearMin; set => SetMinMax(ref _tirePressureRearMin, value, ref _tirePressureRearMax); }
     private double _tirePressureRearMin = 1.0;
 
     [JsonPropertyOrder(0)]
@@ -35,7 +35,7 @@ public class TuningConstraints : NotifyBase
     private double _tirePressureRearMax = 3.8;
 
     [JsonPropertyOrder(1)]
-    public double CamberFrontMin { get => _camberFrontMin; set => SetMinMax(ref _camberFrontMin, value, CamberFrontMax, _camberFrontMax); }
+    public double CamberFrontMin { get => _camberFrontMin; set => SetMinMax(ref _camberFrontMin, value, ref _camberFrontMax); }
     private double _camberFrontMin = -5.0;
 
     [JsonPropertyOrder(0)]
@@ -43,7 +43,7 @@ public class TuningConstraints : NotifyBase
     private double _camberFrontMax = 5.0;
 
     [JsonPropertyOrder(1)]
-    public double CamberRearMin { get => _camberRearMin; set => SetMinMax(ref _camberRearMin, value, CamberRearMax, _camberRearMax); }
+    public double CamberRearMin { get => _camberRearMin; set => SetMinMax(ref _camberRearMin, value, ref _camberRearMax); }
     private double _camberRearMin = -5.0;
 
     [JsonPropertyOrder(0)]
@@ -51,7 +51,7 @@ public class TuningConstraints : NotifyBase
     private double _camberRearMax = 5.0;
 
     [JsonPropertyOrder(1)]
-    public double ToeFrontMin { get => _toeFrontMin; set => SetMinMax(ref _toeFrontMin, value, ToeFrontMax, _toeFrontMax); }
+    public double ToeFrontMin { get => _toeFrontMin; set => SetMinMax(ref _toeFrontMin, value, ref _toeFrontMax); }
     private double _toeFrontMin = -5.0;
 
     [JsonPropertyOrder(0)]
@@ -59,7 +59,7 @@ public class TuningConstraints : NotifyBase
     private double _toeFrontMax = 5.0;
 
     [JsonPropertyOrder(1)]
-    public double ToeRearMin { get => _toeRearMin; set => SetMinMax(ref _toeRearMin, value, ToeRearMax, _toeRearMax); }
+    public double ToeRearMin { get => _toeRearMin; set => SetMinMax(ref _toeRearMin, value, ref _toeRearMax); }
     private double _toeRearMin = -5.0;
 
     [JsonPropertyOrder(0)]
@@ -67,7 +67,7 @@ public class TuningConstraints : NotifyBase
     private double _toeRearMax = 5.0;
 
     [JsonPropertyOrder(1)]
-    public double CasterMin { get => _casterMin; set => SetMinMax(ref _casterMin, value, CasterMax, _casterMax); }
+    public double CasterMin { get => _casterMin; set => SetMinMax(ref _casterMin, value, ref _casterMax); }
     private double _casterMin = 1.0;
 
     [JsonPropertyOrder(0)]
@@ -75,7 +75,7 @@ public class TuningConstraints : NotifyBase
     private double _casterMax = 7.0;
 
     [JsonPropertyOrder(1)]
-    public double ARBFrontMin { get => _arbFrontMin; set => SetMinMax(ref _arbFrontMin, value, ARBFrontMax, _arbFrontMax); }
+    public double ARBFrontMin { get => _arbFrontMin; set => SetMinMax(ref _arbFrontMin, value, ref _arbFrontMax); }
     private double _arbFrontMin = 1;
 
     [JsonPropertyOrder(0)]
@@ -83,7 +83,7 @@ public class TuningConstraints : NotifyBase
     private double _arbFrontMax = 65;
 
     [JsonPropertyOrder(1)]
-    public double ARBRearMin { get => _arbRearMin; set => SetMinMax(ref _arbRearMin, value, ARBRearMax, _arbRearMax); }
+    public double ARBRearMin { get => _arbRearMin; set => SetMinMax(ref _arbRearMin, value, ref _arbRearMax); }
     private double _arbRearMin = 1;
 
     [JsonPropertyOrder(0)]
@@ -91,7 +91,7 @@ public class TuningConstraints : NotifyBase
     private double _arbRearMax = 65;
 
     [JsonPropertyOrder(1)]
-    public double SpringFrontMin { get => _springFrontMin; set => SetMinMax(ref _springFrontMin, value, SpringFrontMax, _springFrontMax); }
+    public double SpringFrontMin { get => _springFrontMin; set => SetMinMax(ref _springFrontMin, value, ref _springFrontMax); }
     private double _springFrontMin = 57.1;
 
     [JsonPropertyOrder(0)]
@@ -99,7 +99,7 @@ public class TuningConstraints : NotifyBase
     private double _springFrontMax = 285.6;
 
     [JsonPropertyOrder(1)]
-    public double SpringRearMin { get => _springRearMin; set => SetMinMax(ref _springRearMin, value, SpringRearMax, _springRearMax); }
+    public double SpringRearMin { get => _springRearMin; set => SetMinMax(ref _springRearMin, value, ref _springRearMax); }
     private double _springRearMin = 57.1;
 
     [JsonPropertyOrder(0)]
@@ -107,7 +107,7 @@ public class TuningConstraints : NotifyBase
     private double _springRearMax = 285.6;
 
     [JsonPropertyOrder(1)]
-    public double RideHeightFrontMin { get => _rideHeightFrontMin; set => SetMinMax(ref _rideHeightFrontMin, value, RideHeightFrontMax, _rideHeightFrontMax); }
+    public double RideHeightFrontMin { get => _rideHeightFrontMin; set => SetMinMax(ref _rideHeightFrontMin, value, ref _rideHeightFrontMax); }
     private double _rideHeightFrontMin = 50;
 
     [JsonPropertyOrder(0)]
@@ -115,7 +115,7 @@ public class TuningConstraints : NotifyBase
     private double _rideHeightFrontMax = 250;
 
     [JsonPropertyOrder(1)]
-    public double RideHeightRearMin { get => _rideHeightRearMin; set => SetMinMax(ref _rideHeightRearMin, value, RideHeightRearMax, _rideHeightRearMax); }
+    public double RideHeightRearMin { get => _rideHeightRearMin; set => SetMinMax(ref _rideHeightRearMin, value, ref _rideHeightRearMax); }
     private double _rideHeightRearMin = 50;
 
     [JsonPropertyOrder(0)]
@@ -123,7 +123,7 @@ public class TuningConstraints : NotifyBase
     private double _rideHeightRearMax = 250;
 
     [JsonPropertyOrder(1)]
-    public double ReboundFrontMin { get => _reboundFrontMin; set => SetMinMax(ref _reboundFrontMin, value, ReboundFrontMax, _reboundFrontMax); }
+    public double ReboundFrontMin { get => _reboundFrontMin; set => SetMinMax(ref _reboundFrontMin, value, ref _reboundFrontMax); }
     private double _reboundFrontMin = 1;
 
     [JsonPropertyOrder(0)]
@@ -131,7 +131,7 @@ public class TuningConstraints : NotifyBase
     private double _reboundFrontMax = 20;
 
     [JsonPropertyOrder(1)]
-    public double ReboundRearMin { get => _reboundRearMin; set => SetMinMax(ref _reboundRearMin, value, ReboundRearMax, _reboundRearMax); }
+    public double ReboundRearMin { get => _reboundRearMin; set => SetMinMax(ref _reboundRearMin, value, ref _reboundRearMax); }
     private double _reboundRearMin = 1;
 
     [JsonPropertyOrder(0)]
@@ -139,7 +139,7 @@ public class TuningConstraints : NotifyBase
     private double _reboundRearMax = 20;
 
     [JsonPropertyOrder(1)]
-    public double BumpFrontMin { get => _bumpFrontMin; set => SetMinMax(ref _bumpFrontMin, value, BumpFrontMax, _bumpFrontMax); }
+    public double BumpFrontMin { get => _bumpFrontMin; set => SetMinMax(ref _bumpFrontMin, value, ref _bumpFrontMax); }
     private double _bumpFrontMin = 1;
 
     [JsonPropertyOrder(0)]
@@ -147,7 +147,7 @@ public class TuningConstraints : NotifyBase
     private double _bumpFrontMax = 20;
 
     [JsonPropertyOrder(1)]
-    public double BumpRearMin { get => _bumpRearMin; set => SetMinMax(ref _bumpRearMin, value, BumpRearMax, _bumpRearMax); }
+    public double BumpRearMin { get => _bumpRearMin; set => SetMinMax(ref _bumpRearMin, value, ref _bumpRearMax); }
     private double _bumpRearMin = 1;
 
     [JsonPropertyOrder(0)]
@@ -155,7 +155,7 @@ public class TuningConstraints : NotifyBase
     private double _bumpRearMax = 20;
 
     [JsonPropertyOrder(1)]
-    public double AeroFrontMin { get => _aeroFrontMin; set => SetMinMax(ref _aeroFrontMin, value, AeroFrontMax, _aeroFrontMax); }
+    public double AeroFrontMin { get => _aeroFrontMin; set => SetMinMax(ref _aeroFrontMin, value, ref _aeroFrontMax); }
     private double _aeroFrontMin = 78;
 
     [JsonPropertyOrder(0)]
@@ -163,7 +163,7 @@ public class TuningConstraints : NotifyBase
     private double _aeroFrontMax = 130;
 
     [JsonPropertyOrder(1)]
-    public double AeroRearMin { get => _aeroRearMin; set => SetMinMax(ref _aeroRearMin, value, AeroRearMax, _aeroRearMax); }
+    public double AeroRearMin { get => _aeroRearMin; set => SetMinMax(ref _aeroRearMin, value, ref _aeroRearMax); }
     private double _aeroRearMin = 78;
 
     [JsonPropertyOrder(0)]
@@ -171,7 +171,7 @@ public class TuningConstraints : NotifyBase
     private double _aeroRearMax = 130;
 
     [JsonPropertyOrder(1)]
-    public double DiffAccelMin { get => _diffAccelMin; set => SetMinMax(ref _diffAccelMin, value, DiffAccelMax, _diffAccelMax); }
+    public double DiffAccelMin { get => _diffAccelMin; set => SetMinMax(ref _diffAccelMin, value, ref _diffAccelMax); }
     private double _diffAccelMin;
 
     [JsonPropertyOrder(0)]
@@ -179,7 +179,7 @@ public class TuningConstraints : NotifyBase
     private double _diffAccelMax = 100;
 
     [JsonPropertyOrder(1)]
-    public double DiffDecelMin { get => _diffDecelMin; set => SetMinMax(ref _diffDecelMin, value, DiffDecelMax, _diffDecelMax); }
+    public double DiffDecelMin { get => _diffDecelMin; set => SetMinMax(ref _diffDecelMin, value, ref _diffDecelMax); }
     private double _diffDecelMin;
 
     [JsonPropertyOrder(0)]
@@ -190,7 +190,7 @@ public class TuningConstraints : NotifyBase
     private double _centerDiffBias = 50;
 
     [JsonPropertyOrder(1)]
-    public double BrakeBalanceMin { get => _brakeBalanceMin; set => SetMinMax(ref _brakeBalanceMin, value, BrakeBalanceMax, _brakeBalanceMax); }
+    public double BrakeBalanceMin { get => _brakeBalanceMin; set => SetMinMax(ref _brakeBalanceMin, value, ref _brakeBalanceMax); }
     private double _brakeBalanceMin = 40;
 
     [JsonPropertyOrder(0)]
@@ -198,7 +198,7 @@ public class TuningConstraints : NotifyBase
     private double _brakeBalanceMax = 70;
 
     [JsonPropertyOrder(1)]
-    public double BrakePressureMin { get => _brakePressureMin; set => SetMinMax(ref _brakePressureMin, value, BrakePressureMax, _brakePressureMax); }
+    public double BrakePressureMin { get => _brakePressureMin; set => SetMinMax(ref _brakePressureMin, value, ref _brakePressureMax); }
     private double _brakePressureMin = 50;
 
     [JsonPropertyOrder(0)]
@@ -206,7 +206,7 @@ public class TuningConstraints : NotifyBase
     private double _brakePressureMax = 200;
 
     [JsonPropertyOrder(1)]
-    public double FinalDriveMin { get => _finalDriveMin; set => SetMinMax(ref _finalDriveMin, Math.Max(value, 0.1), FinalDriveMax, _finalDriveMax); }
+    public double FinalDriveMin { get => _finalDriveMin; set => SetMinMax(ref _finalDriveMin, Math.Max(value, 0.1), ref _finalDriveMax); }
     private double _finalDriveMin = 2.2;
 
     [JsonPropertyOrder(0)]
