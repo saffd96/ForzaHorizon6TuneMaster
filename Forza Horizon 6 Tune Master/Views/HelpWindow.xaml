@@ -343,6 +343,16 @@
                     </Grid>
                 </Border>
 
+                <!-- Donate mention -->
+                <Border Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="8"
+                        Padding="16,12" Margin="0,8,0,0">
+                    <TextBlock Text="{l:Loc HelpDonateText}"
+                               TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                               Foreground="{StaticResource TextDimBrush}"/>
+                </Border>
+
             </StackPanel>
         </ScrollViewer>
 

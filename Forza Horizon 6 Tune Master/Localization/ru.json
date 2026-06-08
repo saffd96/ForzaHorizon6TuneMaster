@@ -516,6 +516,17 @@
 
   "ResultCreatedAtFormat": "dd.MM.yyyy  HH:mm",
 
-  "LanguageLoadError": "Не удалось загрузить файл языка для '{0}'"
+  "LanguageLoadError": "Не удалось загрузить файл языка для '{0}'",
+
+  "DonateSymbol": "❤",
+  "DonateButtonTooltip": "Поддержать проект",
+  "DonateWindowTitle": "Поддержка — Tune Master",
+  "DonateTitle": "Поддержать проект",
+  "DonateDescription": "Я делаю Tune Master в свободное время — правлю формулы, фикшу баги, добавляю фишки. Если программа помогает и хочется сказать спасибо — небольшой донат через DonationAlerts будет очень кстати.",
+  "DonateLinkLabel": "Ссылка для доната:",
+  "DonateThankYou": "Спасибо за вашу поддержку! ❤",
+  "DonateClose": "Закрыть",
+
+  "HelpDonateText": "Нравится программа? Нажми ❤ в верхней панели — поддержи проект."
 
 }

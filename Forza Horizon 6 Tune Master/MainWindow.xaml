@@ -92,6 +92,33 @@
                                   DisplayMemberPath="Label"
                                   SelectedItem="{Binding SelectedLanguageItem}"
                                   MinWidth="100"/>
+                        <Button x:Name="DonateHeartButton"
+                                Style="{StaticResource SecondaryButton}"
+                                Padding="10,3" Margin="10,0,0,0"
+                                FontWeight="Bold" FontSize="{DynamicResource FontNormal}"
+                                ToolTip="{l:Loc DonateButtonTooltip}"
+                                Click="DonateButton_Click">
+                            <TextBlock x:Name="HeartIcon"
+                                       Text="❤">
+                                <TextBlock.Foreground>
+                                    <SolidColorBrush Color="#8892A4"/>
+                                </TextBlock.Foreground>
+                            </TextBlock>
+                            <Button.Triggers>
+                                <EventTrigger RoutedEvent="Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="HeartIcon"
+                                                            Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)"
+                                                            From="#8892A4" To="#FF5E0E"
+                                                            Duration="0:0:0.75"
+                                                            AutoReverse="True"
+                                                            RepeatBehavior="Forever"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Button.Triggers>
+                        </Button>
                         <Button Content="{l:Loc HelpSymbol}"
                                 Style="{StaticResource SecondaryButton}"
                                 Padding="10,3" Margin="10,0,0,0"

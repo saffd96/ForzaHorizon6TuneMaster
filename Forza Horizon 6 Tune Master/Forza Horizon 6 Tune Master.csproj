@@ -15,6 +15,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Resource Include="Assets\dalink-qr-code.png"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <Resource Include="icon.ico"/>
     </ItemGroup>
 

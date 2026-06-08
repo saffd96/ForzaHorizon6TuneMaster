@@ -516,6 +516,17 @@
 
   "ResultCreatedAtFormat": "dd.MM.yyyy  HH:mm",
 
-  "LanguageLoadError": "Failed to load language file for '{0}'"
+  "LanguageLoadError": "Failed to load language file for '{0}'",
+
+  "DonateSymbol": "❤",
+  "DonateButtonTooltip": "Support the project",
+  "DonateWindowTitle": "Support — Tune Master",
+  "DonateTitle": "Support the project",
+  "DonateDescription": "I make Tune Master in my spare time — tuning formulas, fixing bugs, adding features. If the app helps you and you'd like to say thanks, a small donation via DonationAlerts would mean a lot.",
+  "DonateLinkLabel": "Donation link:",
+  "DonateThankYou": "Thank you for your support! ❤",
+  "DonateClose": "Close",
+
+  "HelpDonateText": "Like the app? Hit the ❤ button in the top bar to support the project."
 
 }

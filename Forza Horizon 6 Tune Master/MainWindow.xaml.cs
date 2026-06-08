@@ -96,6 +96,11 @@ public partial class MainWindow : Window
         return null;
     }
 
+    private void DonateButton_Click(object sender, RoutedEventArgs e)
+    {
+        new DonateWindow { Owner = this }.ShowDialog();
+    }
+
     private void HelpButton_Click(object sender, RoutedEventArgs e)
     {
         new HelpWindow { Owner = this }.ShowDialog();
