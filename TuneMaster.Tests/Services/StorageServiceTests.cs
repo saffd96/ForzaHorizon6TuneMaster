@@ -1,28 +1,18 @@
 using Forza_Horizon_6_Tune_Master.Models;
 using Forza_Horizon_6_Tune_Master.Services;
+using TuneMaster.Tests;
 
 namespace TuneMaster.Tests.Services;
 
-[Collection("StorageService")]
+[Collection("FileSystem")]
 public class StorageServiceTests : IDisposable
 {
+    private readonly TestingEnvironment _testEnv = new();
     private readonly StorageService _storage = new();
-    private readonly List<string> _existingNames;
-
-    public StorageServiceTests()
-    {
-        _existingNames = _storage.GetProfileNames();
-    }
 
     public void Dispose()
     {
-        foreach (var name in _storage.GetProfileNames())
-        {
-            if (!_existingNames.Contains(name))
-            {
-                _storage.Delete(name);
-            }
-        }
+        _testEnv.Dispose();
     }
 
     [Fact]
@@ -256,5 +246,4 @@ public class StorageServiceTests : IDisposable
     }
 }
 
-[CollectionDefinition("StorageService", DisableParallelization = true)]
-public class StorageServiceTestCollection { }
+

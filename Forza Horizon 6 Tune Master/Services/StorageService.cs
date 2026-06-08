@@ -15,9 +15,7 @@ public class SavedProfile
 
 public class StorageService
 {
-    private static readonly string ProfilesDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ForzaTuneMaster", "profiles");
+    private static string ProfilesDir => ForzaPaths.ProfilesDir;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

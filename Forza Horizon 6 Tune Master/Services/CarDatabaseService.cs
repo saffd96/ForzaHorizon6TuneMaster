@@ -10,12 +10,8 @@ public record CarLoadResult(List<CarData> Cars, bool FromCache, string? WebError
 
 public class CarDatabaseService
 {
-    private static readonly string CacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ForzaTuneMaster");
-
-    private static readonly string CachePath = Path.Combine(CacheDir, "fh6_cars_fandom.json");
-    private static readonly string LegacyCachePath = Path.Combine(CacheDir, "fh6_cars_all.json");
+    private static string CachePath => ForzaPaths.CachePath;
+    private static string LegacyCachePath => ForzaPaths.LegacyCachePath;
 
     private static readonly HttpClient Client = new() { Timeout = TimeSpan.FromSeconds(20) };
 
@@ -170,7 +166,7 @@ public class CarDatabaseService
     {
         try
         {
-            Directory.CreateDirectory(CacheDir);
+            Directory.CreateDirectory(ForzaPaths.BaseDir);
             File.WriteAllText(CachePath, JsonSerializer.Serialize(cars));
         }
         catch { /* non-critical */ }

@@ -25,9 +25,7 @@ public class WikiCarSpecService
 {
     private static readonly HttpClient Client = new() { Timeout = TimeSpan.FromSeconds(15) };
 
-    private static readonly string CacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ForzaTuneMaster", "specs");
+    private static string CacheDir => ForzaPaths.SpecsDir;
 
     public static void DeleteCache()
     {

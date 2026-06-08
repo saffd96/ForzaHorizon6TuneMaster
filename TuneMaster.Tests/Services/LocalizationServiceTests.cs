@@ -1,9 +1,17 @@
 using Forza_Horizon_6_Tune_Master.Services;
+using TuneMaster.Tests;
 
 namespace TuneMaster.Tests.Services;
 
-public class LocalizationServiceTests
+[Collection("FileSystem")]
+public class LocalizationServiceTests : IDisposable
 {
+    private readonly TestingEnvironment _testEnv = new();
+
+    public void Dispose()
+    {
+        _testEnv.Dispose();
+    }
     [Fact]
     public void Instance_IsSingleton()
     {

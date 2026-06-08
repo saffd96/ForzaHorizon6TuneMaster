@@ -1,9 +1,17 @@
 using Forza_Horizon_6_Tune_Master.Services;
+using TuneMaster.Tests;
 
 namespace TuneMaster.Tests.Services;
 
-public class WikiCarSpecServiceTests
+[Collection("FileSystem")]
+public class WikiCarSpecServiceTests : IDisposable
 {
+    private readonly TestingEnvironment _testEnv = new();
+
+    public void Dispose()
+    {
+        _testEnv.Dispose();
+    }
     [Fact]
     public void ParseEngineType_ValidValues_ReturnsCorrect()
     {

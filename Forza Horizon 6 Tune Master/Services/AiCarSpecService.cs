@@ -17,13 +17,8 @@ public class AiCarSpecsResponse
 
 public class AiCarSpecService
 {
-    private static readonly string SpecsCacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ForzaTuneMaster", "specs_cache");
-
-    private static readonly string OverridesPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ForzaTuneMaster", "specs_overrides.json");
+    private static string SpecsCacheDir => ForzaPaths.SpecsCacheDir;
+    private static string OverridesPath => ForzaPaths.OverridesPath;
 
     private static readonly JsonSerializerOptions CacheJsonOptions = new()
     {

@@ -19,9 +19,7 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
     private const string FallbackCode = "en";
 
-    private static readonly string SettingsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ForzaTuneMaster", "settings.json");
+    private static string SettingsPath => ForzaPaths.SettingsPath;
 
     public string CurrentLanguage => _currentCode;
 

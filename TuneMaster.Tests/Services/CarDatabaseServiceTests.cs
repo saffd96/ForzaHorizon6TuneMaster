@@ -2,39 +2,25 @@ using System.Text.Json;
 using Forza_Horizon_6_Tune_Master.Models;
 using Forza_Horizon_6_Tune_Master.Services;
 using System.IO;
+using TuneMaster.Tests;
 
 namespace TuneMaster.Tests.Services;
 
-[Collection("CarDatabase")]
+[Collection("FileSystem")]
 public class CarDatabaseServiceTests : IDisposable
 {
-    private static readonly string CacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "ForzaTuneMaster");
-    private static readonly string CachePath = Path.Combine(CacheDir, "fh6_cars_fandom.json");
-    private static readonly string LegacyPath = Path.Combine(CacheDir, "fh6_cars_all.json");
-    private static readonly object Lock = new();
-
-    public CarDatabaseServiceTests()
-    {
-        Cleanup();
-    }
+    private readonly TestingEnvironment _testEnv = new();
 
     public void Dispose()
     {
-        Cleanup();
-    }
-
-    private static void Cleanup()
-    {
-        try { if (File.Exists(CachePath)) File.Delete(CachePath); } catch { }
-        try { if (File.Exists(LegacyPath)) File.Delete(LegacyPath); } catch { }
+        _testEnv.Dispose();
     }
 
     private static void WriteCache(List<CarData> cars)
     {
-        Directory.CreateDirectory(CacheDir);
-        File.WriteAllText(CachePath, JsonSerializer.Serialize(new List<CarData>(cars)));
+        var path = ForzaPaths.CachePath;
+        Directory.CreateDirectory(ForzaPaths.BaseDir);
+        File.WriteAllText(path, JsonSerializer.Serialize(new List<CarData>(cars)));
     }
 
     [Fact]
@@ -89,8 +75,8 @@ public class CarDatabaseServiceTests : IDisposable
     [Fact]
     public async Task LoadCarDatabase_InvalidCache_ReturnsEmpty()
     {
-        Directory.CreateDirectory(CacheDir);
-        File.WriteAllText(CachePath, "invalid json content");
+        Directory.CreateDirectory(ForzaPaths.BaseDir);
+        File.WriteAllText(ForzaPaths.CachePath, "invalid json content");
         var svc = new CarDatabaseService();
         var result = await svc.LoadCarDatabaseAsync();
 
@@ -100,27 +86,26 @@ public class CarDatabaseServiceTests : IDisposable
     [Fact]
     public void DeleteCache_RemovesFiles()
     {
-        Directory.CreateDirectory(CacheDir);
-        File.WriteAllText(CachePath, "test");
-        File.WriteAllText(LegacyPath, "test");
+        var baseDir = ForzaPaths.BaseDir;
+        Directory.CreateDirectory(baseDir);
+        File.WriteAllText(ForzaPaths.CachePath, "test");
+        File.WriteAllText(ForzaPaths.LegacyCachePath, "test");
 
         CarDatabaseService.DeleteCache();
 
-        Assert.False(File.Exists(CachePath));
-        Assert.False(File.Exists(LegacyPath));
+        Assert.False(File.Exists(ForzaPaths.CachePath));
+        Assert.False(File.Exists(ForzaPaths.LegacyCachePath));
     }
 
     [Fact]
     public void DeleteCache_NoFiles_DoesNotThrow()
     {
-        Cleanup();
         CarDatabaseService.DeleteCache();
     }
 
     [Fact]
     public void IsCacheStale_WhenNoCache()
     {
-        Cleanup();
         Assert.True(CarDatabaseService.IsCacheStale);
     }
 
@@ -181,5 +166,4 @@ public class CarDatabaseServiceTests : IDisposable
     }
 }
 
-[CollectionDefinition("CarDatabase", DisableParallelization = true)]
-public class CarDatabaseTestCollection { }
+
