@@ -8,7 +8,6 @@ public enum Discipline
     CrossCountry,  // Кросс-кантри
     Drift,         // Дрифт
     Drag,          // Драг-рейсинг
-    Eliminator,    // Вышибала
     Street         // Уличные гонки
 }
 

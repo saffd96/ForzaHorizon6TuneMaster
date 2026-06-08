@@ -124,29 +124,27 @@
 
             <TextBlock Text="{l:Loc SectionDiscipline}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
-                <UniformGrid Rows="2" Columns="4" HorizontalAlignment="Stretch">
-                    <!-- Row 1 -->
+                <UniformGrid Rows="1" Columns="7" HorizontalAlignment="Stretch">
                     <RadioButton Tag="🛣️" Content="{l:Loc DisciplineRoad}"
-                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,8"
+                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
                                  IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Road}}"
                                  ToolTip="{l:Loc DisciplineRoadTooltip}"/>
 
                     <RadioButton Tag="⛰️" Content="{l:Loc DisciplineTouge}"
-                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,8"
+                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
                                  IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Touge}}"
                                  ToolTip="{l:Loc DisciplineTougeTooltip}"/>
 
                     <RadioButton Tag="🌧️" Content="{l:Loc DisciplineRally}"
-                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,8"
+                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
                                  IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Rally}}"
                                  ToolTip="{l:Loc DisciplineRallyTooltip}"/>
 
                     <RadioButton Tag="🌲" Content="{l:Loc DisciplineCrossCountry}"
-                                 Style="{StaticResource DisciplineButton}" Margin="0,0,0,8"
+                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
                                  IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.CrossCountry}}"
                                  ToolTip="{l:Loc DisciplineCrossCountryTooltip}"/>
 
-                    <!-- Row 2 -->
                     <RadioButton Tag="💨" Content="{l:Loc DisciplineDrift}"
                                  Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
                                  IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drift}}"
@@ -157,13 +155,8 @@
                                  IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drag}}"
                                  ToolTip="{l:Loc DisciplineDragTooltip}"/>
 
-                    <RadioButton Tag="🏆" Content="{l:Loc DisciplineEliminator}"
-                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
-                                 IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Eliminator}}"
-                                 ToolTip="{l:Loc DisciplineEliminatorTooltip}"/>
-
                     <RadioButton Tag="🏙️" Content="{l:Loc DisciplineStreet}"
-                                 Style="{StaticResource DisciplineButton}"
+                                 Style="{StaticResource DisciplineButton}" Margin="0,0,0,0"
                                  IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Street}}"
                                  ToolTip="{l:Loc DisciplineStreetTooltip}"/>
                 </UniformGrid>

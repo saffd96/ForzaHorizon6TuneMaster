@@ -139,7 +139,6 @@
   "DisciplineCrossCountry": "Cross Country",
   "DisciplineDrift": "Drift",
   "DisciplineDrag": "Drag",
-  "DisciplineEliminator": "Eliminator",
   "DisciplineStreet": "Street",
   "Enum_Discipline_Road": "Road Racing",
   "Enum_Discipline_Touge": "Touge",
@@ -147,7 +146,6 @@
   "Enum_Discipline_CrossCountry": "Cross Country",
   "Enum_Discipline_Drift": "Drift",
   "Enum_Discipline_Drag": "Drag",
-  "Enum_Discipline_Eliminator": "Eliminator",
   "Enum_Discipline_Street": "Street",
 
   "DisciplineRoadTooltip": "Road Racing — tarmac tracks, focus on handling and corner speed.",
@@ -156,7 +154,6 @@
   "DisciplineCrossCountryTooltip": "Cross Country — full off-road, max suspension travel and durability.",
   "DisciplineDriftTooltip": "Drift — controlled oversteer, focus on angle and slip control.",
   "DisciplineDragTooltip": "Drag Racing — straight-line, maximum weight transfer at launch.",
-  "DisciplineEliminatorTooltip": "Eliminator — battle royale, versatile all-round setup.",
   "DisciplineStreetTooltip": "Street Racing — urban tracks with civilian traffic. Speed and maneuverability.",
 
   "DragDistEighth": "⅛ mile",
@@ -291,7 +288,7 @@
   "HelpStep4Note": "Spring and ride height sections are visible only with Sport / Race / Rally / Drift / Offroad suspension. Center diff bias (0% = front, 100% = rear) is only for AWD. If no aero kit is installed, uncheck and leave fields empty.",
 
   "HelpStep5Title": "5 — DISCIPLINE & GENERATION",
-  "HelpStep5Text": "Choose a discipline — it determines target spring frequencies, wheel geometry, gear ratios and tire pressure:\n\n• Road — tarmac, balanced handling\n• Touge — mountain passes, precise corner entry\n• Drift — controlled oversteer, angle and slide\n• Drag — straight line, max launch\n• Rally — mixed surface, soft suspension\n• Cross Country — off-road, max travel\n• Eliminator — battle royale, all-round\n• Street — urban, speed and maneuverability\n\nFor Drag, also set the distance (⅛, ¼, ½ mile or mile).",
+   "HelpStep5Text": "Choose a discipline — it determines target spring frequencies, wheel geometry, gear ratios and tire pressure:\n\n• Road — tarmac, balanced handling\n• Touge — mountain passes, precise corner entry\n• Drift — controlled oversteer, angle and slide\n• Drag — straight line, max launch\n• Rally — mixed surface, soft suspension\n• Cross Country — off-road, max travel\n• Street — urban, speed and maneuverability\n\nFor Drag, also set the distance (⅛, ¼, ½ mile or mile).",
   "HelpStep5Note": "Click ⚡ Generate at the bottom of the left panel. Or check ✓ Auto in the right panel header — the tune auto-recalculates on any data change (~400 ms debounce). Generation status is shown in the status bar and overlay.",
 
   "HelpStep6Title": "6 — VIEWING RESULTS",

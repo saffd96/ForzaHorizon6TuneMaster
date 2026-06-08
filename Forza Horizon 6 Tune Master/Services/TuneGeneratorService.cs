@@ -1266,7 +1266,7 @@ public class TuneGeneratorService
                 };
                 break;
             default:
-                // Road / Touge / Street / Eliminator
+                // Road / Touge / Street
                 // AWD rear diff: high lock for traction; front diff set separately below (~28%)
                 (accel, decel) = car.DriveType switch
                 {

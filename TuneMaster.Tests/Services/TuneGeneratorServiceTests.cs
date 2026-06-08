@@ -543,7 +543,6 @@ public class TuneGeneratorServiceTests
     [InlineData(Discipline.CrossCountry)]
     [InlineData(Discipline.Touge)]
     [InlineData(Discipline.Street)]
-    [InlineData(Discipline.Eliminator)]
     public void Generate_AllDisciplines_NoThrow(Discipline discipline)
     {
         var track = new TrackInfo { Discipline = discipline };
@@ -976,17 +975,6 @@ public class TuneGeneratorServiceTests
 
         Assert.Equal(0, result.RideHeightFront);
         Assert.Equal(0, result.RideHeightRear);
-    }
-
-    [Fact]
-    public void Generate_Eliminator_NoThrow()
-    {
-        var track = new TrackInfo { Discipline = Discipline.Eliminator };
-
-        var result = _sut.Generate(CarFactory.DefaultCar(), track, CarFactory.RelaxedConstraints());
-
-        Assert.NotNull(result);
-        Assert.True(result.TirePressureFront > 0);
     }
 
     [Fact]
