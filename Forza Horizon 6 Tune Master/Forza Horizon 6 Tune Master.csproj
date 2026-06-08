@@ -10,20 +10,44 @@
         <ApplicationIcon>icon.ico</ApplicationIcon>
     </PropertyGroup>
 
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <DebugType>none</DebugType>
+        <DebugSymbols>false</DebugSymbols>
+    </PropertyGroup>
+
     <ItemGroup>
+        <PackageReference Include="Obfuscar" Version="2.2.50">
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+          <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
         <PackageReference Include="System.Text.Json" Version="8.0.5" />
     </ItemGroup>
 
     <ItemGroup>
-        <Resource Include="Assets\dalink-qr-code.png"/>
+        <Resource Include="Assets\dalink-qr-code.png" />
     </ItemGroup>
 
     <ItemGroup>
-        <Resource Include="icon.ico"/>
+        <Resource Include="icon.ico" />
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="Localization\*.json"/>
+        <EmbeddedResource Include="Localization\*.json" />
     </ItemGroup>
+
+    <Target Name="Obfuscate" AfterTargets="AfterBuild" Condition="'$(Configuration)'=='Release'">
+        <PropertyGroup>
+            <_ObfuscateIn>$(TargetDir.TrimEnd('\'))</_ObfuscateIn>
+            <_ObfuscateOut>$(_ObfuscateIn)\Obfuscated</_ObfuscateOut>
+            <_ObfuscateConfig>$(IntermediateOutputPath)obfuscar_temp.xml</_ObfuscateConfig>
+            <_ObfuscateDll>$(_ObfuscateIn)\$(TargetName).dll</_ObfuscateDll>
+            <_GenConfigScript>$(MSBuildProjectDirectory)\generate_obfuscar_config.ps1</_GenConfigScript>
+        </PropertyGroup>
+        <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(_GenConfigScript)&quot; -ConfigPath &quot;$(_ObfuscateConfig)&quot; -TargetDll &quot;$(_ObfuscateDll)&quot;" />
+        <Exec Command="&quot;$(Obfuscar)&quot; &quot;$(_ObfuscateConfig)&quot;" />
+        <Copy SourceFiles="$(_ObfuscateOut)\$(TargetName).dll" DestinationFiles="$(_ObfuscateDll)" OverwriteReadOnlyFiles="true" Condition="Exists('$(_ObfuscateOut)\$(TargetName).dll')" />
+        <RemoveDir Directories="$(_ObfuscateOut)" Condition="Exists('$(_ObfuscateOut)')" />
+        <Delete Files="$(_ObfuscateConfig)" Condition="Exists('$(_ObfuscateConfig)')" />
+    </Target>
 
 </Project>

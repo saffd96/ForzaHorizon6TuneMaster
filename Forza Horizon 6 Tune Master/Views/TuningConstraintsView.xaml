@@ -286,7 +286,7 @@
             <TextBlock Text="{l:Loc SectionAero}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
                 <StackPanel>
-                    <Grid Margin="0,0,0,6">
+                    <Grid Margin="0,0,0,6" Visibility="{Binding Car.HasFrontAero, Converter={StaticResource B2V}}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" MinWidth="130"/>
                             <ColumnDefinition Width="*" MinWidth="65"/>
@@ -297,7 +297,7 @@
                         <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroFrontMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                         <TextBox   Grid.Column="3" Text="{Binding Constraints.AeroFrontMax, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
                     </Grid>
-                    <Grid>
+                    <Grid Visibility="{Binding Car.HasRearAero, Converter={StaticResource B2V}}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" MinWidth="130"/>
                             <ColumnDefinition Width="*" MinWidth="65"/>
