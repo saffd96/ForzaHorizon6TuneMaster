@@ -80,9 +80,9 @@
                                 <TextBlock Text="{Binding TuneResult.Car.Name, FallbackValue='—'}"
                                            FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
                                 <TextBlock Margin="0,2,0,0" TextWrapping="Wrap">
-                                    <Run Text="{Binding TuneResult.Car.Make}"    Foreground="{StaticResource TextDimBrush}"/>
+                                    <Run Text="{Binding TuneResult.Car.Make, FallbackValue=''}"    Foreground="{StaticResource TextDimBrush}"/>
                                     <Run Text=" "/>
-                                    <Run Text="{Binding TuneResult.Car.Model}"   Foreground="{StaticResource TextDimBrush}"/>
+                                    <Run Text="{Binding TuneResult.Car.Model, FallbackValue=''}"   Foreground="{StaticResource TextDimBrush}"/>
                                     <Run Text="  •  "                            Foreground="{StaticResource TextMutedBrush}"/>
                                      <Run Text="{Binding TuneResult.Track.Discipline, Converter={StaticResource EnumLabel}}" Foreground="{StaticResource AccentBrush}"/>
                                      <Run Text="  •  "                            Foreground="{StaticResource TextMutedBrush}"/>
@@ -327,7 +327,7 @@
                                                 </MultiBinding>
                                             </TextBlock.Text>
                                         </TextBlock>
-                                        <TextBlock Text="{l:Loc ResultSpringFront}" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultRideHeightFront}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Style="{StaticResource ValueDisplay}"
@@ -339,7 +339,7 @@
                                                 </MultiBinding>
                                             </TextBlock.Text>
                                         </TextBlock>
-                                        <TextBlock Text="{l:Loc ResultSpringRear}" Style="{StaticResource ParamLabel}"/>
+                                        <TextBlock Text="{l:Loc ResultRideHeightRear}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -533,7 +533,7 @@
                                         <TextBlock Text="{l:Loc ResultRecGears}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                     <ItemsControl ItemsSource="{Binding TuneResult.GearRatios}"
-                                                  AlternationCount="100">
+                                                  AlternationCount="10">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <WrapPanel/>

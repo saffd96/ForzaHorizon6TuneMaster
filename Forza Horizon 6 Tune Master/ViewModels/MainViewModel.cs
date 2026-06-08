@@ -24,6 +24,7 @@ public class MainViewModel : INotifyPropertyChanged
         get => _car;
         set
         {
+            if (value == null) return;
             if (_car != null) _car.PropertyChanged -= OnModelChanged;
             if (_car != null) _car.PropertyChanged -= OnCarPropertyChanged;
             _car = value;
@@ -32,6 +33,7 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             NotifyCarDisplayProperties();
             OnPropertyChanged(nameof(HasCenterDiffBias));
+            OnPropertyChanged(nameof(HasAWDFrontDiff));
             OnPropertyChanged(nameof(SelectedCarDisplayText));
             ClearAiEstimatedFields();
             ClearAiSpecStatus();
@@ -45,6 +47,7 @@ public class MainViewModel : INotifyPropertyChanged
         get => _track;
         set
         {
+            if (value == null) return;
             if (_track != null) _track.PropertyChanged -= OnModelChanged;
             _track = value;
             _track.PropertyChanged += OnModelChanged;
@@ -59,6 +62,7 @@ public class MainViewModel : INotifyPropertyChanged
         get => _constraints;
         set
         {
+            if (value == null) return;
             if (_constraints != null) _constraints.PropertyChanged -= OnModelChanged;
             _constraints = value;
             _constraints.PropertyChanged += OnModelChanged;
@@ -113,6 +117,7 @@ public class MainViewModel : INotifyPropertyChanged
                 ApplyCarFilter();
 
                 _wikiSpecsCts?.Cancel();
+                _wikiSpecsCts?.Dispose();
                 _wikiSpecsCts = new CancellationTokenSource();
                 if (!_isLoadingProfile)
                     _ = FetchAndApplyWikiSpecsAsync(value, _wikiSpecsCts.Token);
@@ -664,6 +669,7 @@ public class MainViewModel : INotifyPropertyChanged
         RefreshUnitOptionLabels();
         RefreshLanguageLabels();
         // Force all ComboBox selection boxes to re-render with new labels
+        // Re-assign unit items to force ComboBox re-render with new language labels.
         var us = _selectedUnitSystemItem;
         var pp = _selectedPowerUnitItem;
         var ss = _selectedSpringUnitItem;
@@ -685,9 +691,9 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedSpringUnitItem));
         OnPropertyChanged(nameof(SelectedLanguageItem));
         // Force all TuneResult-bound converters to re-evaluate with new language.
-        // Safe — TuneResultView has no TwoWay bindings (no data loss).
+        // Use a temporary non-null TuneResult to avoid null references in converters.
         var tr = _tuneResult;
-        _tuneResult = null!;
+        _tuneResult = new TuneResult();
         OnPropertyChanged(nameof(TuneResult));
         _tuneResult = tr;
         OnPropertyChanged(nameof(TuneResult));
@@ -728,6 +734,8 @@ public class MainViewModel : INotifyPropertyChanged
         {
             _selectedProfile = value;
             OnPropertyChanged();
+            LoadCommand.Raise();
+            DeleteProfileCommand.Raise();
             ProfileSearchText = value ?? "";
             if (value != null) LoadProfile();
         }
@@ -930,6 +938,7 @@ public class MainViewModel : INotifyPropertyChanged
     private async Task DebounceGenerate()
     {
         _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
         _debounceCts = new CancellationTokenSource();
         int myId = ++_pendingGenerationId;
         try
@@ -969,13 +978,13 @@ public class MainViewModel : INotifyPropertyChanged
     {
         GenerateCommand        = new RelayCommand(GenerateTune);
         SaveCommand            = new RelayCommand(SaveProfile);
-        LoadCommand            = new RelayCommand(LoadProfile);
-        DeleteProfileCommand   = new RelayCommand(DeleteProfile);
+        LoadCommand            = new RelayCommand(LoadProfile, () => SelectedProfile != null);
+        DeleteProfileCommand   = new RelayCommand(DeleteProfile, () => SelectedProfile != null);
         NewProfileCommand      = new RelayCommand(NewProfile);
         FetchAiCarSpecsCommand = new RelayCommand(() => _ = FetchAiCarSpecsAsync(), () => !IsFetchingAiSpecs);
         DismissAiSpecStatusCommand = new RelayCommand(() => AiSpecStatusMessage = "");
         ClearCarSelectionCommand = new RelayCommand(ClearCarSelection);
-        RefreshCarDatabaseCommand = new RelayCommand(RefreshCarDatabase, () => !IsLoadingCars);
+        RefreshCarDatabaseCommand = new RelayCommand(() => _ = RefreshCarDatabaseAsync(), () => !IsLoadingCars);
         ClearCacheCommand = new RelayCommand(ClearCache);
         ClearAiCacheCommand = new RelayCommand(ClearAiCache);
 
@@ -985,6 +994,7 @@ public class MainViewModel : INotifyPropertyChanged
         SetLanguageCommand      = new RelayCommand(() => { }); // no-op: switching handled by SelectedLanguageItem setter
 
         _car.PropertyChanged += OnModelChanged;
+        _car.PropertyChanged += OnCarPropertyChanged;
         _track.PropertyChanged += OnModelChanged;
         _constraints.PropertyChanged += OnModelChanged;
 
@@ -1365,10 +1375,10 @@ public class MainViewModel : INotifyPropertyChanged
                 StatusMessage = string.Format(T("StatusAutoUpdateFailed"), result.WebErrorMessage);
             }
         }
-        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AutoRefresh] {ex.Message}"); }
+        catch (Exception ex) { StatusMessage = $"[AutoRefresh] {ex.Message}"; }
     }
 
-    private async void RefreshCarDatabase()
+    private async Task RefreshCarDatabaseAsync()
     {
         BusyMessage = T("BusyRefreshingCars");
         IsLoadingCars = true;

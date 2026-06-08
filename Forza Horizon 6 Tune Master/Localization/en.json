@@ -208,6 +208,8 @@
   "ResultSpringFront": "FRONT",
   "ResultSpringRear": "REAR",
   "ResultRideHeight": "RIDE HEIGHT",
+  "ResultRideHeightFront": "FRONT",
+  "ResultRideHeightRear": "REAR",
   "ResultDampers": "DAMPERS (1–20)",
   "ResultReboundFront": "REBOUND F",
   "ResultReboundRear": "REBOUND R",

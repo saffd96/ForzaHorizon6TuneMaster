@@ -507,7 +507,7 @@ public class TuneGeneratorService
             braking += -(camF + CamberBrakingThreshold) * CamberBrakingPenalty;
         if (camR < -CamberBrakingThreshold)
             braking += -(camR + CamberBrakingThreshold) * CamberBrakingPenalty;
-        double brakingPenalty = -braking * 0.3;
+        double brakingPenalty = braking * 0.3;
         camF += brakingPenalty;
         camR += brakingPenalty;
 
@@ -980,13 +980,17 @@ public class TuneGeneratorService
         sprF *= suspMul;
         sprR *= suspMul;
 
-        // Aspiration: more sudden power delivery → stiffer rear spring to control squat
+        // Aspiration: more sudden power delivery → stiffer driven-axle spring to control squat
         if (car.PowertrainType == PowertrainType.Hybrid)
         { sprF *= 1.05; sprR *= 1.05; }
-        sprR *= GetPowerDeliveryFactors(car.PowertrainType, car.AspirationType, car.AntiLag).Spring;
+        double aspSpring = GetPowerDeliveryFactors(car.PowertrainType, car.AspirationType, car.AntiLag).Spring;
+        if (car.DriveType == Models.DriveType.FWD)
+            sprF *= aspSpring;
+        else
+            sprR *= aspSpring;
 
-        r.SpringFront = Clamp(Math.Round(sprF), c.SpringFrontMin, c.SpringFrontMax);
-        r.SpringRear  = Clamp(Math.Round(sprR), c.SpringRearMin,  c.SpringRearMax);
+        r.SpringFront = Math.Round(Clamp(sprF, c.SpringFrontMin, c.SpringFrontMax), 1);
+        r.SpringRear  = Math.Round(Clamp(sprR, c.SpringRearMin,  c.SpringRearMax),  1);
         ex["Springs"] = string.Format(L("Expl_Springs_Fmt"), r.SpringFront, r.SpringRear, hzF, hzR, L($"Enum_SuspensionUpgrade_{car.SuspensionUpgrade}"));
     }
 
@@ -1046,8 +1050,8 @@ public class TuneGeneratorService
         rhF += profileRhAdj;
         rhR += profileRhAdj;
 
-        r.RideHeightFront = Math.Round(Clamp(rhF, c.RideHeightFrontMin, c.RideHeightFrontMax));
-        r.RideHeightRear  = Math.Round(Clamp(rhR, c.RideHeightRearMin,  c.RideHeightRearMax));
+        r.RideHeightFront = Math.Round(Clamp(rhF, c.RideHeightFrontMin, c.RideHeightFrontMax), 1);
+        r.RideHeightRear  = Math.Round(Clamp(rhR, c.RideHeightRearMin,  c.RideHeightRearMax),  1);
         ex["RideHeight"] = string.Format(L("Expl_RideHeight_Fmt"), r.RideHeightFront, r.RideHeightRear, note);
     }
 
@@ -1125,10 +1129,12 @@ public class TuneGeneratorService
         rebF *= suspMul; rebR *= suspMul;
         bmpF *= suspMul; bmpR *= suspMul;
 
-        // Aspiration: sudden power onset → stiffer rear damping to resist squat/extension
+        // Aspiration: sudden power onset → stiffer driven-axle damping to resist squat/extension
         double aspDamper = GetPowerDeliveryFactors(car.PowertrainType, car.AspirationType, car.AntiLag).Damper;
-        rebR *= aspDamper;
-        bmpR *= aspDamper;
+        if (car.DriveType == Models.DriveType.FWD)
+        { rebF *= aspDamper; bmpF *= aspDamper; }
+        else
+        { rebR *= aspDamper; bmpR *= aspDamper; }
 
         r.ReboundFront = Math.Round(Clamp(rebF, c.ReboundFrontMin, c.ReboundFrontMax), 1);
         r.ReboundRear  = Math.Round(Clamp(rebR, c.ReboundRearMin,  c.ReboundRearMax), 1);
@@ -1164,8 +1170,10 @@ public class TuneGeneratorService
             Models.DriveType.AWD => (0.65, 0.55),  // front emphasis to mitigate AWD understeer
             _                    => (0.55, 0.60)
         };
-        double aeroF = car.HasFrontAero ? c.AeroFrontMax * fwFactor * speedFactor * pwrFactor : 0;
-        double aeroR = car.HasRearAero  ? c.AeroRearMax  * rwFactor * speedFactor * pwrFactor : 0;
+        // Interpolate between [Min, Max] so that even very fast cars get graduated values
+        double aeroBase = Math.Min(1.0, speedFactor * pwrFactor);
+        double aeroF = car.HasFrontAero ? c.AeroFrontMin + (c.AeroFrontMax - c.AeroFrontMin) * fwFactor * aeroBase : 0;
+        double aeroR = car.HasRearAero  ? c.AeroRearMin  + (c.AeroRearMax  - c.AeroRearMin)  * rwFactor * aeroBase : 0;
 
         // Discipline
         switch (track.Discipline)
@@ -1460,7 +1468,7 @@ public class TuneGeneratorService
         double step = Math.Clamp(stepIdeal, stepMin, stepMax);
 
         // Estimate top gear ratio needed to hit target speed at redline (assume FD ≈ 3.5)
-        double tireCirc = Math.PI * car.RearWheelDiameterInch * 0.0254;
+        double tireCirc = Math.PI * car.DrivenWheelDiameterInch * 0.0254;
         double targetKmh = Math.Min(effectiveMaxKmh, TargetSpeedCapKmh);
         double targetMs = targetKmh / 3.6;
 
@@ -1523,7 +1531,7 @@ public class TuneGeneratorService
         int n = Math.Max(1, Math.Min(car.GearCount, 10));
 
         double pwRatio = car.PowerHP / (car.TotalMass / 1000.0);
-        double tireCirc = Math.PI * car.RearWheelDiameterInch * 0.0254;
+        double tireCirc = Math.PI * car.DrivenWheelDiameterInch * 0.0254;
 
 double targetKmh = track.Discipline == Discipline.Drag
     ? effectiveMaxKmh

@@ -19,8 +19,10 @@
 
             <!-- Helper template -->
             <!-- ── Tire Pressure ─────────────────────────────────────── -->
-            <TextBlock Text="{Binding TirePressureUnitLabel}" Style="{StaticResource SectionHeader}" Visibility="Collapsed"/>
-            <Border Style="{StaticResource SectionCard}" Visibility="Collapsed">
+            <TextBlock Text="{Binding TirePressureUnitLabel}" Style="{StaticResource SectionHeader}"
+                       Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}"/>
+            <Border Style="{StaticResource SectionCard}"
+                    Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}">
                 <StackPanel>
                     <Grid Style="{StaticResource MinMaxRow}">
                         <Grid.ColumnDefinitions>
@@ -45,8 +47,10 @@
             </Border>
 
             <!-- ── Alignment ─────────────────────────────────────────── -->
-            <TextBlock Text="{l:Loc SectionAlignment}" Style="{StaticResource SectionHeader}" Visibility="Collapsed"/>
-            <Border Style="{StaticResource SectionCard}" Visibility="Collapsed">
+            <TextBlock Text="{l:Loc SectionAlignment}" Style="{StaticResource SectionHeader}"
+                       Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}"/>
+            <Border Style="{StaticResource SectionCard}"
+                    Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}">
                 <StackPanel>
                     <Grid Style="{StaticResource MinMaxRow}">
                         <Grid.ColumnDefinitions>
@@ -92,7 +96,6 @@
                             <ColumnDefinition Width="*" MinWidth="65"/>
                             <ColumnDefinition Width="8"/>
                             <ColumnDefinition Width="*" MinWidth="65"/>
-                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{l:Loc CasterLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
                         <TextBox   Grid.Column="1" Text="{Binding Constraints.CasterMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
@@ -180,8 +183,10 @@
             </Border>
 
             <!-- ── Dampers ───────────────────────────────────────────── -->
-            <TextBlock Text="{l:Loc SectionDampers}" Style="{StaticResource SectionHeader}" Visibility="Collapsed"/>
-            <Border Style="{StaticResource SectionCard}" Visibility="Collapsed">
+            <TextBlock Text="{l:Loc SectionDampers}" Style="{StaticResource SectionHeader}"
+                       Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}"/>
+            <Border Style="{StaticResource SectionCard}"
+                    Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}">
                 <StackPanel>
                     <Grid Style="{StaticResource MinMaxRow}">
                         <Grid.ColumnDefinitions>
@@ -225,8 +230,10 @@
             </Border>
 
             <!-- ── Differential ──────────────────────────────────────── -->
-            <TextBlock Text="{l:Loc SectionDiff}" Style="{StaticResource SectionHeader}" Visibility="Collapsed"/>
-            <Border Style="{StaticResource SectionCard}" Visibility="Collapsed">
+            <TextBlock Text="{l:Loc SectionDiff}" Style="{StaticResource SectionHeader}"
+                       Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}"/>
+            <Border Style="{StaticResource SectionCard}"
+                    Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}">
                 <StackPanel>
                     <Grid Style="{StaticResource MinMaxRow}">
                         <Grid.ColumnDefinitions>
@@ -285,7 +292,6 @@
                             <ColumnDefinition Width="*" MinWidth="65"/>
                             <ColumnDefinition Width="8"/>
                             <ColumnDefinition Width="*" MinWidth="65"/>
-                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{l:Loc AeroFrontMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
                         <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroFrontMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
@@ -297,7 +303,6 @@
                             <ColumnDefinition Width="*" MinWidth="65"/>
                             <ColumnDefinition Width="8"/>
                             <ColumnDefinition Width="*" MinWidth="65"/>
-                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{l:Loc AeroRearMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
                         <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroRearMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
@@ -307,15 +312,16 @@
             </Border>
 
             <!-- ── Final Drive ───────────────────────────────────────── -->
-            <TextBlock Text="{l:Loc SectionFinalDrive}" Style="{StaticResource SectionHeader}" Visibility="Collapsed"/>
-            <Border Style="{StaticResource SectionCard}" Visibility="Collapsed">
+            <TextBlock Text="{l:Loc SectionFinalDrive}" Style="{StaticResource SectionHeader}"
+                       Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}"/>
+            <Border Style="{StaticResource SectionCard}"
+                    Visibility="{Binding Car.SuspensionAllowsAdvancedTuning, Converter={StaticResource B2V}}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="130"/>
                         <ColumnDefinition Width="*" MinWidth="65"/>
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="*" MinWidth="65"/>
-                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="{l:Loc FinalDriveLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
                     <TextBox   Grid.Column="1" Text="{Binding Constraints.FinalDriveMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>

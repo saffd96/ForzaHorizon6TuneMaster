@@ -9,13 +9,17 @@
   <component name="ChangeListManager">
     <list default="true" id="6f5aca4a-8e95-4953-8a4a-45b281d20313" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Converters/Converters.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Converters/Converters.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/en.json" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/en.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/ru.json" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/ru.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/MainWindow.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/MainWindow.xaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/MainWindow.xaml.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/MainWindow.xaml.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Resources/DarkTheme.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Resources/DarkTheme.xaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/DonateWindow.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/DonateWindow.xaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/HelpWindow.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/HelpWindow.xaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/CarCard.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/CarCard.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/TuneResult.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/TuneResult.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/TuneGeneratorService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/TuneGeneratorService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/MainViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/MainViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/CarCardView.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/CarCardView.xaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/TuneResultView.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/TuneResultView.xaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/TuningConstraintsView.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/TuningConstraintsView.xaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -102,7 +106,6 @@
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="remove import/export tuning" />
     <MESSAGE value="change cars api" />
     <MESSAGE value="add localisation" />
     <MESSAGE value="fix localisation" />
@@ -127,7 +130,8 @@
     <MESSAGE value="add donate" />
     <MESSAGE value="fix help" />
     <MESSAGE value="fix: tests" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix: tests" />
+    <MESSAGE value="add feedback" />
+    <option name="LAST_COMMIT_MESSAGE" value="add feedback" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

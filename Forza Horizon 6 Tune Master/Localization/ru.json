@@ -208,6 +208,8 @@
   "ResultSpringFront": "ПЕРЕД",
   "ResultSpringRear": "ЗАД",
   "ResultRideHeight": "КЛИРЕНС",
+  "ResultRideHeightFront": "ПЕРЕД",
+  "ResultRideHeightRear": "ЗАД",
   "ResultDampers": "АМОРТИЗАТОРЫ (1–20)",
   "ResultReboundFront": "ОТБОЙ П",
   "ResultReboundRear": "ОТБОЙ З",

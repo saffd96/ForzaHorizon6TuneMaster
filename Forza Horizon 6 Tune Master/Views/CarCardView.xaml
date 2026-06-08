@@ -377,48 +377,54 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="70"/>
-                                <ColumnDefinition Width="8"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="70"/>
-                                <ColumnDefinition Width="8"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="70"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="{Binding WheelbaseFieldLabel}" Style="{StaticResource FormLabel}" MinWidth="70"/>
-                            <TextBox   Grid.Column="1" Text="{Binding WheelbaseDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                            <TextBlock Grid.Column="3" Text="{Binding FrontTrackFieldLabel}"   Style="{StaticResource FormLabel}" MinWidth="70"/>
-                            <TextBox   Grid.Column="4" Text="{Binding FrontTrackDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                            <TextBlock Grid.Column="6" Text="{Binding RearTrackFieldLabel}"     Style="{StaticResource FormLabel}" MinWidth="60"/>
-                            <TextBox   Grid.Column="7" Text="{Binding RearTrackDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        </Grid>
-                        <Grid Margin="0,10,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="{l:Loc CdLabel}" Style="{StaticResource FormLabel}" Width="140"
-                                       ToolTip="{l:Loc CdTooltip}"/>
-                            <TextBox   Grid.Column="1" Text="{Binding Car.Cd, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                            <TextBlock Grid.Column="3" Text="{l:Loc FrontalAreaLabel}" Style="{StaticResource FormLabel}" Width="120"
-                                       ToolTip="{l:Loc FrontalAreaTooltip}"/>
-                            <TextBox   Grid.Column="4" Text="{Binding Car.FrontalAreaM2, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        </Grid>
-                    </StackPanel>
-                    <TextBlock Grid.Column="0" Text="⚠" Foreground="{StaticResource AccentBrush}"
-                               FontSize="40" FontWeight="Bold"
-                               VerticalAlignment="Center" HorizontalAlignment="Right"
-                               Margin="0,0,8,0"
-                               Visibility="{Binding HasAnyAiEstimatedField, Converter={StaticResource BoolVis}}"
-                               ToolTip="{l:Loc AiEstimatedTooltip}"/>
+                    <Grid Grid.Column="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="70"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding WheelbaseFieldLabel}" Style="{StaticResource FormLabel}" MinWidth="70"/>
+                                <TextBox   Grid.Column="1" Text="{Binding WheelbaseDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                                <TextBlock Grid.Column="3" Text="{Binding FrontTrackFieldLabel}"   Style="{StaticResource FormLabel}" MinWidth="70"/>
+                                <TextBox   Grid.Column="4" Text="{Binding FrontTrackDisplay, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                                <TextBlock Grid.Column="6" Text="{Binding RearTrackFieldLabel}"     Style="{StaticResource FormLabel}" MinWidth="60"/>
+                                <TextBox   Grid.Column="7" Text="{Binding RearTrackDisplay,  UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                            </Grid>
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{l:Loc CdLabel}" Style="{StaticResource FormLabel}" Width="140"
+                                           ToolTip="{l:Loc CdTooltip}"/>
+                                <TextBox   Grid.Column="1" Text="{Binding Car.Cd, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                                <TextBlock Grid.Column="3" Text="{l:Loc FrontalAreaLabel}" Style="{StaticResource FormLabel}" Width="120"
+                                           ToolTip="{l:Loc FrontalAreaTooltip}"/>
+                                <TextBox   Grid.Column="4" Text="{Binding Car.FrontalAreaM2, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
+                            </Grid>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" Text="⚠" Foreground="{StaticResource AccentBrush}"
+                                   FontSize="40" FontWeight="Bold"
+                                   VerticalAlignment="Center" HorizontalAlignment="Right"
+                                   Margin="0,0,8,0"
+                                   Visibility="{Binding HasAnyAiEstimatedField, Converter={StaticResource BoolVis}}"
+                                   ToolTip="{l:Loc AiEstimatedTooltip}"/>
+                    </Grid>
                     <Button Grid.Column="1"
                             Content="AI"
                             Command="{Binding FetchAiCarSpecsCommand}"
@@ -427,8 +433,8 @@
                             Padding="0"
                             FontSize="20" FontWeight="Bold"
                             VerticalAlignment="Stretch"
+                            MinWidth="50" MinHeight="50"
                             Width="{Binding RelativeSource={RelativeSource Self}, Path=ActualHeight}"
-                            MinWidth="50"
                             Margin="12,0,0,0"
                             ToolTip="{l:Loc AiFetchButton}" />
 
@@ -559,7 +565,6 @@
                             <ColumnDefinition Width="*" MinWidth="65"/>
                             <ColumnDefinition Width="8"/>
                             <ColumnDefinition Width="*" MinWidth="65"/>
-                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{l:Loc AeroFrontMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
                         <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroFrontMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
@@ -571,7 +576,6 @@
                             <ColumnDefinition Width="*" MinWidth="65"/>
                             <ColumnDefinition Width="8"/>
                             <ColumnDefinition Width="*" MinWidth="65"/>
-                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="{l:Loc AeroRearMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
                         <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroRearMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>

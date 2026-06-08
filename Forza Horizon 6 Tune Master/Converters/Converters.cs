@@ -15,23 +15,36 @@ public class EnumToBoolConverter : IValueConverter
         => value?.Equals(parameter) ?? false;
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        => (bool)value ? parameter : Binding.DoNothing;
+        => value is bool b && b ? parameter : Binding.DoNothing;
 }
 
 public class EqualityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        => Equals(value, System.Convert.ChangeType(parameter, value?.GetType() ?? typeof(int)));
+    {
+        if (value == null || parameter == null) return false;
+        try { return Equals(value, System.Convert.ChangeType(parameter, value.GetType())); }
+        catch { return Equals(value, parameter); }
+    }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        => (bool)value ? System.Convert.ChangeType(parameter, targetType) : Binding.DoNothing;
+    {
+        if (value is not bool b || !b) return Binding.DoNothing;
+        if (targetType == null || parameter == null) return Binding.DoNothing;
+        try { return System.Convert.ChangeType(parameter, targetType); }
+        catch { return parameter; }
+    }
 }
 
 public class EqualityVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        => Equals(value, System.Convert.ChangeType(parameter, value?.GetType() ?? typeof(int)))
-            ? Visibility.Visible : Visibility.Collapsed;
+    {
+        if (value == null || parameter == null) return Visibility.Collapsed;
+        try { return Equals(value, System.Convert.ChangeType(parameter, value.GetType()))
+            ? Visibility.Visible : Visibility.Collapsed; }
+        catch { return Equals(value, parameter) ? Visibility.Visible : Visibility.Collapsed; }
+    }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => throw new NotImplementedException();
@@ -92,11 +105,14 @@ public class UnitValueConverter : IMultiValueConverter
 {
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
-        if (values.Length < 2 || values[0] is not double val) return "—";
+        if (values == null || values.Length < 2 || values[0] is not double val) return "—";
 
-        bool imp = values[1] is UnitSystem us ? us == UnitSystem.Imperial : values[1] is bool b && b;
-        SpringUnit su = values[1] is SpringUnit sv ? sv : SpringUnit.KgfMm;
-        PowerUnit  pu = values[1] is PowerUnit  pv ? pv : PowerUnit.HP;
+        var v1 = values[1];
+        if (v1 == DependencyProperty.UnsetValue)
+            v1 = UnitSystem.Metric;
+        bool imp = v1 is UnitSystem us ? us == UnitSystem.Imperial : v1 is bool b && b;
+        SpringUnit su = v1 is SpringUnit sv ? sv : SpringUnit.KgfMm;
+        PowerUnit  pu = v1 is PowerUnit  pv ? pv : PowerUnit.HP;
 
         var loc = LocalizationService.Instance;
         return (parameter as string) switch

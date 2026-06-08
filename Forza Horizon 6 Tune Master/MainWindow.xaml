@@ -85,7 +85,7 @@
                                   SelectedItem="{Binding SelectedSpringUnitItem}"
                                   MinWidth="100"
                                   ToolTip="{l:Loc SpringUnitTooltip}"/>
-                        <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="8,2"/>
+                        <Separator Margin="8,2"/>
                         <TextBlock Text="{l:Loc LanguageLabel}" Foreground="{StaticResource TextMutedBrush}"
                                    FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <ComboBox ItemsSource="{Binding LanguageOptions}"
