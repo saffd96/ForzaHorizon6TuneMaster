@@ -181,6 +181,8 @@ public class TuneGeneratorService
         if (track.Discipline == Discipline.Drag)
             CalculateLaunchControl(car, r);
 
+        PostValidateAndRecalculate(car, track, c, r, ex, ref effectiveMaxKmh);
+
         return r;
     }
 
@@ -1696,6 +1698,157 @@ double targetKmh = track.Discipline == Discipline.Drag
             if (dropWarnings.Count > 0)
                 ex["FinalDrive"] += string.Format(L("Expl_FinalDrive_Warning"), minSafeRpm, string.Join(", ", dropWarnings));
         }
+    }
+
+    // ── Post-generation verification & recalculation ─────────────────────
+    // Runs after all initial calculations. Checks cross-value consistency and
+    // adjusts gearing, springs, and ride height where needed, then re-converges aero.
+
+    private static void PostValidateAndRecalculate(CarCard car, TrackInfo track, TuningConstraints c,
+        TuneResult r, Dictionary<string, string> ex, ref double effectiveMaxKmh)
+    {
+        bool anyChange = false;
+        const int maxIter = 3;
+
+        for (int iter = 0; iter < maxIter; iter++)
+        {
+            bool changed = false;
+
+            // 1. Speed consistency: ensure gearing can achieve physics-limited speed
+            if (car.AllowGearCalculation && r.GearRatios.Count > 0 && r.FinalDrive > 0)
+            {
+                double actual = r.ActualMaxSpeedKmh;
+                double target = track.Discipline == Discipline.Drag
+                    ? effectiveMaxKmh
+                    : Math.Min(effectiveMaxKmh, TargetSpeedCapKmh);
+
+                if (actual > 0 && target > 0 && actual < target * 0.97)
+                {
+                    double ratio = target / actual;
+                    double newFd = Clamp(r.FinalDrive / ratio, c.FinalDriveMin, c.FinalDriveMax);
+                    if (Math.Abs(newFd - r.FinalDrive) > 0.01)
+                    {
+                        r.FinalDrive = Math.Round(newFd, 2);
+                        changed = true;
+                    }
+                }
+            }
+
+            // 2. RPM drop correction: tighten gear ratios if any shift drops below torque peak
+            if (RpmDropFix(car, r))
+                changed = true;
+
+            // 3. Spring/ride-height cross-check
+            if (SpringRideHeightFix(car, track, c, r))
+                changed = true;
+
+            // 4. Re-converge aero if speed-related values changed
+            if (changed)
+            {
+                double newEff = ComputeEffectiveMaxSpeedKmh(car, r);
+                if (Math.Abs(newEff - effectiveMaxKmh) > 1)
+                {
+                    effectiveMaxKmh = newEff;
+                    CalculateAero(car, track, c, r, ex, effectiveMaxKmh);
+                    effectiveMaxKmh = ComputeEffectiveMaxSpeedKmh(car, r);
+                }
+            }
+
+            if (!changed) break;
+            anyChange = true;
+        }
+
+        if (anyChange)
+        {
+            string gearStr = string.Join("  ", r.GearRatios.Select((g, i) => $"{i + 1}: {g:F2}"));
+            double actualSpd = r.ActualMaxSpeedKmh;
+            double tgt = track.Discipline == Discipline.Drag
+                ? effectiveMaxKmh
+                : Math.Min(effectiveMaxKmh, TargetSpeedCapKmh);
+            ex["FinalDrive"] = string.Format(L("Expl_FinalDrive_Verified"),
+                r.FinalDrive, r.RecommendedGearCount, gearStr, effectiveMaxKmh, actualSpd, car.MaxRPM);
+        }
+    }
+
+    // Adjusts gear ratios so that every upshift keeps RPM ≥ 90% of torque-peak RPM.
+    // Returns true if any ratio was modified.
+    private static bool RpmDropFix(CarCard car, TuneResult r)
+    {
+        if (!car.AllowGearCalculation || r.GearRatios.Count < 2) return false;
+        if (car.MaxRPM <= 0 || car.TorquePeakRPM <= 0 || car.PowerPeakRPM <= 0) return false;
+
+        double shiftRpm = car.PowerPeakRPM;
+        double minSafeRpm = car.TorquePeakRPM * 0.90;
+        bool anyFixed = false;
+
+        for (int pass = 0; pass < 5; pass++)
+        {
+            bool anyDrop = false;
+            for (int i = 0; i < r.GearRatios.Count - 1; i++)
+            {
+                double rpmAfter = shiftRpm * r.GearRatios[i + 1] / r.GearRatios[i];
+                if (rpmAfter < minSafeRpm)
+                {
+                    double minRatio = r.GearRatios[i + 1] * (minSafeRpm / rpmAfter);
+                    r.GearRatios[i + 1] = Math.Round(Math.Min(r.GearRatios[i],
+                        Clamp(minRatio, GearRatioMin, GearRatioMax)), 2);
+                    anyDrop = true;
+                    anyFixed = true;
+                }
+            }
+            if (!anyDrop) break;
+        }
+
+        return anyFixed;
+    }
+
+    // Ensures spring rates are appropriate for the chosen ride height.
+    // Low ride height + soft springs → stiffen; High ride height + stiff springs → soften.
+    private static bool SpringRideHeightFix(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r)
+    {
+        if (!car.SuspensionAllowsAdvancedTuning) return false;
+
+        double rhRangeF = Math.Max(1.0, c.RideHeightFrontMax - c.RideHeightFrontMin);
+        double rhRangeR = Math.Max(1.0, c.RideHeightRearMax - c.RideHeightRearMin);
+        double rhFracF = (r.RideHeightFront - c.RideHeightFrontMin) / rhRangeF;
+        double rhFracR = (r.RideHeightRear - c.RideHeightRearMin) / rhRangeR;
+
+        double sprRangeF = Math.Max(1.0, c.SpringFrontMax - c.SpringFrontMin);
+        double sprRangeR = Math.Max(1.0, c.SpringRearMax - c.SpringRearMin);
+        double sprFracF = (r.SpringFront - c.SpringFrontMin) / sprRangeF;
+        double sprFracR = (r.SpringRear - c.SpringRearMin) / sprRangeR;
+
+        bool changed = false;
+
+        // Low ride height + soft springs → bottoming risk → stiffen springs
+        if (rhFracF < 0.25 && sprFracF < 0.40)
+        {
+            double newSpr = Clamp(c.SpringFrontMin + sprRangeF * 0.50, c.SpringFrontMin, c.SpringFrontMax);
+            r.SpringFront = Math.Round(newSpr);
+            changed = true;
+        }
+        if (rhFracR < 0.25 && sprFracR < 0.40)
+        {
+            double newSpr = Clamp(c.SpringRearMin + sprRangeR * 0.50, c.SpringRearMin, c.SpringRearMax);
+            r.SpringRear = Math.Round(newSpr);
+            changed = true;
+        }
+
+        // High ride height + stiff springs → harsh → soften slightly
+        if (rhFracF > 0.75 && sprFracF > 0.85)
+        {
+            double newSpr = Clamp(c.SpringFrontMin + sprRangeF * 0.65, c.SpringFrontMin, c.SpringFrontMax);
+            r.SpringFront = Math.Round(newSpr);
+            changed = true;
+        }
+        if (rhFracR > 0.75 && sprFracR > 0.85)
+        {
+            double newSpr = Clamp(c.SpringRearMin + sprRangeR * 0.65, c.SpringRearMin, c.SpringRearMax);
+            r.SpringRear = Math.Round(newSpr);
+            changed = true;
+        }
+
+        return changed;
     }
 
     private static (double first, double top, string note) GetDragRatios(CarCard car, DragDistance dist)

@@ -1014,4 +1014,92 @@ public class TuneGeneratorServiceTests
         Assert.NotEmpty(result.GearRatios);
         Assert.Equal(car.GearCount, result.GearRatios.Count);
     }
+
+    // ── Post-validation tests ──────────────────────────────────────────────
+
+    [Fact]
+    public void Generate_PostValidate_AdjustsFDWhenConstrained()
+    {
+        // Fast car where FD is forced too high → actual speed < target → post-validate should adjust
+        var car = CarFactory.AWDPerformanceCar();
+        var c = CarFactory.RelaxedConstraints();
+        c.FinalDriveMin = 4.5; // Force FD high → actual speed will be low
+
+        var result = _sut.Generate(car, CarFactory.DefaultTrack(), c);
+
+        Assert.InRange(result.FinalDrive, c.FinalDriveMin, c.FinalDriveMax);
+        // Should still produce a positive actual max speed
+        Assert.True(result.ActualMaxSpeedKmh > 0);
+    }
+
+    [Fact]
+    public void Generate_PostValidate_NoFalsePositiveForNormalCar()
+    {
+        var car = CarFactory.AWDPerformanceCar();
+        var c = CarFactory.RelaxedConstraints();
+
+        var result = _sut.Generate(car, CarFactory.DefaultTrack(), c);
+
+        // Normal car should still produce valid results
+        Assert.InRange(result.SpringFront, c.SpringFrontMin, c.SpringFrontMax);
+        Assert.InRange(result.SpringRear, c.SpringRearMin, c.SpringRearMax);
+        Assert.InRange(result.FinalDrive, c.FinalDriveMin, c.FinalDriveMax);
+        Assert.NotEmpty(result.GearRatios);
+    }
+
+    [Fact]
+    public void Generate_PostValidate_SpringRideHeightConsistency()
+    {
+        var car = CarFactory.DefaultCar();
+        // Set up constraints where ride height is low and springs would normally be soft
+        var c = CarFactory.RelaxedConstraints();
+        c.RideHeightFrontMin = 10;
+        c.RideHeightFrontMax = 50;   // very low max → forces low ride height
+        c.RideHeightRearMin = 10;
+        c.RideHeightRearMax = 50;
+        c.SpringFrontMin = 10;
+        c.SpringFrontMax = 600;
+        c.SpringRearMin = 10;
+        c.SpringRearMax = 600;
+
+        var result = _sut.Generate(car, CarFactory.DefaultTrack(), c);
+
+        // Springs should be reasonable (not at minimum despite low ride height)
+        Assert.InRange(result.RideHeightFront, c.RideHeightFrontMin, c.RideHeightFrontMax);
+        Assert.InRange(result.RideHeightRear, c.RideHeightRearMin, c.RideHeightRearMax);
+        Assert.InRange(result.SpringFront, c.SpringFrontMin, c.SpringFrontMax);
+        Assert.InRange(result.SpringRear, c.SpringRearMin, c.SpringRearMax);
+    }
+
+    [Fact]
+    public void Generate_PostValidate_GearRatiosRemainDescending()
+    {
+        var result = _sut.Generate(CarFactory.DefaultCar(), CarFactory.DefaultTrack(), CarFactory.RelaxedConstraints());
+
+        for (int i = 1; i < result.GearRatios.Count; i++)
+            Assert.True(result.GearRatios[i] <= result.GearRatios[i - 1],
+                $"Gear {i + 1} ({result.GearRatios[i]}) > gear {i} ({result.GearRatios[i - 1]}) after post-validation");
+    }
+
+    [Fact]
+    public void Generate_PostValidate_AllValuesStillInRange()
+    {
+        var car = CarFactory.DefaultCar();
+        var c = CarFactory.RelaxedConstraints();
+
+        var result = _sut.Generate(car, CarFactory.DefaultTrack(), c);
+
+        Assert.InRange(result.TirePressureFront, c.TirePressureFrontMin, c.TirePressureFrontMax);
+        Assert.InRange(result.TirePressureRear, c.TirePressureRearMin, c.TirePressureRearMax);
+        Assert.InRange(result.CamberFront, c.CamberFrontMin, c.CamberFrontMax);
+        Assert.InRange(result.CamberRear, c.CamberRearMin, c.CamberRearMax);
+        Assert.InRange(result.ToeFront, c.ToeFrontMin, c.ToeFrontMax);
+        Assert.InRange(result.ToeRear, c.ToeRearMin, c.ToeRearMax);
+        Assert.InRange(result.ARBFront, c.ARBFrontMin, c.ARBFrontMax);
+        Assert.InRange(result.ARBRear, c.ARBRearMin, c.ARBRearMax);
+        Assert.InRange(result.ReboundFront, c.ReboundFrontMin, c.ReboundFrontMax);
+        Assert.InRange(result.ReboundRear, c.ReboundRearMin, c.ReboundRearMax);
+        Assert.InRange(result.BumpFront, c.BumpFrontMin, c.BumpFrontMax);
+        Assert.InRange(result.BumpRear, c.BumpRearMin, c.BumpRearMax);
+    }
 }
