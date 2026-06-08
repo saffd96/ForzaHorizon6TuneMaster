@@ -229,9 +229,10 @@ public class TuneGeneratorService
 
     private static double EffectiveWtDist(CarCard car)
     {
-        // Trust any value the user explicitly set (anything other than the unmodified default 50.0).
-        // Engine-position fallback only applies when the field was never filled in.
-        if (car.WeightDistributionFront != 50.0)
+        // Trust any value the user or wiki explicitly set.
+        // Engine-position fallback only when the field was never filled in
+        // (avoids treating a real 50% balance as "unset").
+        if (car.HasExplicitWeightDistribution)
             return car.WeightDistributionFront;
         return car.EnginePosition switch
         {

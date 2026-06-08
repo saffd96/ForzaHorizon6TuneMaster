@@ -45,10 +45,11 @@ public class CarCard : NotifyBase
     }
 
     private double _weightDistributionFront = 50;
+    [JsonIgnore] public bool HasExplicitWeightDistribution { get; private set; }
     public double WeightDistributionFront
     {
         get => _weightDistributionFront;
-        set { Set(ref _weightDistributionFront, value); }
+        set { HasExplicitWeightDistribution = true; Set(ref _weightDistributionFront, value); }
     }
 
     // Engine
