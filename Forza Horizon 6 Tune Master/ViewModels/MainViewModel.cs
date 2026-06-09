@@ -863,8 +863,8 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
             OnPropertyChanged(nameof(HasAnyAiEstimatedField));
         };
-        _carSpec.RaiseRefreshCarDbCommand = () => RefreshCarDatabaseCommand.Raise();
-        _carSpec.RaiseFetchAiSpecsCommand = () => FetchAiCarSpecsCommand.Raise();
+        _carSpec.RaiseRefreshCarDbCommand = () => RefreshCarDatabaseCommand?.Raise();
+        _carSpec.RaiseFetchAiSpecsCommand = () => FetchAiCarSpecsCommand?.Raise();
         _carSpec.SetBusyMessage = msg => BusyMessage = msg;
         _carSpec.SetStatusMessage = msg => StatusMessage = msg;
         _carSpec.BusyFlagsChanged = () =>
