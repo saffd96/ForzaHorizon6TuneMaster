@@ -100,6 +100,14 @@ internal static class CalculationHelpers
         return Math.Round(Math.Clamp(v * 3.6, 60.0, TargetSpeedCapKmh));
     }
 
+    internal static double GetSeasonGripFactor(Season s) => s switch
+    {
+        Season.Winter => 0.78,
+        Season.Autumn => 0.88,
+        Season.Spring => 0.93,
+        _             => 1.00
+    };
+
     internal static (double Diff, double Spring, double Damper) GetPowerDeliveryFactors(
         PowertrainType pt, AspirationType? asp, bool antiLag = false)
     {

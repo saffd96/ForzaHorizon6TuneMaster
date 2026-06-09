@@ -156,6 +156,16 @@
   "DisciplineDragTooltip": "Drag Racing — гонки по прямой, максимальный перенос веса на старте.",
   "DisciplineStreetTooltip": "Street Racing — городские трассы с гражданским трафиком. Важны скорость и манёвренность для объезда машин.",
 
+  "SectionSeason": "СЕЗОН",
+  "SeasonSummer": "Лето",
+  "SeasonSpring": "Весна",
+  "SeasonAutumn": "Осень",
+  "SeasonWinter": "Зима",
+  "SeasonSummerTooltip": "Лето — сухой горячий асфальт, максимальное сцепление. Базовый тюнинг.",
+  "SeasonSpringTooltip": "Весна — мокрые дороги, лёгкий дождь, умеренное снижение сцепления.",
+  "SeasonAutumnTooltip": "Осень — сильные дожди, мокрый асфальт, длиннее тормозной путь. Мягче сетап.",
+  "SeasonWinterTooltip": "Зима — холодный асфальт, шины долго греются, лёд в горах. Максимальное снижение сцепления.",
+
   "DragDistEighth": "⅛ мили",
   "DragDistQuarter": "¼ мили",
   "DragDistHalf": "½ мили",

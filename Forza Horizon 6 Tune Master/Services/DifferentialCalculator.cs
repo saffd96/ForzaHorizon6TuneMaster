@@ -68,6 +68,10 @@ internal static class DifferentialCalculator
         accel -= (car.Wheelbase - CalculationHelpers.RefWheelbaseMm) / 500.0 * 3.0;
         accel *= CalculationHelpers.GetPowerDeliveryFactors(car.PowertrainType, car.AspirationType, car.AntiLag).Diff;
 
+        // Less lock on slippery surfaces: independent wheels find traction better.
+        double seasonFactorDiff = CalculationHelpers.GetSeasonGripFactor(track.Season);
+        accel -= (1.0 - seasonFactorDiff) * 18.0;
+
         accel = Math.Min(accel, maxAccel);
         decel = Math.Min(decel, maxDecel);
 

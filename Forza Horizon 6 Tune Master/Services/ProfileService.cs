@@ -17,7 +17,8 @@ public class ProfileService
         var dt = t.T($"Enum_DriveType_{car.DriveType}");
         var et = t.T($"Enum_EngineType_{car.EngineType}");
         var disc = t.T($"Discipline{track.Discipline}");
-        return $"{car.Year} {car.Make} {car.Model} {dt} {et} {disc}".Trim();
+        var season = t.T($"Season{track.Season}");
+        return $"{car.Year} {car.Make} {car.Model} {dt} {et} {disc} {season}".Trim();
     }
 
     public string Save(CarCard car, TrackInfo track, TuningConstraints constraints, TuneResult? result, List<string> aiEstimatedFields)

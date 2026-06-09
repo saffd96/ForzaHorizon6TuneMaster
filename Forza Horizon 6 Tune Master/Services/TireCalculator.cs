@@ -124,6 +124,19 @@ internal static class TireCalculator
                 break;
         }
 
+        // Cold seasons: raise pressure so cold tires generate heat faster.
+        // Hot seasons: lower pressure to prevent overheating.
+        double seasonPressAdj = track.Season switch
+        {
+            Season.Winter => +0.034,
+            Season.Spring => +0.034,
+            Season.Autumn => -0.034,
+            Season.Summer => -0.034,
+            _             =>  0.000
+        };
+        tpF += seasonPressAdj;
+        tpR += seasonPressAdj;
+
         double rimCorrF = (car.FrontRimDiameter - 19) * 0.018;
         double rimCorrR = (car.RearRimDiameter  - 19) * 0.018;
 

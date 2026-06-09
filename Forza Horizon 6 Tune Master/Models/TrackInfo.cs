@@ -18,4 +18,11 @@ public class TrackInfo : NotifyBase
         get => _dragDistance;
         set { Set(ref _dragDistance, value); }
     }
+
+    private Season _season = Season.Summer;
+    public Season Season
+    {
+        get => _season;
+        set { Set(ref _season, value); }
+    }
 }

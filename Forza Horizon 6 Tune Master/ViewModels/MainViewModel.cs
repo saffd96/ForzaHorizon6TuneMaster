@@ -1046,11 +1046,29 @@ public class MainViewModel : INotifyPropertyChanged
     {
         try
         {
+            // If the auto-name changed since the last generate (e.g. season switched without
+            // regenerating), delete the stale file so it doesn't duplicate in the dropdown.
+            if (!string.IsNullOrEmpty(Car.Name))
+            {
+                string newAutoName = _profileService.AutoProfileName(Car, Track);
+                if (Car.Name != newAutoName)
+                    _profileService.Delete(Car.Name);
+            }
             string name = _profileService.Save(Car, Track, Constraints, TuneResult, _carSpec.AiEstimatedFields.ToList());
             RefreshProfiles();
+            SelectProfileSilently(name);
             StatusMessage = string.Format(T("StatusProfileSaved"), name);
         }
         catch (Exception ex) { StatusMessage = string.Format(T("StatusSaveError"), ex.Message); }
+    }
+
+    private void SelectProfileSilently(string name)
+    {
+        _selectedProfile = name;
+        OnPropertyChanged(nameof(SelectedProfile));
+        LoadCommand.Raise();
+        DeleteProfileCommand.Raise();
+        ProfileSearchText = name;
     }
 
     private void LoadProfile()

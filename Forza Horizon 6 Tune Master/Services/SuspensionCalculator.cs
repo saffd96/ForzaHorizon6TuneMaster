@@ -60,6 +60,11 @@ internal static class SuspensionCalculator
             arbR += rollAdj;
         }
 
+        double seasonFactorArb = CalculationHelpers.GetSeasonGripFactor(track.Season);
+        double arbSeasonMul = 1.0 - (1.0 - seasonFactorArb) * 0.65;
+        arbF *= arbSeasonMul;
+        arbR *= arbSeasonMul;
+
         bool hasFront = car.HasFrontARB;
         bool hasRear  = car.HasRearARB;
         if (hasFront)
@@ -139,6 +144,11 @@ internal static class SuspensionCalculator
             sprF *= aspSpring;
         else
             sprR *= aspSpring;
+
+        double seasonFactorSpr = CalculationHelpers.GetSeasonGripFactor(track.Season);
+        double springSeasonMul = 1.0 - (1.0 - seasonFactorSpr) * 0.50;
+        sprF *= springSeasonMul;
+        sprR *= springSeasonMul;
 
         r.SpringFront = Math.Round(CalculationHelpers.Clamp(sprF, c.SpringFrontMin, c.SpringFrontMax), 1);
         r.SpringRear  = Math.Round(CalculationHelpers.Clamp(sprR, c.SpringRearMin,  c.SpringRearMax),  1);
@@ -264,6 +274,11 @@ internal static class SuspensionCalculator
         };
         rebF *= suspMul; rebR *= suspMul;
         bmpF *= suspMul; bmpR *= suspMul;
+
+        double seasonFactorDmp = CalculationHelpers.GetSeasonGripFactor(track.Season);
+        double dampSeasonMul = 1.0 - (1.0 - seasonFactorDmp) * 0.32;
+        rebF *= dampSeasonMul; rebR *= dampSeasonMul;
+        bmpF *= dampSeasonMul; bmpR *= dampSeasonMul;
 
         double aspDamper = CalculationHelpers.GetPowerDeliveryFactors(car.PowertrainType, car.AspirationType, car.AntiLag).Damper;
         if (car.DriveType == Models.DriveType.FWD)

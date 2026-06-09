@@ -13,6 +13,8 @@ public enum Discipline
 
 public enum DragDistance { Eighth, Quarter, Half, Mile }
 
+public enum Season { Summer, Spring, Autumn, Winter }
+
 public enum DriveType { FWD, RWD, AWD }
 
 public enum EngineType { I1, I2, I3, I4, I5, I6, I8, Boxer, V6, V8, V10, V12, W12, Rotary }
