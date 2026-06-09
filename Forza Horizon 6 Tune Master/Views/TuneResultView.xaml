@@ -200,9 +200,9 @@
                         <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource ParamCard}">
                             <StackPanel>
                                 <TextBlock Text="{l:Loc ResultGeometry}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
+                                <!-- Camber -->
                                 <Grid Margin="0,0,0,6">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
@@ -216,13 +216,9 @@
                                                    ToolTip="{Binding TuneResult.Explanations[Camber]}"/>
                                         <TextBlock Text="{l:Loc ResultCamberRear}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
-                                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                                        <TextBlock Text="{Binding TuneResult.Caster, StringFormat='{}{0:F1}°'}" Style="{StaticResource ValueDisplay}"
-                                                   ToolTip="{Binding TuneResult.Explanations[Caster]}"/>
-                                        <TextBlock Text="{l:Loc ResultCaster}" Style="{StaticResource ParamLabel}"/>
-                                    </StackPanel>
                                 </Grid>
-                                <Grid>
+                                <!-- Toe -->
+                                <Grid Margin="0,0,0,6">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
@@ -238,6 +234,12 @@
                                         <TextBlock Text="{l:Loc ResultToeRear}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                 </Grid>
+                                <!-- Caster -->
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding TuneResult.Caster, StringFormat='{}{0:F1}°'}" Style="{StaticResource ValueDisplay}"
+                                               ToolTip="{Binding TuneResult.Explanations[Caster]}"/>
+                                    <TextBlock Text="{l:Loc ResultCaster}" Style="{StaticResource ParamLabel}"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 
@@ -426,7 +428,28 @@
                         <Border Grid.Row="6" Grid.Column="0" Style="{StaticResource ParamCard}">
                             <StackPanel>
                                 <TextBlock Text="{l:Loc ResultDiff}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
-                                <!-- Main (rear/FWD) diff -->
+                                <!-- Front diff (AWD only) -->
+                                <StackPanel Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
+                                    <TextBlock Text="{l:Loc ResultDiffFront}" Foreground="{StaticResource TextDimBrush}"
+                                                FontSize="10" Margin="0,0,0,6"/>
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding TuneResult.DiffFrontAccel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
+                                                       ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
+                                            <TextBlock Text="{l:Loc ResultDiffAccel}" Style="{StaticResource ParamLabel}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding TuneResult.DiffFrontDecel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
+                                                       ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
+                                            <TextBlock Text="{l:Loc ResultDiffDecel}" Style="{StaticResource ParamLabel}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                                <!-- Rear diff -->
                                 <TextBlock Text="{l:Loc ResultDiffRear}" Foreground="{StaticResource TextDimBrush}"
                                             FontSize="10" Margin="0,0,0,6"/>
                                 <Grid Margin="0,0,0,6">
@@ -445,9 +468,8 @@
                                         <TextBlock Text="{l:Loc ResultDiffDecel}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
                                 </Grid>
-                                <!-- AWD front diff + centre bias -->
+                                <!-- Center bias (AWD only) -->
                                 <StackPanel Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
-                                    <Separator Margin="0,4"/>
                                     <TextBlock Text="{l:Loc ResultDiffCenter}" Foreground="{StaticResource AccentBrush}"
                                                 FontSize="10" FontWeight="SemiBold" Margin="0,2,0,4"/>
                                     <StackPanel HorizontalAlignment="Center" Margin="0,0,0,4">
@@ -456,25 +478,6 @@
                                                    ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
                                         <TextBlock Text="{l:Loc ResultDiffCenterBias}" Style="{StaticResource ParamLabel}"/>
                                     </StackPanel>
-                                    <Separator Margin="0,4"/>
-                                    <TextBlock Text="{l:Loc ResultDiffFront}" Foreground="{StaticResource TextDimBrush}"
-                                                FontSize="10" Margin="0,0,0,6"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                                            <TextBlock Text="{Binding TuneResult.DiffFrontAccel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
-                                                       ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
-                                            <TextBlock Text="{l:Loc ResultDiffAccel}" Style="{StaticResource ParamLabel}"/>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                                            <TextBlock Text="{Binding TuneResult.DiffFrontDecel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
-                                                       ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
-                                            <TextBlock Text="{l:Loc ResultDiffDecel}" Style="{StaticResource ParamLabel}"/>
-                                        </StackPanel>
-                                    </Grid>
                                 </StackPanel>
                             </StackPanel>
                         </Border>

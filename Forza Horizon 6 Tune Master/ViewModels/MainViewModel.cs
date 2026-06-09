@@ -16,6 +16,7 @@ public class MainViewModel : INotifyPropertyChanged
 {
     private readonly TuneGeneratorService _generator = new();
     private readonly StorageService _storage = new();
+    private readonly ProfileService _profileService;
 
     // ── Models ──────────────────────────────────────────────────────────────
     private CarCard _car = new();
@@ -35,8 +36,10 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(HasCenterDiffBias));
             OnPropertyChanged(nameof(HasAWDFrontDiff));
             OnPropertyChanged(nameof(SelectedCarDisplayText));
-            ClearAiEstimatedFields();
-            ClearAiSpecStatus();
+            _carSpec.ClearAiEstimatedFields();
+            _carSpec.ClearAiSpecStatus();
+            OnPropertyChanged(nameof(AiSpecStatusMessage));
+            OnPropertyChanged(nameof(HasAiSpecStatus));
             OnModelChanged(null, null!);
         }
     }
@@ -88,78 +91,36 @@ public class MainViewModel : INotifyPropertyChanged
     public bool HasAWDFrontDiff  => Car.DriveType == Models.DriveType.AWD && _tuneResult?.CenterDiffBias.HasValue == true;
     public bool HasLaunchControl => _tuneResult?.LaunchControlRpm.HasValue == true;
 
-    // ── Car database ──────────────────────────────────────────────────────────
-    private readonly CarDatabaseService _carDbService = new();
-    private readonly WikiCarSpecService _wikiSpecService = new();
-    private CancellationTokenSource? _wikiSpecsCts;
-    private List<CarData> _carDatabase = new();
-
-    private bool _suppressFilter;
+    // ── Car database + specs ──────────────────────────────────────────────────
+    private readonly CarSpecController _carSpec = new();
     private bool _isLoadingProfile;
 
-    private CarData? _selectedCar;
     public CarData? SelectedCar
     {
-        get => _selectedCar;
+        get => _carSpec.SelectedCar;
         set
         {
-            if (_selectedCar == value) return;
-            _selectedCar = value;
-            if (value != null)
-            {
-                if (!_isLoadingProfile) { ClearAiEstimatedFields(); ClearAiSpecStatus(); }
-                _car.Make = value.Make;
-                _car.Model = value.Model;
-                _car.Year = value.Year;
-                _suppressFilter = true;
-                CarSearchText = value.DisplayName;
-                _suppressFilter = false;
-                ApplyCarFilter();
-
-                _wikiSpecsCts?.Cancel();
-                _wikiSpecsCts?.Dispose();
-                _wikiSpecsCts = new CancellationTokenSource();
-                if (!_isLoadingProfile)
-                    _ = FetchAndApplyWikiSpecsAsync(value, _wikiSpecsCts.Token);
-            }
+            _carSpec.SelectCar(value, _car, _isLoadingProfile);
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedCarDisplayText));
             OnPropertyChanged(nameof(HasSelectedCar));
         }
     }
-    public bool HasSelectedCar => _selectedCar != null;
+    public bool HasSelectedCar => _carSpec.HasSelectedCar;
 
-    private string _carSearchText = "";
     public string CarSearchText
     {
-        get => _carSearchText;
+        get => _carSpec.CarSearchText;
         set
         {
-            if (_carSearchText == value) return;
-            _carSearchText = value;
+            _carSpec.CarSearchText = value;
             OnPropertyChanged();
-            if (!_suppressFilter) ApplyCarFilter();
         }
     }
 
-    private readonly ObservableCollection<CarData> _filteredCarDatabase = new();
-    public ObservableCollection<CarData> FilteredCarDatabase => _filteredCarDatabase;
+    public ObservableCollection<CarData> FilteredCarDatabase => _carSpec.FilteredCarDatabase;
 
-    private void ApplyCarFilter()
-    {
-        var query = string.IsNullOrWhiteSpace(_carSearchText)
-            ? null
-            : _carSearchText.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-        _filteredCarDatabase.Clear();
-        foreach (var car in _carDatabase)
-        {
-            if (query == null || query.All(q => car.DisplayName.ToLowerInvariant().Contains(q)))
-                _filteredCarDatabase.Add(car);
-        }
-    }
-
-    public string SelectedCarDisplayText => _selectedCar?.DisplayName
+    public string SelectedCarDisplayText => _carSpec.SelectedCar?.DisplayName
         ?? $"{_car.Year} {_car.Make} {_car.Model}".Trim();
 
     // ── Unit system ──────────────────────────────────────────────────────────
@@ -201,86 +162,69 @@ public class MainViewModel : INotifyPropertyChanged
     public bool UseImperial => _measurementSystem == UnitSystem.Imperial;
 
     // ── Constraint display properties (unit-aware) ───────────────────────────
-    // Tire Pressure
-    private double TirePressureToDisplay(double bar) => UseImperial ? Math.Round(bar * 14.504, 1) : bar;
-    private double TirePressureFromDisplay(double val) => UseImperial ? Math.Round(val / 14.504, 2) : val;
-
     public double TirePressureFrontMinDisplay
     {
-        get => TirePressureToDisplay(Constraints.TirePressureFrontMin);
-        set { Constraints.TirePressureFrontMin = TirePressureFromDisplay(value); OnPropertyChanged(); }
+        get => UnitConverter.TirePressureToDisplay(Constraints.TirePressureFrontMin, UseImperial);
+        set { Constraints.TirePressureFrontMin = UnitConverter.TirePressureFromDisplay(value, UseImperial); OnPropertyChanged(); }
     }
     public double TirePressureFrontMaxDisplay
     {
-        get => TirePressureToDisplay(Constraints.TirePressureFrontMax);
-        set { Constraints.TirePressureFrontMax = TirePressureFromDisplay(value); OnPropertyChanged(); }
+        get => UnitConverter.TirePressureToDisplay(Constraints.TirePressureFrontMax, UseImperial);
+        set { Constraints.TirePressureFrontMax = UnitConverter.TirePressureFromDisplay(value, UseImperial); OnPropertyChanged(); }
     }
     public double TirePressureRearMinDisplay
     {
-        get => TirePressureToDisplay(Constraints.TirePressureRearMin);
-        set { Constraints.TirePressureRearMin = TirePressureFromDisplay(value); OnPropertyChanged(); }
+        get => UnitConverter.TirePressureToDisplay(Constraints.TirePressureRearMin, UseImperial);
+        set { Constraints.TirePressureRearMin = UnitConverter.TirePressureFromDisplay(value, UseImperial); OnPropertyChanged(); }
     }
     public double TirePressureRearMaxDisplay
     {
-        get => TirePressureToDisplay(Constraints.TirePressureRearMax);
-        set { Constraints.TirePressureRearMax = TirePressureFromDisplay(value); OnPropertyChanged(); }
+        get => UnitConverter.TirePressureToDisplay(Constraints.TirePressureRearMax, UseImperial);
+        set { Constraints.TirePressureRearMax = UnitConverter.TirePressureFromDisplay(value, UseImperial); OnPropertyChanged(); }
     }
 
     // Springs
-    private double SpringToDisplay(double nmm) => _springUnit switch
-    {
-        SpringUnit.KgfMm => Math.Round(nmm / 9.807, 2),
-        SpringUnit.LbsIn => Math.Round(nmm * 5.710, 1),
-        _                => Math.Round(nmm, 1)
-    };
-    private double SpringFromDisplay(double val) => _springUnit switch
-    {
-        SpringUnit.KgfMm => val * 9.807,
-        SpringUnit.LbsIn => val / 5.710,
-        _                => val
-    };
-
     public double SpringFrontMinDisplay
     {
-        get => SpringToDisplay(Constraints.SpringFrontMin);
-        set { Constraints.SpringFrontMin = SpringFromDisplay(value); OnPropertyChanged(); }
+        get => UnitConverter.SpringToDisplay(Constraints.SpringFrontMin, _springUnit);
+        set { Constraints.SpringFrontMin = UnitConverter.SpringFromDisplay(value, _springUnit); OnPropertyChanged(); }
     }
     public double SpringFrontMaxDisplay
     {
-        get => SpringToDisplay(Constraints.SpringFrontMax);
-        set { Constraints.SpringFrontMax = SpringFromDisplay(value); OnPropertyChanged(); }
+        get => UnitConverter.SpringToDisplay(Constraints.SpringFrontMax, _springUnit);
+        set { Constraints.SpringFrontMax = UnitConverter.SpringFromDisplay(value, _springUnit); OnPropertyChanged(); }
     }
     public double SpringRearMinDisplay
     {
-        get => SpringToDisplay(Constraints.SpringRearMin);
-        set { Constraints.SpringRearMin = SpringFromDisplay(value); OnPropertyChanged(); }
+        get => UnitConverter.SpringToDisplay(Constraints.SpringRearMin, _springUnit);
+        set { Constraints.SpringRearMin = UnitConverter.SpringFromDisplay(value, _springUnit); OnPropertyChanged(); }
     }
     public double SpringRearMaxDisplay
     {
-        get => SpringToDisplay(Constraints.SpringRearMax);
-        set { Constraints.SpringRearMax = SpringFromDisplay(value); OnPropertyChanged(); }
+        get => UnitConverter.SpringToDisplay(Constraints.SpringRearMax, _springUnit);
+        set { Constraints.SpringRearMax = UnitConverter.SpringFromDisplay(value, _springUnit); OnPropertyChanged(); }
     }
 
     // Ride Height
     public double RideHeightFrontMinDisplay
     {
-        get => UseImperial ? Math.Round(Constraints.RideHeightFrontMin / 25.4, 1) : Constraints.RideHeightFrontMin;
-        set { Constraints.RideHeightFrontMin = UseImperial ? Math.Round(value * 25.4, 0) : value; OnPropertyChanged(); }
+        get => UnitConverter.RideHeightToDisplay(Constraints.RideHeightFrontMin, UseImperial);
+        set { Constraints.RideHeightFrontMin = UnitConverter.RideHeightFromDisplay(value, UseImperial); OnPropertyChanged(); }
     }
     public double RideHeightFrontMaxDisplay
     {
-        get => UseImperial ? Math.Round(Constraints.RideHeightFrontMax / 25.4, 1) : Constraints.RideHeightFrontMax;
-        set { Constraints.RideHeightFrontMax = UseImperial ? Math.Round(value * 25.4, 0) : value; OnPropertyChanged(); }
+        get => UnitConverter.RideHeightToDisplay(Constraints.RideHeightFrontMax, UseImperial);
+        set { Constraints.RideHeightFrontMax = UnitConverter.RideHeightFromDisplay(value, UseImperial); OnPropertyChanged(); }
     }
     public double RideHeightRearMinDisplay
     {
-        get => UseImperial ? Math.Round(Constraints.RideHeightRearMin / 25.4, 1) : Constraints.RideHeightRearMin;
-        set { Constraints.RideHeightRearMin = UseImperial ? Math.Round(value * 25.4, 0) : value; OnPropertyChanged(); }
+        get => UnitConverter.RideHeightToDisplay(Constraints.RideHeightRearMin, UseImperial);
+        set { Constraints.RideHeightRearMin = UnitConverter.RideHeightFromDisplay(value, UseImperial); OnPropertyChanged(); }
     }
     public double RideHeightRearMaxDisplay
     {
-        get => UseImperial ? Math.Round(Constraints.RideHeightRearMax / 25.4, 1) : Constraints.RideHeightRearMax;
-        set { Constraints.RideHeightRearMax = UseImperial ? Math.Round(value * 25.4, 0) : value; OnPropertyChanged(); }
+        get => UnitConverter.RideHeightToDisplay(Constraints.RideHeightRearMax, UseImperial);
+        set { Constraints.RideHeightRearMax = UnitConverter.RideHeightFromDisplay(value, UseImperial); OnPropertyChanged(); }
     }
 
     // ── Constraint unit labels ────────────────────────────────────────────────
@@ -345,88 +289,66 @@ public class MainViewModel : INotifyPropertyChanged
     // ── Unit display properties for CarCardView ──────────────────────────────
     public double PowerDisplay
     {
-        get => _powerUnit switch
-        {
-            PowerUnit.KW => Math.Round(_car.PowerHP * 0.7457, 1),
-            PowerUnit.PS => Math.Round(_car.PowerHP * 1.01387, 1),
-            _            => _car.PowerHP
-        };
+        get => UnitConverter.PowerToDisplay(_car.PowerHP, _powerUnit);
         set
         {
-            _car.PowerHP = _powerUnit switch
-            {
-                PowerUnit.KW => value / 0.7457,
-                PowerUnit.PS => value / 1.01387,
-                _            => value
-            };
+            _car.PowerHP = UnitConverter.PowerFromDisplay(value, _powerUnit);
             OnPropertyChanged();
         }
     }
 
     public double SpeedDisplay
     {
-        get => _measurementSystem == UnitSystem.Imperial
-            ? Math.Round(_car.MaxSpeedKmh * 0.6214, 1)
-            : _car.MaxSpeedKmh;
+        get => UnitConverter.SpeedToDisplay(_car.MaxSpeedKmh, UseImperial);
         set { /* computed — read-only */ OnPropertyChanged(); }
     }
 
     public double MassDisplay
     {
-        get => _measurementSystem == UnitSystem.Imperial
-            ? Math.Round(_car.TotalMass * 2.2046, 1)
-            : _car.TotalMass;
+        get => UnitConverter.MassToDisplay(_car.TotalMass, UseImperial);
         set
         {
-            _car.TotalMass = _measurementSystem == UnitSystem.Imperial ? value / 2.2046 : value;
+            _car.TotalMass = UnitConverter.MassFromDisplay(value, UseImperial);
             OnPropertyChanged();
         }
     }
 
     public double TorqueDisplay
     {
-        get => _measurementSystem == UnitSystem.Imperial
-            ? Math.Round(_car.TorqueNm * 0.73756, 1)
-            : _car.TorqueNm;
+        get => UnitConverter.TorqueToDisplay(_car.TorqueNm, UseImperial);
         set
         {
-            _car.TorqueNm = _measurementSystem == UnitSystem.Imperial ? value / 0.73756 : value;
+            _car.TorqueNm = UnitConverter.TorqueFromDisplay(value, UseImperial);
             OnPropertyChanged();
         }
     }
 
     public double WheelbaseDisplay
     {
-        get => _measurementSystem == UnitSystem.Imperial
-            ? Math.Round(_car.Wheelbase / 25.4, 1)
-            : _car.Wheelbase;
+        get => UnitConverter.LengthToDisplay(_car.Wheelbase, UseImperial);
         set
         {
-            _car.Wheelbase = _measurementSystem == UnitSystem.Imperial ? value * 25.4 : value;
+            _car.Wheelbase = UnitConverter.LengthFromDisplay(value, UseImperial);
             OnPropertyChanged();
         }
     }
 
     public double FrontTrackDisplay
     {
-        get => _measurementSystem == UnitSystem.Imperial
-            ? Math.Round(_car.FrontTrack / 25.4, 1)
-            : _car.FrontTrack;
+        get => UnitConverter.LengthToDisplay(_car.FrontTrack, UseImperial);
         set
         {
-            _car.FrontTrack = _measurementSystem == UnitSystem.Imperial ? value * 25.4 : value;
+            _car.FrontTrack = UnitConverter.LengthFromDisplay(value, UseImperial);
             OnPropertyChanged();
         }
     }
 
     public double RearTrackDisplay
     {
-        get => _measurementSystem == UnitSystem.Imperial
-            ? Math.Round(_car.RearTrack / 25.4, 1)
-            : _car.RearTrack;
+        get => UnitConverter.LengthToDisplay(_car.RearTrack, UseImperial);
         set
         {
-            _car.RearTrack = _measurementSystem == UnitSystem.Imperial ? value * 25.4 : value;
+            _car.RearTrack = UnitConverter.LengthFromDisplay(value, UseImperial);
             OnPropertyChanged();
         }
     }
@@ -800,44 +722,25 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    private bool _isFetchingAiSpecs;
     public bool IsFetchingAiSpecs
     {
-        get => _isFetchingAiSpecs;
-        set
-        {
-            _isFetchingAiSpecs = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(IsBusy));
-            FetchAiCarSpecsCommand.Raise();
-        }
+        get => _carSpec.IsFetchingAiSpecs;
+        set => _carSpec.IsFetchingAiSpecs = value;
     }
 
-    private bool _isLoadingCars;
     public bool IsLoadingCars
     {
-        get => _isLoadingCars;
-        set
-        {
-            _isLoadingCars = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(IsBusy));
-        }
+        get => _carSpec.IsLoadingCars;
+        set => _carSpec.IsLoadingCars = value;
     }
 
-    private bool _isLoadingCarSpecs;
     public bool IsLoadingCarSpecs
     {
-        get => _isLoadingCarSpecs;
-        set
-        {
-            _isLoadingCarSpecs = value;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(IsBusy));
-        }
+        get => _carSpec.IsLoadingCarSpecs;
+        set => _carSpec.IsLoadingCarSpecs = value;
     }
 
-    public bool IsBusy => _isGenerating || _isFetchingAiSpecs || _isLoadingCars || _isLoadingCarSpecs;
+    public bool IsBusy => _isGenerating || _carSpec.IsFetchingAiSpecs || _carSpec.IsLoadingCars || _carSpec.IsLoadingCarSpecs;
 
     private string _busyMessage = "";
     public string BusyMessage
@@ -847,42 +750,21 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ── AI spec status overlay ──────────────────────────────────────────────
-    private string _aiSpecStatusMessage = "";
     public string AiSpecStatusMessage
     {
-        get => _aiSpecStatusMessage;
-        set { _aiSpecStatusMessage = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasAiSpecStatus)); }
+        get => _carSpec.AiSpecStatusMessage;
+        set { OnPropertyChanged(); OnPropertyChanged(nameof(HasAiSpecStatus)); }
     }
-    public bool HasAiSpecStatus => !string.IsNullOrEmpty(_aiSpecStatusMessage);
-    public bool NeedsCarSelectionHighlight { get; private set; }
-
-    public void ClearAiSpecStatus()
-    {
-        NeedsCarSelectionHighlight = false;
-        AiSpecStatusMessage = "";
-    }
+    public bool HasAiSpecStatus => _carSpec.HasAiSpecStatus;
+    public bool NeedsCarSelectionHighlight => _carSpec.NeedsCarSelectionHighlight;
 
     // ── AI-estimated field tracking ─────────────────────────────────────────
-    private readonly HashSet<string> _aiEstimatedFields = new();
-    private bool _isSettingAiSpecs;
-
-    public bool IsWheelbaseAiEstimated  => _aiEstimatedFields.Contains("Wheelbase");
-    public bool IsFrontTrackAiEstimated => _aiEstimatedFields.Contains("FrontTrack");
-    public bool IsRearTrackAiEstimated  => _aiEstimatedFields.Contains("RearTrack");
-    public bool IsCdAiEstimated         => _aiEstimatedFields.Contains("Cd");
-    public bool IsFrontalAreaAiEstimated => _aiEstimatedFields.Contains("FrontalArea");
-    public bool HasAnyAiEstimatedField => _aiEstimatedFields.Count > 0;
-
-    private void ClearAiEstimatedFields()
-    {
-        _aiEstimatedFields.Clear();
-        OnPropertyChanged(nameof(IsWheelbaseAiEstimated));
-        OnPropertyChanged(nameof(IsFrontTrackAiEstimated));
-        OnPropertyChanged(nameof(IsRearTrackAiEstimated));
-        OnPropertyChanged(nameof(IsCdAiEstimated));
-        OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
-        OnPropertyChanged(nameof(HasAnyAiEstimatedField));
-    }
+    public bool IsWheelbaseAiEstimated  => _carSpec.IsWheelbaseAiEstimated;
+    public bool IsFrontTrackAiEstimated => _carSpec.IsFrontTrackAiEstimated;
+    public bool IsRearTrackAiEstimated  => _carSpec.IsRearTrackAiEstimated;
+    public bool IsCdAiEstimated         => _carSpec.IsCdAiEstimated;
+    public bool IsFrontalAreaAiEstimated => _carSpec.IsFrontalAreaAiEstimated;
+    public bool HasAnyAiEstimatedField => _carSpec.HasAnyAiEstimatedField;
 
     private int _pendingGenerationId;
     private DateTime _lastInputChange = DateTime.MinValue;
@@ -910,22 +792,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (e.PropertyName is nameof(CarCard.Make) or nameof(CarCard.Model) or nameof(CarCard.Year))
             OnPropertyChanged(nameof(SelectedCarDisplayText));
 
-        if (!_isSettingAiSpecs)
-        {
-            bool removed = false;
-            if (e.PropertyName == nameof(CarCard.Wheelbase) && _aiEstimatedFields.Remove("Wheelbase"))
-            { removed = true; OnPropertyChanged(nameof(IsWheelbaseAiEstimated)); }
-            else if (e.PropertyName == nameof(CarCard.FrontTrack) && _aiEstimatedFields.Remove("FrontTrack"))
-            { removed = true; OnPropertyChanged(nameof(IsFrontTrackAiEstimated)); }
-            else if (e.PropertyName == nameof(CarCard.RearTrack) && _aiEstimatedFields.Remove("RearTrack"))
-            { removed = true; OnPropertyChanged(nameof(IsRearTrackAiEstimated)); }
-            else if (e.PropertyName == nameof(CarCard.Cd) && _aiEstimatedFields.Remove("Cd"))
-            { removed = true; OnPropertyChanged(nameof(IsCdAiEstimated)); }
-            else if (e.PropertyName == nameof(CarCard.FrontalAreaM2) && _aiEstimatedFields.Remove("FrontalArea"))
-            { removed = true; OnPropertyChanged(nameof(IsFrontalAreaAiEstimated)); }
-            if (removed)
-                OnPropertyChanged(nameof(HasAnyAiEstimatedField));
-        }
+        _carSpec.OnCarPropertyChanged(e.PropertyName);
     }
 
     private void OnModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -976,17 +843,59 @@ public class MainViewModel : INotifyPropertyChanged
 
     public MainViewModel()
     {
+        _profileService = new ProfileService(_storage);
+
+        // Wire CarSpecController callbacks
+        _carSpec.NotifyCarDisplayProperties = NotifyCarDisplayProperties;
+        _carSpec.NotifyCarSelectionProperties = () =>
+        {
+            OnPropertyChanged(nameof(SelectedCar));
+            OnPropertyChanged(nameof(HasSelectedCar));
+            OnPropertyChanged(nameof(SelectedCarDisplayText));
+            OnPropertyChanged(nameof(CarSearchText));
+        };
+        _carSpec.NotifyAiEstimatedFieldProperties = () =>
+        {
+            OnPropertyChanged(nameof(IsWheelbaseAiEstimated));
+            OnPropertyChanged(nameof(IsFrontTrackAiEstimated));
+            OnPropertyChanged(nameof(IsRearTrackAiEstimated));
+            OnPropertyChanged(nameof(IsCdAiEstimated));
+            OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
+            OnPropertyChanged(nameof(HasAnyAiEstimatedField));
+        };
+        _carSpec.RaiseRefreshCarDbCommand = () => RefreshCarDatabaseCommand.Raise();
+        _carSpec.RaiseFetchAiSpecsCommand = () => FetchAiCarSpecsCommand.Raise();
+        _carSpec.SetBusyMessage = msg => BusyMessage = msg;
+        _carSpec.SetStatusMessage = msg => StatusMessage = msg;
+        _carSpec.BusyFlagsChanged = () =>
+        {
+            OnPropertyChanged(nameof(IsFetchingAiSpecs));
+            OnPropertyChanged(nameof(IsLoadingCars));
+            OnPropertyChanged(nameof(IsLoadingCarSpecs));
+            OnPropertyChanged(nameof(IsBusy));
+        };
+        _carSpec.NotifyAiSpecStatusChanged = () =>
+        {
+            OnPropertyChanged(nameof(AiSpecStatusMessage));
+            OnPropertyChanged(nameof(HasAiSpecStatus));
+        };
+
         GenerateCommand        = new RelayCommand(GenerateTune);
         SaveCommand            = new RelayCommand(SaveProfile);
         LoadCommand            = new RelayCommand(LoadProfile, () => SelectedProfile != null);
         DeleteProfileCommand   = new RelayCommand(DeleteProfile, () => SelectedProfile != null);
         NewProfileCommand      = new RelayCommand(NewProfile);
-        FetchAiCarSpecsCommand = new RelayCommand(() => _ = FetchAiCarSpecsAsync(), () => !IsFetchingAiSpecs);
-        DismissAiSpecStatusCommand = new RelayCommand(() => AiSpecStatusMessage = "");
-        ClearCarSelectionCommand = new RelayCommand(ClearCarSelection);
-        RefreshCarDatabaseCommand = new RelayCommand(() => _ = RefreshCarDatabaseAsync(), () => !IsLoadingCars);
-        ClearCacheCommand = new RelayCommand(ClearCache);
-        ClearAiCacheCommand = new RelayCommand(ClearAiCache);
+        FetchAiCarSpecsCommand = new RelayCommand(() => _ = _carSpec.FetchAiCarSpecsAsync(Car), () => !IsFetchingAiSpecs);
+        DismissAiSpecStatusCommand = new RelayCommand(() =>
+        {
+            _carSpec.ClearAiSpecStatus();
+            OnPropertyChanged(nameof(AiSpecStatusMessage));
+            OnPropertyChanged(nameof(HasAiSpecStatus));
+        });
+        ClearCarSelectionCommand = new RelayCommand(() => _carSpec.ClearCarSelection(_car));
+        RefreshCarDatabaseCommand = new RelayCommand(() => _ = _carSpec.RefreshCarDatabaseAsync(), () => !IsLoadingCars);
+        ClearCacheCommand = new RelayCommand(() => _carSpec.ClearCache());
+        ClearAiCacheCommand = new RelayCommand(() => _carSpec.ClearAiCache());
 
         ToggleUnitsCommand      = new RelayCommand(DoToggleUnits);
         TogglePowerUnitCommand  = new RelayCommand(DoTogglePowerUnit);
@@ -1115,7 +1024,7 @@ public class MainViewModel : INotifyPropertyChanged
         IsGenerating = true;
         try
         {
-            Car.Name = SelectedProfile ?? AutoProfileName();
+            Car.Name = _profileService.AutoProfileName(Car, Track);
             TuneResult = _generator.Generate(Car, Track, Constraints);
             var discLocalized = T($"Discipline{Track.Discipline}");
             StatusMessage = string.Format(T("StatusTuneGenerated"), Car.Make, Car.Model, $"{discLocalized}  •  {DateTime.Now:HH:mm}");
@@ -1131,123 +1040,12 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    // ── Wiki car specs fetch (auto on car select) ────────────────────────────
-    private async Task FetchAndApplyWikiSpecsAsync(CarData car, CancellationToken ct)
-    {
-        if (string.IsNullOrEmpty(car.WikiPageTitle)) return;
-
-        BusyMessage = T("BusyLoadingSpecs");
-        IsLoadingCarSpecs = true;
-        try
-        {
-            var specs = await _wikiSpecService.FetchSpecsAsync(car.WikiPageTitle, ct);
-            if (ct.IsCancellationRequested || specs == null) return;
-
-            if (specs.EngineType.HasValue)             Car.EngineType = specs.EngineType.Value;
-            if (specs.AspirationType.HasValue)         Car.AspirationType = specs.AspirationType.Value;
-            if (specs.PowertrainType.HasValue)         Car.PowertrainType = specs.PowertrainType.Value;
-            if (specs.PowerHP is > 0)                  Car.PowerHP = specs.PowerHP.Value;
-            if (specs.TorqueNm is > 0)                 Car.TorqueNm = specs.TorqueNm.Value;
-            if (specs.DriveType.HasValue)              Car.DriveType = specs.DriveType.Value;
-            if (specs.EnginePosition.HasValue)         Car.EnginePosition = specs.EnginePosition.Value;
-            if (specs.WeightDistributionFront is > 0)  Car.WeightDistributionFront = specs.WeightDistributionFront.Value;
-            if (specs.TotalMassKg is > 0)              Car.TotalMass = specs.TotalMassKg.Value;
-            if (specs.GearCount is > 0)                Car.GearCount = specs.GearCount.Value;
-
-            NotifyCarDisplayProperties();
-            StatusMessage = string.Format(T("StatusSpecsLoaded"), car.Make, car.Model);
-        }
-        catch (OperationCanceledException) { /* другой автомобиль выбран */ }
-        catch (Exception ex)
-        {
-            if (!ct.IsCancellationRequested)
-                StatusMessage = string.Format(T("StatusSpecsError"), ex.Message);
-        }
-        finally
-        {
-            IsLoadingCarSpecs = false;
-        }
-    }
-
-    // ── AI car specs fetch ──────────────────────────────────────────────────
-    private readonly AiCarSpecService _aiCarSpecService = new();
-    private async Task FetchAiCarSpecsAsync()
-    {
-        if (IsFetchingAiSpecs) return;
-        ClearAiSpecStatus();
-        if (string.IsNullOrWhiteSpace(Car.Make) && string.IsNullOrWhiteSpace(Car.Model))
-        {
-            NeedsCarSelectionHighlight = true;
-            AiSpecStatusMessage = T("StatusFirstSelectCar");
-            StatusMessage = T("StatusFirstSelectCar");
-            return;
-        }
-
-        BusyMessage = T("BusyFetchingAi");
-        IsFetchingAiSpecs = true;
-        try
-        {
-            var carName = $"{Car.Year} {Car.Make} {Car.Model}".Trim();
-            StatusMessage = string.Format(T("StatusAiRequested"), carName);
-
-            var specs = await _aiCarSpecService.FetchCarSpecsAsync(carName);
-
-            _isSettingAiSpecs = true;
-            _aiEstimatedFields.Clear();
-            if (specs.WheelbaseMm > 0) { Car.Wheelbase = specs.WheelbaseMm; _aiEstimatedFields.Add("Wheelbase"); }
-            if (specs.FrontTrackMm > 0) { Car.FrontTrack = specs.FrontTrackMm; _aiEstimatedFields.Add("FrontTrack"); }
-            if (specs.RearTrackMm > 0) { Car.RearTrack = specs.RearTrackMm; _aiEstimatedFields.Add("RearTrack"); }
-            if (specs.DragCoefficientCd > 0) { Car.Cd = specs.DragCoefficientCd; _aiEstimatedFields.Add("Cd"); }
-            if (specs.FrontalAreaM2 > 0) { Car.FrontalAreaM2 = specs.FrontalAreaM2; _aiEstimatedFields.Add("FrontalArea"); }
-            _isSettingAiSpecs = false;
-
-            OnPropertyChanged(nameof(WheelbaseDisplay));
-            OnPropertyChanged(nameof(FrontTrackDisplay));
-            OnPropertyChanged(nameof(RearTrackDisplay));
-            OnPropertyChanged(nameof(IsWheelbaseAiEstimated));
-            OnPropertyChanged(nameof(IsFrontTrackAiEstimated));
-            OnPropertyChanged(nameof(IsRearTrackAiEstimated));
-            OnPropertyChanged(nameof(IsCdAiEstimated));
-            OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
-            OnPropertyChanged(nameof(HasAnyAiEstimatedField));
-
-            var estimated = specs.EstimatedFields.Count > 0
-                ? string.Format(T("AiSpecEstimate"), string.Join(", ", specs.EstimatedFields))
-                : "";
-            var rawValues = $"WB={specs.WheelbaseMm} Trk={specs.FrontTrackMm}/{specs.RearTrackMm} Cd={specs.DragCoefficientCd} A={specs.FrontalAreaM2}m²";
-            StatusMessage = $"{string.Format(T("StatusAiReceived"), carName, estimated)} [{rawValues}]";
-        }
-        catch (Exception ex)
-        {
-            AiSpecStatusMessage = string.Format(T("StatusAiError"), ex.Message);
-            StatusMessage = string.Format(T("StatusAiError"), ex.Message);
-        }
-        finally
-        {
-            IsFetchingAiSpecs = false;
-        }
-    }
-
     // ── Profile management ──────────────────────────────────────────────────
-    private string AutoProfileName()
-    {
-        var dt = T($"Enum_DriveType_{Car.DriveType}");
-        var et = T($"Enum_EngineType_{Car.EngineType}");
-        var disc = T($"Discipline{Track.Discipline}");
-        return $"{Car.Year} {Car.Make} {Car.Model} {dt} {et} {disc}".Trim();
-    }
-
     private void SaveProfile()
     {
         try
         {
-            string name = AutoProfileName();
-            Car.Name = name;
-            _storage.Save(name, new SavedProfile
-            {
-                Car = Car, Track = Track, Constraints = Constraints, LastResult = TuneResult,
-                AiEstimatedFields = _aiEstimatedFields.ToList()
-            });
+            string name = _profileService.Save(Car, Track, Constraints, TuneResult, _carSpec.AiEstimatedFields.ToList());
             RefreshProfiles();
             StatusMessage = string.Format(T("StatusProfileSaved"), name);
         }
@@ -1259,7 +1057,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (SelectedProfile == null) return;
         try
         {
-            var p = _storage.Load(SelectedProfile);
+            var p = _profileService.Load(SelectedProfile);
             if (p == null) { StatusMessage = T("StatusProfileNotFound"); return; }
             Car         = p.Car;
             Track       = p.Track;
@@ -1268,9 +1066,9 @@ public class MainViewModel : INotifyPropertyChanged
             var loadedResult = p.LastResult;
             if (loadedResult != null) { loadedResult.Car = Car; loadedResult.Track = Track; }
             TuneResult  = loadedResult;
-            _aiEstimatedFields.Clear();
+            _carSpec.AiEstimatedFields.Clear();
             foreach (var f in p.AiEstimatedFields)
-                _aiEstimatedFields.Add(f);
+                _carSpec.AiEstimatedFields.Add(f);
             OnPropertyChanged(nameof(IsWheelbaseAiEstimated));
             OnPropertyChanged(nameof(IsFrontTrackAiEstimated));
             OnPropertyChanged(nameof(IsRearTrackAiEstimated));
@@ -1278,7 +1076,7 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
             OnPropertyChanged(nameof(HasAnyAiEstimatedField));
             _isLoadingProfile = true;
-            SelectCarFromProfile();
+            _carSpec.SelectCarFromProfile(Car);
             _isLoadingProfile = false;
             StatusMessage = string.Format(T("StatusProfileLoaded"), SelectedProfile);
         }
@@ -1290,7 +1088,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (SelectedProfile == null) return;
         if (MessageBox.Show(string.Format(T("DeleteProfileConfirm"), SelectedProfile), T("DeleteProfileTitle"),
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        _storage.Delete(SelectedProfile);
+        _profileService.Delete(SelectedProfile);
         RefreshProfiles();
         StatusMessage = T("StatusProfileDeleted");
     }
@@ -1300,7 +1098,7 @@ public class MainViewModel : INotifyPropertyChanged
         Car = new CarCard(); Track = new TrackInfo(); Constraints = new TuningConstraints();
         NotifyConstraintDisplayProperties();
         TuneResult  = null;
-        SelectedCar = null;
+        _carSpec.ClearCarSelection(_car);
         SelectedProfile = null;
         ProfileSearchText = "";
         StatusMessage = T("StatusProfileCreated");
@@ -1308,127 +1106,16 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void RefreshProfiles()
     {
-        Profiles = new ObservableCollection<string>(_storage.GetProfileNames());
+        Profiles = new ObservableCollection<string>(_profileService.GetProfileNames());
         ApplyProfileFilter();
         LoadCommand.Raise();
         DeleteProfileCommand.Raise();
     }
 
     // ── Car database ─────────────────────────────────────────────────────────
-    private void ClearCarSelection()
-    {
-        SelectedCar = null;
-        _car.Make = "";
-        _car.Model = "";
-        _car.Year = 0;
-        CarSearchText = "";
-    }
-
     private async Task LoadCarDatabaseAsync()
     {
-        BusyMessage = T("BusyLoadingCars");
-        IsLoadingCars = true;
-        RefreshCarDatabaseCommand.Raise();
-        try
-        {
-            var result = await _carDbService.LoadCarDatabaseAsync();
-            _carDatabase = result.Cars;
-            ApplyCarFilter();
-            SelectCarFromProfile();
-
-            if (result.FromCache && result.WebErrorMessage != null)
-                StatusMessage = string.Format(T("StatusCarsNoConnection"), result.Cars.Count, result.WebErrorMessage);
-            else if (result.FromCache)
-                StatusMessage = string.Format(T("StatusCarsLoadedFromCache"), result.Cars.Count);
-            else
-                StatusMessage = string.Format(T("StatusCarsLoaded"), result.Cars.Count);
-
-            if (result.FromCache && CarDatabaseService.IsCacheStale)
-                _ = AutoRefreshCarDatabaseAsync();
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = string.Format(T("CarsLoadingError"), ex.Message);
-        }
-        finally
-        {
-            IsLoadingCars = false;
-            RefreshCarDatabaseCommand.Raise();
-        }
-    }
-
-    private async Task AutoRefreshCarDatabaseAsync()
-    {
-        await Task.Delay(500);
-        StatusMessage = T("BusyRefreshingCars");
-        try
-        {
-            var result = await _carDbService.RefreshAsync();
-            if (!result.FromCache)
-            {
-                _carDatabase = result.Cars;
-                ApplyCarFilter();
-                StatusMessage = string.Format(T("StatusDbRefreshed"), result.Cars.Count);
-            }
-            else if (result.WebErrorMessage != null)
-            {
-                StatusMessage = string.Format(T("StatusAutoUpdateFailed"), result.WebErrorMessage);
-            }
-        }
-        catch (Exception ex) { StatusMessage = $"[AutoRefresh] {ex.Message}"; }
-    }
-
-    private async Task RefreshCarDatabaseAsync()
-    {
-        BusyMessage = T("BusyRefreshingCars");
-        IsLoadingCars = true;
-        RefreshCarDatabaseCommand.Raise();
-        try
-        {
-            var result = await _carDbService.RefreshAsync();
-            _carDatabase = result.Cars;
-            ApplyCarFilter();
-
-            if (result.FromCache && result.WebErrorMessage != null)
-                StatusMessage = string.Format(T("StatusDbRefreshError"), result.WebErrorMessage, result.Cars.Count);
-            else
-                StatusMessage = string.Format(T("StatusDbRefreshed"), result.Cars.Count);
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = string.Format(T("StatusDbUpdateError"), ex.Message);
-        }
-        finally
-        {
-            IsLoadingCars = false;
-            RefreshCarDatabaseCommand.Raise();
-        }
-    }
-
-    private void ClearCache()
-    {
-        CarDatabaseService.DeleteCache();
-        WikiCarSpecService.DeleteCache();
-        _carDatabase.Clear();
-        _filteredCarDatabase.Clear();
-        StatusMessage = T("StatusCacheCleared");
-    }
-
-    private void ClearAiCache()
-    {
-        AiCarSpecService.DeleteCache();
-        StatusMessage = T("StatusCacheCleared");
-    }
-
-    private void SelectCarFromProfile()
-    {
-        if (string.IsNullOrEmpty(_car.Make) && string.IsNullOrEmpty(_car.Model))
-        {
-            SelectedCar = null;
-            return;
-        }
-        SelectedCar = _carDatabase.FirstOrDefault(c =>
-            c.Make == _car.Make && c.Model == _car.Model && c.Year == _car.Year);
+        await _carSpec.LoadCarDatabaseAsync(Car);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

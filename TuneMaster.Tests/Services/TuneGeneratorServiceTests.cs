@@ -321,14 +321,15 @@ public class TuneGeneratorServiceTests
     }
 
     [Fact]
-    public void Generate_ElectricCar_LaunchControl1000()
+    public void Generate_ElectricCar_LaunchControl_IsNull()
     {
         var car = CarFactory.ElectricCar();
         var track = new TrackInfo { Discipline = Discipline.Drag };
 
         var result = _sut.Generate(car, track, CarFactory.RelaxedConstraints());
 
-        Assert.NotNull(result.LaunchControlRpm);
+        // Electric motors deliver instant torque from 0 RPM — launch RPM doesn't apply
+        Assert.Null(result.LaunchControlRpm);
     }
 
     [Fact]
@@ -340,7 +341,7 @@ public class TuneGeneratorServiceTests
         var result = _sut.Generate(car, track, CarFactory.RelaxedConstraints());
 
         Assert.Single(result.GearRatios);
-        Assert.NotNull(result.LaunchControlRpm);
+        Assert.Null(result.LaunchControlRpm);
     }
 
     [Fact]

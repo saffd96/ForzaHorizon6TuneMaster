@@ -285,30 +285,31 @@
             <!-- ── Aero ──────────────────────────────────────────────── -->
             <TextBlock Text="{l:Loc SectionAero}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
-                <StackPanel>
-                    <Grid Margin="0,0,0,6" Visibility="{Binding Car.HasFrontAero, Converter={StaticResource B2V}}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" MinWidth="130"/>
-                            <ColumnDefinition Width="*" MinWidth="65"/>
-                            <ColumnDefinition Width="8"/>
-                            <ColumnDefinition Width="*" MinWidth="65"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{l:Loc AeroFrontMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
-                        <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroFrontMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        <TextBox   Grid.Column="3" Text="{Binding Constraints.AeroFrontMax, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                    </Grid>
-                    <Grid Visibility="{Binding Car.HasRearAero, Converter={StaticResource B2V}}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" MinWidth="130"/>
-                            <ColumnDefinition Width="*" MinWidth="65"/>
-                            <ColumnDefinition Width="8"/>
-                            <ColumnDefinition Width="*" MinWidth="65"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{l:Loc AeroRearMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"/>
-                        <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroRearMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                        <TextBox   Grid.Column="3" Text="{Binding Constraints.AeroRearMax, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"/>
-                    </Grid>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" MinWidth="130"/>
+                        <ColumnDefinition Width="*" MinWidth="65"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*" MinWidth="65"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto" MinWidth="130"/>
+                        <ColumnDefinition Width="*" MinWidth="65"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*" MinWidth="65"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{l:Loc AeroFrontMinMaxLabel}" Style="{StaticResource FormLabel}" MinWidth="130"
+                               Visibility="{Binding Car.HasFrontAero, Converter={StaticResource B2V}}"/>
+                    <TextBox   Grid.Column="1" Text="{Binding Constraints.AeroFrontMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"
+                               Visibility="{Binding Car.HasFrontAero, Converter={StaticResource B2V}}"/>
+                    <TextBox   Grid.Column="3" Text="{Binding Constraints.AeroFrontMax, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"
+                               Visibility="{Binding Car.HasFrontAero, Converter={StaticResource B2V}}"/>
+                    <TextBlock Grid.Column="5" Text="{l:Loc AeroRearMinMaxLabel}"   Style="{StaticResource FormLabel}" MinWidth="130"
+                               Visibility="{Binding Car.HasRearAero, Converter={StaticResource B2V}}"/>
+                    <TextBox   Grid.Column="6" Text="{Binding Constraints.AeroRearMin, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"
+                               Visibility="{Binding Car.HasRearAero, Converter={StaticResource B2V}}"/>
+                    <TextBox   Grid.Column="8" Text="{Binding Constraints.AeroRearMax, UpdateSourceTrigger=LostFocus}" cv:NumericBehavior.IsNumeric="True"
+                               Visibility="{Binding Car.HasRearAero, Converter={StaticResource B2V}}"/>
+                </Grid>
             </Border>
 
             <!-- ── Final Drive ───────────────────────────────────────── -->
