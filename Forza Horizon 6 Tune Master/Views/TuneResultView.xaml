@@ -87,6 +87,8 @@
                                     <Run Text="  •  "                            Foreground="{StaticResource TextMutedBrush}"/>
                                      <Run Text="{Binding TuneResult.Track.Discipline, Converter={StaticResource EnumLabel}}" Foreground="{StaticResource AccentBrush}"/>
                                      <Run Text="  •  "                            Foreground="{StaticResource TextMutedBrush}"/>
+                                     <Run Text="{Binding TuneResult.Track.Season, Converter={StaticResource EnumLabel}}"     Foreground="{StaticResource AccentBrush}"/>
+                                     <Run Text="  •  "                            Foreground="{StaticResource TextMutedBrush}"/>
                                      <Run Text="{Binding TuneResult.Car.DriveType, Converter={StaticResource EnumLabel}}"    Foreground="{StaticResource CyanBrush}"/>
                                     <Run Text="  "/>
                                     <Run Foreground="{StaticResource TextDimBrush}">

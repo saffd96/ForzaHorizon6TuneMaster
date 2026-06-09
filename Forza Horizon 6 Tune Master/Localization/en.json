@@ -157,14 +157,14 @@
   "DisciplineStreetTooltip": "Street Racing — urban tracks with civilian traffic. Speed and maneuverability.",
 
   "SectionSeason": "SEASON",
-  "SeasonSummer": "Summer",
-  "SeasonSpring": "Spring",
-  "SeasonAutumn": "Autumn",
-  "SeasonWinter": "Winter",
   "SeasonSummerTooltip": "Summer — dry hot tarmac, maximum grip. Standard baseline setup.",
   "SeasonSpringTooltip": "Spring — wet roads from cherry blossom rain, moderate grip reduction.",
   "SeasonAutumnTooltip": "Autumn — heavy rain, wet roads, longer braking distances. Softer setup.",
   "SeasonWinterTooltip": "Winter — cold tarmac, slow tire warm-up, icy mountain roads. Most grip reduction.",
+  "Enum_Season_Summer": "Summer",
+  "Enum_Season_Spring": "Spring",
+  "Enum_Season_Autumn": "Autumn",
+  "Enum_Season_Winter": "Winter",
 
   "DragDistEighth": "⅛ mile",
   "DragDistQuarter": "¼ mile",

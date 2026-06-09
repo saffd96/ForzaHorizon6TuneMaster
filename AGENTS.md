@@ -37,9 +37,9 @@ Windows + .NET 8 SDK required (WPF is Windows-only). Only NuGet dep: `System.Tex
 
 ## Data Flow
 
-1. User fills `CarCardView` + selects discipline in `TuneResultView`
+1. User fills `CarCardView` + selects discipline + season in `TrackInfoView`
 2. Clicks "Сгенерировать" → `MainViewModel.GenerateCommand` → `TuneGeneratorService.Generate(Car, Track, Constraints)` → `TuneResult`
-3. `TuneResultView` binds to `MainViewModel.TuneResult`
+3. `TuneResultView` binds to `MainViewModel.TuneResult` (header shows discipline + season + drive type)
 
 ## Test Pattern
 
@@ -53,12 +53,12 @@ var result = new TuneGeneratorService().Generate(
 
 - **No DI**: `MainWindow.DataContext = new MainViewModel()` — services constructed inline.
 - **INPC**: Custom `NotifyBase` with `Set<T>(ref field, value)`. No CommunityToolkit.
-- **Enums** (`Models/Enums.cs`): 7 disciplines (`Road, Touge, Rally, CrossCountry, Drift, Drag, Street`), `DriveType`, `TireType` (9), `SuspensionUpgrade` (7), `DifferentialUpgrade` (7), `SpringUnit {KgfMm, NMm, LbsIn}`.
+- **Enums** (`Models/Enums.cs`): 7 disciplines (`Road, Touge, Rally, CrossCountry, Drift, Drag, Street`), `DriveType`, `Season` (4), `TireType` (9), `SuspensionUpgrade` (7), `DifferentialUpgrade` (7), `SpringUnit {KgfMm, NMm, LbsIn}`.
 - **Root namespace**: `Forza_Horizon_6_Tune_Master` (underscores, not dots).
 - **RelayCommand** (`ViewModels/RelayCommand.cs`): simple `ICommand` wrapper with `Raise()` for manual `CanExecuteChanged`.
 - **Canonical storage units** (models store metric; conversion only in `*Display` properties):
   - Power → HP, Speed → km/h, Mass → kg, Spring → N/mm, Pressure → bar, Height → mm
-- **Profile persistence**: `StorageService` saves `SavedProfile` as indented JSON to `%APPDATA%\ForzaTuneMaster\profiles\<name>.json`. Spaces in names stored as underscores on disk.
+- **Profile persistence**: `StorageService` saves `SavedProfile` as indented JSON to `%APPDATA%\ForzaTuneMaster\profiles\<name>.json`. Spaces in names stored as underscores on disk. Current `ProfileVersion` = `"1.4"` (was `"1.3"` before Season support).
 - **Key services**: `LocalizationService` (singleton, embedded `Localization/{ru,en}.json`), `AiCarSpecService` (Cerebras/OpenRouter), `WikiCarSpecService` (Forza Fandom wiki parser, cached at `%APPDATA%\ForzaTuneMaster\specs\*.json`).
 - `Services/Abstractions/` and `Data/` exist but are empty.
 
@@ -84,6 +84,8 @@ var result = new TuneGeneratorService().Generate(
 - **Tire pressure**: base varies by TireType (Slick=2.24 bar, Sport=2.07, Offroad=2.00, etc.), adjusted for mass, wtDist, power, profile, rim diameter.
 - **Gear ratios**: `GearCount == 1` → single gear + FD targets MaxSpeedKmh. Multi-gear: first/top vary by discipline, intermediates geometric.
 - **Caster**: only positive (app uses `CasterMin=1`).
+- **Season grip factor**: `GetSeasonGripFactor()` — Summer=1.00, Spring=0.93, Autumn=0.88, Winter=0.78. Affects springs (×0.50 weight), ARB (×0.65), dampers (×0.32), diff accel (−`(1−grip)×18`), tire pressure (±0.034 bar cold/hot split).
+- **Season selector** (`TrackInfoView.xaml:186-206`): 4 RadioButtons with `EnumToBoolConverter` binding `Track.Season`. Season appended to auto-profile name; `SaveProfile()` deletes stale file on season switch.
 
 ## API Keys
 

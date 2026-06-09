@@ -6,51 +6,55 @@ internal static class GearingCalculator
 {
     public static int CalcRecommendedGearCount(CarCard car, TrackInfo track, double effectiveMaxKmh)
     {
+        // Electric: torquePeakRPM = 0, can't compute RPM drop
         if (car.PowertrainType == PowertrainType.Electric)
             return track.Discipline == Discipline.Drag ? 1 : 2;
 
+        // Compute first and top gear ratios using discipline-specific logic
+        double first, top;
         if (track.Discipline == Discipline.Drag)
         {
-            return track.DragDistance switch
+            (first, top, _) = GetDragRatios(car, track.DragDistance);
+        }
+        else
+        {
+            double pwRatio = car.PowerHP / (car.TotalMass / 1000.0);
+            (first, _, _, _) = GetDisciplineGearParams(track.Discipline, pwRatio, car.FuelType);
+
+            double targetKmh = Math.Min(effectiveMaxKmh, CalculationHelpers.TargetSpeedCapKmh);
+            double targetMs = targetKmh / 3.6;
+            double tireCirc = Math.PI * car.DrivenWheelDiameterInch * 0.0254;
+            double totalRatio = targetMs > 0 && car.MaxRPM > 0 && tireCirc > 0
+                ? car.MaxRPM * CalculationHelpers.RevLimitFraction * tireCirc / (60.0 * targetMs)
+                : 9.0;
+            double estFd = track.Discipline switch
             {
-                DragDistance.Eighth  => 4,
-                DragDistance.Quarter => 4,
-                DragDistance.Half    => 4,
-                _                    => 5,
+                Discipline.Drift        => 2.8,
+                Discipline.Rally        => 4.0,
+                Discipline.CrossCountry => 4.3,
+                _                       => 3.5
             };
+            top = CalculationHelpers.Clamp(totalRatio / estFd, CalculationHelpers.GearRatioMin, first);
         }
 
-        double pwRatio = car.PowerHP / (car.TotalMass / 1000.0);
-        (double first, double stepMin, double stepMax, _) = GetDisciplineGearParams(track.Discipline, pwRatio, car.FuelType);
+        // Step from allowed RPM drop: after shifting at PowerPeakRPM,
+        // RPM should not drop below TorquePeakRPM * 0.90 (same as RpmDropFix)
+        double shiftRpm = car.PowerPeakRPM;
+        double minRpm = car.TorquePeakRPM * 0.90;
+        double step = shiftRpm > 0 && minRpm > 0 && minRpm < shiftRpm
+            ? minRpm / shiftRpm
+            : 0.72;
+
+        double stepMin = 0.50, stepMax = 0.95;
         ApplyAspirationStepAdjustment(car.AspirationType, car.AntiLag, ref stepMin, ref stepMax);
-        stepMin = Math.Max(0.50, stepMin);
-        stepMax = CalculationHelpers.Clamp(stepMax, stepMin + 0.05, 0.95);
+        step = CalculationHelpers.Clamp(step, stepMin, stepMax);
 
-        double stepIdeal = car.TorquePeakRPM > 0 && car.PowerPeakRPM > 0
-            ? (double)car.TorquePeakRPM / car.PowerPeakRPM
-            : (stepMin + stepMax) / 2.0;
-        double step = CalculationHelpers.Clamp(stepIdeal, stepMin, stepMax);
+        double spread = Math.Max(top / first, 0.01);
+        int rec = step < 1.0
+            ? (int)Math.Round(1.0 + Math.Log(spread) / Math.Log(step))
+            : 1;
 
-        double tireCirc = Math.PI * car.DrivenWheelDiameterInch * 0.0254;
-        double targetKmh = Math.Min(effectiveMaxKmh, CalculationHelpers.TargetSpeedCapKmh);
-        double targetMs = targetKmh / 3.6;
-
-        double totalRatio = targetMs > 0 && car.MaxRPM > 0 && tireCirc > 0
-            ? car.MaxRPM * CalculationHelpers.RevLimitFraction * tireCirc / (60.0 * targetMs)
-            : 9.0;
-        double estFd = track.Discipline switch
-        {
-            Discipline.Drift        => 2.8,
-            Discipline.Rally        => 4.0,
-            Discipline.CrossCountry => 4.3,
-            _                       => 3.5
-        };
-        double topEstimate = CalculationHelpers.Clamp(totalRatio / estFd, CalculationHelpers.GearRatioMin, first);
-
-        double spread = Math.Max(topEstimate / first, 0.01);
-        int rec = (int)Math.Round(1.0 + Math.Log(spread) / Math.Log(step));
-
-        return Math.Clamp(rec, 4, 10);
+        return Math.Clamp(rec, 1, 10);
     }
 
     public static (double first, double stepMin, double stepMax, string note) GetDisciplineGearParams(

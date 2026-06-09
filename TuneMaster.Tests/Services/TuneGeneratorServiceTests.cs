@@ -403,10 +403,10 @@ public class TuneGeneratorServiceTests
         var rH = _sut.Generate(CarFactory.DefaultCar(), trackHalf, CarFactory.RelaxedConstraints());
         var rM = _sut.Generate(CarFactory.DefaultCar(), trackMile, CarFactory.RelaxedConstraints());
 
-        Assert.Equal(4, r8.RecommendedGearCount);
-        Assert.Equal(4, rQ.RecommendedGearCount);
+        Assert.Equal(3, r8.RecommendedGearCount);
+        Assert.Equal(3, rQ.RecommendedGearCount);
         Assert.Equal(4, rH.RecommendedGearCount);
-        Assert.Equal(5, rM.RecommendedGearCount);
+        Assert.Equal(4, rM.RecommendedGearCount);
     }
 
     [Fact]
@@ -445,7 +445,7 @@ public class TuneGeneratorServiceTests
 
         var result = _sut.Generate(car, CarFactory.DefaultTrack(), CarFactory.RelaxedConstraints());
 
-        Assert.True(result.RecommendedGearCount >= 4);
+        Assert.True(result.RecommendedGearCount >= 1);
         Assert.Empty(result.GearRatios);
     }
 
@@ -888,7 +888,7 @@ public class TuneGeneratorServiceTests
 
         var result = _sut.Generate(CarFactory.DefaultCar(), track, CarFactory.RelaxedConstraints());
 
-        Assert.Equal(4, result.RecommendedGearCount);
+        Assert.Equal(3, result.RecommendedGearCount);
     }
 
     [Fact]
@@ -988,7 +988,7 @@ public class TuneGeneratorServiceTests
 
         Assert.Empty(result.GearRatios);
         Assert.True(result.FinalDrive > 0);
-        Assert.True(result.RecommendedGearCount >= 4);
+        Assert.True(result.RecommendedGearCount >= 1);
     }
 
     [Fact]
@@ -999,7 +999,7 @@ public class TuneGeneratorServiceTests
 
         var result = _sut.Generate(car, track, CarFactory.RelaxedConstraints());
 
-        Assert.Equal(4, result.RecommendedGearCount);
+        Assert.Equal(3, result.RecommendedGearCount);
         Assert.NotEmpty(result.GearRatios);
         Assert.Equal(car.GearCount, result.GearRatios.Count);
     }

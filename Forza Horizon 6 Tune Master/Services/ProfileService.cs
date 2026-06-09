@@ -17,7 +17,7 @@ public class ProfileService
         var dt = t.T($"Enum_DriveType_{car.DriveType}");
         var et = t.T($"Enum_EngineType_{car.EngineType}");
         var disc = t.T($"Discipline{track.Discipline}");
-        var season = t.T($"Season{track.Season}");
+        var season = t.T($"Enum_Season_{track.Season}");
         return $"{car.Year} {car.Make} {car.Model} {dt} {et} {disc} {season}".Trim();
     }
 
