@@ -20,9 +20,9 @@ internal static class DifferentialCalculator
             case Discipline.Drag:
                 (accel, decel) = car.DriveType switch
                 {
-                    Models.DriveType.RWD => (100.0, 20.0),
-                    Models.DriveType.AWD => (85.0, 0.0),
-                    _                    => (80.0, 10.0)
+                    Models.DriveType.RWD => (75.0, 25.0),
+                    Models.DriveType.AWD => (65.0, 15.0),
+                    _                    => (65.0, 15.0)
                 };
                 break;
             case Discipline.Drift:
@@ -30,9 +30,9 @@ internal static class DifferentialCalculator
                 (accel, decel) = (car.DriveType, isElectricDrift) switch
                 {
                     (Models.DriveType.RWD, true)  => (72.0, 0.0),
-                    (Models.DriveType.RWD, false)  => (95.0, 0.0),
+                    (Models.DriveType.RWD, false)  => (85.0, 0.0),
                     (Models.DriveType.AWD, true)   => (65.0, 8.0),
-                    (Models.DriveType.AWD, false)  => (80.0, 10.0),
+                    (Models.DriveType.AWD, false)  => (75.0, 10.0),
                     (Models.DriveType.FWD, _)      => (30.0, 5.0),
                     _                              => (0.0, 0.0)
                 };
@@ -40,37 +40,39 @@ internal static class DifferentialCalculator
             case Discipline.Rally:
                 (accel, decel) = car.DriveType switch
                 {
-                    Models.DriveType.AWD => (65.0, 20.0),
-                    _                    => (55.0, 20.0)
+                    Models.DriveType.AWD => (55.0, 20.0),
+                    _                    => (45.0, 20.0)
                 };
                 break;
             case Discipline.CrossCountry:
                 (accel, decel) = car.DriveType switch
                 {
-                    Models.DriveType.AWD => (60.0, 25.0),
-                    _                    => (50.0, 25.0)
+                    Models.DriveType.AWD => (50.0, 25.0),
+                    _                    => (40.0, 25.0)
                 };
                 break;
             default:
                 (accel, decel) = car.DriveType switch
                 {
-                    Models.DriveType.RWD => (55.0, 20.0),
-                    Models.DriveType.FWD => (85.0, 5.0),
-                    _                    => (90.0, 40.0)
+                    Models.DriveType.RWD => (45.0, 20.0),
+                    Models.DriveType.FWD => (60.0, 5.0),
+                    _                    => (55.0, 30.0)
                 };
                 break;
         }
 
-        accel += Math.Max(0, (car.PowerHP - CalculationHelpers.PowerBaselineHP) / CalculationHelpers.PowerStepHP * 5.0);
-        accel += Math.Max(0, (car.TorqueNm - CalculationHelpers.TorqueBaselineNm) / 300.0 * 3.0);
-        accel += (car.TotalMass - CalculationHelpers.MassBaselineKg) / 100.0 * 1.5;
-        accel += car.EnginePosition switch { EnginePosition.Rear => 8.0, EnginePosition.Mid => 4.0, _ => 0.0 };
-        accel -= (car.Wheelbase - CalculationHelpers.RefWheelbaseMm) / 500.0 * 3.0;
+        accel += Math.Max(0, (car.PowerHP - CalculationHelpers.PowerBaselineHP) / CalculationHelpers.PowerStepHP * 2.5);
+        accel += Math.Max(0, (car.TorqueNm - CalculationHelpers.TorqueBaselineNm) / 300.0 * 1.5);
+        accel += (car.TotalMass - CalculationHelpers.MassBaselineKg) / 100.0 * 0.5;
+        accel += car.EnginePosition switch { EnginePosition.Rear => 4.0, EnginePosition.Mid => 2.0, _ => 0.0 };
+        accel -= (car.Wheelbase - CalculationHelpers.RefWheelbaseMm) / 500.0 * 1.5;
+        
         accel *= CalculationHelpers.GetPowerDeliveryFactors(car.PowertrainType, car.AspirationType, car.AntiLag).Diff;
 
-        // Less lock on slippery surfaces: independent wheels find traction better.
         double seasonFactorDiff = CalculationHelpers.GetSeasonGripFactor(track.Season);
-        accel -= (1.0 - seasonFactorDiff) * 18.0;
+        double seasonPenalty = (1.0 - seasonFactorDiff) * 15.0;
+        accel -= seasonPenalty;
+        decel -= seasonPenalty * 0.6;
 
         accel = Math.Min(accel, maxAccel);
         decel = Math.Min(decel, maxDecel);
@@ -98,31 +100,35 @@ internal static class DifferentialCalculator
 
         if (car.DriveType == Models.DriveType.AWD)
         {
-            double bias = track.Discipline switch
+            double bias = (100.0 - CalculationHelpers.EffectiveWtDist(car)) / 100.0;
+            
+            double biasAdj = track.Discipline switch
             {
-                Discipline.Drift        => 0.50,
-                Discipline.Drag         => 0.60,
-                Discipline.Rally        => 0.70,
-                Discipline.CrossCountry => 0.60,
-                _                       => 0.78
+                Discipline.Drag         => 0.15,
+                Discipline.Drift        => 0.05,
+                Discipline.Rally        => 0.10,
+                Discipline.CrossCountry => 0.08,
+                _                       => 0.05
             };
+            
+            bias += biasAdj;
             bias += (car.Wheelbase - CalculationHelpers.RefWheelbaseMm) / 500.0 * 0.03;
-            bias = CalculationHelpers.Clamp(bias, 0.0, 1.0);
+            bias = CalculationHelpers.Clamp(bias, 0.30, 0.85);
 
             double fAccel = track.Discipline switch
             {
-                Discipline.Drag         => 50,
+                Discipline.Drag         => 55,
                 Discipline.Drift        => 30,
-                Discipline.Rally        => 35,
-                Discipline.CrossCountry => 40,
-                _                       => 28
+                Discipline.Rally        => 40,
+                Discipline.CrossCountry => 45,
+                _                       => 45
             };
             double fDecel = track.Discipline switch
             {
                 Discipline.Drift        => 5,
                 Discipline.Rally        => 20,
                 Discipline.CrossCountry => 15,
-                _                       => 0
+                _                       => 10
             };
 
             double wdFront_awd = CalculationHelpers.EffectiveWtDist(car);
@@ -134,7 +140,7 @@ internal static class DifferentialCalculator
                 EnginePosition.Rear    => -8.0,
                 _                      =>  0.0
             };
-            fAccel = Math.Clamp(fAccel, 5.0, 60.0);
+            fAccel = Math.Clamp(fAccel, 10.0, 65.0);
 
             double frontFactor = 1.2 - bias * 0.4;
             double rearFactor  = 0.8 + bias * 0.4;

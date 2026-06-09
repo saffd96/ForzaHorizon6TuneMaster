@@ -13,43 +13,65 @@ internal static class AeroCalculator
             return;
         }
 
-        double speedFactor = (overrideSpeedKmh ?? car.MaxSpeedKmh) / 280.0;
-        double pwrFactor = Math.Min(1.5, 1.0 + Math.Max(0, (car.PowerHP - CalculationHelpers.PowerBaselineHP) / CalculationHelpers.PowerStepHP * 0.15));
+        double speed = overrideSpeedKmh ?? car.MaxSpeedKmh;
 
-        var (fwFactor, rwFactor) = car.DriveType switch
+        double speedFactor = Math.Min(1.2, Math.Pow(speed / 380.0, 1.1)); 
+        double pwrFactor = 1.0 + Math.Max(0, (car.PowerHP - CalculationHelpers.PowerBaselineHP) / CalculationHelpers.PowerStepHP * 0.12);
+        pwrFactor = Math.Min(1.5, pwrFactor); 
+        
+        double aeroMultiplier = speedFactor * pwrFactor;
+
+        double fwBase, rwBase;
+        switch (car.DriveType)
         {
-            Models.DriveType.RWD => (0.55, 0.70),
-            Models.DriveType.FWD => (0.65, 0.55),
-            Models.DriveType.AWD => (0.65, 0.55),
-            _                    => (0.55, 0.60)
-        };
-        double aeroBase = Math.Min(1.0, speedFactor * pwrFactor);
-        double aeroF = car.HasFrontAero ? c.AeroFrontMin + (c.AeroFrontMax - c.AeroFrontMin) * fwFactor * aeroBase : 0;
-        double aeroR = car.HasRearAero  ? c.AeroRearMin  + (c.AeroRearMax  - c.AeroRearMin)  * rwFactor * aeroBase : 0;
+            case Models.DriveType.RWD:
+                bool isFrontEngineRwd = car.EnginePosition == Models.EnginePosition.Front; 
+                fwBase = isFrontEngineRwd ? 0.45 : 0.55;
+                rwBase = isFrontEngineRwd ? 0.75 : 0.65;
+                break;
+            case Models.DriveType.FWD:
+                fwBase = 0.65; rwBase = 0.50;
+                break;
+            case Models.DriveType.AWD:
+                fwBase = 0.55; 
+                rwBase = 0.75; 
+                break;
+            default:
+                fwBase = 0.55; rwBase = 0.60;
+                break;
+        }
+
+        double aeroF = 0, aeroR = 0;
 
         switch (track.Discipline)
         {
             case Discipline.Drag:
-                // Scale rear aero with PTW/speed so a 900 HP car gets more downforce than a 300 HP car
-                double dragAeroFactor = Math.Min(0.15, speedFactor * pwrFactor * 0.15);
-                aeroF = 0;
-                aeroR = car.HasRearAero ? c.AeroRearMin + (c.AeroRearMax - c.AeroRearMin) * (0.10 + dragAeroFactor) : 0;
+                aeroF = c.AeroFrontMin;
+                double dragRearFactor = Math.Min(0.45, 0.05 + (pwrFactor - 1.0) * 0.80); 
+                aeroR = car.HasRearAero ? c.AeroRearMin + (c.AeroRearMax - c.AeroRearMin) * dragRearFactor : 0;
                 break;
+
             case Discipline.Drift:
-                aeroF *= 0.35; aeroR *= 0.3;
+                aeroF = car.HasFrontAero ? c.AeroFrontMin + (c.AeroFrontMax - c.AeroFrontMin) * 0.15 * aeroMultiplier : 0;
+                aeroR = car.HasRearAero  ? c.AeroRearMin  + (c.AeroRearMax  - c.AeroRearMin)  * 0.15 * aeroMultiplier : 0;
                 break;
+
             case Discipline.CrossCountry:
-                aeroF = car.HasFrontAero ? CalculationHelpers.Clamp(c.AeroFrontMax * 0.40 * speedFactor * pwrFactor, c.AeroFrontMin, c.AeroFrontMax) : 0;
-                aeroR = car.HasRearAero  ? CalculationHelpers.Clamp(c.AeroRearMax  * 0.55 * speedFactor * pwrFactor, c.AeroRearMin,  c.AeroRearMax)  : 0;
-                break;
             case Discipline.Rally:
-                aeroF = car.HasFrontAero ? CalculationHelpers.Clamp(c.AeroFrontMax * 0.60 * speedFactor * pwrFactor, c.AeroFrontMin, c.AeroFrontMax) : 0;
-                aeroR = car.HasRearAero  ? CalculationHelpers.Clamp(c.AeroRearMax  * 0.75 * speedFactor * pwrFactor, c.AeroRearMin,  c.AeroRearMax)  : 0;
+                double offroadFactor = track.Discipline == Discipline.Rally ? 0.65 : 0.50;
+                aeroF = car.HasFrontAero ? c.AeroFrontMin + (c.AeroFrontMax - c.AeroFrontMin) * offroadFactor * aeroMultiplier : 0;
+                aeroR = car.HasRearAero  ? c.AeroRearMin  + (c.AeroRearMax  - c.AeroRearMin)  * (offroadFactor + 0.10) * aeroMultiplier : 0;
+                break;
+
+            default:
+                aeroF = car.HasFrontAero ? c.AeroFrontMin + (c.AeroFrontMax - c.AeroFrontMin) * fwBase * aeroMultiplier : 0;
+                aeroR = car.HasRearAero  ? c.AeroRearMin  + (c.AeroRearMax  - c.AeroRearMin)  * rwBase * aeroMultiplier : 0;
                 break;
         }
 
         r.AeroFront = car.HasFrontAero ? Math.Round(CalculationHelpers.Clamp(aeroF, c.AeroFrontMin, c.AeroFrontMax)) : 0;
         r.AeroRear  = car.HasRearAero  ? Math.Round(CalculationHelpers.Clamp(aeroR, c.AeroRearMin,  c.AeroRearMax))  : 0;
+        
         ex["Aero"] = string.Format(CalculationHelpers.L("Expl_Aero_Fmt"), r.AeroFront, r.AeroRear, car.MaxSpeedKmh, car.PowerHP);
     }
 }

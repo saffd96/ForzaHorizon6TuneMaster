@@ -143,7 +143,7 @@
                                     ToolTip="{l:Loc DonateButtonTooltip}"
                                     Click="DonateButton_Click">
                                 <TextBlock x:Name="HeartIcon"
-                                           Text="❤">
+                                            Text="{l:Loc DonateSymbol}">
                                     <TextBlock.Foreground>
                                         <SolidColorBrush Color="#8892A4"/>
                                     </TextBlock.Foreground>

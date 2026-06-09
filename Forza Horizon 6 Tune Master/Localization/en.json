@@ -94,8 +94,6 @@
   "RearAeroLabel": "Rear aero kit installed",
   "FrontARBLabel": "Front anti-roll bar installed",
   "RearARBLabel": "Rear anti-roll bar installed",
-  "AeroFrontLabel": "Front Min / Max",
-  "AeroRearLabel": "Rear Min / Max",
   "AiFetchButton": "AI: fetch specs (Cx, wheelbase, track, frontal area)",
 
   "CdLabel": "Cd (drag coefficient)",
@@ -542,6 +540,9 @@
   "FeedbackSendButton": "✉ Send",
   "FeedbackCancelButton": "Cancel",
   "FeedbackSentMessage": "Thank you! The email will be sent through your mail client.\n\nIf the app didn't open, click the email in the card above — it will be copied to your clipboard.",
+  "FeedbackCharLimit": "max 2000 characters",
+  "FeedbackEmailCharLimit": "max 254 characters",
+  "FeedbackCopied": "✓ copied!",
 
   "DonateSymbol": "❤",
   "DonateButtonTooltip": "Support the project",

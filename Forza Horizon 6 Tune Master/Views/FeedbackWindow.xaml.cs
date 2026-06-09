@@ -47,7 +47,7 @@ public partial class FeedbackWindow : Window
     {
         Clipboard.SetText(TargetEmail);
         var previous = DirectEmailText.Text;
-        DirectEmailText.Text = "✓ скопировано!";
+        DirectEmailText.Text = LocalizationService.Instance.T("FeedbackCopied");
         await Task.Delay(2000);
         DirectEmailText.Text = previous;
     }

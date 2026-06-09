@@ -179,7 +179,7 @@
                          VerticalScrollBarVisibility="Auto"
                          VerticalContentAlignment="Top"
                          CaretBrush="{StaticResource AccentBrush}"/>
-                <TextBlock Text="макс. 2000 символов"
+                <TextBlock Text="{l:Loc FeedbackCharLimit}"
                            FontSize="{DynamicResource FontXSmall}"
                            Foreground="{StaticResource TextMutedBrush}"
                            HorizontalAlignment="Right"
@@ -198,8 +198,9 @@
                          Foreground="{StaticResource TextBrush}"
                          BorderBrush="{StaticResource BorderBrush}"
                          BorderThickness="1"
-                         CaretBrush="{StaticResource AccentBrush}"/>
-                <TextBlock Text="макс. 254 символа"
+                         CaretBrush="{StaticResource AccentBrush}"
+                         ToolTip="{l:Loc FeedbackEmailPlaceholder}"/>
+                <TextBlock Text="{l:Loc FeedbackEmailCharLimit}"
                            FontSize="{DynamicResource FontXSmall}"
                            Foreground="{StaticResource TextMutedBrush}"
                            HorizontalAlignment="Right"

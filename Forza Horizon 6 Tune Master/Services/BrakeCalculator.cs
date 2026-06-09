@@ -8,30 +8,49 @@ internal static class BrakeCalculator
     {
         double bias = CalculationHelpers.EffectiveWtDist(car);
 
-        double discAdj = track.Discipline switch
+        double cgShift = car.EnginePosition switch
         {
-            Discipline.Drift        => -5.0,
-            Discipline.Drag         => -4.0,
-            Discipline.Rally        => -2.0,
-            Discipline.CrossCountry => -3.0,
-            _                       => 0.0
+            EnginePosition.Front => 2.5,   
+            EnginePosition.Mid   => -2.5,  
+            EnginePosition.Rear  => -1.5,  
+            _                    => 0.0
         };
-        bias += discAdj;
+        bias += cgShift;
+
+        if (track.Discipline == Discipline.Drag)
+        {
+            bias = 50.0; 
+        }
+        else
+        {
+            double discAdj = track.Discipline switch
+            {
+                Discipline.Drift        => -5.0,
+                Discipline.Rally        => -1.5,
+                Discipline.CrossCountry => -2.5,
+                _                       => 0.0
+            };
+            bias += discAdj;
+        }
 
         if (car.DriveType == Models.DriveType.FWD)
-            bias += 4.0;
+            bias -= 3.0;
 
-        double pressure = track.Discipline switch
-        {
-            Discipline.Drift  => 85,
-            Discipline.Rally  => 90,
-            Discipline.CrossCountry => 85,
-            _                 => 100
-        };
-        pressure += (car.TotalMass - CalculationHelpers.MassBaselineKg) / 200.0 * 2.5;
-        pressure += Math.Max(0, (effectiveMaxKmh - CalculationHelpers.RefSpeedKmh) / 100.0 * 5.0);
-        if (car.DriveType == Models.DriveType.AWD) pressure += 5;
-        if (car.TireType is TireType.Slick or TireType.SemiSlick) pressure += 5.0;
+        double pressure = 100.0;
+
+        if (car.TotalMass > 1500)
+            pressure += (car.TotalMass - 1500) / 250.0 * 4.0;
+        else if (car.TotalMass < 1100)
+            pressure -= 4.0;
+
+        if (car.TireType is TireType.Slick or TireType.SemiSlick or TireType.Drag)
+            pressure += 3.0;
+
+        if (track.Discipline is Discipline.Rally or Discipline.CrossCountry)
+            pressure -= 10.0;
+
+        if (track.Discipline == Discipline.Drift)
+            pressure -= 5.0;
 
         r.BrakeBalance  = Math.Round(CalculationHelpers.Clamp(bias,  c.BrakeBalanceMin,  c.BrakeBalanceMax));
         r.BrakePressure = Math.Round(CalculationHelpers.Clamp(pressure, c.BrakePressureMin, c.BrakePressureMax));

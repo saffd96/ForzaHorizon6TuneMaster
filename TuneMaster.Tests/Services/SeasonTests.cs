@@ -15,10 +15,10 @@ public class SeasonTests
     // ── GetSeasonGripFactor ───────────────────────────────────────────────────
 
     [Theory]
-    [InlineData(Season.Summer, 1.00)]
-    [InlineData(Season.Spring, 0.93)]
-    [InlineData(Season.Autumn, 0.88)]
-    [InlineData(Season.Winter, 0.78)]
+    [InlineData(Season.Summer, 1.05)]
+    [InlineData(Season.Spring, 1.00)]
+    [InlineData(Season.Autumn, 0.95)]
+    [InlineData(Season.Winter, 0.85)]
     public void GetSeasonGripFactor_ReturnsExpected(Season season, double expected)
     {
         Assert.Equal(expected, CalculationHelpers.GetSeasonGripFactor(season));

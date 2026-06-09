@@ -32,7 +32,7 @@ public class TuneGeneratorService
         BrakeCalculator.CalculateBrakes(car, track, c, r, ex, effectiveMaxKmh);
         GearingCalculator.CalculateGearing(car, track, c, r, ex, effectiveMaxKmh);
         if (track.Discipline == Discipline.Drag)
-            LaunchControlCalculator.CalculateLaunchControl(car, r);
+            LaunchControlCalculator.CalculateLaunchControl(car, track, r);
 
         GearingCalculator.PostValidateAndRecalculate(car, track, c, r, ex, ref effectiveMaxKmh);
 

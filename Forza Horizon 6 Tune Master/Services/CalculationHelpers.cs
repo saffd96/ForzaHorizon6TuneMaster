@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Forza_Horizon_6_Tune_Master.Models;
 
 namespace Forza_Horizon_6_Tune_Master.Services;
@@ -6,7 +7,12 @@ internal static class CalculationHelpers
 {
     internal static string L(string key) => LocalizationService.Instance.T(key);
 
-    internal static double Clamp(double v, double min, double max) => Math.Max(min, Math.Min(max, v));
+    internal static double Clamp(double v, double min, double max)
+    {
+        if (v < min || v > max)
+            Debug.WriteLine($"[Clamp] {v} clamped to [{min}, {max}]");
+        return Math.Max(min, Math.Min(max, v));
+    }
 
     internal const double GearRatioMin = 0.48;
     internal const double GearRatioMax = 6.10;
@@ -22,7 +28,7 @@ internal static class CalculationHelpers
     internal const double RefFrontTrackMm    = 1550;
     internal const double RefSpeedKmh        = 200;
     internal const double RefTireWidth       = 275;
-    internal const double MassLogFactor      = 0.85;
+    internal const double MassLogFactor      = 1.0;
 
     internal const double SpringHzToNmm      = 0.019739;
     internal const double RevLimitFraction   = 0.95;
@@ -69,6 +75,8 @@ internal static class CalculationHelpers
         const double AeroDragFactor = 0.001787;
         double cdATotal = cdABody + (r.AeroFront + r.AeroRear) * AeroDragFactor;
 
+        if (cdATotal < 0.3) cdATotal = 0.3; 
+
         double crr = car.TireType switch
         {
             TireType.Slick     => 0.004,
@@ -102,10 +110,10 @@ internal static class CalculationHelpers
 
     internal static double GetSeasonGripFactor(Season s) => s switch
     {
-        Season.Winter => 0.78,
-        Season.Autumn => 0.88,
-        Season.Spring => 0.93,
-        _             => 1.00
+        Season.Winter => 0.85,
+        Season.Autumn => 0.95,
+        Season.Spring => 1.00,
+        _             => 1.05
     };
 
     internal static (double Diff, double Spring, double Damper) GetPowerDeliveryFactors(

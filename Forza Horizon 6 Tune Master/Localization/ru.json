@@ -94,8 +94,6 @@
   "RearAeroLabel": "Задний аэро-пакет установлен",
   "FrontARBLabel": "Передний стабилизатор установлен",
   "RearARBLabel": "Задний стабилизатор установлен",
-  "AeroFrontLabel": "Перед Мин / Макс",
-  "AeroRearLabel": "Зад Мин / Макс",
   "AiFetchButton": "AI: подобрать характеристики (Cx, база, колея, фронт. площадь)",
 
   "CdLabel": "Cx (коэф. лобового сопр.)",
@@ -542,6 +540,9 @@
   "FeedbackSendButton": "✉ Отправить",
   "FeedbackCancelButton": "Отмена",
   "FeedbackSentMessage": "Спасибо! Письмо будет отправлено через вашу почтовую программу.\n\nЕсли приложение не открылось, нажмите на email в карточке выше — он скопируется в буфер обмена.",
+  "FeedbackCharLimit": "макс. 2000 символов",
+  "FeedbackEmailCharLimit": "макс. 254 символа",
+  "FeedbackCopied": "✓ скопировано!",
 
   "DonateSymbol": "❤",
   "DonateButtonTooltip": "Поддержать проект",

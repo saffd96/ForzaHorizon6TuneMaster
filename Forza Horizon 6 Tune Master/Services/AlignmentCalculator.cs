@@ -112,20 +112,29 @@ internal static class AlignmentCalculator
         baseF *= wbRatio * massFactor;
         baseR *= wbRatio * massFactor;
 
-        (double discMulF, double discMulR) = (track.Discipline, car.DriveType) switch
-        {
-            (Discipline.Drag, _)                          => (0.0, 0.0),
-            (Discipline.Drift, _)                         => (2.5, 2.5),
-            (Discipline.Rally, _)                         => (1.3, 0.9),
-            (Discipline.CrossCountry, _)                  => (0.8, 1.5),
-            (Discipline.Touge, Models.DriveType.RWD)      => (1.4, 1.3),
-            (Discipline.Touge, Models.DriveType.FWD)      => (1.2, 1.5),
-            (Discipline.Touge, _)                         => (1.4, 1.4),
-            _                                             => (1.0, 1.0)
-        };
+        double toeF, toeR;
 
-        double toeF = baseF * discMulF;
-        double toeR = baseR * discMulR;
+        if (track.Discipline == Discipline.Drift)
+        {
+            toeF = -0.35;
+            toeR = -0.15;
+        }
+        else
+        {
+            (double discMulF, double discMulR) = (track.Discipline, car.DriveType) switch
+            {
+                (Discipline.Drag, _)                          => (0.0, 0.0),
+                (Discipline.Rally, _)                         => (1.3, 0.9),
+                (Discipline.CrossCountry, _)                  => (0.8, 1.5),
+                (Discipline.Touge, Models.DriveType.RWD)      => (1.4, 1.3),
+                (Discipline.Touge, Models.DriveType.FWD)      => (1.2, 1.5),
+                (Discipline.Touge, _)                         => (1.4, 1.4),
+                _                                             => (1.0, 1.0)
+            };
+
+            toeF = baseF * discMulF;
+            toeR = baseR * discMulR;
+        }
 
         double speedFactor = CalculationHelpers.Clamp((effectiveMaxKmh - 120.0) / 200.0, 0, 1);
         toeF *= (1.0 - speedFactor * 0.15);
@@ -141,7 +150,7 @@ internal static class AlignmentCalculator
         string rd = r.ToeRear  > 0 ? CalculationHelpers.L("Expl_Toe_In")   : r.ToeRear  < 0 ? CalculationHelpers.L("Expl_Toe_Out") : CalculationHelpers.L("Expl_Toe_Zero");
         ex["Toe"] = string.Format(CalculationHelpers.L("Expl_Toe_Fmt"), r.ToeFront, fd, r.ToeRear, rd);
     }
-
+    
     public static void CalculateCaster(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
     {
         double baseByWeight = CalculationHelpers.Clamp(5.0 + (car.TotalMass - 800.0) / 600.0, 5.0, 7.5);
@@ -149,7 +158,7 @@ internal static class AlignmentCalculator
         double discMul = track.Discipline switch
         {
             Discipline.Drag         => 0.90,
-            Discipline.Drift        => 0.85,
+            Discipline.Drift        => 1.15,
             Discipline.Rally        => 0.92,
             Discipline.CrossCountry => 0.95,
             _                       => 1.0
@@ -175,17 +184,6 @@ internal static class AlignmentCalculator
         double tuningCap  = CamberTuningLayerCapNominal * ptwRatio;
         double totalCap   = CamberMaxTotalDeviationNominal * Math.Sqrt(massRatio * ptwRatio);
         return (physicsCap, tuningCap, totalCap);
-    }
-
-    private static (double f, double r) SoftSquashCamber(double f, double r, double cap)
-    {
-        double mag = Math.Sqrt(f * f + r * r);
-        if (mag > cap)
-        {
-            double scale = cap / mag;
-            return (f * scale, r * scale);
-        }
-        return (f, r);
     }
 
     private static double GetCamberCgReference(CarCard car)
@@ -246,7 +244,6 @@ internal static class AlignmentCalculator
 
     private static double GetGripPowerScale((double grip, double thermal, double wear) grip)
     {
-        // Normalize over the actual grip range [0.55, 1.0] so scale spans full [0.5, 1.0]
         const double minGrip = 0.55;
         return 0.5 + (grip.grip - minGrip) / (1.0 - minGrip) * 0.5;
     }
@@ -316,7 +313,7 @@ internal static class AlignmentCalculator
             }
             else if (car.DriveType == DriveType.FWD)
             {
-                camF += 0.15; camR += -0.15;
+                camF += -0.25; camR += 0.15; 
             }
             else
             {
@@ -325,6 +322,17 @@ internal static class AlignmentCalculator
         }
 
         return (camF, camR);
+    }
+
+    private static (double f, double r) SoftSquashCamber(double f, double r, double cap)
+    {
+        double mag = Math.Max(Math.Abs(f), Math.Abs(r));
+        if (mag > cap)
+        {
+            double scale = cap / mag;
+            return (f * scale, r * scale);
+        }
+        return (f, r);
     }
 
     private static (double f, double r) GetCamberAeroAdjustment(CarCard car, TuneResult r)

@@ -186,14 +186,14 @@
             <TextBlock Text="{l:Loc SectionSeason}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
                 <UniformGrid Rows="1" Columns="4" HorizontalAlignment="Stretch">
-                    <RadioButton Tag="☀️" Content="{l:Loc Enum_Season_Summer}"
-                                 Style="{StaticResource SeasonButton}" Margin="0,0,8,0"
-                                 IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Summer}}"
-                                 ToolTip="{l:Loc SeasonSummerTooltip}"/>
                     <RadioButton Tag="🌸" Content="{l:Loc Enum_Season_Spring}"
                                  Style="{StaticResource SeasonButton}" Margin="0,0,8,0"
                                  IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Spring}}"
                                  ToolTip="{l:Loc SeasonSpringTooltip}"/>
+                    <RadioButton Tag="☀️" Content="{l:Loc Enum_Season_Summer}"
+                                 Style="{StaticResource SeasonButton}" Margin="0,0,8,0"
+                                 IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Summer}}"
+                                 ToolTip="{l:Loc SeasonSummerTooltip}"/>
                     <RadioButton Tag="🍂" Content="{l:Loc Enum_Season_Autumn}"
                                  Style="{StaticResource SeasonButton}" Margin="0,0,8,0"
                                  IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Autumn}}"
