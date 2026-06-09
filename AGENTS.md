@@ -6,20 +6,12 @@
 
 ```powershell
 dotnet build                                                   # Debug build (all 3 projects)
-dotnet build -c Release                                        # Release build (auto-obfuscates via Obfuscar)
+dotnet build -c Release                                        # Release build (stripped debug symbols)
 dotnet test TuneMaster.Tests\TuneMaster.Tests.csproj           # Run xUnit tests (~24 files)
 dotnet test TuneMaster.Tests\TuneMaster.Tests.csproj --filter "FullyQualifiedName~TuneGeneratorService"  # Single test class
 ```
 
 Windows + .NET 8 SDK required (WPF is Windows-only). Only NuGet dep: `System.Text.Json 8.0.5`.
-
-## Obfuscation
-
-- **Obfuscar** v2.2.50 runs automatically in `Release` builds via post-build target.
-- Config: `obfuscar.xml` — skips WPF types (`*View`, `*Converter`, `App`, `MainWindow`, `NotifyBase`, `RelayCommand`).
-- String hiding enabled (`--HideStrings`).
-- Debug symbols stripped in Release (`<DebugType>none</DebugType>`).
-- Publish command remains unchanged; obfuscated DLL bundled automatically.
 
 ## Projects
 
@@ -58,7 +50,7 @@ var result = new TuneGeneratorService().Generate(
 - **RelayCommand** (`ViewModels/RelayCommand.cs`): simple `ICommand` wrapper with `Raise()` for manual `CanExecuteChanged`.
 - **Canonical storage units** (models store metric; conversion only in `*Display` properties):
   - Power → HP, Speed → km/h, Mass → kg, Spring → N/mm, Pressure → bar, Height → mm
-- **Profile persistence**: `StorageService` saves `SavedProfile` as indented JSON to `%APPDATA%\ForzaTuneMaster\profiles\<name>.json`. Spaces in names stored as underscores on disk. Current `ProfileVersion` = `"1.4"` (was `"1.3"` before Season support).
+- **Profile persistence**: `StorageService` saves `SavedProfile` as indented JSON to `%APPDATA%\ForzaTuneMaster\profiles\<name>.json`. Spaces in names stored as underscores on disk. Current `ProfileVersion` = `"v1.4"` (was `"1.3"` before Season support). Displayed as `VersionTag` in top-right corner.
 - **Key services**: `LocalizationService` (singleton, embedded `Localization/{ru,en}.json`), `AiCarSpecService` (Cerebras/OpenRouter), `WikiCarSpecService` (Forza Fandom wiki parser, cached at `%APPDATA%\ForzaTuneMaster\specs\*.json`).
 - `Services/Abstractions/` and `Data/` exist but are empty.
 

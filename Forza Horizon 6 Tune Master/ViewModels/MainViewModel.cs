@@ -1161,6 +1161,8 @@ public class MainViewModel : INotifyPropertyChanged
         await _carSpec.LoadCarDatabaseAsync(Car);
     }
 
+    public string AppVersion => SavedProfile.ProfileVersion;
+
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? p = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));

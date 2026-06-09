@@ -170,7 +170,7 @@
                                     ToolTip="{l:Loc FeedbackButtonTooltip}"
                                     Click="FeedbackButton_Click"/>
                         </StackPanel>
-                        <TextBlock Text="{l:Loc VersionTag}"
+                        <TextBlock Text="{Binding AppVersion}"
                                    Foreground="{StaticResource TextMutedBrush}"
                                    FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="20,0,0,0"/>
                     </StackPanel>
