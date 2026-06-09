@@ -374,31 +374,39 @@ internal static class GearingCalculator
         double sprFracF = (r.SpringFront - c.SpringFrontMin) / sprRangeF;
         double sprFracR = (r.SpringRear - c.SpringRearMin) / sprRangeR;
 
+        // Physical floor: season and discipline factors can produce low-fraction springs on wide
+        // constraint ranges without the spring being genuinely anomalous.  Only override when the
+        // spring is also below 55 % of the 2 Hz baseline for this car — the harshest seasonal
+        // multiplier (Winter) reduces springs by 11 %, keeping them well above that ceiling.
+        double wdF = CalculationHelpers.EffectiveWtDist(car) / 100.0;
+        double physFloorF = CalculationHelpers.SpringHzToNmm * 4.0 * car.TotalMass * wdF        * 0.55;
+        double physFloorR = CalculationHelpers.SpringHzToNmm * 4.0 * car.TotalMass * (1 - wdF) * 0.55;
+
         bool changed = false;
 
-        if (!offRoad && rhFracF < 0.25 && sprFracF < 0.40)
+        if (!offRoad && rhFracF < 0.25 && sprFracF < 0.40 && r.SpringFront < physFloorF)
         {
             double newSpr = CalculationHelpers.Clamp(c.SpringFrontMin + sprRangeF * 0.50, c.SpringFrontMin, c.SpringFrontMax);
-            r.SpringFront = Math.Round(newSpr);
+            r.SpringFront = Math.Round(newSpr, 1);
             changed = true;
         }
-        if (!offRoad && rhFracR < 0.25 && sprFracR < 0.40)
+        if (!offRoad && rhFracR < 0.25 && sprFracR < 0.40 && r.SpringRear < physFloorR)
         {
             double newSpr = CalculationHelpers.Clamp(c.SpringRearMin + sprRangeR * 0.50, c.SpringRearMin, c.SpringRearMax);
-            r.SpringRear = Math.Round(newSpr);
+            r.SpringRear = Math.Round(newSpr, 1);
             changed = true;
         }
 
         if (rhFracF > 0.75 && sprFracF > 0.85)
         {
             double newSpr = CalculationHelpers.Clamp(c.SpringFrontMin + sprRangeF * 0.65, c.SpringFrontMin, c.SpringFrontMax);
-            r.SpringFront = Math.Round(newSpr);
+            r.SpringFront = Math.Round(newSpr, 1);
             changed = true;
         }
         if (rhFracR > 0.75 && sprFracR > 0.85)
         {
             double newSpr = CalculationHelpers.Clamp(c.SpringRearMin + sprRangeR * 0.65, c.SpringRearMin, c.SpringRearMax);
-            r.SpringRear = Math.Round(newSpr);
+            r.SpringRear = Math.Round(newSpr, 1);
             changed = true;
         }
 
