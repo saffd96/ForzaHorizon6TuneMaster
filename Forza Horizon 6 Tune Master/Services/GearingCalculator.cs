@@ -159,6 +159,8 @@ internal static class GearingCalculator
 
             ApplyAspirationStepAdjustment(car.AspirationType, car.AntiLag, ref stepMin, ref stepMax);
             stepMin = Math.Max(0.50, stepMin);
+            if (n <= 4) stepMax -= 0.04;
+            else if (n <= 5) stepMax -= 0.02;
             stepMax = CalculationHelpers.Clamp(stepMax, stepMin + 0.05, 0.95);
 
             double stepIdeal = car.PowerPeakRPM > 0

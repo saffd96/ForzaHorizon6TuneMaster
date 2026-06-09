@@ -17,16 +17,21 @@ internal static class LaunchControlCalculator
 
         double baseLaunch = car.AspirationType switch
         {
-            AspirationType.TwinTurbo            => car.AntiLag
-                                                       ? Math.Max(car.MaxRPM * 0.37, torquePeak * 0.60)
-                                                       : Math.Max(car.MaxRPM * 0.32, torquePeak * 0.55),
-            AspirationType.SingleTurbo          => car.AntiLag
-                                                       ? Math.Max(car.MaxRPM * 0.42, torquePeak * 0.65)
-                                                       : Math.Max(car.MaxRPM * 0.38, torquePeak * 0.60),
-            AspirationType.PositiveDisplacement => Math.Max(car.MaxRPM * 0.28, torquePeak * 0.65),
-            AspirationType.Centrifugal          => Math.Max(car.MaxRPM * 0.25, torquePeak * 0.72),
-            AspirationType.Electric             => Math.Max(car.MaxRPM * 0.15, torquePeak * 0.50),
-            _                                   => Math.Max(car.MaxRPM * 0.20, torquePeak * 0.70)
+            AspirationType.TwinTurbo when car.AntiLag
+                => Math.Max(car.MaxRPM * 0.37, torquePeak * 0.60),
+            AspirationType.TwinTurbo
+                => Math.Max(car.MaxRPM * 0.32, torquePeak * 0.55),
+            AspirationType.SingleTurbo when car.AntiLag
+                => Math.Max(car.MaxRPM * 0.42, torquePeak * 0.65),
+            AspirationType.SingleTurbo
+                => Math.Max(car.MaxRPM * 0.38, torquePeak * 0.60),
+            AspirationType.PositiveDisplacement
+                => Math.Max(car.MaxRPM * 0.28, torquePeak * 0.65),
+            AspirationType.Centrifugal
+                => Math.Max(car.MaxRPM * 0.25, torquePeak * 0.72),
+            AspirationType.Electric
+                => car.MaxRPM * 0.15,
+            _   => Math.Max(car.MaxRPM * 0.20, torquePeak * 0.70)
         };
 
         double driveAdj = car.DriveType switch

@@ -124,8 +124,11 @@ internal static class TireCalculator
                 break;
         }
 
-        r.TirePressureFront = Math.Round(CalculationHelpers.Clamp(tpF + discF, c.TirePressureFrontMin, c.TirePressureFrontMax), 2);
-        r.TirePressureRear  = Math.Round(CalculationHelpers.Clamp(tpR + discR, c.TirePressureRearMin,  c.TirePressureRearMax),  2);
+        double rimCorrF = (car.FrontRimDiameter - 19) * 0.018;
+        double rimCorrR = (car.RearRimDiameter  - 19) * 0.018;
+
+        r.TirePressureFront = Math.Round(CalculationHelpers.Clamp(tpF + discF + rimCorrF, c.TirePressureFrontMin, c.TirePressureFrontMax), 2);
+        r.TirePressureRear  = Math.Round(CalculationHelpers.Clamp(tpR + discR + rimCorrR, c.TirePressureRearMin,  c.TirePressureRearMax),  2);
         ex["TirePressure"] = string.Format(CalculationHelpers.L("Expl_TirePressure_Fmt"), r.TirePressureFront, r.TirePressureRear, reason);
     }
 }

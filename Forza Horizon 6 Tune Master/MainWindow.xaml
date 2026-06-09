@@ -18,6 +18,43 @@
         <cv:EqualityVisibilityConverter x:Key="EqVis"/>
         <cv:BoolToVisibilityConverter x:Key="BoolVis"/>
         <cv:InverseBoolToVisibilityConverter x:Key="BoolToCollapsed"/>
+        <cv:NullToVisibilityConverter x:Key="NullVis"/>
+        <Style x:Key="IconButton" TargetType="Button">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextDimBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource ElevatedBrush}"/>
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource CardBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid ClipToBounds="True">
@@ -149,13 +186,23 @@
                         <TextBlock Text="{l:Loc ProfilesLabel}" Foreground="{StaticResource TextDimBrush}"
                                    VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
                         <Grid VerticalAlignment="Center">
-                            <TextBox x:Name="ProfileSearchBox"
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" x:Name="ProfileSearchBox"
                                      Text="{Binding ProfileSearchText, UpdateSourceTrigger=PropertyChanged}"
                                      MinWidth="140"
                                      Background="{StaticResource ElevatedBrush}"
                                      BorderBrush="{StaticResource BorderBrush}"
                                      GotFocus="ProfileSearchBox_GotFocus"
                                      LostFocus="ProfileSearchBox_LostFocus" />
+                            <Button Grid.Column="1" Content="✕"
+                                    Style="{StaticResource IconButton}"
+                                    Width="26" Height="26"
+                                    Margin="4,0,0,0"
+                                    Click="ClearProfileSelection_Click"
+                                    Visibility="{Binding SelectedProfile, Converter={StaticResource NullVis}}"/>
                             <Popup x:Name="ProfileDropdownPopup"
                                    PlacementTarget="{Binding ElementName=ProfileSearchBox}"
                                    Placement="Bottom"

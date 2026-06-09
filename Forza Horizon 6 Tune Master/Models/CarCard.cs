@@ -336,7 +336,7 @@ public class CarCard : NotifyBase
                 return Cd * FrontalAreaM2;
             double avgProfile = (FrontTireProfile + RearTireProfile) / 2.0;
             double bodyFactor = Math.Clamp(1.0 + Math.Max(0, (avgProfile - 45.0) / 20.0) * 2.0, 1.0, 3.5);
-            return (0.50 + TotalMass / 2500.0) * bodyFactor;
+            return Math.Clamp((0.50 + TotalMass / 2500.0) * bodyFactor, 0.30, 2.00);
         }
     }
 

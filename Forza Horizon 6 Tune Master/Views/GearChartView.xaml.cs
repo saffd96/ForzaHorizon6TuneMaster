@@ -31,6 +31,10 @@ public partial class GearChartView : UserControl
         DependencyProperty.Register(nameof(WheelDiameterInch), typeof(double), typeof(GearChartView),
             new PropertyMetadata(25.0, OnPropChanged));
 
+    public static readonly DependencyProperty ActualMaxSpeedKmhProperty =
+        DependencyProperty.Register(nameof(ActualMaxSpeedKmh), typeof(double), typeof(GearChartView),
+            new PropertyMetadata(0.0, OnPropChanged));
+
     public IList<double>? GearRatios
     {
         get => (IList<double>?)GetValue(GearRatiosProperty);
@@ -65,6 +69,12 @@ public partial class GearChartView : UserControl
     {
         get => (double)GetValue(WheelDiameterInchProperty);
         set => SetValue(WheelDiameterInchProperty, value);
+    }
+
+    public double ActualMaxSpeedKmh
+    {
+        get => (double)GetValue(ActualMaxSpeedKmhProperty);
+        set => SetValue(ActualMaxSpeedKmhProperty, value);
     }
 
     private static readonly Color[] Palette =
@@ -306,7 +316,7 @@ public partial class GearChartView : UserControl
                 StrokeThickness = 2
             });
 
-            // label — gear number at the end
+            // gear number label at the end of the line
             var lbl = new TextBlock
             {
                 Text = $"{i + 1}",
@@ -319,6 +329,45 @@ public partial class GearChartView : UserControl
             ChartCanvas.Children.Add(lbl);
             Canvas.SetLeft(lbl, x1 - 12);
             Canvas.SetTop(lbl, y1 - 20);
+
+            // speed label at top of gear line (km/h at redline)
+            double topSpeed = SpeedAt(i, MaxRPM);
+            var speedLbl = new TextBlock
+            {
+                Text = $"{topSpeed:F0}",
+                Foreground = new SolidColorBrush(Color.FromArgb(0xBB, col.R, col.G, col.B)),
+                FontSize = 9,
+                FontFamily = lblFamily,
+                TextAlignment = TextAlignment.Center
+            };
+            ChartCanvas.Children.Add(speedLbl);
+            Canvas.SetLeft(speedLbl, x1 - 10);
+            Canvas.SetTop(speedLbl, padT + 2);
+        }
+
+        // vertical dashed line at actual max speed
+        double actualMax = ActualMaxSpeedKmh;
+        if (actualMax > 0 && actualMax <= speedCap)
+        {
+            double xMax = SpeedToX(actualMax);
+            ChartCanvas.Children.Add(new Line
+            {
+                X1 = xMax, X2 = xMax, Y1 = padT, Y2 = padT + ch,
+                Stroke = new SolidColorBrush(Color.FromArgb(0x99, 0x22, 0xC5, 0x5E)),
+                StrokeThickness = 1.5,
+                StrokeDashArray = new DoubleCollection([5, 4])
+            });
+            var maxLbl = new TextBlock
+            {
+                Text = $"{actualMax:F0}",
+                Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 0x22, 0xC5, 0x5E)),
+                FontSize = 9,
+                FontFamily = lblFamily,
+                TextAlignment = TextAlignment.Center
+            };
+            ChartCanvas.Children.Add(maxLbl);
+            Canvas.SetLeft(maxLbl, xMax - 12);
+            Canvas.SetTop(maxLbl, padT + ch + 4);
         }
 
         // ── shift trajectory (acceleration ladder) ──

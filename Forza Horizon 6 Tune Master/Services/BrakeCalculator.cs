@@ -31,6 +31,7 @@ internal static class BrakeCalculator
         pressure += (car.TotalMass - CalculationHelpers.MassBaselineKg) / 200.0 * 2.5;
         pressure += Math.Max(0, (effectiveMaxKmh - CalculationHelpers.RefSpeedKmh) / 100.0 * 5.0);
         if (car.DriveType == Models.DriveType.AWD) pressure += 5;
+        if (car.TireType is TireType.Slick or TireType.SemiSlick) pressure += 5.0;
 
         r.BrakeBalance  = Math.Round(CalculationHelpers.Clamp(bias,  c.BrakeBalanceMin,  c.BrakeBalanceMax));
         r.BrakePressure = Math.Round(CalculationHelpers.Clamp(pressure, c.BrakePressureMin, c.BrakePressureMax));

@@ -26,12 +26,15 @@ internal static class DifferentialCalculator
                 };
                 break;
             case Discipline.Drift:
-                (accel, decel) = car.DriveType switch
+                bool isElectricDrift = car.PowertrainType == PowertrainType.Electric;
+                (accel, decel) = (car.DriveType, isElectricDrift) switch
                 {
-                    Models.DriveType.RWD => (95.0, 0.0),
-                    Models.DriveType.AWD => (80.0, 10.0),
-                    Models.DriveType.FWD => (30.0, 5.0),
-                    _                    => (0.0, 0.0)
+                    (Models.DriveType.RWD, true)  => (72.0, 0.0),
+                    (Models.DriveType.RWD, false)  => (95.0, 0.0),
+                    (Models.DriveType.AWD, true)   => (65.0, 8.0),
+                    (Models.DriveType.AWD, false)  => (80.0, 10.0),
+                    (Models.DriveType.FWD, _)      => (30.0, 5.0),
+                    _                              => (0.0, 0.0)
                 };
                 break;
             case Discipline.Rally:
@@ -91,8 +94,7 @@ internal static class DifferentialCalculator
 
         if (car.DriveType == Models.DriveType.AWD)
         {
-            double bias = c.CenterDiffBias / 100.0;
-            double targetBias = track.Discipline switch
+            double bias = track.Discipline switch
             {
                 Discipline.Drift        => 0.50,
                 Discipline.Drag         => 0.60,
@@ -100,7 +102,6 @@ internal static class DifferentialCalculator
                 Discipline.CrossCountry => 0.60,
                 _                       => 0.78
             };
-            bias = bias * 0.3 + targetBias * 0.7;
             bias += (car.Wheelbase - CalculationHelpers.RefWheelbaseMm) / 500.0 * 0.03;
             bias = CalculationHelpers.Clamp(bias, 0.0, 1.0);
 

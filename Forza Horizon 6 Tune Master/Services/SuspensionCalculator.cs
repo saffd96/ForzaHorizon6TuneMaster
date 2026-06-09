@@ -26,14 +26,14 @@ internal static class SuspensionCalculator
 
         (double baseF, double baseR, string arbNoteKey) = (track.Discipline, car.DriveType) switch
         {
-            (Discipline.Drag, _)             => (2.0, 18.0, "Expl_ARBNote_Drag"),
+            (Discipline.Drag, _)             => (2.0, 3.0, "Expl_ARBNote_Drag"),
             (Discipline.Drift, Models.DriveType.RWD) => (5.0, 22.0, "Expl_ARBNote_DriftRWD"),
             (Discipline.Drift, _)            => (20.0, 40.0, "Expl_ARBNote_DriftAWD"),
             (Discipline.Rally, _)            => (14.0, 12.0, "Expl_ARBNote_Rally"),
             (Discipline.CrossCountry, _)     => (10.0, 10.0, "Expl_ARBNote_CrossCountry"),
-            (Discipline.Touge, Models.DriveType.RWD) => (30.0, 26.0, "Expl_ARBNote_TougeRWD"),
-            (Discipline.Touge, Models.DriveType.FWD) => (10.0, 32.0, "Expl_ARBNote_TougeFWD"),
-            (Discipline.Touge, _)            => (34.0, 28.0, "Expl_ARBNote_TougeAWD"),
+            (Discipline.Touge, Models.DriveType.RWD) => (24.0, 28.0, "Expl_ARBNote_TougeRWD"),
+            (Discipline.Touge, Models.DriveType.FWD) => (8.0,  34.0, "Expl_ARBNote_TougeFWD"),
+            (Discipline.Touge, _)            => (28.0, 32.0, "Expl_ARBNote_TougeAWD"),
             (Discipline.Street, Models.DriveType.RWD) => (28.0, 24.0, "Expl_ARBNote_StreetRWD"),
             (Discipline.Street, Models.DriveType.FWD) => (10.0, 30.0, "Expl_ARBNote_StreetFWD"),
             (_, Models.DriveType.RWD)        => (28.0, 20.0, "Expl_ARBNote_RoadRWD"),
@@ -83,7 +83,7 @@ internal static class SuspensionCalculator
 
         (double hzF, double hzR) = track.Discipline switch
         {
-            Discipline.Drag         => (1.5, 2.5),
+            Discipline.Drag         => (2.0, 1.0),
             Discipline.Drift        => (1.8, 2.2),
             Discipline.Rally        => (1.5, 1.7),
             Discipline.CrossCountry => (1.3, 1.5),
@@ -107,6 +107,8 @@ internal static class SuspensionCalculator
         double sprR = CalculationHelpers.SpringHzToNmm * hzR * hzR * car.TotalMass * wdR;
 
         double cgH_spr    = CalculationHelpers.EstimateCGHeight(car);
+        double avgProfile_spr = (car.FrontTireProfile + car.RearTireProfile) / 2.0;
+        cgH_spr = Math.Max(250.0, cgH_spr - (45.0 - avgProfile_spr) * 0.8);
         double cgFactor   = CalculationHelpers.Clamp(1.0 + (cgH_spr - 420.0) / 700.0 * 0.35, 0.90, 1.25);
         double avgTrack_s = car.FrontTrack > 0 && car.RearTrack > 0
             ? (car.FrontTrack + car.RearTrack) / 2.0 : 1600.0;
@@ -221,6 +223,15 @@ internal static class SuspensionCalculator
             (Discipline.CrossCountry, _)     => 0.67,
             (_, _)                           => 0.57
         };
+        bumpRatio += car.SuspensionUpgrade switch
+        {
+            SuspensionUpgrade.Race  =>  0.04,
+            SuspensionUpgrade.Rally =>  0.03,
+            SuspensionUpgrade.Drift =>  0.02,
+            SuspensionUpgrade.Stock => -0.03,
+            _                       =>  0.0
+        };
+        bumpRatio = Math.Clamp(bumpRatio, 0.40, 0.75);
 
         double wdAdj = wdDev * 4.0;
         double rebF = baseReb * massScale + wdAdj;

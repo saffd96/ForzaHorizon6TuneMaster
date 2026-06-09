@@ -141,4 +141,10 @@ public partial class MainWindow : Window
         if (ProfileListBox.SelectedItem != null)
             ProfileDropdownPopup.IsOpen = false;
     }
+
+    private void ClearProfileSelection_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.SelectedProfile = null;
+    }
 }

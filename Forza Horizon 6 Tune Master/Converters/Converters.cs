@@ -278,3 +278,18 @@ public class DateDisplayConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         Binding.DoNothing;
 }
+
+public class ValueToRangeConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values[0] is not double v || values[1] is not double min || values[2] is not double max)
+            return 0.5;
+        if (max <= min) return 0.5;
+        double ratio = (v - min) / (max - min);
+        return ratio is >= 0.0 and <= 1.0 ? ratio : 0.5;
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}

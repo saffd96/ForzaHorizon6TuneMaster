@@ -13,6 +13,7 @@
         <cv:AddOneConverter                  x:Key="AddOne"/>
         <cv:DateDisplayConverter            x:Key="DateDisplay"/>
         <cv:GenericEnumLabelConverter       x:Key="EnumLabel"/>
+        <cv:ValueToRangeConverter           x:Key="VTR"/>
 
         <!-- FontSize scales live with panel width via code-behind DynamicResource -->
         <Style x:Key="ValueDisplay" TargetType="TextBlock" BasedOn="{StaticResource ValueDisplay}">
@@ -179,6 +180,16 @@
                                             </TextBlock.Text>
                                         </TextBlock>
                                         <TextBlock Text="{l:Loc ResultTirePressureFront}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.TirePressureFront"/>
+                                                    <Binding Path="Constraints.TirePressureFrontMin"/>
+                                                    <Binding Path="Constraints.TirePressureFrontMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                      </StackPanel>
                                      <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                          <TextBlock Style="{StaticResource ValueDisplay}"
@@ -191,6 +202,16 @@
                                              </TextBlock.Text>
                                          </TextBlock>
                                          <TextBlock Text="{l:Loc ResultTirePressureRear}" Style="{StaticResource ParamLabel}"/>
+                                         <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                      Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                             <ProgressBar.Value>
+                                                 <MultiBinding Converter="{StaticResource VTR}">
+                                                     <Binding Path="TuneResult.TirePressureRear"/>
+                                                     <Binding Path="Constraints.TirePressureRearMin"/>
+                                                     <Binding Path="Constraints.TirePressureRearMax"/>
+                                                 </MultiBinding>
+                                             </ProgressBar.Value>
+                                         </ProgressBar>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -210,11 +231,31 @@
                                         <TextBlock Text="{Binding TuneResult.CamberFront, StringFormat='{}{0:F1}°'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Camber]}"/>
                                         <TextBlock Text="{l:Loc ResultCamberFront}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.CamberFront"/>
+                                                    <Binding Path="Constraints.CamberFrontMin"/>
+                                                    <Binding Path="Constraints.CamberFrontMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.CamberRear, StringFormat='{}{0:F1}°'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Camber]}"/>
                                         <TextBlock Text="{l:Loc ResultCamberRear}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.CamberRear"/>
+                                                    <Binding Path="Constraints.CamberRearMin"/>
+                                                    <Binding Path="Constraints.CamberRearMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                 </Grid>
                                 <!-- Toe -->
@@ -227,11 +268,31 @@
                                         <TextBlock Text="{Binding TuneResult.ToeFront, StringFormat='{}{0:F1}°'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Toe]}"/>
                                         <TextBlock Text="{l:Loc ResultToeFront}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.ToeFront"/>
+                                                    <Binding Path="Constraints.ToeFrontMin"/>
+                                                    <Binding Path="Constraints.ToeFrontMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.ToeRear, StringFormat='{}{0:F1}°'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Toe]}"/>
                                         <TextBlock Text="{l:Loc ResultToeRear}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.ToeRear"/>
+                                                    <Binding Path="Constraints.ToeRearMin"/>
+                                                    <Binding Path="Constraints.ToeRearMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                 </Grid>
                                 <!-- Caster -->
@@ -239,6 +300,16 @@
                                     <TextBlock Text="{Binding TuneResult.Caster, StringFormat='{}{0:F1}°'}" Style="{StaticResource ValueDisplay}"
                                                ToolTip="{Binding TuneResult.Explanations[Caster]}"/>
                                     <TextBlock Text="{l:Loc ResultCaster}" Style="{StaticResource ParamLabel}"/>
+                                    <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                 Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                        <ProgressBar.Value>
+                                            <MultiBinding Converter="{StaticResource VTR}">
+                                                <Binding Path="TuneResult.Caster"/>
+                                                <Binding Path="Constraints.CasterMin"/>
+                                                <Binding Path="Constraints.CasterMax"/>
+                                            </MultiBinding>
+                                        </ProgressBar.Value>
+                                    </ProgressBar>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -256,11 +327,31 @@
                                         <TextBlock Text="{Binding TuneResult.ARBFront, StringFormat='{}{0:F0}'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[ARB]}"/>
                                         <TextBlock Text="{l:Loc ResultARBFront}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.ARBFront"/>
+                                                    <Binding Path="Constraints.ARBFrontMin"/>
+                                                    <Binding Path="Constraints.ARBFrontMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.ARBRear, StringFormat='{}{0:F0}'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[ARB]}"/>
                                         <TextBlock Text="{l:Loc ResultARBRear}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.ARBRear"/>
+                                                    <Binding Path="Constraints.ARBRearMin"/>
+                                                    <Binding Path="Constraints.ARBRearMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -284,34 +375,56 @@
                                                 Style="{StaticResource ParamLabel}"
                                                 HorizontalAlignment="Center" TextAlignment="Center"
                                                 VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Grid.Row="0" Grid.Column="1"
-                                               Style="{StaticResource ValueDisplay}"
-                                               HorizontalAlignment="Center" TextAlignment="Center"
-                                               TextWrapping="Wrap"
-                                               ToolTip="{Binding TuneResult.Explanations[Springs]}">
-                                        <TextBlock.Text>
-                                            <MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring">
-                                                <Binding Path="TuneResult.SpringFront"/>
-                                                <Binding Path="SpringUnit"/>
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
+                                    <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center">
+                                        <TextBlock Style="{StaticResource ValueDisplay}"
+                                                   HorizontalAlignment="Center" TextAlignment="Center"
+                                                   TextWrapping="Wrap"
+                                                   ToolTip="{Binding TuneResult.Explanations[Springs]}">
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring">
+                                                    <Binding Path="TuneResult.SpringFront"/>
+                                                    <Binding Path="SpringUnit"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.SpringFront"/>
+                                                    <Binding Path="Constraints.SpringFrontMin"/>
+                                                    <Binding Path="Constraints.SpringFrontMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
+                                    </StackPanel>
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="{l:Loc ResultSpringRear}"
                                                 Style="{StaticResource ParamLabel}"
                                                 HorizontalAlignment="Center" TextAlignment="Center"
                                                 VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1"
-                                               Style="{StaticResource ValueDisplay}"
-                                               HorizontalAlignment="Center" TextAlignment="Center"
-                                               TextWrapping="Wrap"
-                                               ToolTip="{Binding TuneResult.Explanations[Springs]}">
-                                        <TextBlock.Text>
-                                            <MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring">
-                                                <Binding Path="TuneResult.SpringRear"/>
-                                                <Binding Path="SpringUnit"/>
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
+                                    <StackPanel Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center">
+                                        <TextBlock Style="{StaticResource ValueDisplay}"
+                                                   HorizontalAlignment="Center" TextAlignment="Center"
+                                                   TextWrapping="Wrap"
+                                                   ToolTip="{Binding TuneResult.Explanations[Springs]}">
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring">
+                                                    <Binding Path="TuneResult.SpringRear"/>
+                                                    <Binding Path="SpringUnit"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.SpringRear"/>
+                                                    <Binding Path="Constraints.SpringRearMin"/>
+                                                    <Binding Path="Constraints.SpringRearMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
+                                    </StackPanel>
                                 </Grid>
                                 <TextBlock Text="{l:Loc ResultRideHeight}" Style="{StaticResource SectionHeader}" Margin="0,0,0,6"/>
                                 <Grid>
@@ -330,6 +443,16 @@
                                             </TextBlock.Text>
                                         </TextBlock>
                                         <TextBlock Text="{l:Loc ResultRideHeightFront}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.RideHeightFront"/>
+                                                    <Binding Path="Constraints.RideHeightFrontMin"/>
+                                                    <Binding Path="Constraints.RideHeightFrontMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Style="{StaticResource ValueDisplay}"
@@ -342,6 +465,16 @@
                                             </TextBlock.Text>
                                         </TextBlock>
                                         <TextBlock Text="{l:Loc ResultRideHeightRear}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.RideHeightRear"/>
+                                                    <Binding Path="Constraints.RideHeightRearMin"/>
+                                                    <Binding Path="Constraints.RideHeightRearMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -366,22 +499,62 @@
                                         <TextBlock Text="{Binding TuneResult.ReboundFront, StringFormat='{}{0:F0}'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Dampers]}"/>
                                         <TextBlock Text="{l:Loc ResultReboundFront}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.ReboundFront"/>
+                                                    <Binding Path="Constraints.ReboundFrontMin"/>
+                                                    <Binding Path="Constraints.ReboundFrontMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                     <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.ReboundRear, StringFormat='{}{0:F0}'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Dampers]}"/>
                                         <TextBlock Text="{l:Loc ResultReboundRear}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.ReboundRear"/>
+                                                    <Binding Path="Constraints.ReboundRearMin"/>
+                                                    <Binding Path="Constraints.ReboundRearMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                     <!-- Bump row -->
                                     <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.BumpFront, StringFormat='{}{0:F0}'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Dampers]}"/>
                                         <TextBlock Text="{l:Loc ResultBumpFront}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.BumpFront"/>
+                                                    <Binding Path="Constraints.BumpFrontMin"/>
+                                                    <Binding Path="Constraints.BumpFrontMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                     <StackPanel Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.BumpRear, StringFormat='{}{0:F0}'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Dampers]}"/>
                                         <TextBlock Text="{l:Loc ResultBumpRear}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.BumpRear"/>
+                                                    <Binding Path="Constraints.BumpRearMin"/>
+                                                    <Binding Path="Constraints.BumpRearMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -407,6 +580,16 @@
                                             </TextBlock.Text>
                                         </TextBlock>
                                         <TextBlock Text="{l:Loc ResultAeroFront}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.AeroFront"/>
+                                                    <Binding Path="Constraints.AeroFrontMin"/>
+                                                    <Binding Path="Constraints.AeroFrontMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Style="{StaticResource ValueDisplay}"
@@ -419,6 +602,16 @@
                                             </TextBlock.Text>
                                         </TextBlock>
                                         <TextBlock Text="{l:Loc ResultAeroRear}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.AeroRear"/>
+                                                    <Binding Path="Constraints.AeroRearMin"/>
+                                                    <Binding Path="Constraints.AeroRearMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -441,11 +634,31 @@
                                             <TextBlock Text="{Binding TuneResult.DiffFrontAccel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                        ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
                                             <TextBlock Text="{l:Loc ResultDiffAccel}" Style="{StaticResource ParamLabel}"/>
+                                            <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                         Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                                <ProgressBar.Value>
+                                                    <MultiBinding Converter="{StaticResource VTR}">
+                                                        <Binding Path="TuneResult.DiffFrontAccel"/>
+                                                        <Binding Path="Constraints.DiffAccelMin"/>
+                                                        <Binding Path="Constraints.DiffAccelMax"/>
+                                                    </MultiBinding>
+                                                </ProgressBar.Value>
+                                            </ProgressBar>
                                         </StackPanel>
                                         <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                             <TextBlock Text="{Binding TuneResult.DiffFrontDecel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                        ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
                                             <TextBlock Text="{l:Loc ResultDiffDecel}" Style="{StaticResource ParamLabel}"/>
+                                            <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                         Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                                <ProgressBar.Value>
+                                                    <MultiBinding Converter="{StaticResource VTR}">
+                                                        <Binding Path="TuneResult.DiffFrontDecel"/>
+                                                        <Binding Path="Constraints.DiffDecelMin"/>
+                                                        <Binding Path="Constraints.DiffDecelMax"/>
+                                                    </MultiBinding>
+                                                </ProgressBar.Value>
+                                            </ProgressBar>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
@@ -461,11 +674,31 @@
                                         <TextBlock Text="{Binding TuneResult.DiffAccel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
                                         <TextBlock Text="{l:Loc ResultDiffAccel}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.DiffAccel"/>
+                                                    <Binding Path="Constraints.DiffAccelMin"/>
+                                                    <Binding Path="Constraints.DiffAccelMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.DiffDecel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
                                         <TextBlock Text="{l:Loc ResultDiffDecel}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.DiffDecel"/>
+                                                    <Binding Path="Constraints.DiffDecelMin"/>
+                                                    <Binding Path="Constraints.DiffDecelMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                 </Grid>
                                 <!-- Center bias (AWD only) -->
@@ -495,11 +728,31 @@
                                         <TextBlock Text="{Binding TuneResult.BrakeBalance, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Brakes]}"/>
                                         <TextBlock Text="{l:Loc ResultBrakeBalance}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.BrakeBalance"/>
+                                                    <Binding Path="Constraints.BrakeBalanceMin"/>
+                                                    <Binding Path="Constraints.BrakeBalanceMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="{Binding TuneResult.BrakePressure, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Brakes]}"/>
                                         <TextBlock Text="{l:Loc ResultBrakePressure}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.BrakePressure"/>
+                                                    <Binding Path="Constraints.BrakePressureMin"/>
+                                                    <Binding Path="Constraints.BrakePressureMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -515,6 +768,16 @@
                                                    Style="{StaticResource ValueDisplay}" FontSize="20"
                                                    ToolTip="{Binding TuneResult.Explanations[FinalDrive]}"/>
                                         <TextBlock Text="{l:Loc ResultFinalDrive}" Style="{StaticResource ParamLabel}"/>
+                                        <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                                                     Foreground="{StaticResource AccentBrush}" Background="{StaticResource BorderBrush}" BorderThickness="0">
+                                            <ProgressBar.Value>
+                                                <MultiBinding Converter="{StaticResource VTR}">
+                                                    <Binding Path="TuneResult.FinalDrive"/>
+                                                    <Binding Path="Constraints.FinalDriveMin"/>
+                                                    <Binding Path="Constraints.FinalDriveMax"/>
+                                                </MultiBinding>
+                                            </ProgressBar.Value>
+                                        </ProgressBar>
                                     </StackPanel>
                                     <StackPanel HorizontalAlignment="Center" Margin="0,0,24,4">
                                         <TextBlock Style="{StaticResource ValueDisplay}" FontSize="20"
@@ -552,6 +815,9 @@
                                                         <Run Text="{l:Loc ResultGearFormat}"/>
                                                         <Run Text="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AddOne}, Mode=OneWay}"/>
                                                     </TextBlock>
+                                                    <ProgressBar Height="4" Width="60" Margin="0,3,0,0" Minimum="0.5" Maximum="5.0"
+                                                                 Value="{Binding Mode=OneWay}" Foreground="{StaticResource AccentBrush}"
+                                                                 Background="{StaticResource BorderBrush}" BorderThickness="0"/>
                                                 </StackPanel>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
@@ -563,7 +829,8 @@
                                     MaxRPM="{Binding TuneResult.Car.MaxRPM}"
                                     PowerPeakRPM="{Binding TuneResult.Car.PowerPeakRPM}"
                                     TorquePeakRPM="{Binding TuneResult.Car.TorquePeakRPM}"
-                                    WheelDiameterInch="{Binding TuneResult.Car.RearWheelDiameterInch}"/>
+                                    WheelDiameterInch="{Binding TuneResult.Car.RearWheelDiameterInch}"
+                                    ActualMaxSpeedKmh="{Binding TuneResult.ActualMaxSpeedKmh}"/>
                             </StackPanel>
                         </Border>
 

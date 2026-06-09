@@ -118,9 +118,9 @@ internal static class AlignmentCalculator
             (Discipline.Drift, _)                         => (2.5, 2.5),
             (Discipline.Rally, _)                         => (1.3, 0.9),
             (Discipline.CrossCountry, _)                  => (0.8, 1.5),
-            (Discipline.Touge, Models.DriveType.RWD)      => (1.4, 1.0),
-            (Discipline.Touge, Models.DriveType.FWD)      => (1.2, 1.2),
-            (Discipline.Touge, _)                         => (1.4, 1.1),
+            (Discipline.Touge, Models.DriveType.RWD)      => (1.4, 1.3),
+            (Discipline.Touge, Models.DriveType.FWD)      => (1.2, 1.5),
+            (Discipline.Touge, _)                         => (1.4, 1.4),
             _                                             => (1.0, 1.0)
         };
 
