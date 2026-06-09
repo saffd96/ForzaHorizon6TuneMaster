@@ -6,11 +6,14 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 public class SavedProfile
 {
+    public const string ProfileVersion = "1.3";
+
     public CarCard Car { get; set; } = new();
     public TrackInfo Track { get; set; } = new();
     public TuningConstraints Constraints { get; set; } = new();
     public TuneResult? LastResult { get; set; }
     public List<string> AiEstimatedFields { get; set; } = new();
+    public string? Version { get; set; }
 }
 
 public class StorageService

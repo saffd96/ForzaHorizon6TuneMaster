@@ -950,6 +950,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (savedSu != null && Enum.TryParse<SpringUnit>(savedSu, out var su)) SpringUnit = su;
 
         RefreshProfiles();
+        RecalculateOutdatedProfiles();
         InvalidateAllLanguageDependent();
         _ = LoadCarDatabaseAsync();
     }
@@ -1102,6 +1103,30 @@ public class MainViewModel : INotifyPropertyChanged
         SelectedProfile = null;
         ProfileSearchText = "";
         StatusMessage = T("StatusProfileCreated");
+    }
+
+    // ── Auto-recalculate profiles with outdated version ───────────────────
+    private void RecalculateOutdatedProfiles()
+    {
+        var names = _profileService.GetProfileNames();
+        if (names.Count == 0) return;
+        int ok = 0;
+        foreach (var name in names)
+        {
+            var p = _profileService.Load(name);
+            if (p == null) continue;
+            if (p.Version == SavedProfile.ProfileVersion) continue;
+            try
+            {
+                p.LastResult = _generator.Generate(p.Car, p.Track, p.Constraints);
+                p.Version = SavedProfile.ProfileVersion;
+                _storage.Save(name, p);
+                ok++;
+            }
+            catch { }
+        }
+        if (ok > 0)
+            StatusMessage = string.Format(T("StatusProfilesRecalculated"), ok);
     }
 
     private void RefreshProfiles()

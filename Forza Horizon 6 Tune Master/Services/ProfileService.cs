@@ -27,7 +27,8 @@ public class ProfileService
         _storage.Save(name, new SavedProfile
         {
             Car = car, Track = track, Constraints = constraints, LastResult = result,
-            AiEstimatedFields = aiEstimatedFields
+            AiEstimatedFields = aiEstimatedFields,
+            Version = SavedProfile.ProfileVersion
         });
         return name;
     }

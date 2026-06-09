@@ -2,6 +2,7 @@ using Forza_Horizon_6_Tune_Master.Models;
 using Forza_Horizon_6_Tune_Master.Services;
 using Forza_Horizon_6_Tune_Master.ViewModels;
 using TuneMaster.Tests;
+using TuneMaster.Tests.Helpers;
 
 namespace TuneMaster.Tests.ViewModels;
 
@@ -713,6 +714,94 @@ public class MainViewModelTests : IDisposable
     {
         var vm = new MainViewModel();
         vm.ClearAiCacheCommand.Execute(null);
+    }
+
+    [Fact]
+    public void SaveCommand_SavesProfileWithVersion()
+    {
+        var vm = new MainViewModel();
+        vm.Car.Make = "VersionCheck";
+        vm.Car.Model = "Car";
+        vm.Car.Year = 2024;
+
+        vm.SaveCommand.Execute(null);
+
+        var storage = new StorageService();
+        var name = vm.Profiles.FirstOrDefault(p => p.Contains("VersionCheck"));
+        Assert.NotNull(name);
+        var loaded = storage.Load(name);
+        Assert.NotNull(loaded);
+        Assert.Equal(SavedProfile.ProfileVersion, loaded.Version);
+    }
+
+    [Fact]
+    public void RecalculateOutdatedProfiles_OnConstruction_UpdatesOldProfile()
+    {
+        // Seed a profile with no Version (simulating old format)
+        var storage = new StorageService();
+        storage.Save("OldProfileNoVersion", new SavedProfile
+        {
+            Car = CarFactory.DefaultCar(),
+            Track = CarFactory.DefaultTrack(),
+            Constraints = CarFactory.RelaxedConstraints(),
+        });
+
+        var vm = new MainViewModel();
+
+        var loaded = storage.Load("OldProfileNoVersion");
+        Assert.NotNull(loaded);
+        Assert.Equal(SavedProfile.ProfileVersion, loaded.Version);
+        Assert.NotNull(loaded.LastResult);
+    }
+
+    [Fact]
+    public void RecalculateOutdatedProfiles_OnConstruction_SkipsCurrentVersion()
+    {
+        // Seed a profile already at current version
+        var storage = new StorageService();
+        storage.Save("CurrentVersionProfile", new SavedProfile
+        {
+            Car = CarFactory.DefaultCar(),
+            Track = CarFactory.DefaultTrack(),
+            Constraints = CarFactory.RelaxedConstraints(),
+            Version = SavedProfile.ProfileVersion,
+        });
+
+        var vm = new MainViewModel();
+
+        var loaded = storage.Load("CurrentVersionProfile");
+        Assert.NotNull(loaded);
+        Assert.Equal(SavedProfile.ProfileVersion, loaded.Version);
+        // LastResult should still be null because it wasn't recalculated
+        Assert.Null(loaded.LastResult);
+    }
+
+    [Fact]
+    public void RecalculateOutdatedProfiles_OnConstruction_UpdatesMultipleOldProfiles()
+    {
+        var storage = new StorageService();
+        var car = CarFactory.DefaultCar();
+        var track = CarFactory.DefaultTrack();
+        var constraints = CarFactory.RelaxedConstraints();
+
+        storage.Save("Old1", new SavedProfile { Car = car, Track = track, Constraints = constraints });
+        storage.Save("Old2", new SavedProfile { Car = car, Track = track, Constraints = constraints });
+        storage.Save("Current", new SavedProfile { Car = car, Track = track, Constraints = constraints, Version = SavedProfile.ProfileVersion });
+
+        var vm = new MainViewModel();
+
+        var old1 = storage.Load("Old1");
+        var old2 = storage.Load("Old2");
+        var current = storage.Load("Current");
+
+        Assert.Equal(SavedProfile.ProfileVersion, old1!.Version);
+        Assert.Equal(SavedProfile.ProfileVersion, old2!.Version);
+        Assert.NotNull(old1.LastResult);
+        Assert.NotNull(old2.LastResult);
+
+        // Current version profile should NOT have been touched
+        Assert.Null(current!.LastResult);
+        Assert.Equal(SavedProfile.ProfileVersion, current.Version);
     }
 }
 

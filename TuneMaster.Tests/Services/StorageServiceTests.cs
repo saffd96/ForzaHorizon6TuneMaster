@@ -228,6 +228,47 @@ public class StorageServiceTests : IDisposable
     }
 
     [Fact]
+    public void Save_Version_Roundtrips()
+    {
+        var profile = new SavedProfile
+        {
+            Car = new CarCard { Make = "VersionTest" },
+            Version = SavedProfile.ProfileVersion,
+        };
+
+        _storage.Save("VersionTest", profile);
+        var loaded = _storage.Load("VersionTest");
+
+        Assert.NotNull(loaded);
+        Assert.Equal(SavedProfile.ProfileVersion, loaded.Version);
+    }
+
+    [Fact]
+    public void Save_Version_NullByDefault()
+    {
+        var profile = new SavedProfile { Car = new CarCard { Make = "NoVersion" } };
+
+        _storage.Save("NoVersion", profile);
+        var loaded = _storage.Load("NoVersion");
+
+        Assert.NotNull(loaded);
+        Assert.Null(loaded.Version);
+    }
+
+    [Fact]
+    public void Save_Version_OldProfile_LoadsWithNullVersion()
+    {
+        var profile = new SavedProfile { Car = new CarCard { Make = "Old" } };
+
+        _storage.Save("OldProfile", profile);
+        var loaded = _storage.Load("OldProfile");
+
+        Assert.NotNull(loaded);
+        // Simulates loading a profile saved before Version field existed
+        Assert.Null(loaded.Version);
+    }
+
+    [Fact]
     public void MultipleProfiles_Independent()
     {
         var p1 = new SavedProfile { Car = new CarCard { Make = "Make1" } };
