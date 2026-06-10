@@ -72,11 +72,18 @@ internal static class TireCalculator
             {
                 discF = 0.60;
 
-                double dragPtw = car.PowerHP / car.TotalMass;
+                double dragPtw = car.PowerHP / (car.TotalMass / 1000.0);
                 double dragPtwFactor = CalculationHelpers.Clamp((dragPtw - 100) / 400, 0, 1);
                 double dragMassFactor = CalculationHelpers.Clamp((car.TotalMass - 1000) / 1000, 0, 1);
 
-                discR = -0.30 - dragMassFactor * 0.20 - dragPtwFactor * 0.40; 
+                double dragDistFactor = track.DragDistance switch
+                {
+                    DragDistance.Quarter => 0.06,
+                    DragDistance.Half => 0.12,
+                    DragDistance.Mile => 0.18,
+                    _ => 0.00
+                };
+                discR = -0.35 - dragMassFactor * 0.10 + dragPtwFactor * 0.10 + dragDistFactor;
                 reason = CalculationHelpers.L("Expl_TirePressureReason_Drag");
                 break;
             }

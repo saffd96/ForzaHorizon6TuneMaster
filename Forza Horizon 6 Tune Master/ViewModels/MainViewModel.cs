@@ -13,6 +13,7 @@ using System.Windows;
 using Microsoft.Win32;
 using Forza_Horizon_6_Tune_Master.Models;
 using Forza_Horizon_6_Tune_Master.Services;
+using Forza_Horizon_6_Tune_Master.Views;
 
 namespace Forza_Horizon_6_Tune_Master.ViewModels;
 
@@ -21,6 +22,7 @@ public class MainViewModel : INotifyPropertyChanged
     private readonly TuneGeneratorService _generator = new();
     private readonly StorageService _storage = new();
     private readonly ProfileService _profileService;
+    private int _tuneGenerationCount;
 
     // ── Models ──────────────────────────────────────────────────────────────
     private CarCard _car = new();
@@ -1033,6 +1035,14 @@ public class MainViewModel : INotifyPropertyChanged
             TuneResult = _generator.Generate(Car, Track, Constraints);
             var discLocalized = T($"Discipline{Track.Discipline}");
             StatusMessage = string.Format(T("StatusTuneGenerated"), Car.Make, Car.Model, $"{discLocalized}  •  {DateTime.Now:HH:mm}");
+
+            _tuneGenerationCount++;
+            if (_tuneGenerationCount % 7 == 0)
+            {
+                var owner = Application.Current?.MainWindow;
+                if (owner != null)
+                    new DonateWindow { Owner = owner }.ShowDialog();
+            }
         }
         catch (Exception ex)
         {
@@ -1163,6 +1173,7 @@ public class MainViewModel : INotifyPropertyChanged
     private async Task LoadCarDatabaseAsync()
     {
         await _carSpec.LoadCarDatabaseAsync(Car);
+        _carSpec.SelectCarFromProfile(Car);
     }
 
     public string AppVersion => SavedProfile.ProfileVersion;

@@ -29,8 +29,8 @@ public class TuneGeneratorService
         SuspensionCalculator.CalculateSprings(car, track, c, r, ex);
         SuspensionCalculator.CalculateRideHeight(car, track, c, r, ex);
         SuspensionCalculator.CalculateDampers(car, track, c, r, ex);
-        DifferentialCalculator.CalculateDifferential(car, track, c, r, ex);
         BrakeCalculator.CalculateBrakes(car, track, c, r, ex, effectiveMaxKmh);
+        DifferentialCalculator.CalculateDifferential(car, track, c, r, ex);
         GearingCalculator.CalculateGearing(car, track, c, r, ex, effectiveMaxKmh);
         if (track.Discipline == Discipline.Drag)
             LaunchControlCalculator.CalculateLaunchControl(car, track, r);

@@ -465,16 +465,16 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock Grid.Column="3" Text="{l:Loc DiffLabel}" Style="{StaticResource FormLabel}" MinWidth="80"/>
-                        <ComboBox  x:Name="DiffCombo"        Grid.Column="4" SelectedValue="{Binding Car.DifferentialUpgrade}">
+                        <TextBlock Grid.Column="3" Text="{l:Loc BrakesLabel}"      Style="{StaticResource FormLabel}" MinWidth="60"/>
+                        <ComboBox  x:Name="BrakesCombo"      Grid.Column="4" SelectedValue="{Binding Car.BrakesUpgrade}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock Grid.Column="6" Text="{l:Loc BrakesLabel}"      Style="{StaticResource FormLabel}" MinWidth="60"/>
-                        <ComboBox  x:Name="BrakesCombo"      Grid.Column="7" SelectedValue="{Binding Car.BrakesUpgrade}">
+                        <TextBlock Grid.Column="6" Text="{l:Loc DiffLabel}" Style="{StaticResource FormLabel}" MinWidth="80"/>
+                        <ComboBox  x:Name="DiffCombo"        Grid.Column="7" SelectedValue="{Binding Car.DifferentialUpgrade}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}"/>

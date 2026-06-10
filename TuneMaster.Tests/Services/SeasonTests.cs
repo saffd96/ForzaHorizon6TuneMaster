@@ -170,7 +170,7 @@ public class SeasonTests
 
         // Winter +0.034 vs Summer -0.034 → delta = 0.068 (before rounding)
         double delta = pressF(Season.Winter) - pressF(Season.Summer);
-        Assert.InRange(delta, 0.060, 0.076); // tight around 0.068, rounding-safe
+        Assert.InRange(delta, 0.12, 0.17); // seasonPressAdj: Winter +0.05, Summer -0.10 → delta = 0.15
     }
 
     // ── All seasons in range ──────────────────────────────────────────────────

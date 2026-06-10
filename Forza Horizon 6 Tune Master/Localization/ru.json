@@ -164,7 +164,6 @@
   "Enum_Season_Autumn": "Осень",
   "Enum_Season_Winter": "Зима",
 
-  "DragDistEighth": "⅛ мили",
   "DragDistQuarter": "¼ мили",
   "DragDistHalf": "½ мили",
   "DragDistMile": "1 миля",
@@ -504,10 +503,9 @@
   "Expl_GearNote_Touge": "Короткие передачи для горных серпантинов.",
   "Expl_GearNote_Road": "Ряд под дорожные дисциплины.",
 
-  "Expl_DragDistStr_0": "1/8 мили",
-  "Expl_DragDistStr_1": "1/4 мили",
-  "Expl_DragDistStr_2": "1/2 мили",
-  "Expl_DragDistStr_3": "1 миля",
+  "Expl_DragDistStr_0": "1/4 мили",
+  "Expl_DragDistStr_1": "1/2 мили",
+  "Expl_DragDistStr_2": "1 миля",
   "Expl_DragNote": "{0}: первая {1:F2} (TQ/масса {2:F2} Нм/кг, {3}).",
 
   "Expl_RpmAbbr": "об/мин",

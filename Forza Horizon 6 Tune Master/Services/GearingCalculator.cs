@@ -51,9 +51,9 @@ internal static class GearingCalculator
         if (track.Discipline == Discipline.Drag)
         {
             double tqPerKg = car.TorqueNm / Math.Max(car.TotalMass, 500.0);
-            if (tqPerKg > 0.80) idealStep = 0.80;
-            else if (tqPerKg < 0.40) idealStep = 0.86;
-            else idealStep = 0.83;
+            if (tqPerKg > 0.80) idealStep = 0.70;
+            else if (tqPerKg < 0.40) idealStep = 0.58;
+            else idealStep = 0.65;
         }
         else
         {
@@ -84,7 +84,8 @@ internal static class GearingCalculator
             rec = (int)Math.Round(1.0 + logSpread / logStep);
         }
 
-        return Math.Clamp(rec, 1, 10);
+        int maxGears = Math.Max(1, Math.Min(car.GearCount, 10));
+        return Math.Clamp(rec, 1, maxGears);
     }
 
     public static (double first, double stepMin, double stepMax, string note) GetDisciplineGearParams(
@@ -141,6 +142,8 @@ internal static class GearingCalculator
         double pwRatio = car.PowerHP / (car.TotalMass / 1000.0);
         double tireCirc = Math.PI * car.DrivenWheelDiameterInch * 0.0254;
 
+        double targetRpmFraction = CalculationHelpers.RevLimitFraction;
+
         double targetKmh = track.Discipline == Discipline.Drag
             ? effectiveMaxKmh
             : Math.Min(effectiveMaxKmh, CalculationHelpers.TargetSpeedCapKmh);
@@ -149,7 +152,7 @@ internal static class GearingCalculator
         if (n == 1)
         {
             double total = targetMs > 0 && car.MaxRPM > 0
-                ? car.MaxRPM * CalculationHelpers.RevLimitFraction * tireCirc / (60.0 * targetMs)
+                ? car.MaxRPM * targetRpmFraction * tireCirc / (60.0 * targetMs)
                 : 9.0;
 
             double g1 = track.Discipline switch
@@ -289,7 +292,7 @@ internal static class GearingCalculator
 
         double actualTop = ratios[n - 1];
         double fd = targetMs > 0 && car.MaxRPM > 0 && actualTop > 0
-            ? car.MaxRPM * CalculationHelpers.RevLimitFraction * tireCirc / (60.0 * targetMs * actualTop)
+            ? car.MaxRPM * targetRpmFraction * tireCirc / (60.0 * targetMs * actualTop)
             : 3.50;
 
         r.FinalDrive = Math.Round(CalculationHelpers.Clamp(fd, c.FinalDriveMin, c.FinalDriveMax), 2);
@@ -493,7 +496,6 @@ internal static class GearingCalculator
 
         double top = dist switch
         {
-            DragDistance.Eighth => 1.80,
             DragDistance.Quarter => 1.30,
             DragDistance.Half => 1.00,
             DragDistance.Mile => 0.85,

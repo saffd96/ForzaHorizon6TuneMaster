@@ -620,7 +620,7 @@
                         </Border>
 
                         <!-- Differential -->
-                        <Border Grid.Row="6" Grid.Column="0" Style="{StaticResource ParamCard}">
+                        <Border Grid.Row="6" Grid.Column="2" Style="{StaticResource ParamCard}">
                             <StackPanel>
                                 <TextBlock Text="{l:Loc ResultDiff}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
                                 <!-- Front diff (AWD only) -->
@@ -718,7 +718,7 @@
                         </Border>
 
                         <!-- Brakes -->
-                        <Border Grid.Row="6" Grid.Column="2" Style="{StaticResource ParamCard}">
+                        <Border Grid.Row="6" Grid.Column="0" Style="{StaticResource ParamCard}">
                             <StackPanel>
                                 <TextBlock Text="{l:Loc ResultBrakes}" Style="{StaticResource SectionHeader}" Margin="0,0,0,8"/>
                                 <Grid>

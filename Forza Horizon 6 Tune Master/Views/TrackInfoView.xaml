@@ -50,6 +50,38 @@
 
         <Style x:Key="SeasonButton" TargetType="RadioButton" BasedOn="{StaticResource DisciplineButton}">
             <Setter Property="GroupName" Value="Season"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="bd"
+                                Background="{StaticResource ElevatedBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="0">
+                            <StackPanel Margin="6,5" HorizontalAlignment="Center">
+                                <TextBlock x:Name="Icon"  FontSize="14" HorizontalAlignment="Center"
+                                           Text="{TemplateBinding Tag}"/>
+                                <TextBlock x:Name="Label" FontSize="10" FontFamily="Segoe UI"
+                                           FontWeight="SemiBold" HorizontalAlignment="Center"
+                                           Margin="0,1,0,0"
+                                           Text="{TemplateBinding Content}"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd"    Property="Background"   Value="#1E1A00"/>
+                                <Setter TargetName="bd"    Property="BorderBrush"  Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="bd"    Property="BorderThickness" Value="2"/>
+                                <Setter TargetName="Label" Property="Foreground"   Value="{StaticResource AccentBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource CyanBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="DragDistButton" TargetType="RadioButton">
@@ -128,58 +160,54 @@
 
             <TextBlock Text="{l:Loc SectionDiscipline}" Style="{StaticResource SectionHeader}"/>
             <Border Style="{StaticResource SectionCard}">
-                <UniformGrid Rows="1" Columns="7" HorizontalAlignment="Stretch">
-                    <RadioButton Tag="🛣️" Content="{l:Loc DisciplineRoad}"
-                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
-                                 IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Road}}"
-                                 ToolTip="{l:Loc DisciplineRoadTooltip}"/>
+                <StackPanel>
+                    <UniformGrid Rows="1" Columns="7" HorizontalAlignment="Stretch">
+                        <RadioButton Tag="🛣️" Content="{l:Loc DisciplineRoad}"
+                                     Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
+                                     IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Road}}"
+                                     ToolTip="{l:Loc DisciplineRoadTooltip}"/>
 
-                    <RadioButton Tag="⛰️" Content="{l:Loc DisciplineTouge}"
-                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
-                                 IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Touge}}"
-                                 ToolTip="{l:Loc DisciplineTougeTooltip}"/>
+                        <RadioButton Tag="⛰️" Content="{l:Loc DisciplineTouge}"
+                                     Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
+                                     IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Touge}}"
+                                     ToolTip="{l:Loc DisciplineTougeTooltip}"/>
 
-                    <RadioButton Tag="🌧️" Content="{l:Loc DisciplineRally}"
-                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
-                                 IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Rally}}"
-                                 ToolTip="{l:Loc DisciplineRallyTooltip}"/>
+                        <RadioButton Tag="🌧️" Content="{l:Loc DisciplineRally}"
+                                     Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
+                                     IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Rally}}"
+                                     ToolTip="{l:Loc DisciplineRallyTooltip}"/>
 
-                    <RadioButton Tag="🌲" Content="{l:Loc DisciplineCrossCountry}"
-                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
-                                 IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.CrossCountry}}"
-                                 ToolTip="{l:Loc DisciplineCrossCountryTooltip}"/>
+                        <RadioButton Tag="🌲" Content="{l:Loc DisciplineCrossCountry}"
+                                     Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
+                                     IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.CrossCountry}}"
+                                     ToolTip="{l:Loc DisciplineCrossCountryTooltip}"/>
 
-                    <RadioButton Tag="💨" Content="{l:Loc DisciplineDrift}"
-                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
-                                 IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drift}}"
-                                 ToolTip="{l:Loc DisciplineDriftTooltip}"/>
+                        <RadioButton Tag="💨" Content="{l:Loc DisciplineDrift}"
+                                     Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
+                                     IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drift}}"
+                                     ToolTip="{l:Loc DisciplineDriftTooltip}"/>
 
-                    <RadioButton Tag="⚡" Content="{l:Loc DisciplineDrag}"
-                                 Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
-                                 IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drag}}"
-                                 ToolTip="{l:Loc DisciplineDragTooltip}"/>
+                        <RadioButton Tag="⚡" Content="{l:Loc DisciplineDrag}"
+                                     Style="{StaticResource DisciplineButton}" Margin="0,0,8,0"
+                                     IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drag}}"
+                                     ToolTip="{l:Loc DisciplineDragTooltip}"/>
 
-                    <RadioButton Tag="🏙️" Content="{l:Loc DisciplineStreet}"
-                                 Style="{StaticResource DisciplineButton}" Margin="0,0,0,0"
-                                 IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Street}}"
-                                 ToolTip="{l:Loc DisciplineStreetTooltip}"/>
-                </UniformGrid>
-            </Border>
+                        <RadioButton Tag="🏙️" Content="{l:Loc DisciplineStreet}"
+                                     Style="{StaticResource DisciplineButton}" Margin="0,0,0,0"
+                                     IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Street}}"
+                                     ToolTip="{l:Loc DisciplineStreetTooltip}"/>
+                    </UniformGrid>
 
-            <!-- Drag distance — shown only when Drag is selected -->
-            <TextBlock Text="{l:Loc SectionDragDistance}" Style="{StaticResource SectionHeader}"
-                       Visibility="{Binding Track.IsDrag, Converter={StaticResource B2V}}"/>
-            <Border Style="{StaticResource SectionCard}"
-                    Visibility="{Binding Track.IsDrag, Converter={StaticResource B2V}}">
-                <StackPanel Orientation="Horizontal">
-                    <RadioButton Content="{l:Loc DragDistEighth}"  Style="{StaticResource DragDistButton}"
-                                 IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Eighth}}"/>
-                    <RadioButton Content="{l:Loc DragDistQuarter}"  Style="{StaticResource DragDistButton}"
-                                 IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Quarter}}"/>
-                    <RadioButton Content="{l:Loc DragDistHalf}"  Style="{StaticResource DragDistButton}"
-                                 IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Half}}"/>
-                    <RadioButton Content="{l:Loc DragDistMile}"  Style="{StaticResource DragDistButton}"
-                                 IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Mile}}"/>
+                    <!-- Drag distance — shown only when Drag is selected -->
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0"
+                                Visibility="{Binding Track.IsDrag, Converter={StaticResource B2V}}">
+                        <RadioButton Content="{l:Loc DragDistQuarter}"  Style="{StaticResource DragDistButton}"
+                                     IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Quarter}}"/>
+                        <RadioButton Content="{l:Loc DragDistHalf}"  Style="{StaticResource DragDistButton}"
+                                     IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Half}}"/>
+                        <RadioButton Content="{l:Loc DragDistMile}"  Style="{StaticResource DragDistButton}"
+                                     IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Mile}}"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 

@@ -187,7 +187,6 @@ public class WikiCarSpecService
         var engine = raw.ToUpperInvariant().Trim();
         if (engine.Contains('|') || engine.Contains('=')) return null;
 
-        // Strip trailing extras like "|extra = (Suzuki F6A)"
         var pipe = engine.IndexOf('|');
         if (pipe > 0) engine = engine[..pipe].Trim();
 

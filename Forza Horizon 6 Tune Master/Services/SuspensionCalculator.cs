@@ -29,7 +29,7 @@ internal static class SuspensionCalculator
 
         (double baseF, double baseR, string arbNoteKey) = (track.Discipline, car.DriveType) switch
         {
-            (Discipline.Drag, _)             => (2.0, 3.0, "Expl_ARBNote_Drag"),
+            (Discipline.Drag, _)             => (2.0, 10.0, "Expl_ARBNote_Drag"),
             (Discipline.Drift, Models.DriveType.RWD) => (5.0, 22.0, "Expl_ARBNote_DriftRWD"),
             (Discipline.Drift, _)            => (20.0, 40.0, "Expl_ARBNote_DriftAWD"),
             (Discipline.Rally, _)            => (14.0, 12.0, "Expl_ARBNote_Rally"),
@@ -91,7 +91,10 @@ internal static class SuspensionCalculator
 
         (double hzF, double hzR) = track.Discipline switch
         {
-            Discipline.Drag         => (2.0, 1.0),
+            Discipline.Drag when track.DragDistance == DragDistance.Quarter => (2.0, 1.3),
+            Discipline.Drag when track.DragDistance == DragDistance.Half    => (2.0, 1.4),
+            Discipline.Drag when track.DragDistance == DragDistance.Mile    => (2.0, 1.6),
+            Discipline.Drag                                                 => (2.0, 1.2),
             Discipline.Drift        => (1.8, 2.2),
             Discipline.Rally        => (2.0, 2.2),
             Discipline.CrossCountry => (1.3, 1.5),
@@ -189,7 +192,9 @@ internal static class SuspensionCalculator
 
         (double baseFFactor, double baseRFactor, string note) = track.Discipline switch
         {
-            Discipline.Drag         => (0.05, 0.80, CalculationHelpers.L("Expl_RideHeightNote_Drag")),
+            Discipline.Drag when track.DragDistance == DragDistance.Half    => (0.15, 0.50, CalculationHelpers.L("Expl_RideHeightNote_Drag")),
+            Discipline.Drag when track.DragDistance == DragDistance.Mile    => (0.20, 0.40, CalculationHelpers.L("Expl_RideHeightNote_Drag")),
+            Discipline.Drag                                                 => (0.10, 0.65, CalculationHelpers.L("Expl_RideHeightNote_Drag")),
             Discipline.Drift        => (0.15, 0.19, CalculationHelpers.L("Expl_RideHeightNote_Drift")),
             Discipline.Rally        => (0.40, 0.45, CalculationHelpers.L("Expl_RideHeightNote_Rally")),
             Discipline.CrossCountry => (0.60, 0.65, CalculationHelpers.L("Expl_RideHeightNote_CrossCountry")),

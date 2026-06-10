@@ -11,7 +11,7 @@ public enum Discipline
     Street         // Уличные гонки
 }
 
-public enum DragDistance { Eighth, Quarter, Half, Mile }
+public enum DragDistance { Quarter, Half, Mile }
 
 public enum Season { Summer, Spring, Autumn, Winter }
 

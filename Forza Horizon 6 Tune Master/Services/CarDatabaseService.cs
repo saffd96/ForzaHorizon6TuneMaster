@@ -130,7 +130,6 @@ public class CarDatabaseService
         var fullName = positional[0].Trim();
         if (string.IsNullOrWhiteSpace(fullName)) return null;
 
-        // param[2] = year, param[12] = PI
         if (!int.TryParse(positional[2], out var year)) return null;
 
         var pi = 0;
@@ -148,7 +147,6 @@ public class CarDatabaseService
         }
         else
         {
-            // Fallback: first word is make
             var spaceIdx = fullName.IndexOf(' ');
             if (spaceIdx < 0) return null;
             make = fullName[..spaceIdx];

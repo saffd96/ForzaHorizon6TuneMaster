@@ -22,9 +22,9 @@ internal static class DifferentialCalculator
             case Discipline.Drag:
                 (accel, decel) = car.DriveType switch
                 {
-                    Models.DriveType.RWD => (75.0, 25.0),
-                    Models.DriveType.AWD => (65.0, 15.0),
-                    _                    => (65.0, 15.0)
+                    Models.DriveType.RWD => (75.0, 10.0),
+                    Models.DriveType.AWD => (65.0,  5.0),
+                    _                    => (65.0,  5.0)
                 };
                 break;
             case Discipline.Drift:
@@ -127,6 +127,7 @@ internal static class DifferentialCalculator
             };
             double fDecel = track.Discipline switch
             {
+                Discipline.Drag         => 3,
                 Discipline.Drift        => 5,
                 Discipline.Rally        => 20,
                 Discipline.CrossCountry => 15,

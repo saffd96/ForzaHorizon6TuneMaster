@@ -217,8 +217,11 @@ internal class CarSpecController
             NotifyCarSelectionProperties?.Invoke();
             return;
         }
-        _selectedCar = _carDatabase.FirstOrDefault(c =>
+        var match = _carDatabase.FirstOrDefault(c =>
             c.Make == car.Make && c.Model == car.Model && c.Year == car.Year);
+        _selectedCar = match;
+        _carSearchText = "";
+        ApplyCarFilter();
         NotifyCarSelectionProperties?.Invoke();
     }
 

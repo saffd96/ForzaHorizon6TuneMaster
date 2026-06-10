@@ -20,6 +20,11 @@ dotnet publish "Forza Horizon 6 Tune Master/Forza Horizon 6 Tune Master.csproj" 
 
 No linter is configured. NuGet dependencies: `System.Text.Json 8.0.5`, `HtmlAgilityPack` (wiki parsing).
 
+To run a single test by name:
+```powershell
+dotnet test TuneMaster.Tests/TuneMaster.Tests.csproj --filter "FullyQualifiedName~TestMethodName"
+```
+
 ## Architecture
 
 WPF .NET 8, MVVM, single ViewModel (`MainViewModel`, ~1500 lines) bound to all UserControl views via `DataContext` propagated from `MainWindow`. `TuneValidator/` is a separate utility project for offline validation.
@@ -71,23 +76,37 @@ Unit conversion happens only at display time. `MainViewModel` exposes `PowerDisp
 
 **RelayCommand.** Simple `ICommand` wrapper with `Raise()` to manually fire `CanExecuteChanged`. Load/Delete commands gate on `SelectedProfile != null` via `Func<bool>` in constructor.
 
-**Profile persistence.** `StorageService` serialises `SavedProfile` (Car + Track + Constraints + LastResult + `AiEstimatedFields` list) as indented JSON. Spaces in profile names are stored as underscores. Apply `[JsonIgnore]` to all computed properties on model classes to avoid serialisation errors. `ForzaPaths` is a static class centralising all `%APPDATA%` paths; it exposes `SetTestRoot()` returning `IDisposable` for test isolation.
+**Profile persistence.** `StorageService` serialises `SavedProfile` (Car + Track + Constraints + LastResult + `AiEstimatedFields` list) as indented JSON. Profile names are sanitised by replacing all `Path.GetInvalidFileNameChars()` with underscores. Apply `[JsonIgnore]` to all computed properties on model classes to avoid serialisation errors. `ForzaPaths` is a static class centralising all `%APPDATA%` paths; it exposes `SetTestRoot()` returning `IDisposable` for test isolation. Current `SavedProfile.ProfileVersion` is `"v1.41"`.
 
 **Constraint min/max invariants.** `TuningConstraints` setters call `SetMinMax()` / `SetMaxMin()` helpers that auto-correct the paired bound using `[CallerMemberName]` to derive the counterpart property name. Never bypass these setters.
 
 **`_isLoadingProfile` flag.** `MainViewModel` sets this during profile deserialization to suppress async wiki/AI spec fetches that would overwrite the loaded values.
 
+## CalculationHelpers
+
+`Services/CalculationHelpers.cs` is a shared static utility used by every calculator. Contains:
+- All shared numeric constants (`SpringHzToNmm = 0.019739`, `GearRatioMin/Max`, power/mass/speed baselines)
+- `EffectiveWtDist(car)` — returns explicit front weight distribution or engine-position default
+- `EstimateCGHeight(car)` — suspension-upgrade + engine-position + mass correction, clamped 280–700 mm
+- `ComputeEffectiveMaxSpeedKmh(car, r)` — Newton-Raphson power balance including aero drag
+- `GetSeasonGripFactor(season)` — returns 0.85–1.05 multiplier
+- `GetPowerDeliveryFactors(pt, asp, antiLag)` — returns `(Diff, Spring, Damper)` multipliers by powertrain/aspiration
+- `L(key)` — shorthand for `LocalizationService.Instance.T(key)` used throughout calculators
+
 ## TuneGeneratorService
 
 Pure static methods — no state. Each `Calculate*` method signature is `(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string,string> ex)` and writes side effects only to `r` and `ex`. Key points:
 
-- **Spring rate formula**: `k = mass × wdF × (2πf)² / 2000` (constant 0.019739, result in N/mm)
+- **Spring rate formula**: `sprF = 0.039478 × hzF² × mass × wdF` (N/mm). `CalculationHelpers.SpringHzToNmm = 0.019739` is a separate constant used only for physics-floor checks in post-validation — the primary spring calc uses `CorrectSpringHzToNmm = 0.039478` (2×) defined locally in `SuspensionCalculator`.
+- **Post-validation pass**: After initial generation, `GearingCalculator.PostValidateAndRecalculate()` runs up to 3 iterations fixing RPM drops between gears, spring/ride-height coherence, and re-converging aero if effective max speed shifted.
 - **Final drive**: Newton-Raphson targeting `MaxSpeedKmh` at 95% MaxRPM through top gear ratio
 - **Aero convergence**: `CalculateAero()` is called 3× iteratively to converge on speed-dependent downforce
 - **Discipline switch in every method** — adding a new discipline requires updating every `switch`
 - **Aspiration affects multipliers** throughout: power delivery, launch RPM floor, spring/damper/ARB factors, differential
 - **Dynamic camber caps** based on mass/PTW ratio; soft-squash (proportional) clamping rather than hard clip
 - **Tire model**: 9 tire types × 3 properties (grip, thermal sensitivity, wear resistance)
+- **AWD differential**: for AWD cars, `DifferentialCalculator` also sets `TuneResult.DiffFrontAccel`, `DiffFrontDecel`, and `CenterDiffBias` (rear-biased percentage) in addition to the rear-diff fields
+- **Gear count flags**: `CarCard.AllowGearCalculation` gates full ratio output; `CarCard.OnlyFinalDriveCalculation` outputs only final drive ratio
 - `TuneResult.Explanations` (`Dictionary<string,string>`) is populated by each method with human-readable justifications shown in the UI
 
 ## CarCard — Computed Properties

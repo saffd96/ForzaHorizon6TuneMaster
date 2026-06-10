@@ -164,7 +164,6 @@
   "Enum_Season_Autumn": "Autumn",
   "Enum_Season_Winter": "Winter",
 
-  "DragDistEighth": "⅛ mile",
   "DragDistQuarter": "¼ mile",
   "DragDistHalf": "½ mile",
   "DragDistMile": "1 mile",
@@ -296,7 +295,7 @@
   "HelpStep4Note": "Spring and ride height sections are visible only with Sport / Race / Rally / Drift / Offroad suspension. Center diff bias (0% = front, 100% = rear) is only for AWD. If no aero kit is installed, uncheck and leave fields empty.",
 
   "HelpStep5Title": "5 — DISCIPLINE & GENERATION",
-   "HelpStep5Text": "Choose a discipline — it determines target spring frequencies, wheel geometry, gear ratios and tire pressure:\n\n• Road — tarmac, balanced handling\n• Touge — mountain passes, precise corner entry\n• Drift — controlled oversteer, angle and slide\n• Drag — straight line, max launch\n• Rally — mixed surface, soft suspension\n• Cross Country — off-road, max travel\n• Street — urban, speed and maneuverability\n\nFor Drag, also set the distance (⅛, ¼, ½ mile or mile).",
+   "HelpStep5Text": "Choose a discipline — it determines target spring frequencies, wheel geometry, gear ratios and tire pressure:\n\n• Road — tarmac, balanced handling\n• Touge — mountain passes, precise corner entry\n• Drift — controlled oversteer, angle and slide\n• Drag — straight line, max launch\n• Rally — mixed surface, soft suspension\n• Cross Country — off-road, max travel\n• Street — urban, speed and maneuverability\n\nFor Drag, also set the distance (¼, ½ mile or mile).",
   "HelpStep5Note": "Click ⚡ Generate at the bottom of the left panel. Or check ✓ Auto in the right panel header — the tune auto-recalculates on any data change (~400 ms debounce). Generation status is shown in the status bar and overlay.",
 
   "HelpStep6Title": "6 — VIEWING RESULTS",
@@ -504,10 +503,9 @@
   "Expl_GearNote_Touge": "Short gears for mountain switchbacks.",
   "Expl_GearNote_Road": "Road discipline ratios.",
 
-  "Expl_DragDistStr_0": "1/8 mile",
-  "Expl_DragDistStr_1": "1/4 mile",
-  "Expl_DragDistStr_2": "1/2 mile",
-  "Expl_DragDistStr_3": "1 mile",
+  "Expl_DragDistStr_0": "1/4 mile",
+  "Expl_DragDistStr_1": "1/2 mile",
+  "Expl_DragDistStr_2": "1 mile",
   "Expl_DragNote": "{0}: first {1:F2} (TQ/mass {2:F2} Nm/kg, {3}).",
 
   "Expl_RpmAbbr": "RPM",
