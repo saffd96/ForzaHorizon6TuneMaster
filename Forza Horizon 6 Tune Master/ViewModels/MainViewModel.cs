@@ -1037,7 +1037,7 @@ public class MainViewModel : INotifyPropertyChanged
             StatusMessage = string.Format(T("StatusTuneGenerated"), Car.Make, Car.Model, $"{discLocalized}  •  {DateTime.Now:HH:mm}");
 
             _tuneGenerationCount++;
-            if (_tuneGenerationCount % 7 == 0)
+            if (_tuneGenerationCount % 25 == 0)
             {
                 var owner = Application.Current?.MainWindow;
                 if (owner != null)
