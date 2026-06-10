@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace Forza_Horizon_6_Tune_Master.Models;
 
 public class TuneResult
