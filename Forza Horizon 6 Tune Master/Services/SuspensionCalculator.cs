@@ -114,10 +114,12 @@ internal static class SuspensionCalculator
         else
             hzR += squat;
 
-        const double CorrectSpringHzToNmm = 0.039478; 
+        const double CorrectSpringHzToNmm = 0.039478;
 
-        double sprF = CorrectSpringHzToNmm * hzF * hzF * car.TotalMass * wdF;
-        double sprR = CorrectSpringHzToNmm * hzR * hzR * car.TotalMass * wdR;
+        // Formula produces values in game spring units (displayed as "kgf/mm").
+        // Multiply by GameSpringUnitToNmm to store canonically in N/mm.
+        double sprF = CorrectSpringHzToNmm * hzF * hzF * car.TotalMass * wdF * CalculationHelpers.GameSpringUnitToNmm;
+        double sprR = CorrectSpringHzToNmm * hzR * hzR * car.TotalMass * wdR * CalculationHelpers.GameSpringUnitToNmm;
 
         double cgH_spr    = CalculationHelpers.EstimateCGHeight(car);
         double avgProfile_spr = (car.FrontTireProfile + car.RearTireProfile) / 2.0;
@@ -244,8 +246,8 @@ internal static class SuspensionCalculator
 
     public static void CalculateDampers(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
     {
-        double sprF = r.SpringFront > 0 ? r.SpringFront : 100.0;
-        double sprR = r.SpringRear > 0 ? r.SpringRear : 100.0;
+        double sprF = (r.SpringFront > 0 ? r.SpringFront : 100.0) / CalculationHelpers.GameSpringUnitToNmm;
+        double sprR = (r.SpringRear > 0 ? r.SpringRear : 100.0) / CalculationHelpers.GameSpringUnitToNmm;
 
         double wdF = CalculationHelpers.EffectiveWtDist(car) / 100.0;
         double massF = car.TotalMass * wdF;

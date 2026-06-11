@@ -2,15 +2,15 @@
 /shelf/
 /workspace.xml
 
+# .NET build outputs (игнорируем ВСЕ папки bin и obj в проекте)
+[Bb]in/
+[Oo]bj/
+
 # Rider / JetBrains ignored files
 /projectSettingsUpdater.xml
 /.idea.Forza Horizon 6 Tune Master.iml
 /modules.xml
 /contentModel.xml
-
-# .NET build outputs (игнорируем ВСЕ папки bin и obj в проекте)
-[Bb]in/
-[Oo]bj/
 
 # API keys (создайте ApiKeys.cs из ApiKeys.cs.example со своим ключом)
 **/Services/ApiKeys.cs

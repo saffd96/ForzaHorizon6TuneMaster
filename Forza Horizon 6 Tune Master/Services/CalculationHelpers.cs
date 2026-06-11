@@ -32,6 +32,7 @@ internal static class CalculationHelpers
     internal const double MassLogFactor      = 1.0;
 
     internal const double SpringHzToNmm      = 0.019739;
+    internal const double GameSpringUnitToNmm = 9.807; // FH6 spring display unit ("kgf/mm") → canonical N/mm
     internal const double RevLimitFraction   = 0.95;
     internal const double TargetSpeedCapKmh  = 700;
 

@@ -39,5 +39,7 @@ public class ProfileService
 
     public void Delete(string name) => _storage.Delete(name);
 
+    public void DeleteAll() => _storage.DeleteAll();
+
     public List<string> GetProfileNames() => _storage.GetProfileNames();
 }

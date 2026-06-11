@@ -40,12 +40,18 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{l:Loc ResultHeader}" Style="{StaticResource SubtitleText}"
                            FontSize="14" FontWeight="Bold"/>
-                <CheckBox Grid.Column="1"
-                          IsChecked="{Binding IsAutoGenerate}"
-                          Content="{l:Loc AutoCheckbox}"
-                          Foreground="{StaticResource TextDimBrush}"
-                          VerticalAlignment="Center"
-                          FontSize="11" Margin="0,0,8,0"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <CheckBox IsChecked="{Binding IsOverlayMode}"
+                              Content="{l:Loc OverlayCheckbox}"
+                              Foreground="{StaticResource CyanBrush}"
+                              VerticalAlignment="Center"
+                              FontSize="11" Margin="0,0,8,0"/>
+                    <CheckBox IsChecked="{Binding IsAutoGenerate}"
+                              Content="{l:Loc AutoCheckbox}"
+                              Foreground="{StaticResource TextDimBrush}"
+                              VerticalAlignment="Center"
+                              FontSize="11" Margin="0,0,8,0"/>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -108,37 +114,6 @@
                                 <TextBlock Text="{Binding TuneResult.CreatedAt, Converter={StaticResource DateDisplay}}"
                                            FontSize="10" Foreground="{StaticResource TextMutedBrush}"
                                            TextWrapping="Wrap" TextAlignment="Right"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <!-- ── Launch Control (Drag only) ────────────── -->
-                    <Border Visibility="{Binding HasLaunchControl, Converter={StaticResource B2V}}"
-                            Background="{StaticResource ElevatedBrush}"
-                            BorderBrush="{StaticResource AccentBrush}"
-                            BorderThickness="3,0,0,0"
-                            CornerRadius="6" Margin="0,0,0,8" Padding="14,10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="{l:Loc LaunchControlHeader}"
-                                            Foreground="{StaticResource AccentBrush}"
-                                            FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
-                                <TextBlock TextWrapping="Wrap" FontSize="11"
-                                           Foreground="{StaticResource TextDimBrush}"
-                                            Text="{l:Loc LaunchControlHint}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" HorizontalAlignment="Center"
-                                        VerticalAlignment="Center" Margin="16,0,4,0">
-                                <TextBlock Text="{Binding TuneResult.LaunchControlRpm, StringFormat='{}{0:F0}'}"
-                                           FontSize="{DynamicResource FontHuge}" FontWeight="Bold"
-                                           Foreground="{StaticResource AccentBrush}"
-                                           HorizontalAlignment="Center"/>
-                                <TextBlock Text="{l:Loc LaunchControlRpm}" Style="{StaticResource ParamLabel}"
-                                            Foreground="{StaticResource AccentBrush}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -824,7 +799,39 @@
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                      </ItemsControl>
-                                </WrapPanel>
+                                 </WrapPanel>
+
+                                <!-- ── Launch Control (Drag only) ────────────── -->
+                                <Border Visibility="{Binding HasLaunchControl, Converter={StaticResource B2V}}"
+                                        Background="{StaticResource ElevatedBrush}"
+                                        BorderBrush="{StaticResource AccentBrush}"
+                                        BorderThickness="3,0,0,0"
+                                        CornerRadius="6" Margin="0,0,0,8" Padding="12,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{l:Loc LaunchControlHeader}"
+                                                        Foreground="{StaticResource AccentBrush}"
+                                                        FontSize="10" FontWeight="Bold" Margin="0,0,0,2"/>
+                                            <TextBlock TextWrapping="Wrap" FontSize="10"
+                                                       Foreground="{StaticResource TextDimBrush}"
+                                                        Text="{l:Loc LaunchControlHint}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center" Margin="12,0,2,0">
+                                            <TextBlock Text="{Binding TuneResult.LaunchControlRpm, StringFormat='{}{0:F0}'}"
+                                                       FontSize="18" FontWeight="Bold"
+                                                       Foreground="{StaticResource AccentBrush}"
+                                                       HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{l:Loc LaunchControlRpm}" Style="{StaticResource ParamLabel}"
+                                                        Foreground="{StaticResource AccentBrush}" FontSize="9"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
                                 <views:GearChartView Height="240"
                                     GearRatios="{Binding TuneResult.GearRatios}"
                                     FinalDrive="{Binding TuneResult.FinalDrive}"
@@ -832,7 +839,8 @@
                                     PowerPeakRPM="{Binding TuneResult.Car.PowerPeakRPM}"
                                     TorquePeakRPM="{Binding TuneResult.Car.TorquePeakRPM}"
                                     WheelDiameterInch="{Binding TuneResult.Car.RearWheelDiameterInch}"
-                                    ActualMaxSpeedKmh="{Binding TuneResult.ActualMaxSpeedKmh}"/>
+                                    ActualMaxSpeedKmh="{Binding TuneResult.ActualMaxSpeedKmh}"
+                                    UseImperial="{Binding UseImperial}"/>
                             </StackPanel>
                         </Border>
 

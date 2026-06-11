@@ -227,6 +227,8 @@
                                 Command="{Binding LoadCommand}" Margin="4,0,0,0" Padding="10,5"/>
                         <Button Content="{l:Loc ProfileDelete}"   Style="{StaticResource DangerButton}"
                                 Command="{Binding DeleteProfileCommand}" Margin="4,0,0,0" Padding="10,5"/>
+                        <Button Content="{l:Loc ProfileDeleteAll}" Style="{StaticResource DangerButton}"
+                                Command="{Binding DeleteAllProfilesCommand}" Margin="4,0,0,0" Padding="10,5"/>
                         <Button Content="{l:Loc ProfileNew}"      Style="{StaticResource SecondaryButton}"
                                 Command="{Binding NewProfileCommand}" Margin="4,0,0,0" Padding="10,5"/>
 
@@ -268,7 +270,8 @@
                     Background="{StaticResource BgBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="1,0,0,0">
-                <views:TuneResultView DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}"/>
+                <views:TuneResultView DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}"
+                                      Visibility="{Binding IsOverlayMode, Converter={StaticResource BoolToCollapsed}}"/>
             </Border>
         </Grid>
 

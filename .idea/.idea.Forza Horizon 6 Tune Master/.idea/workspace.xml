@@ -8,25 +8,52 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6f5aca4a-8e95-4953-8a4a-45b281d20313" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/AGENTS.md" beforeDir="false" afterPath="$PROJECT_DIR$/AGENTS.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/TuneOverlayWindow.xaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/TuneOverlayWindow.xaml.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/en.json" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/en.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/ru.json" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/ru.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/Enums.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/Enums.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/CarDatabaseService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/CarDatabaseService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/DifferentialCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/DifferentialCalculator.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/MainWindow.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/MainWindow.xaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/MainWindow.xaml.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/MainWindow.xaml.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/TuningConstraints.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/TuningConstraints.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/AlignmentCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/AlignmentCalculator.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/CalculationHelpers.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/CalculationHelpers.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/GearingCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/GearingCalculator.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/ProfileService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/ProfileService.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/StorageService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/StorageService.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/SuspensionCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/SuspensionCalculator.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/TireCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/TireCalculator.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/TuneGeneratorService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/TuneGeneratorService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/WikiCarSpecService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/WikiCarSpecService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/CarSpecController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/CarSpecController.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/MainViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/MainViewModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/CarCardView.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/CarCardView.xaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/TrackInfoView.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/TrackInfoView.xaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/GearChartView.xaml.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/GearChartView.xaml.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/HelpWindow.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/HelpWindow.xaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/TuneResultView.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/TuneResultView.xaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/Services/TuneGeneratorServiceTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/Services/TuneGeneratorServiceTests.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/TuneResultView.xaml.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/TuneResultView.xaml.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/Helpers/CarFactory.cs" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/Helpers/CarFactory.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/Models/TuningConstraintsTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/Models/TuningConstraintsTests.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/bin/Debug/net8.0/TuneValidator.deps.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/bin/Debug/net8.0/TuneValidator.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/bin/Debug/net8.0/TuneValidator.exe" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/bin/Debug/net8.0/TuneValidator.pdb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/bin/Debug/net8.0/TuneValidator.runtimeconfig.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/.NETCoreApp,Version=v8.0.AssemblyAttributes.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/TuneValidator.AssemblyInfo.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/TuneValidator.AssemblyInfoInputs.cache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/TuneValidator.GeneratedMSBuildEditorConfig.editorconfig" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/TuneValidator.GlobalUsings.g.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/TuneValidator.assets.cache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/TuneValidator.csproj.CoreCompileInputs.cache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/TuneValidator.csproj.FileListAbsolute.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/TuneValidator.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/TuneValidator.genruntimeconfig.cache" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/TuneValidator.pdb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/apphost.exe" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/ref/TuneValidator.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/Debug/net8.0/refint/TuneValidator.dll" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/TuneValidator.csproj.nuget.dgspec.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/TuneValidator.csproj.nuget.g.props" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/TuneValidator.csproj.nuget.g.targets" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/project.assets.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneValidator/obj/project.nuget.cache" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,6 +62,7 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -52,6 +80,8 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/38ad98c9d60c1739a82dce92fa559af31b833496d8d3fba4a86361ff05bf017/XamlReader.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/62b26b8f565e2f771607257cd215a4fd55028ec12c4331bcc6641ffa063e5/XpsFont.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/9349c6a67823e37b4ecda5ffa0ae83c89b566798c0d462b4c5f2f5e49a7c5f/Helper.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Forza Horizon 6 Tune Master/obj/Debug/net8.0-windows/MainWindow.g.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Forza Horizon 6 Tune Master/obj/Debug/net8.0-windows/Views/FeedbackWindow.g.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Forza Horizon 6 Tune Master/obj/Debug/net8.0-windows/Views/HelpWindow.g.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
@@ -67,16 +97,16 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;.NET Project.Forza Horizon 6 Tune Master.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    ".NET Project.Forza Horizon 6 Tune Master.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "master"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration name="Forza Horizon 6 Tune Master" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="" />
@@ -114,9 +144,6 @@
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="fix: formulas clirence" />
-    <MESSAGE value="fix: suspension formulas" />
-    <MESSAGE value="fix aero formulas" />
     <MESSAGE value="fix: differential formulas" />
     <MESSAGE value="fix: breaks formulas" />
     <MESSAGE value="fix: gears" />
@@ -139,7 +166,10 @@
     <MESSAGE value="fixes" />
     <MESSAGE value="all fixes" />
     <MESSAGE value="version" />
-    <option name="LAST_COMMIT_MESSAGE" value="version" />
+    <MESSAGE value="fix drag formulas. add tests" />
+    <MESSAGE value="up version" />
+    <MESSAGE value="change counter" />
+    <option name="LAST_COMMIT_MESSAGE" value="change counter" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

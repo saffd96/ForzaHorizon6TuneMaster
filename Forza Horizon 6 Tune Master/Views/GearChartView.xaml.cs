@@ -37,6 +37,10 @@ public partial class GearChartView : UserControl
         DependencyProperty.Register(nameof(ActualMaxSpeedKmh), typeof(double), typeof(GearChartView),
             new PropertyMetadata(0.0, OnPropChanged));
 
+    public static readonly DependencyProperty UseImperialProperty =
+        DependencyProperty.Register(nameof(UseImperial), typeof(bool), typeof(GearChartView),
+            new PropertyMetadata(false, OnPropChanged));
+
     public IList<double>? GearRatios
     {
         get => (IList<double>?)GetValue(GearRatiosProperty);
@@ -77,6 +81,12 @@ public partial class GearChartView : UserControl
     {
         get => (double)GetValue(ActualMaxSpeedKmhProperty);
         set => SetValue(ActualMaxSpeedKmhProperty, value);
+    }
+
+    public bool UseImperial
+    {
+        get => (bool)GetValue(UseImperialProperty);
+        set => SetValue(UseImperialProperty, value);
     }
 
     private static readonly Color[] Palette =
@@ -142,6 +152,9 @@ public partial class GearChartView : UserControl
         if (maxSpeed <= 0) return;
         double speedCap = maxSpeed * 1.08;
 
+        double kmhToDisplay = UseImperial ? 0.621371 : 1.0;
+        double displayCap = speedCap * kmhToDisplay;
+
         double rpmCap = MaxRPM * 1.06;
 
         // mapping helpers
@@ -155,9 +168,12 @@ public partial class GearChartView : UserControl
         const double lblSize = 10;
 
         // ── gridlines (vertical – speed) ──
-        int speedStep = speedCap <= 100 ? 20 : speedCap <= 250 ? 50 : 100;
-        for (int s = 0; s <= speedCap + speedStep; s += speedStep)
+        int speedStep = (int)(speedCap <= 100 ? 20 : speedCap <= 250 ? 50 : 100);
+        int displayStep = UseImperial ? (int)Math.Round(speedStep * kmhToDisplay / 10) * 10 : speedStep;
+        if (displayStep < 5) displayStep = 5;
+        for (int ds = 0; ds <= displayCap + displayStep; ds += displayStep)
         {
+            double s = UseImperial ? ds / kmhToDisplay : ds;
             double x = SpeedToX(s);
             ChartCanvas.Children.Add(new Line
             {
@@ -167,7 +183,7 @@ public partial class GearChartView : UserControl
             });
             var tb = new TextBlock
             {
-                Text = $"{s}",
+                Text = $"{ds}",
                 Foreground = lblBrush,
                 FontSize = lblSize,
                 FontFamily = lblFamily,
@@ -206,9 +222,12 @@ public partial class GearChartView : UserControl
         // ── axis labels ──
         var locSvc = Forza_Horizon_6_Tune_Master.Services.LocalizationService.Instance;
         string FormatLabel(string key, int rpm) => $"{locSvc.T(key)} {rpm / 1000}k";
+        string axisLabel = UseImperial
+            ? $"{locSvc.T("ChartAxisSpeed")}, {locSvc.T("UnitMph")}"
+            : $"{locSvc.T("ChartAxisSpeed")}, {locSvc.T("UnitKmh")}";
         var axisLbl = new TextBlock
         {
-            Text = locSvc.T("ChartAxisSpeed"),
+            Text = axisLabel,
             Foreground = dimLblBrush,
             FontSize = 9,
             FontFamily = lblFamily,
@@ -310,7 +329,6 @@ public partial class GearChartView : UserControl
             double y0 = RpmToY(0);
             double x1 = endX[i];
             double y1 = endY[i];
-
             ChartCanvas.Children.Add(new Line
             {
                 X1 = x0, Y1 = y0, X2 = x1, Y2 = y1,
@@ -329,11 +347,11 @@ public partial class GearChartView : UserControl
                 TextAlignment = TextAlignment.Center
             };
             ChartCanvas.Children.Add(lbl);
-            Canvas.SetLeft(lbl, x1 - 12);
+            Canvas.SetLeft(lbl, x1 - 5);
             Canvas.SetTop(lbl, y1 - 20);
 
-            // speed label at top of gear line (km/h at redline)
-            double topSpeed = SpeedAt(i, MaxRPM);
+            // speed label at top of gear line (km/h or mph at redline)
+            double topSpeed = SpeedAt(i, MaxRPM) * kmhToDisplay;
             var speedLbl = new TextBlock
             {
                 Text = $"{topSpeed:F0}",
@@ -343,15 +361,16 @@ public partial class GearChartView : UserControl
                 TextAlignment = TextAlignment.Center
             };
             ChartCanvas.Children.Add(speedLbl);
-            Canvas.SetLeft(speedLbl, x1 - 10);
-            Canvas.SetTop(speedLbl, padT + 2);
+            Canvas.SetLeft(speedLbl, x1 + 6);
+            Canvas.SetTop(speedLbl, padT - 14);
         }
 
         // vertical dashed line at actual max speed
-        double actualMax = ActualMaxSpeedKmh;
-        if (actualMax > 0 && actualMax <= speedCap)
+        double actualMaxKmh = ActualMaxSpeedKmh;
+        double actualMaxDisplay = actualMaxKmh * kmhToDisplay;
+        if (actualMaxKmh > 0 && actualMaxKmh <= speedCap)
         {
-            double xMax = SpeedToX(actualMax);
+            double xMax = SpeedToX(actualMaxKmh);
             ChartCanvas.Children.Add(new Line
             {
                 X1 = xMax, X2 = xMax, Y1 = padT, Y2 = padT + ch,
@@ -361,7 +380,7 @@ public partial class GearChartView : UserControl
             });
             var maxLbl = new TextBlock
             {
-                Text = $"{actualMax:F0}",
+                Text = $"{actualMaxDisplay:F0}",
                 Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 0x22, 0xC5, 0x5E)),
                 FontSize = 9,
                 FontFamily = lblFamily,
@@ -431,7 +450,7 @@ public partial class GearChartView : UserControl
                 };
                 ChartCanvas.Children.Add(dropLbl);
                 Canvas.SetLeft(dropLbl, targetX + 6);
-                Canvas.SetTop(dropLbl, targetY - 10);
+                Canvas.SetTop(dropLbl, targetY - 12);
 
                 curX = shiftX;
                 curY = shiftY;

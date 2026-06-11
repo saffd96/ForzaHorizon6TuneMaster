@@ -445,8 +445,8 @@ internal static class GearingCalculator
         double sprFracR = (r.SpringRear - c.SpringRearMin) / sprRangeR;
 
         double wdF = CalculationHelpers.EffectiveWtDist(car) / 100.0;
-        double physFloorF = CalculationHelpers.SpringHzToNmm * 4.0 * car.TotalMass * wdF * 0.55;
-        double physFloorR = CalculationHelpers.SpringHzToNmm * 4.0 * car.TotalMass * (1 - wdF) * 0.55;
+        double physFloorF = CalculationHelpers.SpringHzToNmm * 4.0 * car.TotalMass * wdF * 0.55 * CalculationHelpers.GameSpringUnitToNmm;
+        double physFloorR = CalculationHelpers.SpringHzToNmm * 4.0 * car.TotalMass * (1 - wdF) * 0.55 * CalculationHelpers.GameSpringUnitToNmm;
 
         bool changed = false;
 

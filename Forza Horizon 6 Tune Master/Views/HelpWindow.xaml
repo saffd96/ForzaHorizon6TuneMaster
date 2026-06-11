@@ -40,7 +40,7 @@
                     <Border.Effect>
                         <DropShadowEffect Color="#FF5E0E" Opacity="0.3" BlurRadius="10" ShadowDepth="0"/>
                     </Border.Effect>
-                    <TextBlock Text="8"
+                    <TextBlock Text="9"
                                FontSize="18" FontWeight="Bold"
                                Foreground="#FFFFFF"
                                HorizontalAlignment="Center"
@@ -404,6 +404,37 @@
                                            Foreground="{StaticResource TextDimBrush}"
                                            Text="{l:Loc HelpStep8Note}"/>
                             </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Step 9 -->
+                <Border Background="{StaticResource CardBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10" Padding="0" Margin="0,0,0,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="50"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0"
+                                Background="{StaticResource AccentBrush}"
+                                CornerRadius="10,0,0,10"
+                                BorderThickness="0">
+                            <TextBlock Text="9"
+                                       FontSize="22" FontWeight="Bold"
+                                       Foreground="#FFFFFF"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="20,16">
+                            <TextBlock Text="{l:Loc HelpStep9Title}"
+                                       Foreground="{StaticResource AccentBrush}"
+                                       FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       Foreground="{StaticResource TextBrush}"
+                                       Text="{l:Loc HelpStep9Text}"/>
                         </StackPanel>
                     </Grid>
                 </Border>

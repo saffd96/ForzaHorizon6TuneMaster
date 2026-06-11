@@ -14,7 +14,11 @@ public class TuningConstraints : NotifyBase
     }
 
     private void SetMaxMin(ref double maxField, double maxValue, double minValue, double minField, [CallerMemberName] string? p = null)
-        => Set(ref maxField, Math.Max(maxValue, minField), p);
+    {
+        double clamped = Math.Max(maxValue, minField);
+        if (!Set(ref maxField, clamped, p) && clamped != maxValue)
+            OnPropertyChanged(p);
+    }
 
     private static string? MaxPropertyName(string? minProp)
         => minProp?.EndsWith("Min") == true ? minProp[..^3] + "Max" : null;
@@ -93,19 +97,19 @@ public class TuningConstraints : NotifyBase
 
     [JsonPropertyOrder(1)]
     public double SpringFrontMin { get => _springFrontMin; set => SetMinMax(ref _springFrontMin, value, ref _springFrontMax); }
-    private double _springFrontMin = 57.1;
+    private double _springFrontMin = 560;
 
     [JsonPropertyOrder(0)]
     public double SpringFrontMax { get => _springFrontMax; set => SetMaxMin(ref _springFrontMax, value, SpringFrontMin, _springFrontMin); }
-    private double _springFrontMax = 285.6;
+    private double _springFrontMax = 2800;
 
     [JsonPropertyOrder(1)]
     public double SpringRearMin { get => _springRearMin; set => SetMinMax(ref _springRearMin, value, ref _springRearMax); }
-    private double _springRearMin = 57.1;
+    private double _springRearMin = 560;
 
     [JsonPropertyOrder(0)]
     public double SpringRearMax { get => _springRearMax; set => SetMaxMin(ref _springRearMax, value, SpringRearMin, _springRearMin); }
-    private double _springRearMax = 285.6;
+    private double _springRearMax = 2800;
 
     [JsonPropertyOrder(1)]
     public double RideHeightFrontMin { get => _rideHeightFrontMin; set => SetMinMax(ref _rideHeightFrontMin, value, ref _rideHeightFrontMax); }

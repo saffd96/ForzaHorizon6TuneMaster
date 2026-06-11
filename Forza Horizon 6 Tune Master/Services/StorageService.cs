@@ -8,7 +8,7 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 public class SavedProfile
 {
-    public const string ProfileVersion = "v1.4.2";
+    public const string ProfileVersion = "v1.5";
 
     public CarCard Car { get; set; } = new();
     public TrackInfo Track { get; set; } = new();
@@ -63,5 +63,11 @@ public class StorageService
         string safeName = string.Join("_", profileName.Split(Path.GetInvalidFileNameChars()));
         string path = Path.Combine(ProfilesDir, $"{safeName}.json");
         if (File.Exists(path)) File.Delete(path);
+    }
+
+    public void DeleteAll()
+    {
+        foreach (var name in GetProfileNames())
+            Delete(name);
     }
 }

@@ -97,6 +97,21 @@ public class MainViewModel : INotifyPropertyChanged
     public bool HasAWDFrontDiff  => Car.DriveType == Models.DriveType.AWD && _tuneResult?.CenterDiffBias.HasValue == true;
     public bool HasLaunchControl => _tuneResult?.LaunchControlRpm.HasValue == true;
 
+    // ── Overlay mode ───────────────────────────────────────────────────────────
+    private bool _isOverlayMode;
+    public bool IsOverlayMode
+    {
+        get => _isOverlayMode;
+        set { _isOverlayMode = value; OnPropertyChanged(); }
+    }
+
+    private double _overlayOpacity = 0.9;
+    public double OverlayOpacity
+    {
+        get => _overlayOpacity;
+        set { _overlayOpacity = value; OnPropertyChanged(); }
+    }
+
     // ── Car database + specs ──────────────────────────────────────────────────
     private readonly CarSpecController _carSpec = new();
     private bool _isLoadingProfile;
@@ -107,6 +122,7 @@ public class MainViewModel : INotifyPropertyChanged
         set
         {
             _carSpec.SelectCar(value, _car, _isLoadingProfile);
+            if (!_isLoadingProfile) TuneResult = null;
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedCarDisplayText));
             OnPropertyChanged(nameof(HasSelectedCar));
@@ -839,6 +855,7 @@ public class MainViewModel : INotifyPropertyChanged
     public RelayCommand SaveCommand           { get; }
     public RelayCommand LoadCommand           { get; }
     public RelayCommand DeleteProfileCommand  { get; }
+    public RelayCommand DeleteAllProfilesCommand { get; }
     public RelayCommand NewProfileCommand     { get; }
     public RelayCommand FetchAiCarSpecsCommand { get; }
     public RelayCommand DismissAiSpecStatusCommand { get; }
@@ -890,6 +907,7 @@ public class MainViewModel : INotifyPropertyChanged
         SaveCommand            = new RelayCommand(SaveProfile);
         LoadCommand            = new RelayCommand(LoadProfile, () => SelectedProfile != null);
         DeleteProfileCommand   = new RelayCommand(DeleteProfile, () => SelectedProfile != null);
+        DeleteAllProfilesCommand = new RelayCommand(DeleteAllProfiles);
         NewProfileCommand      = new RelayCommand(NewProfile);
         FetchAiCarSpecsCommand = new RelayCommand(() => _ = _carSpec.FetchAiCarSpecsAsync(Car), () => !IsFetchingAiSpecs);
         DismissAiSpecStatusCommand = new RelayCommand(() =>
@@ -1124,6 +1142,15 @@ public class MainViewModel : INotifyPropertyChanged
         _profileService.Delete(SelectedProfile);
         RefreshProfiles();
         StatusMessage = T("StatusProfileDeleted");
+    }
+
+    private void DeleteAllProfiles()
+    {
+        if (MessageBox.Show(T("DeleteAllProfilesConfirm"), T("DeleteAllProfilesTitle"),
+                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+        _profileService.DeleteAll();
+        RefreshProfiles();
+        StatusMessage = T("StatusAllProfilesDeleted");
     }
 
     private void NewProfile()

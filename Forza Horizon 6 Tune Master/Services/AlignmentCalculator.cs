@@ -25,8 +25,6 @@ internal static class AlignmentCalculator
     private const double CamberBrakingThreshold        = 3.0;
     private const double CamberBrakingPenalty           = 0.20;
 
-    private const double CamberDriftRangeMax            = 1.0;
-
     public static void CalculateCamber(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r,
         Dictionary<string, string> ex, double effectiveMaxKmh)
     {

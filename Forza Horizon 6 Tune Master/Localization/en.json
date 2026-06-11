@@ -179,6 +179,10 @@
   "ProfileSave": "💾 Save",
   "ProfileLoad": "Load",
   "ProfileDelete": "🗑 Delete",
+  "ProfileDeleteAll": "🗑 Delete All",
+  "DeleteAllProfilesConfirm": "Delete ALL profiles? This cannot be undone.",
+  "DeleteAllProfilesTitle": "Confirm",
+  "StatusAllProfilesDeleted": "All profiles deleted",
   "ProfileNew": "+ New",
   "StatusProfilesRecalculated": "Recalculated outdated profiles: {0}",
 
@@ -187,6 +191,8 @@
   "HelpButtonTooltip": "How to use Tune Master",
   "GenerateButton": "⚡  Generate",
   "AutoCheckbox": "✓ Auto",
+  "OverlayCheckbox": "Overlay",
+  "OverlayOpacityTooltip": "Overlay opacity",
   "StatusBarDefault": "Ready",
   "EmptyStateTitle": "🏎",
   "EmptyStateText": "Tune not yet generated",
@@ -247,7 +253,7 @@
   "HelpTitle": "How to use Tune Master",
   "HelpClose": "OK — Close",
   "HelpDontShowAgain": "Don't show on startup",
-  "HelpProgressLabel": "8 steps • Quick guide to Tune Master",
+  "HelpProgressLabel": "9 steps • Quick guide to Tune Master",
 
   "FieldPower": "Power",
   "FieldSpeed": "Max speed",
@@ -307,6 +313,9 @@
   "HelpStep8Title": "8 — PROFILES & UNITS",
   "HelpStep8Text": "Profiles let you save and load full tune configurations:\n\n• 💾 Save — stores car data, constraints and tune. Name auto-generated: Make_Model_Year_Drive_Discipline.\n• Load — select a profile from the list to load immediately.\n• + New — resets all fields to defaults.\n• 🗑 Delete — removes the selected profile.\n\nProfiles saved with an older version are automatically recalculated on startup — outdated data formats update without any action needed.\n\nProfiles are stored as JSON files in %APPDATA%\\ForzaTuneMaster\\profiles\\.",
   "HelpStep8Note": "Units and language toggle in the top bar:\n• Metric / Imperial — affects all unit displays\n• Power: HP / PS / kW\n• Spring rate: N/mm · kgf/mm · lb/in\n• Interface language: Русский / English\n\nAll internal calculations use SI (metric) units — imperial conversion is for display only.",
+
+  "HelpStep9Title": "9 — FLOATING OVERLAY",
+  "HelpStep9Text": "Tune results can be displayed in a separate floating window on top of other apps:\n\n• TOGGLE — check the «Overlay» box in the right panel header or press Ctrl+Shift+O\n• DRAG — hold the header and move anywhere on screen\n• RESIZE — drag any corner of the window\n• OPACITY — slider in the header (0.3–1.0)\n• CLOSE — ✕ button in the header or press Ctrl+Shift+O again\n\nOverlay position and size are automatically saved on close and restored on next open.\n\nThe overlay is independent from the main window: it won't minimize with it and can hold focus separately.",
 
   "Enum_EngineType_I1": "I1 (single-cylinder)",
   "Enum_EngineType_I2": "I2",
