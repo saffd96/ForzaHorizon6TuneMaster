@@ -16,7 +16,7 @@ internal static class CalculationHelpers
     }
 
     internal const double GearRatioMin = 0.48;
-    internal const double GearRatioMax = 6.10;
+    internal const double GearRatioMax = 6.00;
 
     internal const double PowerBaselineHP   = 300;
     internal const double PowerStepHP        = 200;
@@ -35,6 +35,10 @@ internal static class CalculationHelpers
     internal const double GameSpringUnitToNmm = 9.807; // FH6 spring display unit ("kgf/mm") → canonical N/mm
     internal const double RevLimitFraction   = 0.95;
     internal const double TargetSpeedCapKmh  = 700;
+
+    internal const double SpringPhysicalFloorFactor = 0.55;
+    internal const double DragFirstGearBaseline = 4.5;
+    internal const double GearDegradeRallyFactor = 1.05;
 
     internal static double EffectiveWtDist(CarCard car)
     {

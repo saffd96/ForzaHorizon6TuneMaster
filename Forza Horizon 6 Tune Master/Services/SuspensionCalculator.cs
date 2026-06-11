@@ -244,6 +244,59 @@ internal static class SuspensionCalculator
         ex["RideHeight"] = string.Format(CalculationHelpers.L("Expl_RideHeight_Fmt"), r.RideHeightFront, r.RideHeightRear, note);
     }
 
+    public static bool SpringRideHeightFix(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r)
+    {
+        if (!car.SuspensionAllowsAdvancedTuning) return false;
+
+        bool offRoad = track.Discipline is Discipline.Rally or Discipline.CrossCountry;
+
+        double rhRangeF = Math.Max(1.0, c.RideHeightFrontMax - c.RideHeightFrontMin);
+        double rhRangeR = Math.Max(1.0, c.RideHeightRearMax - c.RideHeightRearMin);
+        double rhFracF = (r.RideHeightFront - c.RideHeightFrontMin) / rhRangeF;
+        double rhFracR = (r.RideHeightRear - c.RideHeightRearMin) / rhRangeR;
+
+        double sprRangeF = Math.Max(1.0, c.SpringFrontMax - c.SpringFrontMin);
+        double sprRangeR = Math.Max(1.0, c.SpringRearMax - c.SpringRearMin);
+        double sprFracF = (r.SpringFront - c.SpringFrontMin) / sprRangeF;
+        double sprFracR = (r.SpringRear - c.SpringRearMin) / sprRangeR;
+
+        double wdF = CalculationHelpers.EffectiveWtDist(car) / 100.0;
+        double physFloorF = CalculationHelpers.SpringHzToNmm * 4.0 * car.TotalMass * wdF * CalculationHelpers.SpringPhysicalFloorFactor * CalculationHelpers.GameSpringUnitToNmm;
+        double physFloorR = CalculationHelpers.SpringHzToNmm * 4.0 * car.TotalMass * (1 - wdF) * CalculationHelpers.SpringPhysicalFloorFactor * CalculationHelpers.GameSpringUnitToNmm;
+
+        bool changed = false;
+
+        if (!offRoad && rhFracF < 0.25 && sprFracF < 0.40 && r.SpringFront < physFloorF)
+        {
+            double newSpr = Math.Max(physFloorF, c.SpringFrontMin + sprRangeF * 0.50);
+            r.SpringFront = Math.Round(CalculationHelpers.Clamp(newSpr, c.SpringFrontMin, c.SpringFrontMax), 1);
+            changed = true;
+        }
+
+        if (!offRoad && rhFracR < 0.25 && sprFracR < 0.40 && r.SpringRear < physFloorR)
+        {
+            double newSpr = Math.Max(physFloorR, c.SpringRearMin + sprRangeR * 0.50);
+            r.SpringRear = Math.Round(CalculationHelpers.Clamp(newSpr, c.SpringRearMin, c.SpringRearMax), 1);
+            changed = true;
+        }
+
+        if (rhFracF > 0.75 && sprFracF > 0.85)
+        {
+            double newSpr = Math.Max(physFloorF, c.SpringFrontMin + sprRangeF * 0.65);
+            r.SpringFront = Math.Round(CalculationHelpers.Clamp(newSpr, c.SpringFrontMin, c.SpringFrontMax), 1);
+            changed = true;
+        }
+
+        if (rhFracR > 0.75 && sprFracR > 0.85)
+        {
+            double newSpr = Math.Max(physFloorR, c.SpringRearMin + sprRangeR * 0.65);
+            r.SpringRear = Math.Round(CalculationHelpers.Clamp(newSpr, c.SpringRearMin, c.SpringRearMax), 1);
+            changed = true;
+        }
+
+        return changed;
+    }
+
     public static void CalculateDampers(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
     {
         double sprF = (r.SpringFront > 0 ? r.SpringFront : 100.0) / CalculationHelpers.GameSpringUnitToNmm;

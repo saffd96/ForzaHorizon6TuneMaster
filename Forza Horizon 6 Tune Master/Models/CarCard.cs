@@ -223,6 +223,8 @@ public class CarCard : NotifyBase
         set { Set(ref _gearCount, value); }
     }
 
+    public int MaxAvailableGearCount { get; set; } = 10;
+
     private bool _allowGearCalculation = true;
     public bool AllowGearCalculation
     {
