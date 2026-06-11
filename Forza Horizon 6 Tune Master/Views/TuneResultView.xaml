@@ -550,7 +550,7 @@
                                         <TextBlock Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Aero]}">
                                             <TextBlock.Text>
-                                                <MultiBinding Converter="{StaticResource UV}" ConverterParameter="mass">
+                                                <MultiBinding Converter="{StaticResource UV}" ConverterParameter="aero">
                                                     <Binding Path="TuneResult.AeroFront"/>
                                                     <Binding Path="UseImperial"/>
                                                 </MultiBinding>
@@ -572,7 +572,7 @@
                                         <TextBlock Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Aero]}">
                                             <TextBlock.Text>
-                                                <MultiBinding Converter="{StaticResource UV}" ConverterParameter="mass">
+                                                <MultiBinding Converter="{StaticResource UV}" ConverterParameter="aero">
                                                     <Binding Path="TuneResult.AeroRear"/>
                                                     <Binding Path="UseImperial"/>
                                                 </MultiBinding>

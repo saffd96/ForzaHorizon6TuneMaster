@@ -125,6 +125,7 @@ public class UnitValueConverter : IMultiValueConverter
             "height"   => imp ? $"{val / 25.4:F2}{loc.T("UnitInch")}" : $"{val:F0} {loc.T("UnitMm")}",
             "speed"    => imp ? $"~{val * 0.6214:F0} {loc.T("UnitMph")}" : $"~{val:F0} {loc.T("UnitKmh")}",
             "mass"     => imp ? $"{val * 2.2046:F0} {loc.T("UnitLb")}"    : $"{val:F0} {loc.T("UnitKg")}",
+            "aero"     => imp ? $"{val * 2.2046:F0} {loc.T("UnitLb")}"    : $"{val:F0} {loc.T("UnitKg")}",
             "power"    => pu == PowerUnit.KW ? $"{val * 0.7457:F0} {loc.T("UnitKw")}"
                         : pu == PowerUnit.PS ? $"{val * 1.01387:F0} {loc.T("UnitPs")}"
                         :                      $"{val:F0} {loc.T("UnitHp")}",

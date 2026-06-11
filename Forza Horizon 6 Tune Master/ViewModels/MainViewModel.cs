@@ -249,6 +249,28 @@ public class MainViewModel : INotifyPropertyChanged
         set { Constraints.RideHeightRearMax = UnitConverter.RideHeightFromDisplay(value, UseImperial); OnPropertyChanged(); }
     }
 
+    // ── Aero constraint display properties ─────────────────────────────────────
+    public double AeroFrontMinDisplay
+    {
+        get => UnitConverter.AeroToDisplay(Constraints.AeroFrontMin, UseImperial);
+        set { Constraints.AeroFrontMin = UnitConverter.AeroFromDisplay(value, UseImperial); OnPropertyChanged(); }
+    }
+    public double AeroFrontMaxDisplay
+    {
+        get => UnitConverter.AeroToDisplay(Constraints.AeroFrontMax, UseImperial);
+        set { Constraints.AeroFrontMax = UnitConverter.AeroFromDisplay(value, UseImperial); OnPropertyChanged(); }
+    }
+    public double AeroRearMinDisplay
+    {
+        get => UnitConverter.AeroToDisplay(Constraints.AeroRearMin, UseImperial);
+        set { Constraints.AeroRearMin = UnitConverter.AeroFromDisplay(value, UseImperial); OnPropertyChanged(); }
+    }
+    public double AeroRearMaxDisplay
+    {
+        get => UnitConverter.AeroToDisplay(Constraints.AeroRearMax, UseImperial);
+        set { Constraints.AeroRearMax = UnitConverter.AeroFromDisplay(value, UseImperial); OnPropertyChanged(); }
+    }
+
     // ── Constraint unit labels ────────────────────────────────────────────────
     public string TirePressureUnitLabel => UseImperial ? T("UnitPressure_Imperial") : T("UnitPressure_Metric");
     public string SpringUnitLabel => _springUnit switch
@@ -258,6 +280,8 @@ public class MainViewModel : INotifyPropertyChanged
         _                => T("UnitSpring_KgfMm")
     };
     public string RideHeightUnitLabel => UseImperial ? T("UnitRideHeight_Imperial") : T("UnitRideHeight_Metric");
+    public string AeroUnitLabel => UseImperial ? T("UnitLb") : T("UnitKg");
+    public string AeroSectionHeaderText => $"{T("SectionAeroConstraints")} ({AeroUnitLabel})";
 
     private bool _syncingPowerUnit;
     private PowerUnit _powerUnit = PowerUnit.HP;
@@ -993,9 +1017,15 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(RideHeightFrontMaxDisplay));
         OnPropertyChanged(nameof(RideHeightRearMinDisplay));
         OnPropertyChanged(nameof(RideHeightRearMaxDisplay));
+        OnPropertyChanged(nameof(AeroFrontMinDisplay));
+        OnPropertyChanged(nameof(AeroFrontMaxDisplay));
+        OnPropertyChanged(nameof(AeroRearMinDisplay));
+        OnPropertyChanged(nameof(AeroRearMaxDisplay));
         OnPropertyChanged(nameof(TirePressureUnitLabel));
         OnPropertyChanged(nameof(SpringUnitLabel));
         OnPropertyChanged(nameof(RideHeightUnitLabel));
+        OnPropertyChanged(nameof(AeroUnitLabel));
+        OnPropertyChanged(nameof(AeroSectionHeaderText));
     }
 
     private void NotifyCarDisplayProperties()

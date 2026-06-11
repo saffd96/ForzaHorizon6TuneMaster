@@ -36,6 +36,9 @@ internal static class UnitConverter
     internal static double LengthToDisplay(double mm, bool imperial) => imperial ? Math.Round(mm / 25.4, 1) : mm;
     internal static double LengthFromDisplay(double val, bool imperial) => imperial ? val * 25.4 : val;
 
+    internal static double AeroToDisplay(double kgf, bool imperial) => imperial ? Math.Round(kgf * 2.2046, 0) : Math.Round(kgf, 0);
+    internal static double AeroFromDisplay(double val, bool imperial) => imperial ? Math.Round(val / 2.2046, 0) : Math.Round(val, 0);
+
     internal static double PowerToDisplay(double hp, PowerUnit unit) => unit switch
     {
         PowerUnit.KW => Math.Round(hp * 0.7457, 1),
