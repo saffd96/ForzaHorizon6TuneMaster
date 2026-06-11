@@ -116,8 +116,8 @@ internal static class AlignmentCalculator
 
         if (track.Discipline == Discipline.Drift)
         {
-            toeF = -0.35;
-            toeR = -0.15;
+            toeF = -0.80;
+            toeR =  0.20;
         }
         else
         {
@@ -153,11 +153,11 @@ internal static class AlignmentCalculator
     
     public static void CalculateCaster(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
     {
-        double baseByWeight = CalculationHelpers.Clamp(5.0 + (car.TotalMass - 800.0) / 600.0, 5.0, 7.5);
+        double baseByWeight = CalculationHelpers.Clamp(6.0 + (car.TotalMass - 800.0) / 400.0, 6.0, 7.5);
 
         double discMul = track.Discipline switch
         {
-            Discipline.Drag         => 0.90,
+            Discipline.Drag         => 1.00,
             Discipline.Drift        => 1.15,
             Discipline.Rally        => 0.92,
             Discipline.CrossCountry => 0.95,

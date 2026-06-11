@@ -12,12 +12,12 @@ internal static class TireCalculator
         {
             TireType.Slick     => 2.24,
             TireType.SemiSlick => 2.21,
-            TireType.Sport     => 2.07,
-            TireType.Street    => 2.14,
-            TireType.Stock     => 2.14,
-            TireType.Rally     => 2.03,
-            TireType.Winter    => 1.97,
-            TireType.Offroad   => 2.00,
+            TireType.Sport     => 1.93,
+            TireType.Street    => 1.90,
+            TireType.Stock     => 1.90,
+            TireType.Rally     => 1.59,
+            TireType.Winter    => 1.55,
+            TireType.Offroad   => 1.38,
             TireType.Drag      => 1.80,
             _                  => 2.14
         };
@@ -70,7 +70,7 @@ internal static class TireCalculator
         {
             case Discipline.Drag:
             {
-                discF = 0.60;
+                discF = 0.40;
 
                 double dragPtw = car.PowerHP / (car.TotalMass / 1000.0);
                 double dragPtwFactor = CalculationHelpers.Clamp((dragPtw - 100) / 400, 0, 1);
@@ -83,41 +83,21 @@ internal static class TireCalculator
                     DragDistance.Mile => 0.18,
                     _ => 0.00
                 };
-                discR = -0.35 - dragMassFactor * 0.10 + dragPtwFactor * 0.10 + dragDistFactor;
+                discR = -0.10 - dragMassFactor * 0.10 + dragPtwFactor * 0.10 + dragDistFactor;
                 reason = CalculationHelpers.L("Expl_TirePressureReason_Drag");
                 break;
             }
             case Discipline.Drift:
-            {
-                double tireGrip = car.TireType switch
-                {
-                    TireType.Slick     => 1.00,
-                    TireType.SemiSlick => 0.80,
-                    TireType.Sport     => 0.60,
-                    TireType.Street    => 0.50,
-                    TireType.Stock     => 0.40,
-                    TireType.Rally     => 0.30,
-                    TireType.Offroad   => 0.20,
-                    TireType.Drag      => 0.70,
-                    _                  => 0.50
-                };
-                double avgWidth = (car.FrontTireWidth + car.RearTireWidth) / 2.0;
-                double widthFactor = (avgWidth - 205) / 200;
-                double ptwActual = car.PowerHP / car.TotalMass;
-                double ptwFactor = CalculationHelpers.Clamp((ptwActual - 100) / 400, 0, 1);
-                double gripMod = CalculationHelpers.Clamp(tireGrip * 0.50 + widthFactor * 0.25 - ptwFactor * 0.25, 0, 1);
-                
-                discF = -0.05 + gripMod * 0.04;
-                discR =  0.45 + gripMod * 0.15;
+                discF = -0.50;
+                discR = -0.50;
                 reason = CalculationHelpers.L("Expl_TirePressureReason_Drift");
                 break;
-            }
             case Discipline.Rally:
-                discF = -0.20; discR = -0.20;
+                discF = -0.05; discR = -0.05;
                 reason = CalculationHelpers.L("Expl_TirePressureReason_Rally");
                 break;
             case Discipline.CrossCountry:
-                discF = -0.25; discR = -0.25;
+                discF = -0.05; discR = -0.05;
                 reason = CalculationHelpers.L("Expl_TirePressureReason_CrossCountry");
                 break;
             case Discipline.Touge:

@@ -406,18 +406,20 @@ public class TuneGeneratorServiceTests
     }
 
     [Fact]
-    public void Generate_SportUpgrade_DiffDecelNonZero()
+    public void Generate_SportUpgrade_AccelOnlyNoDecel()
     {
         var car = CarFactory.DefaultCar();
         car.DifferentialUpgrade = DifferentialUpgrade.Sport;
 
         var result = _sut.Generate(car, CarFactory.DefaultTrack(), CarFactory.RelaxedConstraints());
 
-        Assert.True(result.DiffDecel > 0, $"Sport diff Decel should be > 0, got {result.DiffDecel}");
+        // Sport LSD has only Acceleration slider in FH6/FH5 — Decel must remain at default (0)
+        Assert.Equal(0, result.DiffDecel);
+        Assert.True(result.DiffAccel > 0, $"Sport diff Accel should be > 0, got {result.DiffAccel}");
         if (car.DriveType == DriveType.AWD)
         {
-            Assert.NotNull(result.DiffFrontDecel);
-            Assert.True(result.DiffFrontDecel!.Value > 0);
+            Assert.NotNull(result.DiffFrontAccel);
+            Assert.Null(result.DiffFrontDecel);
         }
     }
 

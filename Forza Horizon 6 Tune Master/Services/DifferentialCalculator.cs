@@ -8,7 +8,8 @@ internal static class DifferentialCalculator
 {
     public static void CalculateDifferential(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
     {
-        if (car.DifferentialUpgrade == DifferentialUpgrade.Stock)
+        if (car.DifferentialUpgrade == DifferentialUpgrade.Stock ||
+            car.DifferentialUpgrade == DifferentialUpgrade.Street)
         {
             ex["Differential"] = CalculationHelpers.L("Expl_Differential_Stock");
             return;
@@ -22,9 +23,9 @@ internal static class DifferentialCalculator
             case Discipline.Drag:
                 (accel, decel) = car.DriveType switch
                 {
-                    Models.DriveType.RWD => (75.0, 10.0),
-                    Models.DriveType.AWD => (65.0,  5.0),
-                    _                    => (65.0,  5.0)
+                    Models.DriveType.RWD => (85.0, 5.0),
+                    Models.DriveType.AWD => (78.0, 0.0),
+                    _                    => (70.0, 0.0)
                 };
                 break;
             case Discipline.Drift:
@@ -32,7 +33,7 @@ internal static class DifferentialCalculator
                 (accel, decel) = (car.DriveType, isElectricDrift) switch
                 {
                     (Models.DriveType.RWD, true)  => (72.0, 0.0),
-                    (Models.DriveType.RWD, false)  => (85.0, 0.0),
+                    (Models.DriveType.RWD, false)  => (90.0, 10.0),
                     (Models.DriveType.AWD, true)   => (65.0, 8.0),
                     (Models.DriveType.AWD, false)  => (75.0, 10.0),
                     (Models.DriveType.FWD, _)      => (30.0, 5.0),
@@ -56,7 +57,7 @@ internal static class DifferentialCalculator
             default:
                 (accel, decel) = car.DriveType switch
                 {
-                    Models.DriveType.RWD => (45.0, 20.0),
+                    Models.DriveType.RWD => (50.0, 20.0),
                     Models.DriveType.FWD => (60.0, 5.0),
                     _                    => (55.0, 30.0)
                 };
@@ -79,8 +80,11 @@ internal static class DifferentialCalculator
         accel = Math.Min(accel, maxAccel);
         decel = Math.Min(decel, maxDecel);
 
+        bool hasDecel = car.DifferentialUpgrade != DifferentialUpgrade.Sport;
+
         r.DiffAccel = Math.Round(CalculationHelpers.Clamp(accel, c.DiffAccelMin, c.DiffAccelMax));
-        r.DiffDecel = Math.Round(CalculationHelpers.Clamp(decel, c.DiffDecelMin, c.DiffDecelMax));
+        if (hasDecel)
+            r.DiffDecel = Math.Round(CalculationHelpers.Clamp(decel, c.DiffDecelMin, c.DiffDecelMax));
 
         string aspLabel = car.AspirationType switch
         {
@@ -149,16 +153,22 @@ internal static class DifferentialCalculator
             double rearFactor  = 0.8 + bias * 0.4;
 
             r.DiffAccel = Math.Round(CalculationHelpers.Clamp(accel * rearFactor, c.DiffAccelMin, c.DiffAccelMax));
-            r.DiffDecel = Math.Round(CalculationHelpers.Clamp(decel * rearFactor, c.DiffDecelMin, c.DiffDecelMax));
+            if (hasDecel)
+                r.DiffDecel = Math.Round(CalculationHelpers.Clamp(decel * rearFactor, c.DiffDecelMin, c.DiffDecelMax));
 
             r.DiffFrontAccel = Math.Round(CalculationHelpers.Clamp(Math.Min(fAccel, maxAccel) * frontFactor, c.DiffAccelMin, c.DiffAccelMax));
-            r.DiffFrontDecel = Math.Round(CalculationHelpers.Clamp(Math.Min(fDecel, maxDecel) * frontFactor, c.DiffDecelMin, c.DiffDecelMax));
+            if (hasDecel)
+                r.DiffFrontDecel = Math.Round(CalculationHelpers.Clamp(Math.Min(fDecel, maxDecel) * frontFactor, c.DiffDecelMin, c.DiffDecelMax));
             r.CenterDiffBias = Math.Round(bias * 100);
         }
 
         if (r.DiffFrontAccel.HasValue)
-            ex["Differential"] = string.Format(CalculationHelpers.L("Expl_Differential_AWDFmt"), r.DiffAccel, r.DiffDecel, r.DiffFrontAccel, r.DiffFrontDecel, r.CenterDiffBias, diag);
+            ex["Differential"] = hasDecel
+                ? string.Format(CalculationHelpers.L("Expl_Differential_AWDFmt"), r.DiffAccel, r.DiffDecel, r.DiffFrontAccel, r.DiffFrontDecel, r.CenterDiffBias, diag)
+                : string.Format(CalculationHelpers.L("Expl_Differential_AWDFmtAccelOnly"), r.DiffAccel, r.DiffFrontAccel, r.CenterDiffBias, diag);
         else
-            ex["Differential"] = string.Format(CalculationHelpers.L("Expl_Differential_Fmt"), r.DiffAccel, r.DiffDecel, diag);
+            ex["Differential"] = hasDecel
+                ? string.Format(CalculationHelpers.L("Expl_Differential_Fmt"), r.DiffAccel, r.DiffDecel, diag)
+                : string.Format(CalculationHelpers.L("Expl_Differential_FmtAccelOnly"), r.DiffAccel, diag);
     }
 }

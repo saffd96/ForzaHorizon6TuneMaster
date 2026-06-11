@@ -95,6 +95,9 @@ public class MainViewModel : INotifyPropertyChanged
     }
     public bool HasResult        => _tuneResult != null;
     public bool HasAWDFrontDiff  => Car.DriveType == Models.DriveType.AWD && _tuneResult?.CenterDiffBias.HasValue == true;
+    public bool HasDiffDecel     => Car.DifferentialUpgrade != DifferentialUpgrade.Stock
+                                 && Car.DifferentialUpgrade != DifferentialUpgrade.Street
+                                 && Car.DifferentialUpgrade != DifferentialUpgrade.Sport;
     public bool HasLaunchControl => _tuneResult?.LaunchControlRpm.HasValue == true;
 
     // ── Overlay mode ───────────────────────────────────────────────────────────
@@ -835,6 +838,8 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(HasCenterDiffBias));
             OnPropertyChanged(nameof(HasAWDFrontDiff));
         }
+        if (e.PropertyName == nameof(CarCard.DifferentialUpgrade))
+            OnPropertyChanged(nameof(HasDiffDecel));
         if (e.PropertyName is nameof(CarCard.Make) or nameof(CarCard.Model) or nameof(CarCard.Year))
             OnPropertyChanged(nameof(SelectedCarDisplayText));
 

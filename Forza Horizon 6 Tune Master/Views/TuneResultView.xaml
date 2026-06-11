@@ -622,7 +622,8 @@
                                                 </ProgressBar.Value>
                                             </ProgressBar>
                                         </StackPanel>
-                                        <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                        <StackPanel Grid.Column="1" HorizontalAlignment="Center"
+                                                    Visibility="{Binding HasDiffDecel, Converter={StaticResource B2V}}">
                                             <TextBlock Text="{Binding TuneResult.DiffFrontDecel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                        ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
                                             <TextBlock Text="{l:Loc ResultDiffDecel}" Style="{StaticResource ParamLabel}"/>
@@ -662,7 +663,8 @@
                                             </ProgressBar.Value>
                                         </ProgressBar>
                                     </StackPanel>
-                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center"
+                                                Visibility="{Binding HasDiffDecel, Converter={StaticResource B2V}}">
                                         <TextBlock Text="{Binding TuneResult.DiffDecel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
                                         <TextBlock Text="{l:Loc ResultDiffDecel}" Style="{StaticResource ParamLabel}"/>

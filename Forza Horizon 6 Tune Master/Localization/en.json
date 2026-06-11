@@ -491,6 +491,8 @@
 
   "Expl_Differential_Fmt": "Main diff: accel {0}%, decel {1}%. {2}",
   "Expl_Differential_AWDFmt": "Main diff: accel {0}%, decel {1}%. Front: accel {2}%, decel {3}%, center {4}% (rear). {5}",
+  "Expl_Differential_FmtAccelOnly": "Main diff: accel {0}% (Sport LSD — no decel slider). {1}",
+  "Expl_Differential_AWDFmtAccelOnly": "Main diff: accel {0}%. Front: accel {1}%, center {2}% (rear). Sport LSD — no decel sliders. {3}",
   "Expl_Differential_Stock": "Differential: stock — tuning unavailable.",
   "Expl_Differential_DiagFmt": "{0} hp ({1}), eng. {2}, wheelbase {3} mm.",
 

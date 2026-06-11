@@ -30,18 +30,18 @@ internal static class SuspensionCalculator
         (double baseF, double baseR, string arbNoteKey) = (track.Discipline, car.DriveType) switch
         {
             (Discipline.Drag, _)             => (2.0, 10.0, "Expl_ARBNote_Drag"),
-            (Discipline.Drift, Models.DriveType.RWD) => (5.0, 22.0, "Expl_ARBNote_DriftRWD"),
-            (Discipline.Drift, _)            => (20.0, 40.0, "Expl_ARBNote_DriftAWD"),
+            (Discipline.Drift, Models.DriveType.RWD) => (3.0,  50.0, "Expl_ARBNote_DriftRWD"),
+            (Discipline.Drift, _)            => (18.0, 52.0, "Expl_ARBNote_DriftAWD"),
             (Discipline.Rally, _)            => (14.0, 12.0, "Expl_ARBNote_Rally"),
             (Discipline.CrossCountry, _)     => (10.0, 10.0, "Expl_ARBNote_CrossCountry"),
-            (Discipline.Touge, Models.DriveType.RWD) => (22.0, 25.0, "Expl_ARBNote_TougeRWD"),
-            (Discipline.Touge, Models.DriveType.FWD) => (7.0,  31.0, "Expl_ARBNote_TougeFWD"),
-            (Discipline.Touge, _)            => (25.0, 29.0, "Expl_ARBNote_TougeAWD"),
-            (Discipline.Street, Models.DriveType.RWD) => (25.0, 22.0, "Expl_ARBNote_StreetRWD"),
-            (Discipline.Street, Models.DriveType.FWD) => (9.0,  27.0, "Expl_ARBNote_StreetFWD"),
-            (_, Models.DriveType.RWD)        => (28.0, 20.0, "Expl_ARBNote_RoadRWD"),
-            (_, Models.DriveType.FWD)        => (12.0, 28.0, "Expl_ARBNote_RoadFWD"),
-            (_, _)                           => (26.0, 33.0, "Expl_ARBNote_RoadAWD")
+            (Discipline.Touge, Models.DriveType.RWD) => (18.0, 32.0, "Expl_ARBNote_TougeRWD"),
+            (Discipline.Touge, Models.DriveType.FWD) => (9.0,  34.0, "Expl_ARBNote_TougeFWD"),
+            (Discipline.Touge, _)            => (20.0, 35.0, "Expl_ARBNote_TougeAWD"),
+            (Discipline.Street, Models.DriveType.RWD) => (20.0, 30.0, "Expl_ARBNote_StreetRWD"),
+            (Discipline.Street, Models.DriveType.FWD) => (10.0, 32.0, "Expl_ARBNote_StreetFWD"),
+            (_, Models.DriveType.RWD)        => (20.0, 32.0, "Expl_ARBNote_RoadRWD"),
+            (_, Models.DriveType.FWD)        => (13.0, 34.0, "Expl_ARBNote_RoadFWD"),
+            (_, _)                           => (22.0, 38.0, "Expl_ARBNote_RoadAWD")
         };
         string note = CalculationHelpers.L(arbNoteKey);
 
@@ -91,16 +91,16 @@ internal static class SuspensionCalculator
 
         (double hzF, double hzR) = track.Discipline switch
         {
-            Discipline.Drag when track.DragDistance == DragDistance.Quarter => (2.0, 1.3),
-            Discipline.Drag when track.DragDistance == DragDistance.Half    => (2.0, 1.4),
-            Discipline.Drag when track.DragDistance == DragDistance.Mile    => (2.0, 1.6),
-            Discipline.Drag                                                 => (2.0, 1.2),
-            Discipline.Drift        => (1.8, 2.2),
-            Discipline.Rally        => (2.0, 2.2),
-            Discipline.CrossCountry => (1.3, 1.5),
-            Discipline.Touge        => (2.3, 2.2),
-            Discipline.Street       => (2.5, 2.4),
-            _                       => (2.5, 2.6)
+            Discipline.Drag when track.DragDistance == DragDistance.Quarter => (1.5, 0.95),
+            Discipline.Drag when track.DragDistance == DragDistance.Half    => (1.5, 1.0),
+            Discipline.Drag when track.DragDistance == DragDistance.Mile    => (1.5, 1.15),
+            Discipline.Drag                                                 => (1.5, 0.9),
+            Discipline.Drift        => (1.3, 1.6),
+            Discipline.Rally        => (1.45, 1.6),
+            Discipline.CrossCountry => (1.0, 1.1),
+            Discipline.Touge        => (1.65, 1.6),
+            Discipline.Street       => (1.8, 1.7),
+            _                       => (1.8, 1.9)
         };
 
         if (car.DriveType == Models.DriveType.RWD) { hzR += 0.15; hzF -= 0.05; }
@@ -306,8 +306,8 @@ internal static class SuspensionCalculator
         double massF = car.TotalMass * wdF;
         double massR = car.TotalMass * (1.0 - wdF);
 
-        double rebF = 6.0 + Math.Sqrt(sprF * massF) / 45.0;
-        double rebR = 6.0 + Math.Sqrt(sprR * massR) / 45.0;
+        double rebF = 3.0 + Math.Sqrt(sprF * massF) / 35.0;
+        double rebR = 3.0 + Math.Sqrt(sprR * massR) / 35.0;
 
         double discRebMul = track.Discipline switch
         {
