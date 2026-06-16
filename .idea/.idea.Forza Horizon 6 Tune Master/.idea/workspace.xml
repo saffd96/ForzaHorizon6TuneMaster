@@ -52,16 +52,16 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    ".NET Project.Forza Horizon 6 Tune Master.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;.NET Project.Forza Horizon 6 Tune Master.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="Forza Horizon 6 Tune Master" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="" />
@@ -99,8 +99,6 @@
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="visual fixes" />
-    <MESSAGE value="fix popup dropdawn" />
     <MESSAGE value="recalculations" />
     <MESSAGE value="update agent.md" />
     <MESSAGE value="update help" />
@@ -124,7 +122,9 @@
     <MESSAGE value="fix: aerodynamic" />
     <MESSAGE value="fix gering" />
     <MESSAGE value="update formulas" />
-    <option name="LAST_COMMIT_MESSAGE" value="update formulas" />
+    <MESSAGE value="tests" />
+    <MESSAGE value="workspace" />
+    <option name="LAST_COMMIT_MESSAGE" value="workspace" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

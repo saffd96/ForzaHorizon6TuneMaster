@@ -5,6 +5,7 @@
 # .NET build outputs (игнорируем ВСЕ папки bin и obj в проекте)
 [Bb]in/
 [Oo]bj/
+DUMPER/
 
 # Rider / JetBrains ignored files
 /projectSettingsUpdater.xml
