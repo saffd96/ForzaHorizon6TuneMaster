@@ -46,11 +46,7 @@
                               Foreground="{StaticResource CyanBrush}"
                               VerticalAlignment="Center"
                               FontSize="11" Margin="0,0,8,0"/>
-                    <CheckBox IsChecked="{Binding IsAutoGenerate}"
-                              Content="{l:Loc AutoCheckbox}"
-                              Foreground="{StaticResource TextDimBrush}"
-                              VerticalAlignment="Center"
-                              FontSize="11" Margin="0,0,8,0"/>
+
                 </StackPanel>
             </Grid>
         </Border>
@@ -84,12 +80,10 @@
                             Padding="12,10" Margin="0,0,0,8">
                         <Grid>
                             <StackPanel>
-                                <TextBlock Text="{Binding TuneResult.Car.Name, FallbackValue='—'}"
+                                <TextBlock Text="{Binding TuneResult.Car.DisplayName, FallbackValue='—'}"
                                            FontSize="16" FontWeight="Bold" TextWrapping="Wrap"/>
                                 <TextBlock Margin="0,2,0,0" TextWrapping="Wrap">
-                                    <Run Text="{Binding TuneResult.Car.Make, FallbackValue=''}"    Foreground="{StaticResource TextDimBrush}"/>
-                                    <Run Text=" "/>
-                                    <Run Text="{Binding TuneResult.Car.Model, FallbackValue=''}"   Foreground="{StaticResource TextDimBrush}"/>
+                                    <Run Text="{Binding TuneResult.Car.Year, FallbackValue=''}"     Foreground="{StaticResource TextDimBrush}"/>
                                     <Run Text="  •  "                            Foreground="{StaticResource TextMutedBrush}"/>
                                      <Run Text="{Binding TuneResult.Track.Discipline, Converter={StaticResource EnumLabel}}" Foreground="{StaticResource AccentBrush}"/>
                                      <Run Text="  •  "                            Foreground="{StaticResource TextMutedBrush}"/>
@@ -602,12 +596,8 @@
                                 <StackPanel Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
                                     <TextBlock Text="{l:Loc ResultDiffFront}" Foreground="{StaticResource TextDimBrush}"
                                                 FontSize="10" Margin="0,0,0,6"/>
-                                    <Grid Margin="0,0,0,6">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
+                                        <StackPanel HorizontalAlignment="Center" Margin="8,0">
                                             <TextBlock Text="{Binding TuneResult.DiffFrontAccel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                        ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
                                             <TextBlock Text="{l:Loc ResultDiffAccel}" Style="{StaticResource ParamLabel}"/>
@@ -622,7 +612,7 @@
                                                 </ProgressBar.Value>
                                             </ProgressBar>
                                         </StackPanel>
-                                        <StackPanel Grid.Column="1" HorizontalAlignment="Center"
+                                        <StackPanel HorizontalAlignment="Center" Margin="8,0"
                                                     Visibility="{Binding HasDiffDecel, Converter={StaticResource B2V}}">
                                             <TextBlock Text="{Binding TuneResult.DiffFrontDecel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                        ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
@@ -638,17 +628,13 @@
                                                 </ProgressBar.Value>
                                             </ProgressBar>
                                         </StackPanel>
-                                    </Grid>
+                                    </StackPanel>
                                 </StackPanel>
-                                <!-- Rear diff -->
+                                <!-- Rear / Main diff -->
                                 <TextBlock Text="{l:Loc ResultDiffRear}" Foreground="{StaticResource TextDimBrush}"
                                             FontSize="10" Margin="0,0,0,6"/>
-                                <Grid Margin="0,0,0,6">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,6">
+                                    <StackPanel HorizontalAlignment="Center" Margin="8,0">
                                         <TextBlock Text="{Binding TuneResult.DiffAccel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
                                         <TextBlock Text="{l:Loc ResultDiffAccel}" Style="{StaticResource ParamLabel}"/>
@@ -663,7 +649,7 @@
                                             </ProgressBar.Value>
                                         </ProgressBar>
                                     </StackPanel>
-                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center"
+                                    <StackPanel HorizontalAlignment="Center" Margin="8,0"
                                                 Visibility="{Binding HasDiffDecel, Converter={StaticResource B2V}}">
                                         <TextBlock Text="{Binding TuneResult.DiffDecel, StringFormat='{}{0:F0}%'}" Style="{StaticResource ValueDisplay}"
                                                    ToolTip="{Binding TuneResult.Explanations[Differential]}"/>
@@ -679,7 +665,7 @@
                                             </ProgressBar.Value>
                                         </ProgressBar>
                                     </StackPanel>
-                                </Grid>
+                                </StackPanel>
                                 <!-- Center bias (AWD only) -->
                                 <StackPanel Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
                                     <TextBlock Text="{l:Loc ResultDiffCenter}" Foreground="{StaticResource AccentBrush}"
@@ -758,25 +744,6 @@
                                             </ProgressBar.Value>
                                         </ProgressBar>
                                     </StackPanel>
-                                    <StackPanel HorizontalAlignment="Center" Margin="0,0,24,4">
-                                        <TextBlock Style="{StaticResource ValueDisplay}" FontSize="20"
-                                                   Foreground="{StaticResource CyanBrush}"
-                                                   ToolTip="{l:Loc ResultMaxSpeedTooltip}">
-                                            <TextBlock.Text>
-                                                <MultiBinding Converter="{StaticResource UV}" ConverterParameter="speed">
-                                                    <Binding Path="TuneResult.ActualMaxSpeedKmh"/>
-                                                     <Binding Path="UseImperial"/>
-                                                </MultiBinding>
-                                            </TextBlock.Text>
-                                        </TextBlock>
-                                        <TextBlock Text="{l:Loc ResultMaxSpeed}" Style="{StaticResource ParamLabel}"/>
-                                    </StackPanel>
-                                    <StackPanel HorizontalAlignment="Center" Margin="0,0,24,4">
-                                        <TextBlock Text="{Binding TuneResult.RecommendedGearCount}"
-                                                   Style="{StaticResource ValueDisplay}" FontSize="20"
-                                                   ToolTip="{Binding TuneResult.Explanations[FinalDrive]}"/>
-                                        <TextBlock Text="{l:Loc ResultRecGears}" Style="{StaticResource ParamLabel}"/>
-                                    </StackPanel>
                                     <ItemsControl ItemsSource="{Binding TuneResult.GearRatios}"
                                                   AlternationCount="10">
                                         <ItemsControl.ItemsPanel>
@@ -843,6 +810,13 @@
                                     WheelDiameterInch="{Binding TuneResult.Car.RearWheelDiameterInch}"
                                     ActualMaxSpeedKmh="{Binding TuneResult.ActualMaxSpeedKmh}"
                                     UseImperial="{Binding UseImperial}"/>
+
+                                <views:PowerCurveView Height="200"
+                                    TorqueCurve="{Binding TuneResult.Car.CachedTorqueCurveNm}"
+                                    PowerCurve="{Binding TuneResult.Car.CachedPowerCurveHP}"
+                                    MaxRPM="{Binding TuneResult.Car.MaxRPM}"
+                                    TorquePeakRPM="{Binding TuneResult.Car.TorquePeakRPM}"
+                                    PowerPeakRPM="{Binding TuneResult.Car.PowerPeakRPM}"/>
                             </StackPanel>
                         </Border>
 

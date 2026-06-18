@@ -53,31 +53,12 @@ internal static class CalculationHelpers
         };
     }
 
-    internal static double EstimateCGHeight(CarCard car)
-    {
-        double h = car.SuspensionUpgrade switch
-        {
-            SuspensionUpgrade.Race    => 345,
-            SuspensionUpgrade.Sport   => 385,
-            SuspensionUpgrade.Drift   => 375,
-            SuspensionUpgrade.Street  => 415,
-            SuspensionUpgrade.Rally   => 480,
-            SuspensionUpgrade.Offroad => 560,
-            _                         => 415
-        };
-        h += car.EnginePosition switch
-        {
-            EnginePosition.Rear    => -30,
-            EnginePosition.Mid     => -15,
-            _                      => 0
-        };
-        h += Math.Max(0, (car.TotalMass - 1200.0) / 200.0) * 8.0;
-        return Math.Clamp(h, 280, 700);
-    }
-
     internal static double ComputeEffectiveMaxSpeedKmh(CarCard car, TuneResult r)
     {
-        double cdABody = car.CdABodyEstimate;
+        var dbCar = Fh6DatabaseService.Instance?.GetCar(car.CarDbId);
+        double cdABody = dbCar?.BodyAeroLongitudinalDrag > 0
+            ? dbCar.BodyAeroLongitudinalDrag
+            : car.CdABodyEstimate;
         const double AeroDragFactor = 0.001787;
         double cdATotal = cdABody + (r.AeroFront + r.AeroRear) * AeroDragFactor;
 

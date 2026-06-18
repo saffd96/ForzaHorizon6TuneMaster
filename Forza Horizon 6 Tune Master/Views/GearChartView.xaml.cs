@@ -235,7 +235,7 @@ public partial class GearChartView : UserControl
         };
         ChartCanvas.Children.Add(axisLbl);
         Canvas.SetLeft(axisLbl, padL + cw * 0.5 - 28);
-        Canvas.SetTop(axisLbl, h - 18);
+        Canvas.SetTop(axisLbl, h - 8);
 
         axisLbl = new TextBlock
         {
@@ -246,7 +246,7 @@ public partial class GearChartView : UserControl
         };
         ChartCanvas.Children.Add(axisLbl);
         Canvas.SetLeft(axisLbl, 2);
-        Canvas.SetTop(axisLbl, 6);
+        Canvas.SetTop(axisLbl, 10);
 
         // ── horizontal reference lines ──
         // rev limit
@@ -266,7 +266,8 @@ public partial class GearChartView : UserControl
             FontFamily = lblFamily
         };
         ChartCanvas.Children.Add(refLbl);
-        Canvas.SetLeft(refLbl, w - padR + 4);
+        double refLabelLeft = Math.Min(w - padR + 4, w - 80);
+        Canvas.SetLeft(refLbl, refLabelLeft);
         Canvas.SetTop(refLbl, refY - 8);
 
         // power peak
@@ -286,7 +287,7 @@ public partial class GearChartView : UserControl
             FontFamily = lblFamily
         };
         ChartCanvas.Children.Add(refLbl);
-        Canvas.SetLeft(refLbl, w - padR + 4);
+        Canvas.SetLeft(refLbl, refLabelLeft);
         Canvas.SetTop(refLbl, ppY - 8);
 
         // torque peak
@@ -306,7 +307,7 @@ public partial class GearChartView : UserControl
             FontFamily = lblFamily
         };
         ChartCanvas.Children.Add(refLbl);
-        Canvas.SetLeft(refLbl, w - padR + 4);
+        Canvas.SetLeft(refLbl, refLabelLeft);
         Canvas.SetTop(refLbl, tpY - 8);
 
         // ── gear lines ──

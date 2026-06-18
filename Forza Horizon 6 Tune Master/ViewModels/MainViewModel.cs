@@ -5,7 +5,6 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,12 +16,46 @@ using Forza_Horizon_6_Tune_Master.Views;
 
 namespace Forza_Horizon_6_Tune_Master.ViewModels;
 
-public class MainViewModel : INotifyPropertyChanged
+public class MainViewModel : NotifyBase
 {
     private readonly TuneGeneratorService _generator = new();
     private readonly StorageService _storage = new();
     private readonly ProfileService _profileService;
     private int _tuneGenerationCount;
+
+    // ── Selected Parts (upgrade choices) ─────────────────────────────────────
+    private SelectedParts _selectedParts = new();
+    public SelectedParts SelectedParts
+    {
+        get => _selectedParts;
+        set
+        {
+            if (value == null) return;
+            if (_selectedParts != null)
+            {
+                _selectedParts.PartsChanged -= OnPartsChanged;
+                _selectedParts.CarMassUpdated -= OnCarMassUpdated;
+            }
+            _selectedParts = value;
+            _selectedParts.PartsChanged += OnPartsChanged;
+            _selectedParts.CarMassUpdated += OnCarMassUpdated;
+            OnPropertyChanged();
+        }
+    }
+
+    private void OnCarMassUpdated(double totalMass, double? weightDistSum)
+    {
+        Car.TotalMass = totalMass;
+    }
+
+// ── Sub-ViewModels for part selection ────────────────────────────────────
+public SwapsViewModel SwapsVM { get; } = new();
+public EnginePartsViewModel EngineVM { get; } = new();
+public MotorPartsViewModel MotorVM { get; } = new();
+public SuspensionViewModel SuspensionVM { get; } = new();
+public TransmissionViewModel TransmissionVM { get; } = new();
+public TiresWheelsViewModel TiresWheelsVM { get; } = new();
+public AeroVisualViewModel AeroVisualVM { get; } = new();
 
     // ── Models ──────────────────────────────────────────────────────────────
     private CarCard _car = new();
@@ -42,11 +75,10 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(HasCenterDiffBias));
             OnPropertyChanged(nameof(HasAWDFrontDiff));
             OnPropertyChanged(nameof(SelectedCarDisplayText));
-            _carSpec.ClearAiEstimatedFields();
-            _carSpec.ClearAiSpecStatus();
-            OnPropertyChanged(nameof(AiSpecStatusMessage));
-            OnPropertyChanged(nameof(HasAiSpecStatus));
             OnModelChanged(null, null!);
+            if (!_isLoadingProfile)
+                LoadSubViewModels(value);
+            IsElectricCar = Fh6DatabaseService.Instance.GetCar(_car.CarDbId)?.AspirationTypeId == 8;
         }
     }
 
@@ -65,20 +97,78 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    private TuningConstraints _constraints = new();
-    public TuningConstraints Constraints
+
+
+    private int? _lastEngineSwapPartId;
+    private int? _lastForcedInductionPartId;
+    private int? _lastMotorSwapPartId;
+    private int? _lastDrivetrainSwapPartId;
+
+    private void OnPartsChanged()
     {
-        get => _constraints;
-        set
+        if (_selectedParts.EngineSwapPartId != _lastEngineSwapPartId)
         {
-            if (value == null) return;
-            if (_constraints != null) _constraints.PropertyChanged -= OnModelChanged;
-            _constraints = value;
-            _constraints.PropertyChanged += OnModelChanged;
-            OnPropertyChanged();
-            OnModelChanged(null, null!);
+            _lastEngineSwapPartId = _selectedParts.EngineSwapPartId;
+            int engineId = _selectedParts.EngineSwapPartId != null
+                ? Fh6DatabaseService.Instance.GetEngineSwapById(_selectedParts.EngineSwapPartId.Value)?.EngineID ?? Car.EngineDbId
+                : Car.EngineDbId;
+            Car.EngineDbId = engineId;
+            EngineVM.ResetToStockForEngine(engineId);
+            SwapsVM.ResetForcedInductionToStock(engineId);
         }
+
+        if (_selectedParts.ForcedInductionPartId != _lastForcedInductionPartId)
+        {
+            _lastForcedInductionPartId = _selectedParts.ForcedInductionPartId;
+            EngineVM.ReloadIntercooler(_selectedParts.EngineId ?? Car.EngineDbId);
+            UpdateAspirationTypeFromForcedInduction();
+        }
+
+        if (_selectedParts.MotorSwapPartId != _lastMotorSwapPartId)
+        {
+            _lastMotorSwapPartId = _selectedParts.MotorSwapPartId;
+            int motorId = _selectedParts.MotorSwapPartId != null
+                ? Fh6DatabaseService.Instance.GetMotorSwapById(_selectedParts.MotorSwapPartId.Value)?.MotorID ?? Car.MotorDbId
+                : Car.MotorDbId;
+            Car.MotorDbId = motorId;
+            MotorVM.ResetToStockForMotor(motorId);
+        }
+
+        if (_selectedParts.DrivetrainSwapPartId != _lastDrivetrainSwapPartId)
+        {
+            _lastDrivetrainSwapPartId = _selectedParts.DrivetrainSwapPartId;
+            var swap = _selectedParts.DrivetrainSwapPartId != null
+                ? Fh6DatabaseService.Instance.GetDrivetrainSwapById(_selectedParts.DrivetrainSwapPartId.Value)
+                : null;
+            if (swap != null)
+            {
+                Car.DriveTypeID = swap.DriveTypeID;
+                Car.DriveType = MapDriveType(swap.DriveTypeID);
+                TransmissionVM.ResetToStockForDrivetrain(swap.DrivetrainID);
+                OnPropertyChanged(nameof(HasCenterDiffBias));
+                OnPropertyChanged(nameof(HasAWDFrontDiff));
+            }
+        }
+
+        // Recalculate power/torque/RPM when any engine part changes.
+        PowerCalculator.Calculate(Car, _selectedParts);
+        // Update tire/rim dimensions from selected parts.
+        UpdateTireAndWheelData();
+        // Always update enums when ANY part changes (spring, tire, brakes, diff, aero, ARB, etc.)
+        MapPartIdsToEnums(Car);
+        Constraints.ApplyPhysicsBounds(Car, _selectedParts, Fh6DatabaseService.Instance);
+
+        if (!IsAutoGenerate || _isGenerating) return;
+        _lastInputChange = DateTime.Now;
+        _ = DebounceGenerate();
     }
+
+    private static Models.DriveType MapDriveType(int driveTypeId) => driveTypeId switch
+    {
+        0 => Models.DriveType.FWD,
+        2 => Models.DriveType.AWD,
+        _ => Models.DriveType.RWD
+    };
 
     private TuneResult? _tuneResult;
     public TuneResult? TuneResult
@@ -96,9 +186,15 @@ public class MainViewModel : INotifyPropertyChanged
     public bool HasResult        => _tuneResult != null;
     public bool HasAWDFrontDiff  => Car.DriveType == Models.DriveType.AWD && _tuneResult?.CenterDiffBias.HasValue == true;
     public bool HasDiffDecel     => Car.DifferentialUpgrade != DifferentialUpgrade.Stock
-                                 && Car.DifferentialUpgrade != DifferentialUpgrade.Street
-                                 && Car.DifferentialUpgrade != DifferentialUpgrade.Sport;
+                                     && Car.DifferentialUpgrade != DifferentialUpgrade.Sport;
     public bool HasLaunchControl => _tuneResult?.LaunchControlRpm.HasValue == true;
+
+    private bool _isElectricCar;
+    public bool IsElectricCar
+    {
+        get => _isElectricCar;
+        private set { _isElectricCar = value; OnPropertyChanged(); }
+    }
 
     // ── Overlay mode ───────────────────────────────────────────────────────────
     private bool _isOverlayMode;
@@ -116,6 +212,8 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ── Car database + specs ──────────────────────────────────────────────────
+
+    // ── Car database + specs ──────────────────────────────────────────────────
     private readonly CarSpecController _carSpec = new();
     private bool _isLoadingProfile;
 
@@ -125,7 +223,12 @@ public class MainViewModel : INotifyPropertyChanged
         set
         {
             _carSpec.SelectCar(value, _car, _isLoadingProfile);
-            if (!_isLoadingProfile) TuneResult = null;
+            if (!_isLoadingProfile)
+            {
+                TuneResult = null;
+                LoadSubViewModels(_car);
+                OnPropertyChanged(nameof(SelectedParts));
+            }
             OnPropertyChanged();
             OnPropertyChanged(nameof(SelectedCarDisplayText));
             OnPropertyChanged(nameof(HasSelectedCar));
@@ -173,7 +276,6 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(FrontTrackFieldLabel));
             OnPropertyChanged(nameof(RearTrackFieldLabel));
             OnPropertyChanged(nameof(UnitToggleLabel));
-            NotifyConstraintDisplayProperties();
             if (!_syncingUnitSystem)
             {
                 _syncingUnitSystem = true;
@@ -186,105 +288,7 @@ public class MainViewModel : INotifyPropertyChanged
 
     public bool UseImperial => _measurementSystem == UnitSystem.Imperial;
 
-    // ── Constraint display properties (unit-aware) ───────────────────────────
-    public double TirePressureFrontMinDisplay
-    {
-        get => UnitConverter.TirePressureToDisplay(Constraints.TirePressureFrontMin, UseImperial);
-        set { Constraints.TirePressureFrontMin = UnitConverter.TirePressureFromDisplay(value, UseImperial); OnPropertyChanged(); }
-    }
-    public double TirePressureFrontMaxDisplay
-    {
-        get => UnitConverter.TirePressureToDisplay(Constraints.TirePressureFrontMax, UseImperial);
-        set { Constraints.TirePressureFrontMax = UnitConverter.TirePressureFromDisplay(value, UseImperial); OnPropertyChanged(); }
-    }
-    public double TirePressureRearMinDisplay
-    {
-        get => UnitConverter.TirePressureToDisplay(Constraints.TirePressureRearMin, UseImperial);
-        set { Constraints.TirePressureRearMin = UnitConverter.TirePressureFromDisplay(value, UseImperial); OnPropertyChanged(); }
-    }
-    public double TirePressureRearMaxDisplay
-    {
-        get => UnitConverter.TirePressureToDisplay(Constraints.TirePressureRearMax, UseImperial);
-        set { Constraints.TirePressureRearMax = UnitConverter.TirePressureFromDisplay(value, UseImperial); OnPropertyChanged(); }
-    }
-
-    // Springs
-    public double SpringFrontMinDisplay
-    {
-        get => UnitConverter.SpringToDisplay(Constraints.SpringFrontMin, _springUnit);
-        set { Constraints.SpringFrontMin = UnitConverter.SpringFromDisplay(value, _springUnit); OnPropertyChanged(); }
-    }
-    public double SpringFrontMaxDisplay
-    {
-        get => UnitConverter.SpringToDisplay(Constraints.SpringFrontMax, _springUnit);
-        set { Constraints.SpringFrontMax = UnitConverter.SpringFromDisplay(value, _springUnit); OnPropertyChanged(); }
-    }
-    public double SpringRearMinDisplay
-    {
-        get => UnitConverter.SpringToDisplay(Constraints.SpringRearMin, _springUnit);
-        set { Constraints.SpringRearMin = UnitConverter.SpringFromDisplay(value, _springUnit); OnPropertyChanged(); }
-    }
-    public double SpringRearMaxDisplay
-    {
-        get => UnitConverter.SpringToDisplay(Constraints.SpringRearMax, _springUnit);
-        set { Constraints.SpringRearMax = UnitConverter.SpringFromDisplay(value, _springUnit); OnPropertyChanged(); }
-    }
-
-    // Ride Height
-    public double RideHeightFrontMinDisplay
-    {
-        get => UnitConverter.RideHeightToDisplay(Constraints.RideHeightFrontMin, UseImperial);
-        set { Constraints.RideHeightFrontMin = UnitConverter.RideHeightFromDisplay(value, UseImperial); OnPropertyChanged(); }
-    }
-    public double RideHeightFrontMaxDisplay
-    {
-        get => UnitConverter.RideHeightToDisplay(Constraints.RideHeightFrontMax, UseImperial);
-        set { Constraints.RideHeightFrontMax = UnitConverter.RideHeightFromDisplay(value, UseImperial); OnPropertyChanged(); }
-    }
-    public double RideHeightRearMinDisplay
-    {
-        get => UnitConverter.RideHeightToDisplay(Constraints.RideHeightRearMin, UseImperial);
-        set { Constraints.RideHeightRearMin = UnitConverter.RideHeightFromDisplay(value, UseImperial); OnPropertyChanged(); }
-    }
-    public double RideHeightRearMaxDisplay
-    {
-        get => UnitConverter.RideHeightToDisplay(Constraints.RideHeightRearMax, UseImperial);
-        set { Constraints.RideHeightRearMax = UnitConverter.RideHeightFromDisplay(value, UseImperial); OnPropertyChanged(); }
-    }
-
-    // ── Aero constraint display properties ─────────────────────────────────────
-    public double AeroFrontMinDisplay
-    {
-        get => UnitConverter.AeroToDisplay(Constraints.AeroFrontMin, UseImperial);
-        set { Constraints.AeroFrontMin = UnitConverter.AeroFromDisplay(value, UseImperial); OnPropertyChanged(); }
-    }
-    public double AeroFrontMaxDisplay
-    {
-        get => UnitConverter.AeroToDisplay(Constraints.AeroFrontMax, UseImperial);
-        set { Constraints.AeroFrontMax = UnitConverter.AeroFromDisplay(value, UseImperial); OnPropertyChanged(); }
-    }
-    public double AeroRearMinDisplay
-    {
-        get => UnitConverter.AeroToDisplay(Constraints.AeroRearMin, UseImperial);
-        set { Constraints.AeroRearMin = UnitConverter.AeroFromDisplay(value, UseImperial); OnPropertyChanged(); }
-    }
-    public double AeroRearMaxDisplay
-    {
-        get => UnitConverter.AeroToDisplay(Constraints.AeroRearMax, UseImperial);
-        set { Constraints.AeroRearMax = UnitConverter.AeroFromDisplay(value, UseImperial); OnPropertyChanged(); }
-    }
-
-    // ── Constraint unit labels ────────────────────────────────────────────────
-    public string TirePressureUnitLabel => UseImperial ? T("UnitPressure_Imperial") : T("UnitPressure_Metric");
-    public string SpringUnitLabel => _springUnit switch
-    {
-        SpringUnit.NMm   => T("UnitSpring_NMm"),
-        SpringUnit.LbsIn => T("UnitSpring_LbsIn"),
-        _                => T("UnitSpring_KgfMm")
-    };
-    public string RideHeightUnitLabel => UseImperial ? T("UnitRideHeight_Imperial") : T("UnitRideHeight_Metric");
-    public string AeroUnitLabel => UseImperial ? T("UnitLb") : T("UnitKg");
-    public string AeroSectionHeaderText => $"{T("SectionAeroConstraints")} ({AeroUnitLabel})";
+    // ── Unit display properties for CarCardView ──────────────────────────────
 
     private bool _syncingPowerUnit;
     private PowerUnit _powerUnit = PowerUnit.HP;
@@ -320,11 +324,6 @@ public class MainViewModel : INotifyPropertyChanged
             _springUnit = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(SpringUnitToggleLabel));
-            OnPropertyChanged(nameof(SpringUnitLabel));
-            OnPropertyChanged(nameof(SpringFrontMinDisplay));
-            OnPropertyChanged(nameof(SpringFrontMaxDisplay));
-            OnPropertyChanged(nameof(SpringRearMinDisplay));
-            OnPropertyChanged(nameof(SpringRearMaxDisplay));
             if (!_syncingSpringUnit)
             {
                 _syncingSpringUnit = true;
@@ -336,15 +335,7 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ── Unit display properties for CarCardView ──────────────────────────────
-    public double PowerDisplay
-    {
-        get => UnitConverter.PowerToDisplay(_car.PowerHP, _powerUnit);
-        set
-        {
-            _car.PowerHP = UnitConverter.PowerFromDisplay(value, _powerUnit);
-            OnPropertyChanged();
-        }
-    }
+    public double PowerDisplay => UnitConverter.PowerToDisplay(_car.PowerHP, _powerUnit);
 
     public double SpeedDisplay
     {
@@ -362,15 +353,7 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public double TorqueDisplay
-    {
-        get => UnitConverter.TorqueToDisplay(_car.TorqueNm, UseImperial);
-        set
-        {
-            _car.TorqueNm = UnitConverter.TorqueFromDisplay(value, UseImperial);
-            OnPropertyChanged();
-        }
-    }
+    public double TorqueDisplay => UnitConverter.TorqueToDisplay(_car.TorqueNm, UseImperial);
 
     public double WheelbaseDisplay
     {
@@ -398,6 +381,45 @@ public class MainViewModel : INotifyPropertyChanged
         set
         {
             _car.RearTrack = UnitConverter.LengthFromDisplay(value, UseImperial);
+            OnPropertyChanged();
+        }
+    }
+
+    // ── Legacy Constraints (for test compatibility) ───────────────────────────
+    public TuningConstraints Constraints { get; } = new();
+
+    public double TirePressureFrontMinDisplay
+    {
+        get => UnitConverter.TirePressureToDisplay(Constraints.TirePressureFrontMin, UseImperial);
+        set { Constraints.TirePressureFrontMin = UnitConverter.TirePressureFromDisplay(value, UseImperial); OnPropertyChanged(); }
+    }
+
+    public double RideHeightFrontMinDisplay
+    {
+        get => UseImperial ? Math.Round(Constraints.RideHeightFrontMin / 25.4, 1) : Constraints.RideHeightFrontMin;
+        set { Constraints.RideHeightFrontMin = UseImperial ? Math.Round(value * 25.4, 0) : value; OnPropertyChanged(); }
+    }
+
+    public double SpringFrontMinDisplay
+    {
+        get
+        {
+            var nmm = Constraints.SpringFrontMin;
+            return _springUnit switch
+            {
+                SpringUnit.KgfMm => Math.Round(nmm / 9.807, 1),
+                SpringUnit.LbsIn => Math.Round(nmm / 0.175127, 1),
+                _ => nmm
+            };
+        }
+        set
+        {
+            Constraints.SpringFrontMin = _springUnit switch
+            {
+                SpringUnit.KgfMm => value * 9.807,
+                SpringUnit.LbsIn => value * 0.175127,
+                _ => value
+            };
             OnPropertyChanged();
         }
     }
@@ -477,7 +499,6 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(FrontTrackFieldLabel));
                 OnPropertyChanged(nameof(RearTrackFieldLabel));
                 OnPropertyChanged(nameof(UnitToggleLabel));
-                NotifyConstraintDisplayProperties();
                 SaveUnitSettings();
             }
             finally { _syncingUnitSystem = false; }
@@ -524,11 +545,6 @@ public class MainViewModel : INotifyPropertyChanged
                 _springUnit = value.Value;
                 OnPropertyChanged(nameof(SpringUnit));
                 OnPropertyChanged(nameof(SpringUnitToggleLabel));
-                OnPropertyChanged(nameof(SpringUnitLabel));
-                OnPropertyChanged(nameof(SpringFrontMinDisplay));
-                OnPropertyChanged(nameof(SpringFrontMaxDisplay));
-                OnPropertyChanged(nameof(SpringRearMinDisplay));
-                OnPropertyChanged(nameof(SpringRearMaxDisplay));
                 SaveUnitSettings();
             }
             finally { _syncingSpringUnit = false; }
@@ -601,7 +617,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         if (e.PropertyName == "Item")
         {
-            Application.Current?.Dispatcher.Invoke(InvalidateAllLanguageDependent);
+            _ = Application.Current?.Dispatcher.BeginInvoke(InvalidateAllLanguageDependent);
         }
     }
 
@@ -625,9 +641,6 @@ public class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(FrontTrackFieldLabel));
         OnPropertyChanged(nameof(RearTrackFieldLabel));
         OnPropertyChanged(nameof(MaxRPMFieldLabel));
-        OnPropertyChanged(nameof(TirePressureUnitLabel));
-        OnPropertyChanged(nameof(SpringUnitLabel));
-        OnPropertyChanged(nameof(RideHeightUnitLabel));
         OnPropertyChanged(nameof(UnitToggleLabel));
         OnPropertyChanged(nameof(PowerUnitToggleLabel));
         OnPropertyChanged(nameof(SpringUnitToggleLabel));
@@ -747,17 +760,7 @@ public class MainViewModel : INotifyPropertyChanged
 
 
     // ── Auto-generate ───────────────────────────────────────────────────────
-    private bool _isAutoGenerate;
-    public bool IsAutoGenerate
-    {
-        get => _isAutoGenerate;
-        set
-        {
-            _isAutoGenerate = value;
-            OnPropertyChanged();
-            if (value) _ = DebounceGenerate();
-        }
-    }
+    public bool IsAutoGenerate => true;
 
     private bool _isGenerating;
     public bool IsGenerating
@@ -771,25 +774,13 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool IsFetchingAiSpecs
-    {
-        get => _carSpec.IsFetchingAiSpecs;
-        set => _carSpec.IsFetchingAiSpecs = value;
-    }
-
     public bool IsLoadingCars
     {
         get => _carSpec.IsLoadingCars;
         set => _carSpec.IsLoadingCars = value;
     }
 
-    public bool IsLoadingCarSpecs
-    {
-        get => _carSpec.IsLoadingCarSpecs;
-        set => _carSpec.IsLoadingCarSpecs = value;
-    }
-
-    public bool IsBusy => _isGenerating || _carSpec.IsFetchingAiSpecs || _carSpec.IsLoadingCars || _carSpec.IsLoadingCarSpecs;
+    public bool IsBusy => _isGenerating || _carSpec.IsLoadingCars;
 
     private string _busyMessage = "";
     public string BusyMessage
@@ -797,23 +788,6 @@ public class MainViewModel : INotifyPropertyChanged
         get => _busyMessage;
         set { _busyMessage = value; OnPropertyChanged(); }
     }
-
-    // ── AI spec status overlay ──────────────────────────────────────────────
-    public string AiSpecStatusMessage
-    {
-        get => _carSpec.AiSpecStatusMessage;
-        set { OnPropertyChanged(); OnPropertyChanged(nameof(HasAiSpecStatus)); }
-    }
-    public bool HasAiSpecStatus => _carSpec.HasAiSpecStatus;
-    public bool NeedsCarSelectionHighlight => _carSpec.NeedsCarSelectionHighlight;
-
-    // ── AI-estimated field tracking ─────────────────────────────────────────
-    public bool IsWheelbaseAiEstimated  => _carSpec.IsWheelbaseAiEstimated;
-    public bool IsFrontTrackAiEstimated => _carSpec.IsFrontTrackAiEstimated;
-    public bool IsRearTrackAiEstimated  => _carSpec.IsRearTrackAiEstimated;
-    public bool IsCdAiEstimated         => _carSpec.IsCdAiEstimated;
-    public bool IsFrontalAreaAiEstimated => _carSpec.IsFrontalAreaAiEstimated;
-    public bool HasAnyAiEstimatedField => _carSpec.HasAnyAiEstimatedField;
 
     private int _pendingGenerationId;
     private DateTime _lastInputChange = DateTime.MinValue;
@@ -824,7 +798,6 @@ public class MainViewModel : INotifyPropertyChanged
         _car.PropertyChanged += OnModelChanged;
         _car.PropertyChanged += OnCarPropertyChanged;
         _track.PropertyChanged += OnModelChanged;
-        _constraints.PropertyChanged += OnModelChanged;
     }
 
     private void OnCarPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -842,27 +815,41 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(HasDiffDecel));
         if (e.PropertyName is nameof(CarCard.Make) or nameof(CarCard.Model) or nameof(CarCard.Year))
             OnPropertyChanged(nameof(SelectedCarDisplayText));
-
-        _carSpec.OnCarPropertyChanged(e.PropertyName);
+        if (e.PropertyName == nameof(CarCard.TotalMass))
+        {
+            OnPropertyChanged(nameof(MassDisplay));
+            OnPropertyChanged(nameof(SpeedDisplay));
+        }
+        if (e.PropertyName == nameof(CarCard.PowerHP))
+            OnPropertyChanged(nameof(PowerDisplay));
+        if (e.PropertyName == nameof(CarCard.TorqueNm))
+            OnPropertyChanged(nameof(TorqueDisplay));
+        if (e.PropertyName == nameof(CarCard.Wheelbase))
+            OnPropertyChanged(nameof(WheelbaseDisplay));
+        if (e.PropertyName == nameof(CarCard.FrontTrack))
+            OnPropertyChanged(nameof(FrontTrackDisplay));
+        if (e.PropertyName == nameof(CarCard.RearTrack))
+            OnPropertyChanged(nameof(RearTrackDisplay));
     }
 
     private void OnModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (!_isAutoGenerate || _isGenerating) return;
+        if (!IsAutoGenerate || _isGenerating) return;
         _lastInputChange = DateTime.Now;
         _ = DebounceGenerate();
     }
 
     private async Task DebounceGenerate()
     {
-        _debounceCts?.Cancel();
-        _debounceCts?.Dispose();
+        var oldCts = _debounceCts;
         _debounceCts = new CancellationTokenSource();
+        oldCts?.Cancel();
+        oldCts?.Dispose();
         int myId = ++_pendingGenerationId;
         try
         {
-            await Task.Delay(400, _debounceCts.Token);
-            if (!_isAutoGenerate || myId != _pendingGenerationId) return;
+            await Task.Delay(400, _debounceCts.Token).ConfigureAwait(true);
+            if (!IsAutoGenerate || myId != _pendingGenerationId) return;
             BusyMessage = T("BusyGenerating");
             IsGenerating = true;
             GenerateTune();
@@ -886,12 +873,7 @@ public class MainViewModel : INotifyPropertyChanged
     public RelayCommand DeleteProfileCommand  { get; }
     public RelayCommand DeleteAllProfilesCommand { get; }
     public RelayCommand NewProfileCommand     { get; }
-    public RelayCommand FetchAiCarSpecsCommand { get; }
-    public RelayCommand DismissAiSpecStatusCommand { get; }
     public RelayCommand ClearCarSelectionCommand { get; }
-    public RelayCommand RefreshCarDatabaseCommand { get; }
-    public RelayCommand ClearCacheCommand { get; }
-    public RelayCommand ClearAiCacheCommand { get; }
 
     public MainViewModel()
     {
@@ -906,30 +888,11 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(SelectedCarDisplayText));
             OnPropertyChanged(nameof(CarSearchText));
         };
-        _carSpec.NotifyAiEstimatedFieldProperties = () =>
-        {
-            OnPropertyChanged(nameof(IsWheelbaseAiEstimated));
-            OnPropertyChanged(nameof(IsFrontTrackAiEstimated));
-            OnPropertyChanged(nameof(IsRearTrackAiEstimated));
-            OnPropertyChanged(nameof(IsCdAiEstimated));
-            OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
-            OnPropertyChanged(nameof(HasAnyAiEstimatedField));
-        };
-        _carSpec.RaiseRefreshCarDbCommand = () => RefreshCarDatabaseCommand?.Raise();
-        _carSpec.RaiseFetchAiSpecsCommand = () => FetchAiCarSpecsCommand?.Raise();
-        _carSpec.SetBusyMessage = msg => BusyMessage = msg;
         _carSpec.SetStatusMessage = msg => StatusMessage = msg;
         _carSpec.BusyFlagsChanged = () =>
         {
-            OnPropertyChanged(nameof(IsFetchingAiSpecs));
             OnPropertyChanged(nameof(IsLoadingCars));
-            OnPropertyChanged(nameof(IsLoadingCarSpecs));
             OnPropertyChanged(nameof(IsBusy));
-        };
-        _carSpec.NotifyAiSpecStatusChanged = () =>
-        {
-            OnPropertyChanged(nameof(AiSpecStatusMessage));
-            OnPropertyChanged(nameof(HasAiSpecStatus));
         };
 
         GenerateCommand        = new RelayCommand(GenerateTune);
@@ -938,17 +901,7 @@ public class MainViewModel : INotifyPropertyChanged
         DeleteProfileCommand   = new RelayCommand(DeleteProfile, () => SelectedProfile != null);
         DeleteAllProfilesCommand = new RelayCommand(DeleteAllProfiles);
         NewProfileCommand      = new RelayCommand(NewProfile);
-        FetchAiCarSpecsCommand = new RelayCommand(() => _ = _carSpec.FetchAiCarSpecsAsync(Car), () => !IsFetchingAiSpecs);
-        DismissAiSpecStatusCommand = new RelayCommand(() =>
-        {
-            _carSpec.ClearAiSpecStatus();
-            OnPropertyChanged(nameof(AiSpecStatusMessage));
-            OnPropertyChanged(nameof(HasAiSpecStatus));
-        });
         ClearCarSelectionCommand = new RelayCommand(() => _carSpec.ClearCarSelection(_car));
-        RefreshCarDatabaseCommand = new RelayCommand(() => _ = _carSpec.RefreshCarDatabaseAsync(), () => !IsLoadingCars);
-        ClearCacheCommand = new RelayCommand(() => _carSpec.ClearCache());
-        ClearAiCacheCommand = new RelayCommand(() => _carSpec.ClearAiCache());
 
         ToggleUnitsCommand      = new RelayCommand(DoToggleUnits);
         TogglePowerUnitCommand  = new RelayCommand(DoTogglePowerUnit);
@@ -958,7 +911,6 @@ public class MainViewModel : INotifyPropertyChanged
         _car.PropertyChanged += OnModelChanged;
         _car.PropertyChanged += OnCarPropertyChanged;
         _track.PropertyChanged += OnModelChanged;
-        _constraints.PropertyChanged += OnModelChanged;
 
         var svc = LocalizationService.Instance;
         svc.PropertyChanged += OnLanguageChanged;
@@ -1008,29 +960,214 @@ public class MainViewModel : INotifyPropertyChanged
         _ = LoadCarDatabaseAsync();
     }
 
-    private void NotifyConstraintDisplayProperties()
+    private void LoadSubViewModels(CarCard car)
     {
-        OnPropertyChanged(nameof(TirePressureFrontMinDisplay));
-        OnPropertyChanged(nameof(TirePressureFrontMaxDisplay));
-        OnPropertyChanged(nameof(TirePressureRearMinDisplay));
-        OnPropertyChanged(nameof(TirePressureRearMaxDisplay));
-        OnPropertyChanged(nameof(SpringFrontMinDisplay));
-        OnPropertyChanged(nameof(SpringFrontMaxDisplay));
-        OnPropertyChanged(nameof(SpringRearMinDisplay));
-        OnPropertyChanged(nameof(SpringRearMaxDisplay));
-        OnPropertyChanged(nameof(RideHeightFrontMinDisplay));
-        OnPropertyChanged(nameof(RideHeightFrontMaxDisplay));
-        OnPropertyChanged(nameof(RideHeightRearMinDisplay));
-        OnPropertyChanged(nameof(RideHeightRearMaxDisplay));
-        OnPropertyChanged(nameof(AeroFrontMinDisplay));
-        OnPropertyChanged(nameof(AeroFrontMaxDisplay));
-        OnPropertyChanged(nameof(AeroRearMinDisplay));
-        OnPropertyChanged(nameof(AeroRearMaxDisplay));
-        OnPropertyChanged(nameof(TirePressureUnitLabel));
-        OnPropertyChanged(nameof(SpringUnitLabel));
-        OnPropertyChanged(nameof(RideHeightUnitLabel));
-        OnPropertyChanged(nameof(AeroUnitLabel));
-        OnPropertyChanged(nameof(AeroSectionHeaderText));
+        var parts = _isLoadingProfile ? _selectedParts : new SelectedParts();
+        if (parts == null) parts = new SelectedParts();
+        parts.SetCarData(car, !_isLoadingProfile);
+        if (_isLoadingProfile)
+            parts.ResolveEngineAndMotorIds();
+        bool isElectric = Fh6DatabaseService.Instance.GetCar(car.CarDbId)?.AspirationTypeId == 8;
+        IsElectricCar = isElectric;
+        if (isElectric)
+            ClearEnginePartIds(parts);
+        SwapsVM.LoadForCar(car, parts);
+    EngineVM.LoadForCar(car, parts);
+        MotorVM.LoadForCar(car, parts);
+        car.MotorDbId = parts.MotorId ?? 0;
+    SuspensionVM.LoadForCar(car, parts);
+    TransmissionVM.LoadForCar(car, parts);
+    TiresWheelsVM.LoadForCar(car, parts);
+    AeroVisualVM.LoadForCar(car, parts);
+        SelectedParts = parts;
+        _lastEngineSwapPartId = parts.EngineSwapPartId;
+        _lastForcedInductionPartId = parts.ForcedInductionPartId;
+        _lastMotorSwapPartId = parts.MotorSwapPartId;
+        _lastDrivetrainSwapPartId = parts.DrivetrainSwapPartId;
+        MapDbToOldEnums(car);
+        Constraints.ApplyPhysicsBounds(car, parts, Fh6DatabaseService.Instance);
+    }
+
+    private static void ClearEnginePartIds(SelectedParts parts)
+    {
+        parts.EngineSwapPartId = null;
+        parts.ForcedInductionPartId = null;
+        parts.CamshaftPartId = null;
+        parts.DisplacementPartId = null;
+        parts.ValvesPartId = null;
+        parts.PistonsPartId = null;
+        parts.FuelSystemPartId = null;
+        parts.IgnitionPartId = null;
+        parts.ExhaustPartId = null;
+        parts.IntakePartId = null;
+        parts.FlywheelPartId = null;
+        parts.ManifoldPartId = null;
+        parts.OilCoolingPartId = null;
+        parts.RestrictorPartId = null;
+        parts.IntercoolerPartId = null;
+    }
+
+    private void MapDbToOldEnums(CarCard car)
+    {
+        var db = Fh6DatabaseService.Instance;
+        var dbCar = db.GetCar(car.CarDbId);
+        if (dbCar == null) return;
+
+        // DriveType (overridden by drivetrain swap)
+        int driveTypeId = dbCar.DriveTypeID;
+        var drivetrainSwap = _selectedParts.DrivetrainSwapPartId != null ? db.GetDrivetrainSwapById(_selectedParts.DrivetrainSwapPartId.Value) : null;
+        if (drivetrainSwap != null)
+            driveTypeId = drivetrainSwap.DriveTypeID;
+        car.DriveType = driveTypeId switch
+        {
+            0 => Forza_Horizon_6_Tune_Master.Models.DriveType.FWD,
+            2 => Forza_Horizon_6_Tune_Master.Models.DriveType.AWD,
+            _ => Forza_Horizon_6_Tune_Master.Models.DriveType.RWD
+        };
+        car.DriveTypeID = driveTypeId;
+
+        // Engine type from stock engine's CylinderID + ConfigID
+        var engine = db.GetEngine(car.EngineDbId);
+        if (engine != null)
+        {
+            car.EngineType = MapEngineType(engine.CylinderID, engine.ConfigID);
+            car.FuelType = engine.Diesel ? FuelType.Diesel : FuelType.Gasoline;
+            car.AspirationType = dbCar.AspirationTypeId switch
+            {
+                2 => Models.AspirationType.SingleTurbo,
+                3 => Models.AspirationType.TwinTurbo,
+                5 => Models.AspirationType.PositiveDisplacement,
+                6 => Models.AspirationType.Centrifugal,
+                8 => Models.AspirationType.Electric,
+                _ => Models.AspirationType.Natural
+            };
+            IsElectricCar = car.AspirationType == Models.AspirationType.Electric;
+        }
+
+        MapPartIdsToEnums(car);
+    }
+
+    private void MapPartIdsToEnums(CarCard car)
+    {
+        var db = Fh6DatabaseService.Instance;
+        car.TireType = MapTierFromLevel<TireType>(_selectedParts.TireCompoundPartId,
+            id => db.GetTireCompoundById(id)?.Level ?? 0);
+        car.SuspensionUpgrade = MapTierFromLevel<SuspensionUpgrade>(_selectedParts.SpringDamperPartId,
+            id => db.GetSpringDamperById(id)?.Level ?? 0);
+        car.BrakesUpgrade = MapTierFromLevel<BrakesUpgrade>(_selectedParts.BrakePartId,
+            id => db.GetBrakesById(id)?.Level ?? 0);
+        car.DifferentialUpgrade = MapTierFromLevel<DifferentialUpgrade>(_selectedParts.DifferentialPartId,
+            id => db.GetDifferentialById(id)?.Level ?? 0);
+
+        car.HasRearAero = _selectedParts.RearWingPartId != null;
+        car.HasFrontAero = false;
+        car.HasFrontARB = _selectedParts.AntiSwayFrontPartId != null;
+        car.HasRearARB = _selectedParts.AntiSwayRearPartId != null;
+    }
+
+    private void UpdateAspirationTypeFromForcedInduction()
+    {
+        var db = Fh6DatabaseService.Instance;
+        var fi = db.GetForcedInductionById(_selectedParts.ForcedInductionPartId!.Value);
+        Car.AspirationType = fi switch
+        {
+            DbUpgradeTurboSingle => Models.AspirationType.SingleTurbo,
+            DbUpgradeTurboTwin   => Models.AspirationType.TwinTurbo,
+            DbUpgradeCSC         => Models.AspirationType.Centrifugal,
+            DbUpgradeDSC         => Models.AspirationType.PositiveDisplacement,
+            _                    => Car.AspirationType
+        };
+
+        if (fi is DbUpgradeTurboSingle ts)
+        {
+            var stockLevel = db.GetTurbosSingle(ts.EngineID).FirstOrDefault(p => p.IsStock)?.Level;
+            Car.AntiLag = stockLevel.HasValue && ts.Level - stockLevel.Value >= 4;
+        }
+        else if (fi is DbUpgradeTurboTwin tt)
+        {
+            var stockLevel = db.GetTurbosTwin(tt.EngineID).FirstOrDefault(p => p.IsStock)?.Level;
+            Car.AntiLag = stockLevel.HasValue && tt.Level - stockLevel.Value >= 4;
+        }
+        else
+            Car.AntiLag = false;
+    }
+
+    private void UpdateTireAndWheelData()
+    {
+        var db = Fh6DatabaseService.Instance;
+
+        var twf = _selectedParts.TireWidthFrontPartId != null
+            ? db.GetTireWidthFrontById(_selectedParts.TireWidthFrontPartId.Value) : null;
+        if (twf != null) Car.FrontTireWidth = twf.FrontTireWidth;
+
+        var twr = _selectedParts.TireWidthRearPartId != null
+            ? db.GetTireWidthRearById(_selectedParts.TireWidthRearPartId.Value) : null;
+        if (twr != null) Car.RearTireWidth = twr.RearTireWidth;
+
+        var rf = _selectedParts.RimFrontPartId != null
+            ? db.GetRimFrontById(_selectedParts.RimFrontPartId.Value) : null;
+        if (rf != null) Car.FrontRimDiameter = rf.FrontWheelDiameter;
+
+        var rr = _selectedParts.RimRearPartId != null
+            ? db.GetRimRearById(_selectedParts.RimRearPartId.Value) : null;
+        if (rr != null) Car.RearRimDiameter = rr.RearWheelDiameter;
+
+        var taf = _selectedParts.TireAspectRatioFrontPartId != null
+            ? db.GetTireAspectRatioFrontById(_selectedParts.TireAspectRatioFrontPartId.Value) : null;
+        if (taf != null) Car.FrontTireProfile = (int)(Car.StockFrontTireProfile + taf.FrontTireAspectRatioOffset);
+
+        var tar = _selectedParts.TireAspectRatioRearPartId != null
+            ? db.GetTireAspectRatioRearById(_selectedParts.TireAspectRatioRearPartId.Value) : null;
+        if (tar != null) Car.RearTireProfile = (int)(Car.StockRearTireProfile + tar.RearTireAspectRatioOffset);
+    }
+
+    private static EngineType MapEngineType(int cylinderId, int configId)
+    {
+        return configId switch
+        {
+            5 => EngineType.V6, // Electric — no mapping, default V6
+            3 => EngineType.Rotary, // Rotary
+            2 => EngineType.Boxer, // Boxer
+            4 => EngineType.W12, // W
+            1 => cylinderId switch // V
+            {
+                5 => EngineType.V6,
+                6 => EngineType.V8,
+                7 => EngineType.V10,
+                _ => EngineType.V12
+            },
+            _ => cylinderId switch // Inline (0)
+            {
+                0 => EngineType.I1,
+                1 => EngineType.I2,
+                2 => EngineType.I3,
+                3 => EngineType.I4,
+                4 => EngineType.I5,
+                5 => EngineType.I6,
+                6 => EngineType.I8,
+                _ => EngineType.V6
+            }
+        };
+    }
+
+    private static T MapTierFromLevel<T>(int? partId, Func<int, int> getLevel) where T : Enum
+    {
+        if (partId == null) return (T)Enum.GetValues(typeof(T)).GetValue(0)!;
+        int level = getLevel(partId.Value);
+        var values = Enum.GetValues(typeof(T));
+        int idx = Math.Clamp(level, 0, values.Length - 1);
+        return (T)values.GetValue(idx)!;
+    }
+
+    private void NotifyPartSelectionProperties()
+    {
+    OnPropertyChanged(nameof(SwapsVM));
+    OnPropertyChanged(nameof(EngineVM));
+    OnPropertyChanged(nameof(MotorVM));
+    OnPropertyChanged(nameof(SuspensionVM));
+    OnPropertyChanged(nameof(TransmissionVM));
+    OnPropertyChanged(nameof(TiresWheelsVM));
+    OnPropertyChanged(nameof(AeroVisualVM));
     }
 
     private void NotifyCarDisplayProperties()
@@ -1085,7 +1222,7 @@ public class MainViewModel : INotifyPropertyChanged
         try
         {
             Car.Name = _profileService.AutoProfileName(Car, Track);
-            TuneResult = _generator.Generate(Car, Track, Constraints);
+            TuneResult = _generator.Generate(Car, Track, _selectedParts, Fh6DatabaseService.Instance);
             var discLocalized = T($"Discipline{Track.Discipline}");
             StatusMessage = string.Format(T("StatusTuneGenerated"), Car.Make, Car.Model, $"{discLocalized}  •  {DateTime.Now:HH:mm}");
 
@@ -1121,7 +1258,7 @@ public class MainViewModel : INotifyPropertyChanged
                 if (Car.Name != newAutoName)
                     _profileService.Delete(Car.Name);
             }
-            string name = _profileService.Save(Car, Track, Constraints, TuneResult, _carSpec.AiEstimatedFields.ToList());
+            string name = _profileService.Save(Car, Track, _selectedParts, TuneResult, Constraints);
             RefreshProfiles();
             SelectProfileSilently(name);
             StatusMessage = string.Format(T("StatusProfileSaved"), name);
@@ -1145,24 +1282,35 @@ public class MainViewModel : INotifyPropertyChanged
         {
             var p = _profileService.Load(SelectedProfile);
             if (p == null) { StatusMessage = T("StatusProfileNotFound"); return; }
+            _isLoadingProfile = true;
             Car         = p.Car;
             Track       = p.Track;
-            Constraints = p.Constraints;
-            NotifyConstraintDisplayProperties();
+            _selectedParts = p.Parts ?? new SelectedParts();
+            _selectedParts.ResolveEngineAndMotorIds();
+            Car.EngineDbId = _selectedParts.EngineId ?? Car.EngineDbId;
+            Car.MotorDbId  = _selectedParts.MotorId ?? Car.MotorDbId;
+            // Restore CarDbId from Make/Model/Year match first (old profiles may have CarDbId=0)
+            _carSpec.SelectCarFromProfile(Car);
+            // Now CarDbId is correct → load sub-VMs with correct parts
+            LoadSubViewModels(Car);
+            OnPropertyChanged(nameof(SelectedParts));
             var loadedResult = p.LastResult;
             if (loadedResult != null) { loadedResult.Car = Car; loadedResult.Track = Track; }
             TuneResult  = loadedResult;
-            _carSpec.AiEstimatedFields.Clear();
-            foreach (var f in p.AiEstimatedFields)
-                _carSpec.AiEstimatedFields.Add(f);
-            OnPropertyChanged(nameof(IsWheelbaseAiEstimated));
-            OnPropertyChanged(nameof(IsFrontTrackAiEstimated));
-            OnPropertyChanged(nameof(IsRearTrackAiEstimated));
-            OnPropertyChanged(nameof(IsCdAiEstimated));
-            OnPropertyChanged(nameof(IsFrontalAreaAiEstimated));
-            OnPropertyChanged(nameof(HasAnyAiEstimatedField));
-            _isLoadingProfile = true;
-            _carSpec.SelectCarFromProfile(Car);
+            // Restore constraints from saved profile
+            if (p.Constraints != null)
+            {
+                foreach (var prop in typeof(TuningConstraints).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+                {
+                    if (prop.CanWrite && prop.Name != nameof(TuningConstraints.CenterDiffBias))
+                    {
+                        var val = prop.GetValue(p.Constraints);
+                        prop.SetValue(Constraints, val);
+                    }
+                }
+                Constraints.CenterDiffBias = p.Constraints.CenterDiffBias;
+            }
+            MapPartIdsToEnums(Car);
             _isLoadingProfile = false;
             StatusMessage = string.Format(T("StatusProfileLoaded"), SelectedProfile);
         }
@@ -1190,8 +1338,8 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void NewProfile()
     {
-        Car = new CarCard(); Track = new TrackInfo(); Constraints = new TuningConstraints();
-        NotifyConstraintDisplayProperties();
+        Car = new CarCard(); Track = new TrackInfo(); _selectedParts = new SelectedParts();
+        OnPropertyChanged(nameof(SelectedParts));
         TuneResult  = null;
         _carSpec.ClearCarSelection(_car);
         SelectedProfile = null;
@@ -1212,7 +1360,9 @@ public class MainViewModel : INotifyPropertyChanged
             if (p.Version == SavedProfile.ProfileVersion) continue;
             try
             {
-                p.LastResult = _generator.Generate(p.Car, p.Track, p.Constraints);
+                // v1.x profiles had enums as [JsonIgnore] — restore from PartIds
+                MapPartIdsToEnums(p.Car);
+                p.LastResult = _generator.Generate(p.Car, p.Track, p.Parts ?? new SelectedParts(), Fh6DatabaseService.Instance);
                 p.Version = SavedProfile.ProfileVersion;
                 _storage.Save(name, p);
                 ok++;
@@ -1240,9 +1390,6 @@ public class MainViewModel : INotifyPropertyChanged
 
     public string AppVersion => SavedProfile.ProfileVersion;
 
-    public event PropertyChangedEventHandler? PropertyChanged;
-    private void OnPropertyChanged([CallerMemberName] string? p = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
 }
 
 public class UnitSystemOption : NotifyBase

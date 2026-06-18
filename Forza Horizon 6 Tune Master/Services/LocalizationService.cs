@@ -180,6 +180,8 @@ public sealed class LocalizationService : INotifyPropertyChanged
         try
         {
             var asm = Assembly.GetExecutingAssembly();
+
+            // Base hand-curated localization file (required)
             var resourceName = $"Forza_Horizon_6_Tune_Master.Localization.{code}.json";
             using var stream = asm.GetManifestResourceStream(resourceName);
             if (stream == null) return false;
@@ -188,7 +190,29 @@ public sealed class LocalizationService : INotifyPropertyChanged
             var json = reader.ReadToEnd();
             var entries = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
             if (entries == null) return false;
+
             dict = new Dictionary<string, string>(entries, StringComparer.OrdinalIgnoreCase);
+
+            // Optional game-extracted strings (e.g. Upgrades, List_DriveType, List_Aspiration)
+            var gameResourceName = $"Forza_Horizon_6_Tune_Master.Localization.GameStrings.{code}.json";
+            using var gameStream = asm.GetManifestResourceStream(gameResourceName);
+            if (gameStream != null)
+            {
+                using var gameReader = new StreamReader(gameStream);
+                var gameJson = gameReader.ReadToEnd();
+                var gameTables = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(gameJson);
+                if (gameTables != null)
+                {
+                    foreach (var (table, tableEntries) in gameTables)
+                    {
+                        foreach (var (id, value) in tableEntries)
+                        {
+                            dict[$"{table}_{id}"] = value;
+                        }
+                    }
+                }
+            }
+
             return true;
         }
         catch

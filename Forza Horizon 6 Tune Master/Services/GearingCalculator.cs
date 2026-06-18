@@ -7,90 +7,24 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 internal static class GearingCalculator
 {
-    public static int CalcRecommendedGearCount(CarCard car, TrackInfo track, double effectiveMaxKmh)
+    private const double FdMin = 2.2, FdMax = 6.0;
+
+    public static int CalcRecommendedGearCount(CarCard car, TrackInfo track, double effectiveMaxKmh) =>
+        CalcRecommendedGearCount(car, track, new SelectedParts(), Fh6DatabaseService.Instance, effectiveMaxKmh);
+
+    public static int CalcRecommendedGearCount(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, double effectiveMaxKmh)
     {
         if (car.PowertrainType == PowertrainType.Electric)
             return track.Discipline == Discipline.Drag ? 1 : 2;
 
-        double pwRatio = car.PowerHP / (Math.Max(car.TotalMass, 1.0) / 1000.0);
+        var trans = TuningPhysicsContext.Transmission(car, parts, db);
+        if (trans == null) return 1;
 
-        double first, top;
-        if (track.Discipline == Discipline.Drag)
-        {
-            (first, _) = GetDragRatios(car, track.DragDistance, pwRatio);
-            double targetKmh = effectiveMaxKmh;
-            double targetMs = targetKmh / 3.6;
-            double targetRpmFraction =
-                CalculationHelpers.RevLimitFraction > 0 ? CalculationHelpers.RevLimitFraction : 0.95;
-            double totalRatio = CalcTotalRatio(car, targetMs, targetRpmFraction);
-            double estFd = 3.5;
-            estFd *= 1.0 + Math.Max(0, (pwRatio - 150) / 200.0 * 0.05);
-            top = CalculationHelpers.Clamp(totalRatio / estFd, CalculationHelpers.GearRatioMin, first);
-        }
-        else
-        {
-            (first, _, _, _) = GetDisciplineGearParams(track.Discipline, pwRatio, car.FuelType);
+        int maxGears = parts.TransmissionPartId != null ? trans.NumGears : car.GearCount;
+        if (track.Discipline == Discipline.Drag && maxGears > 4)
+            maxGears = 4;
 
-            double targetKmh = Math.Min(effectiveMaxKmh, CalculationHelpers.TargetSpeedCapKmh);
-            double targetMs = targetKmh / 3.6;
-
-            double targetRpmFraction =
-                CalculationHelpers.RevLimitFraction > 0 ? CalculationHelpers.RevLimitFraction : 0.95;
-            double totalRatio = CalcTotalRatio(car, targetMs, targetRpmFraction);
-
-            double estFd = track.Discipline switch
-            {
-                Discipline.Drift => 4.2,
-                Discipline.Rally => 4.0,
-                Discipline.CrossCountry => 4.3,
-                _ => 3.5
-            };
-
-            estFd *= 1.0 + Math.Max(0, (pwRatio - 150) / 200.0 * 0.05);
-
-            top = CalculationHelpers.Clamp(totalRatio / estFd, CalculationHelpers.GearRatioMin, first);
-        }
-
-        double idealStep;
-
-        if (track.Discipline == Discipline.Drag)
-        {
-            double tqPerKg = car.TorqueNm / Math.Max(car.TotalMass, 500.0);
-            if (tqPerKg > 0.80) idealStep = 0.70;
-            else if (tqPerKg < 0.40) idealStep = 0.58;
-            else idealStep = 0.65;
-        }
-        else
-        {
-            (_, double stepMin, double stepMax, _) = GetDisciplineGearParams(track.Discipline, pwRatio, car.FuelType);
-            ApplyAspirationStepAdjustment(car.AspirationType, car.AntiLag, ref stepMin, ref stepMax);
-
-            idealStep = (stepMin + stepMax) / 2.0;
-
-            if (car.AspirationType == AspirationType.TwinTurbo ||
-                car.AspirationType == AspirationType.SingleTurbo ||
-                car.AspirationType == AspirationType.Electric)
-            {
-                idealStep = Math.Max(idealStep, 0.76);
-            }
-        }
-
-        double ratioSpread = first / Math.Max(top, 0.01);
-
-        int rec;
-        if (idealStep >= 1.0 || ratioSpread <= 1.0)
-        {
-            rec = 1;
-        }
-        else
-        {
-            double logSpread = Math.Log(ratioSpread);
-            double logStep = Math.Log(1.0 / idealStep);
-            rec = (int)Math.Round(1.0 + logSpread / logStep);
-        }
-
-        int maxGears = Math.Max(1, Math.Min(car.MaxAvailableGearCount, 10));
-        return Math.Clamp(rec, 1, maxGears);
+        return Math.Clamp(maxGears, 1, car.MaxAvailableGearCount > 0 ? car.MaxAvailableGearCount : 10);
     }
 
     public static (double first, double stepMin, double stepMax, string note) GetDisciplineGearParams(
@@ -105,12 +39,9 @@ internal static class GearingCalculator
             _ => (3.5, 0.68, 0.82, "Expl_GearNote_Road")
         };
         string note = CalculationHelpers.L(noteKey);
-
         first -= CalculationHelpers.Clamp((pwRatio - 150.0) / 100.0 * 0.30, -0.45, 0.50);
-
         if (fuelType == FuelType.Diesel)
             first = Math.Max(first - 0.45, 1.5);
-
         return (first, stepMin, stepMax, note);
     }
 
@@ -131,10 +62,10 @@ internal static class GearingCalculator
         }
     }
 
-    public static void CalculateGearing(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r,
+    public static void CalculateGearing(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r,
         Dictionary<string, string> ex, double effectiveMaxKmh)
     {
-        r.RecommendedGearCount = CalcRecommendedGearCount(car, track, effectiveMaxKmh);
+        r.RecommendedGearCount = CalcRecommendedGearCount(car, track, parts, db, effectiveMaxKmh);
 
         if (!car.AllowGearCalculation)
         {
@@ -142,208 +73,73 @@ internal static class GearingCalculator
             return;
         }
 
-        int n = Math.Max(1, Math.Min(car.GearCount, 10));
+        var trans = TuningPhysicsContext.Transmission(car, parts, db);
+        if (trans == null)
+        {
+            ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_NoCalc"), r.RecommendedGearCount);
+            return;
+        }
 
-        double pwRatio = car.PowerHP / (Math.Max(car.TotalMass, 1.0) / 1000.0);
-        double tireCirc = Math.PI * car.DrivenWheelDiameterInch * 0.0254;
-
-        double targetRpmFraction = CalculationHelpers.RevLimitFraction > 0 
-            ? CalculationHelpers.RevLimitFraction 
+        double targetRpmFraction = CalculationHelpers.RevLimitFraction > 0
+            ? CalculationHelpers.RevLimitFraction
             : 0.95;
-        
+
         double targetKmh = track.Discipline == Discipline.Drag
             ? effectiveMaxKmh
             : Math.Min(effectiveMaxKmh, CalculationHelpers.TargetSpeedCapKmh);
         double targetMs = targetKmh / 3.6;
 
-        if (n == 1)
+        double tireCirc = Math.PI * car.DrivenWheelDiameterInch * 0.0254;
+
+        // Build the ratio list from the selected transmission, skipping invalid entries.
+        var ratios = trans.GearRatios
+            .Take(trans.NumGears)
+            .Where(g => g > 0)
+            .Select(g => Math.Round(CalculationHelpers.Clamp(g, CalculationHelpers.GearRatioMin, CalculationHelpers.GearRatioMax), 2))
+            .ToList();
+
+        if (ratios.Count == 0)
         {
-            double total = CalcTotalRatio(car, targetMs, targetRpmFraction);
-
-            double g1 = track.Discipline switch
-            {
-                Discipline.Drag => GetDragRatios(car, track.DragDistance, pwRatio).first,
-                Discipline.CrossCountry => 4.5,
-                Discipline.Rally => 4.0,
-                Discipline.Touge => 3.8,
-                Discipline.Drift => 3.0,
-                _ => 3.5
-            };
-            g1 = Math.Max(1.0, g1);
-
-            double fd1 = CalculationHelpers.Clamp(total / g1, c.FinalDriveMin, c.FinalDriveMax);
-            g1 = CalculationHelpers.Clamp(total / fd1, CalculationHelpers.GearRatioMin,
-                CalculationHelpers.GearRatioMax);
-            fd1 = CalculationHelpers.Clamp(total / g1, c.FinalDriveMin, c.FinalDriveMax);
-
-            g1 = Math.Round(g1, 2);
-            fd1 = Math.Round(fd1, 2);
-            r.FinalDrive = fd1;
-            if (car.OnlyFinalDriveCalculation)
-            {
-                ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_OnlyFD"), fd1,
-                    r.RecommendedGearCount);
-            }
-            else
-            {
-                r.GearRatios = new List<double> { g1 };
-                ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_SingleGear"),
-                    fd1, g1, g1, fd1, g1 * fd1, effectiveMaxKmh, r.ActualMaxSpeedKmh, car.MaxRPM,
-                    r.RecommendedGearCount);
-            }
-
+            r.FinalDrive = Math.Round(CalculationHelpers.Clamp(trans.FinalDriveRatio, FdMin, FdMax), 2);
+            ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_OnlyFD"), r.FinalDrive, r.RecommendedGearCount);
             return;
         }
 
-        double first, targetTop;
-        string note;
+        double topGear = ratios[^1];
+        double currentFd = trans.FinalDriveRatio > 0 ? trans.FinalDriveRatio : 3.5;
 
-        if (track.Discipline == Discipline.Drag)
+        // Actual top speed with the stock/default final drive.
+        double actualTopKmh = car.MaxRPM > 0 && topGear > 0
+            ? car.MaxRPM * targetRpmFraction * tireCirc / (60.0 * currentFd * topGear) * 3.6
+            : targetKmh;
+
+        // Adjust final drive so the car reaches the target top speed in top gear.
+        double newFd = actualTopKmh > 0 && targetKmh > 0 ? currentFd * actualTopKmh / targetKmh : currentFd;
+        newFd = CalculationHelpers.Clamp(newFd, FdMin, FdMax);
+        r.FinalDrive = Math.Round(newFd, 2);
+
+        // For a single-gear transmission (or final-drive-only mode) keep the list empty.
+        if (car.OnlyFinalDriveCalculation || ratios.Count == 1)
         {
-            (first, note) = GetDragRatios(car, track.DragDistance, pwRatio);
-            double totalRatio = CalcTotalRatio(car, targetMs, targetRpmFraction);
-            double estFd = 3.5;
-            estFd *= 1.0 + Math.Max(0, (pwRatio - 150) / 200.0 * 0.05);
-            estFd = CalculationHelpers.Clamp(estFd, c.FinalDriveMin, c.FinalDriveMax);
-            targetTop = totalRatio / estFd;
-        }
-        else
-        {
-            double stepMin, stepMax;
-            (first, stepMin, stepMax, note) = GetDisciplineGearParams(track.Discipline, pwRatio, car.FuelType);
-
-            ApplyAspirationStepAdjustment(car.AspirationType, car.AntiLag, ref stepMin, ref stepMax);
-            stepMin = Math.Max(0.50, stepMin);
-            if (n <= 4) stepMax -= 0.04;
-            else if (n <= 5) stepMax -= 0.02;
-            double minLimit = stepMin + 0.05;
-            double maxLimit = Math.Max(minLimit + 0.01, 0.95);
-            stepMax = CalculationHelpers.Clamp(stepMax, minLimit, maxLimit);
-
-            double totalRatio = CalcTotalRatio(car, targetMs, targetRpmFraction);
-
-            double estFd = track.Discipline switch
-            {
-                Discipline.Drift => 4.2,
-                Discipline.Rally => 4.0,
-                Discipline.CrossCountry => 4.3,
-                _ => 3.5
-            };
-            estFd *= 1.0 + Math.Max(0, (pwRatio - 150) / 200.0 * 0.05);
-            estFd = CalculationHelpers.Clamp(estFd, c.FinalDriveMin, c.FinalDriveMax);
-
-            targetTop = totalRatio / estFd;
-        }
-
-        first = CalculationHelpers.Clamp(first, CalculationHelpers.GearRatioMin, CalculationHelpers.GearRatioMax);
-        targetTop = CalculationHelpers.Clamp(targetTop, CalculationHelpers.GearRatioMin, first);
-
-        double degFactor = track.Discipline switch
-        {
-            Discipline.Drift => 1.02,
-            Discipline.Rally => CalculationHelpers.GearDegradeRallyFactor,
-            Discipline.CrossCountry => CalculationHelpers.GearDegradeRallyFactor,
-            _ => 1.04,
-        };
-
-        double bandWidth = car.MaxRPM > 0 && car.PowerPeakRPM > 0 && car.TorquePeakRPM > 0
-            ? (double)(car.PowerPeakRPM - car.TorquePeakRPM) / car.MaxRPM
-            : 0.28;
-        degFactor += (0.28 - bandWidth) * 0.20;
-
-        degFactor += (car.AspirationType, car.AntiLag) switch
-        {
-            (AspirationType.Centrifugal, _) => 0.01,
-            (AspirationType.SingleTurbo, false) => 0.01,
-            (AspirationType.Electric, _) => -0.02,
-            _ => 0.00,
-        };
-        if (car.FuelType == FuelType.Diesel) degFactor -= 0.01;
-
-        degFactor = CalculationHelpers.Clamp(degFactor, 1.01, 1.07);
-
-        var ratios = new List<double>(n);
-        if (n <= 2)
-        {
-            for (int i = 0; i < n; i++)
-            {
-                double t = (n == 1) ? 0 : (double)i / (n - 1);
-                double ratio = first * Math.Pow(targetTop / first, t);
-                ratios.Add(Math.Round(
-                    CalculationHelpers.Clamp(ratio, CalculationHelpers.GearRatioMin, CalculationHelpers.GearRatioMax),
-                    2));
-            }
-        }
-        else
-        {
-            double spread = targetTop / first;
-            double degExp = (n - 1) * (n - 2) / 2.0;
-            double s0 = Math.Pow(spread / Math.Pow(degFactor, degExp), 1.0 / (n - 1));
-            double ratio = first;
-            ratios.Add(Math.Round(
-                CalculationHelpers.Clamp(ratio, CalculationHelpers.GearRatioMin, CalculationHelpers.GearRatioMax), 2));
-            double stepCur = s0;
-            for (int i = 1; i < n; i++)
-            {
-                ratio *= stepCur;
-                ratios.Add(Math.Round(
-                    CalculationHelpers.Clamp(ratio, CalculationHelpers.GearRatioMin, CalculationHelpers.GearRatioMax),
-                    2));
-                stepCur *= degFactor;
-            }
-
-            ratios[n - 1] =
-                Math.Round(
-                    CalculationHelpers.Clamp(targetTop, CalculationHelpers.GearRatioMin,
-                        CalculationHelpers.GearRatioMax), 2);
-        }
-
-        double actualTop = ratios[n - 1];
-        double fd = targetMs > 0 && car.MaxRPM > 0 && actualTop > 0
-            ? car.MaxRPM * targetRpmFraction * tireCirc / (60.0 * targetMs * actualTop)
-            : 3.50;
-
-        r.FinalDrive = Math.Round(CalculationHelpers.Clamp(fd, c.FinalDriveMin, c.FinalDriveMax), 2);
-
-        if (car.OnlyFinalDriveCalculation)
-        {
-            ex["FinalDrive"] =
-                string.Format(CalculationHelpers.L("Expl_FinalDrive_OnlyFD"), r.FinalDrive, r.RecommendedGearCount) +
-                " " + note;
+            ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_OnlyFD"), r.FinalDrive, r.RecommendedGearCount)
+                + " " + CalculationHelpers.L("Expl_GearNote_Road");
+            if (!car.OnlyFinalDriveCalculation)
+                r.GearRatios = ratios;
             return;
         }
 
         r.GearRatios = ratios;
         string gearStr = string.Join("  ", ratios.Select((g, i) => $"{i + 1}: {g:F2}"));
-        double actualKmhMulti = r.ActualMaxSpeedKmh;
         ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_MultiGear"),
-            r.FinalDrive, r.RecommendedGearCount, gearStr, effectiveMaxKmh, actualKmhMulti, car.MaxRPM, note);
-
-        if (car.MaxRPM > 0 && car.TorquePeakRPM > 0 && car.PowerPeakRPM > 0 && ratios.Count > 1)
-        {
-            double shiftRpm = car.PowerPeakRPM;
-            double minSafeRpm = car.TorquePeakRPM * 0.90;
-            var dropWarnings = new List<string>();
-            for (int i = 0; i < ratios.Count - 1; i++)
-            {
-                double rpmAfterShift = shiftRpm * ratios[i + 1] / ratios[i];
-                if (rpmAfterShift < minSafeRpm)
-                    dropWarnings.Add($"{i + 1}→{i + 2}: {rpmAfterShift:F0} {CalculationHelpers.L("Expl_RpmAbbr")}");
-            }
-
-            if (dropWarnings.Count > 0)
-                ex["FinalDrive"] += string.Format(CalculationHelpers.L("Expl_FinalDrive_Warning"), minSafeRpm,
-                    string.Join(", ", dropWarnings));
-        }
+            r.FinalDrive, r.RecommendedGearCount, gearStr, effectiveMaxKmh, r.ActualMaxSpeedKmh, car.MaxRPM, CalculationHelpers.L("Expl_GearNote_Road"));
     }
 
-    public static void PostValidateAndRecalculate(CarCard car, TrackInfo track, TuningConstraints c,
+    public static void PostValidateAndRecalculate(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db,
         TuneResult r, Dictionary<string, string> ex, ref double effectiveMaxKmh)
     {
         bool anyChange = false;
-        const int maxIter = 3;
 
-        for (int iter = 0; iter < maxIter; iter++)
+        for (int iter = 0; iter < 2; iter++)
         {
             bool changed = false;
 
@@ -354,20 +150,10 @@ internal static class GearingCalculator
                     ? effectiveMaxKmh
                     : Math.Min(effectiveMaxKmh, CalculationHelpers.TargetSpeedCapKmh);
 
-                if (actual > 0 && target > 0 && actual < target * 0.97)
+                if (actual > 0 && target > 0 && (actual < target * 0.97 || actual > target * 1.05))
                 {
                     double ratio = target / actual;
-                    double newFd = CalculationHelpers.Clamp(r.FinalDrive / ratio, c.FinalDriveMin, c.FinalDriveMax);
-                    if (Math.Abs(newFd - r.FinalDrive) > 0.01)
-                    {
-                        r.FinalDrive = Math.Round(newFd, 2);
-                        changed = true;
-                    }
-                }
-                else if (actual > target * 1.05 && track.Discipline != Discipline.Drag)
-                {
-                    double ratio = target / actual;
-                    double newFd = CalculationHelpers.Clamp(r.FinalDrive * ratio, c.FinalDriveMin, c.FinalDriveMax);
+                    double newFd = CalculationHelpers.Clamp(r.FinalDrive * ratio, FdMin, FdMax);
                     if (Math.Abs(newFd - r.FinalDrive) > 0.01)
                     {
                         r.FinalDrive = Math.Round(newFd, 2);
@@ -379,7 +165,7 @@ internal static class GearingCalculator
             if (RpmDropFix(car, r))
                 changed = true;
 
-            if (SuspensionCalculator.SpringRideHeightFix(car, track, c, r))
+            if (SuspensionCalculator.SpringRideHeightFix(car, track, parts, r))
                 changed = true;
 
             if (changed)
@@ -388,7 +174,7 @@ internal static class GearingCalculator
                 if (Math.Abs(newEff - effectiveMaxKmh) > 1)
                 {
                     effectiveMaxKmh = newEff;
-                    AeroCalculator.CalculateAero(car, track, c, r, ex, effectiveMaxKmh);
+                    AeroCalculator.CalculateAero(car, track, parts, db, r, ex, effectiveMaxKmh);
                     effectiveMaxKmh = CalculationHelpers.ComputeEffectiveMaxSpeedKmh(car, r);
                 }
             }
@@ -399,7 +185,7 @@ internal static class GearingCalculator
 
         if (anyChange)
         {
-            string gearStr = r.GearRatios != null
+            string gearStr = r.GearRatios.Count > 0
                 ? string.Join("  ", r.GearRatios.Select((g, i) => $"{i + 1}: {g:F2}"))
                 : "N/A";
             double actualSpd = r.ActualMaxSpeedKmh;
@@ -422,6 +208,7 @@ internal static class GearingCalculator
             bool anyDrop = false;
             for (int i = r.GearRatios.Count - 2; i >= 0; i--)
             {
+                if (r.GearRatios[i] == 0) continue;
                 double rpmAfter = shiftRpm * r.GearRatios[i + 1] / r.GearRatios[i];
                 if (rpmAfter < minSafeRpm)
                 {
@@ -445,57 +232,4 @@ internal static class GearingCalculator
 
         return anyFixed;
     }
-
-    private static double CalcTotalRatio(CarCard car, double targetMs, double revFraction)
-    {
-        double tireCirc = Math.PI * car.DrivenWheelDiameterInch * 0.0254;
-        return targetMs > 0 && car.MaxRPM > 0 && tireCirc > 0
-            ? car.MaxRPM * revFraction * tireCirc / (60.0 * targetMs)
-            : 9.0;
-    }
-
-    private static (double first, string note) GetDragRatios(CarCard car, DragDistance dist, double pwRatio)
-    {
-        double tqPerKg = car.TorqueNm / Math.Max(car.TotalMass, 500.0);
-    
-        // Базовый расчет БЕЗ промежуточного клемпа - пусть математика "дышит"
-        double first = CalculationHelpers.DragFirstGearBaseline - (tqPerKg - 0.25) * 1.40;
-
-        // Множитель типа привода
-        first *= car.DriveType switch
-        {
-            DriveType.AWD => 1.05,
-            DriveType.FWD => 0.92,
-            _ => 1.0
-        };
-
-        double pwAdjustment;
-        if (pwRatio > 500)
-        {
-            double excess = (pwRatio - 500) / 500.0;
-            pwAdjustment = Math.Min(0.30, 0.50 / (1.0 + excess * 0.5));
-        }
-        else
-        {
-            pwAdjustment = CalculationHelpers.Clamp((pwRatio - 150.0) / 100.0 * 0.30, -0.45, 0.50);
-        }
-        first -= pwAdjustment;
-
-        // Множитель дистанции драга
-        double distFactor = dist switch
-        {
-            DragDistance.Quarter => 1.00,
-            DragDistance.Half => 0.88,
-            DragDistance.Mile => 0.70,
-            _ => 1.0
-        };
-        first *= distFactor;
-
-        first = Math.Round(CalculationHelpers.Clamp(first, 1.5, 5.5), 2);
-
-        string distLabel = CalculationHelpers.L($"Expl_DragDistStr_{(int)dist}");
-        string note = string.Format(CalculationHelpers.L("Expl_DragNote"), distLabel, first, tqPerKg,
-            CalculationHelpers.L($"Enum_DriveType_{car.DriveType}"));
-        
-        return (first, note);
-    }}
+}

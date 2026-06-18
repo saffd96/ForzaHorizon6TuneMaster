@@ -1,220 +1,219 @@
-using System;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using Forza_Horizon_6_Tune_Master.Services;
 
 namespace Forza_Horizon_6_Tune_Master.Models;
 
-public class TuningConstraints : NotifyBase
+public class TuningConstraints : INotifyPropertyChanged
 {
-    private void SetMinMax(ref double minField, double minValue, ref double maxField, [CallerMemberName] string? p = null)
-    {
-        if (minValue > maxField)
-            Set(ref maxField, minValue, MaxPropertyName(p));
-        Set(ref minField, minValue, p);
-    }
+    public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void SetMaxMin(ref double maxField, double maxValue, double minValue, double minField, [CallerMemberName] string? p = null)
-    {
-        double clamped = Math.Max(maxValue, minField);
-        if (!Set(ref maxField, clamped, p) && clamped != maxValue)
-            OnPropertyChanged(p);
-    }
+    private void Raise([CallerMemberName] string? name = null) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-    private static string? MaxPropertyName(string? minProp)
-        => minProp?.EndsWith("Min") == true ? minProp[..^3] + "Max" : null;
-
-    [JsonPropertyOrder(1)]
-    public double TirePressureFrontMin { get => _tirePressureFrontMin; set => SetMinMax(ref _tirePressureFrontMin, value, ref _tirePressureFrontMax); }
+    // ── Tire Pressure ────────────────────────────────────────────────────
     private double _tirePressureFrontMin = 1.0;
-
-    [JsonPropertyOrder(0)]
-    public double TirePressureFrontMax { get => _tirePressureFrontMax; set => SetMaxMin(ref _tirePressureFrontMax, value, TirePressureFrontMin, _tirePressureFrontMin); }
     private double _tirePressureFrontMax = 3.8;
+    [JsonPropertyOrder(1)] public double TirePressureFrontMin { get => _tirePressureFrontMin; set { if (SetMin(ref _tirePressureFrontMin, ref _tirePressureFrontMax, value)) { Raise(); Raise(nameof(TirePressureFrontMax)); } } }
+    [JsonPropertyOrder(0)] public double TirePressureFrontMax { get => _tirePressureFrontMax; set { if (SetMax(ref _tirePressureFrontMin, ref _tirePressureFrontMax, value)) { Raise(); Raise(nameof(TirePressureFrontMin)); } } }
+    private double _tirePressureRearMin = 0.5;
+    private double _tirePressureRearMax = 5.0;
+    public double TirePressureRearMin { get => _tirePressureRearMin; set { if (SetMin(ref _tirePressureRearMin, ref _tirePressureRearMax, value)) { Raise(); Raise(nameof(TirePressureRearMax)); } } }
+    public double TirePressureRearMax { get => _tirePressureRearMax; set { if (SetMax(ref _tirePressureRearMin, ref _tirePressureRearMax, value)) { Raise(); Raise(nameof(TirePressureRearMin)); } } }
 
-    [JsonPropertyOrder(1)]
-    public double TirePressureRearMin { get => _tirePressureRearMin; set => SetMinMax(ref _tirePressureRearMin, value, ref _tirePressureRearMax); }
-    private double _tirePressureRearMin = 1.0;
+    // ── Camber ──────────────────────────────────────────────────────────
+    private double _camberFrontMin = -5;
+    private double _camberFrontMax = 5;
+    public double CamberFrontMin { get => _camberFrontMin; set { if (SetMin(ref _camberFrontMin, ref _camberFrontMax, value)) { Raise(); Raise(nameof(CamberFrontMax)); } } }
+    public double CamberFrontMax { get => _camberFrontMax; set { if (SetMax(ref _camberFrontMin, ref _camberFrontMax, value)) { Raise(); Raise(nameof(CamberFrontMin)); } } }
+    private double _camberRearMin = -5;
+    private double _camberRearMax = 5;
+    public double CamberRearMin { get => _camberRearMin; set { if (SetMin(ref _camberRearMin, ref _camberRearMax, value)) { Raise(); Raise(nameof(CamberRearMax)); } } }
+    public double CamberRearMax { get => _camberRearMax; set { if (SetMax(ref _camberRearMin, ref _camberRearMax, value)) { Raise(); Raise(nameof(CamberRearMin)); } } }
 
-    [JsonPropertyOrder(0)]
-    public double TirePressureRearMax { get => _tirePressureRearMax; set => SetMaxMin(ref _tirePressureRearMax, value, TirePressureRearMin, _tirePressureRearMin); }
-    private double _tirePressureRearMax = 3.8;
+    // ── Toe ──────────────────────────────────────────────────────────────
+    private double _toeFrontMin = -1;
+    private double _toeFrontMax = 1;
+    public double ToeFrontMin { get => _toeFrontMin; set { if (SetMin(ref _toeFrontMin, ref _toeFrontMax, value)) { Raise(); Raise(nameof(ToeFrontMax)); } } }
+    public double ToeFrontMax { get => _toeFrontMax; set { if (SetMax(ref _toeFrontMin, ref _toeFrontMax, value)) { Raise(); Raise(nameof(ToeFrontMin)); } } }
+    private double _toeRearMin = -1;
+    private double _toeRearMax = 1;
+    public double ToeRearMin { get => _toeRearMin; set { if (SetMin(ref _toeRearMin, ref _toeRearMax, value)) { Raise(); Raise(nameof(ToeRearMax)); } } }
+    public double ToeRearMax { get => _toeRearMax; set { if (SetMax(ref _toeRearMin, ref _toeRearMax, value)) { Raise(); Raise(nameof(ToeRearMin)); } } }
 
-    [JsonPropertyOrder(1)]
-    public double CamberFrontMin { get => _camberFrontMin; set => SetMinMax(ref _camberFrontMin, value, ref _camberFrontMax); }
-    private double _camberFrontMin = -5.0;
-
-    [JsonPropertyOrder(0)]
-    public double CamberFrontMax { get => _camberFrontMax; set => SetMaxMin(ref _camberFrontMax, value, CamberFrontMin, _camberFrontMin); }
-    private double _camberFrontMax = 5.0;
-
-    [JsonPropertyOrder(1)]
-    public double CamberRearMin { get => _camberRearMin; set => SetMinMax(ref _camberRearMin, value, ref _camberRearMax); }
-    private double _camberRearMin = -5.0;
-
-    [JsonPropertyOrder(0)]
-    public double CamberRearMax { get => _camberRearMax; set => SetMaxMin(ref _camberRearMax, value, CamberRearMin, _camberRearMin); }
-    private double _camberRearMax = 5.0;
-
-    [JsonPropertyOrder(1)]
-    public double ToeFrontMin { get => _toeFrontMin; set => SetMinMax(ref _toeFrontMin, value, ref _toeFrontMax); }
-    private double _toeFrontMin = -5.0;
-
-    [JsonPropertyOrder(0)]
-    public double ToeFrontMax { get => _toeFrontMax; set => SetMaxMin(ref _toeFrontMax, value, ToeFrontMin, _toeFrontMin); }
-    private double _toeFrontMax = 5.0;
-
-    [JsonPropertyOrder(1)]
-    public double ToeRearMin { get => _toeRearMin; set => SetMinMax(ref _toeRearMin, value, ref _toeRearMax); }
-    private double _toeRearMin = -5.0;
-
-    [JsonPropertyOrder(0)]
-    public double ToeRearMax { get => _toeRearMax; set => SetMaxMin(ref _toeRearMax, value, ToeRearMin, _toeRearMin); }
-    private double _toeRearMax = 5.0;
-
-    [JsonPropertyOrder(1)]
-    public double CasterMin { get => _casterMin; set => SetMinMax(ref _casterMin, value, ref _casterMax); }
+    // ── Caster ──────────────────────────────────────────────────────────
     private double _casterMin = 1.0;
-
-    [JsonPropertyOrder(0)]
-    public double CasterMax { get => _casterMax; set => SetMaxMin(ref _casterMax, value, CasterMin, _casterMin); }
     private double _casterMax = 7.0;
+    public double CasterMin { get => _casterMin; set { if (SetMin(ref _casterMin, ref _casterMax, value)) { Raise(); Raise(nameof(CasterMax)); } } }
+    public double CasterMax { get => _casterMax; set { if (SetMax(ref _casterMin, ref _casterMax, value)) { Raise(); Raise(nameof(CasterMin)); } } }
 
-    [JsonPropertyOrder(1)]
-    public double ARBFrontMin { get => _arbFrontMin; set => SetMinMax(ref _arbFrontMin, value, ref _arbFrontMax); }
-    private double _arbFrontMin = 1;
+    // ── ARB ──────────────────────────────────────────────────────────
+    private double _arbFrontMin;
+    private double _arbFrontMax = 100;
+    public double ARBFrontMin { get => _arbFrontMin; set { if (SetMin(ref _arbFrontMin, ref _arbFrontMax, value)) { Raise(); Raise(nameof(ARBFrontMax)); } } }
+    public double ARBFrontMax { get => _arbFrontMax; set { if (SetMax(ref _arbFrontMin, ref _arbFrontMax, value)) { Raise(); Raise(nameof(ARBFrontMin)); } } }
+    private double _arbRearMin;
+    private double _arbRearMax = 100;
+    public double ARBRearMin { get => _arbRearMin; set { if (SetMin(ref _arbRearMin, ref _arbRearMax, value)) { Raise(); Raise(nameof(ARBRearMax)); } } }
+    public double ARBRearMax { get => _arbRearMax; set { if (SetMax(ref _arbRearMin, ref _arbRearMax, value)) { Raise(); Raise(nameof(ARBRearMin)); } } }
 
-    [JsonPropertyOrder(0)]
-    public double ARBFrontMax { get => _arbFrontMax; set => SetMaxMin(ref _arbFrontMax, value, ARBFrontMin, _arbFrontMin); }
-    private double _arbFrontMax = 65;
-
-    [JsonPropertyOrder(1)]
-    public double ARBRearMin { get => _arbRearMin; set => SetMinMax(ref _arbRearMin, value, ref _arbRearMax); }
-    private double _arbRearMin = 1;
-
-    [JsonPropertyOrder(0)]
-    public double ARBRearMax { get => _arbRearMax; set => SetMaxMin(ref _arbRearMax, value, ARBRearMin, _arbRearMin); }
-    private double _arbRearMax = 65;
-
-    [JsonPropertyOrder(1)]
-    public double SpringFrontMin { get => _springFrontMin; set => SetMinMax(ref _springFrontMin, value, ref _springFrontMax); }
-    private double _springFrontMin = 560;
-
-    [JsonPropertyOrder(0)]
-    public double SpringFrontMax { get => _springFrontMax; set => SetMaxMin(ref _springFrontMax, value, SpringFrontMin, _springFrontMin); }
+    // ── Spring ──────────────────────────────────────────────────────────
+    private double _springFrontMin = 50;
     private double _springFrontMax = 2800;
+    public double SpringFrontMin { get => _springFrontMin; set { if (SetMin(ref _springFrontMin, ref _springFrontMax, value)) { Raise(); Raise(nameof(SpringFrontMax)); } } }
+    public double SpringFrontMax { get => _springFrontMax; set { if (SetMax(ref _springFrontMin, ref _springFrontMax, value)) { Raise(); Raise(nameof(SpringFrontMin)); } } }
+    private double _springRearMin = 50;
+    private double _springRearMax = 2000;
+    public double SpringRearMin { get => _springRearMin; set { if (SetMin(ref _springRearMin, ref _springRearMax, value)) { Raise(); Raise(nameof(SpringRearMax)); } } }
+    public double SpringRearMax { get => _springRearMax; set { if (SetMax(ref _springRearMin, ref _springRearMax, value)) { Raise(); Raise(nameof(SpringRearMin)); } } }
 
-    [JsonPropertyOrder(1)]
-    public double SpringRearMin { get => _springRearMin; set => SetMinMax(ref _springRearMin, value, ref _springRearMax); }
-    private double _springRearMin = 560;
+    // ── Ride Height ──────────────────────────────────────────────────────
+    private double _rideHeightFrontMin = 50.0;
+    private double _rideHeightFrontMax = 250.0;
+    public double RideHeightFrontMin { get => _rideHeightFrontMin; set { if (SetMin(ref _rideHeightFrontMin, ref _rideHeightFrontMax, value)) { Raise(); Raise(nameof(RideHeightFrontMax)); } } }
+    public double RideHeightFrontMax { get => _rideHeightFrontMax; set { if (SetMax(ref _rideHeightFrontMin, ref _rideHeightFrontMax, value)) { Raise(); Raise(nameof(RideHeightFrontMin)); } } }
+    private double _rideHeightRearMin = 10;
+    private double _rideHeightRearMax = 400;
+    public double RideHeightRearMin { get => _rideHeightRearMin; set { if (SetMin(ref _rideHeightRearMin, ref _rideHeightRearMax, value)) { Raise(); Raise(nameof(RideHeightRearMax)); } } }
+    public double RideHeightRearMax { get => _rideHeightRearMax; set { if (SetMax(ref _rideHeightRearMin, ref _rideHeightRearMax, value)) { Raise(); Raise(nameof(RideHeightRearMin)); } } }
 
-    [JsonPropertyOrder(0)]
-    public double SpringRearMax { get => _springRearMax; set => SetMaxMin(ref _springRearMax, value, SpringRearMin, _springRearMin); }
-    private double _springRearMax = 2800;
+    // ── Rebound ───────────────────────────────────────────────────────
+    private double _reboundFrontMin;
+    private double _reboundFrontMax = 30;
+    public double ReboundFrontMin { get => _reboundFrontMin; set { if (SetMin(ref _reboundFrontMin, ref _reboundFrontMax, value)) { Raise(); Raise(nameof(ReboundFrontMax)); } } }
+    public double ReboundFrontMax { get => _reboundFrontMax; set { if (SetMax(ref _reboundFrontMin, ref _reboundFrontMax, value)) { Raise(); Raise(nameof(ReboundFrontMin)); } } }
+    private double _reboundRearMin;
+    private double _reboundRearMax = 30;
+    public double ReboundRearMin { get => _reboundRearMin; set { if (SetMin(ref _reboundRearMin, ref _reboundRearMax, value)) { Raise(); Raise(nameof(ReboundRearMax)); } } }
+    public double ReboundRearMax { get => _reboundRearMax; set { if (SetMax(ref _reboundRearMin, ref _reboundRearMax, value)) { Raise(); Raise(nameof(ReboundRearMin)); } } }
 
-    [JsonPropertyOrder(1)]
-    public double RideHeightFrontMin { get => _rideHeightFrontMin; set => SetMinMax(ref _rideHeightFrontMin, value, ref _rideHeightFrontMax); }
-    private double _rideHeightFrontMin = 50;
+    // ── Bump ─────────────────────────────────────────────────────────
+    private double _bumpFrontMin;
+    private double _bumpFrontMax = 30;
+    public double BumpFrontMin { get => _bumpFrontMin; set { if (SetMin(ref _bumpFrontMin, ref _bumpFrontMax, value)) { Raise(); Raise(nameof(BumpFrontMax)); } } }
+    public double BumpFrontMax { get => _bumpFrontMax; set { if (SetMax(ref _bumpFrontMin, ref _bumpFrontMax, value)) { Raise(); Raise(nameof(BumpFrontMin)); } } }
+    private double _bumpRearMin;
+    private double _bumpRearMax = 30;
+    public double BumpRearMin { get => _bumpRearMin; set { if (SetMin(ref _bumpRearMin, ref _bumpRearMax, value)) { Raise(); Raise(nameof(BumpRearMax)); } } }
+    public double BumpRearMax { get => _bumpRearMax; set { if (SetMax(ref _bumpRearMin, ref _bumpRearMax, value)) { Raise(); Raise(nameof(BumpRearMin)); } } }
 
-    [JsonPropertyOrder(0)]
-    public double RideHeightFrontMax { get => _rideHeightFrontMax; set => SetMaxMin(ref _rideHeightFrontMax, value, RideHeightFrontMin, _rideHeightFrontMin); }
-    private double _rideHeightFrontMax = 250;
+    // ── Aero ────────────────────────────────────────────────────────
+    private double _aeroFrontMin;
+    private double _aeroFrontMax = 300;
+    public double AeroFrontMin { get => _aeroFrontMin; set { if (SetMin(ref _aeroFrontMin, ref _aeroFrontMax, value)) { Raise(); Raise(nameof(AeroFrontMax)); } } }
+    public double AeroFrontMax { get => _aeroFrontMax; set { if (SetMax(ref _aeroFrontMin, ref _aeroFrontMax, value)) { Raise(); Raise(nameof(AeroFrontMin)); } } }
+    private double _aeroRearMin;
+    private double _aeroRearMax = 300;
+    public double AeroRearMin { get => _aeroRearMin; set { if (SetMin(ref _aeroRearMin, ref _aeroRearMax, value)) { Raise(); Raise(nameof(AeroRearMax)); } } }
+    public double AeroRearMax { get => _aeroRearMax; set { if (SetMax(ref _aeroRearMin, ref _aeroRearMax, value)) { Raise(); Raise(nameof(AeroRearMin)); } } }
 
-    [JsonPropertyOrder(1)]
-    public double RideHeightRearMin { get => _rideHeightRearMin; set => SetMinMax(ref _rideHeightRearMin, value, ref _rideHeightRearMax); }
-    private double _rideHeightRearMin = 50;
-
-    [JsonPropertyOrder(0)]
-    public double RideHeightRearMax { get => _rideHeightRearMax; set => SetMaxMin(ref _rideHeightRearMax, value, RideHeightRearMin, _rideHeightRearMin); }
-    private double _rideHeightRearMax = 250;
-
-    [JsonPropertyOrder(1)]
-    public double ReboundFrontMin { get => _reboundFrontMin; set => SetMinMax(ref _reboundFrontMin, value, ref _reboundFrontMax); }
-    private double _reboundFrontMin = 1;
-
-    [JsonPropertyOrder(0)]
-    public double ReboundFrontMax { get => _reboundFrontMax; set => SetMaxMin(ref _reboundFrontMax, value, ReboundFrontMin, _reboundFrontMin); }
-    private double _reboundFrontMax = 20;
-
-    [JsonPropertyOrder(1)]
-    public double ReboundRearMin { get => _reboundRearMin; set => SetMinMax(ref _reboundRearMin, value, ref _reboundRearMax); }
-    private double _reboundRearMin = 1;
-
-    [JsonPropertyOrder(0)]
-    public double ReboundRearMax { get => _reboundRearMax; set => SetMaxMin(ref _reboundRearMax, value, ReboundRearMin, _reboundRearMin); }
-    private double _reboundRearMax = 20;
-
-    [JsonPropertyOrder(1)]
-    public double BumpFrontMin { get => _bumpFrontMin; set => SetMinMax(ref _bumpFrontMin, value, ref _bumpFrontMax); }
-    private double _bumpFrontMin = 1;
-
-    [JsonPropertyOrder(0)]
-    public double BumpFrontMax { get => _bumpFrontMax; set => SetMaxMin(ref _bumpFrontMax, value, BumpFrontMin, _bumpFrontMin); }
-    private double _bumpFrontMax = 20;
-
-    [JsonPropertyOrder(1)]
-    public double BumpRearMin { get => _bumpRearMin; set => SetMinMax(ref _bumpRearMin, value, ref _bumpRearMax); }
-    private double _bumpRearMin = 1;
-
-    [JsonPropertyOrder(0)]
-    public double BumpRearMax { get => _bumpRearMax; set => SetMaxMin(ref _bumpRearMax, value, BumpRearMin, _bumpRearMin); }
-    private double _bumpRearMax = 20;
-
-    [JsonPropertyOrder(1)]
-    public double AeroFrontMin { get => _aeroFrontMin; set => SetMinMax(ref _aeroFrontMin, value, ref _aeroFrontMax); }
-    private double _aeroFrontMin = 78;
-
-    [JsonPropertyOrder(0)]
-    public double AeroFrontMax { get => _aeroFrontMax; set => SetMaxMin(ref _aeroFrontMax, value, AeroFrontMin, _aeroFrontMin); }
-    private double _aeroFrontMax = 130;
-
-    [JsonPropertyOrder(1)]
-    public double AeroRearMin { get => _aeroRearMin; set => SetMinMax(ref _aeroRearMin, value, ref _aeroRearMax); }
-    private double _aeroRearMin = 78;
-
-    [JsonPropertyOrder(0)]
-    public double AeroRearMax { get => _aeroRearMax; set => SetMaxMin(ref _aeroRearMax, value, AeroRearMin, _aeroRearMin); }
-    private double _aeroRearMax = 130;
-
-    [JsonPropertyOrder(1)]
-    public double DiffAccelMin { get => _diffAccelMin; set => SetMinMax(ref _diffAccelMin, value, ref _diffAccelMax); }
+    // ── Differential ──────────────────────────────────────────────────
     private double _diffAccelMin;
-
-    [JsonPropertyOrder(0)]
-    public double DiffAccelMax { get => _diffAccelMax; set => SetMaxMin(ref _diffAccelMax, value, DiffAccelMin, _diffAccelMin); }
     private double _diffAccelMax = 100;
-
-    [JsonPropertyOrder(1)]
-    public double DiffDecelMin { get => _diffDecelMin; set => SetMinMax(ref _diffDecelMin, value, ref _diffDecelMax); }
+    public double DiffAccelMin { get => _diffAccelMin; set { if (SetMin(ref _diffAccelMin, ref _diffAccelMax, value)) { Raise(); Raise(nameof(DiffAccelMax)); } } }
+    public double DiffAccelMax { get => _diffAccelMax; set { if (SetMax(ref _diffAccelMin, ref _diffAccelMax, value)) { Raise(); Raise(nameof(DiffAccelMin)); } } }
     private double _diffDecelMin;
-
-    [JsonPropertyOrder(0)]
-    public double DiffDecelMax { get => _diffDecelMax; set => SetMaxMin(ref _diffDecelMax, value, DiffDecelMin, _diffDecelMin); }
     private double _diffDecelMax = 100;
+    public double DiffDecelMin { get => _diffDecelMin; set { if (SetMin(ref _diffDecelMin, ref _diffDecelMax, value)) { Raise(); Raise(nameof(DiffDecelMax)); } } }
+    public double DiffDecelMax { get => _diffDecelMax; set { if (SetMax(ref _diffDecelMin, ref _diffDecelMax, value)) { Raise(); Raise(nameof(DiffDecelMin)); } } }
 
-    public double CenterDiffBias { get => _centerDiffBias; set => Set(ref _centerDiffBias, value); }
-    private double _centerDiffBias = 50;
+    // ── Brake ────────────────────────────────────────────────────────
+    private double _brakeBalanceMin = 20;
+    private double _brakeBalanceMax = 80;
+    public double BrakeBalanceMin { get => _brakeBalanceMin; set { if (SetMin(ref _brakeBalanceMin, ref _brakeBalanceMax, value)) { Raise(); Raise(nameof(BrakeBalanceMax)); } } }
+    public double BrakeBalanceMax { get => _brakeBalanceMax; set { if (SetMax(ref _brakeBalanceMin, ref _brakeBalanceMax, value)) { Raise(); Raise(nameof(BrakeBalanceMin)); } } }
+    private double _brakePressureMin = 20;
+    private double _brakePressureMax = 300;
+    public double BrakePressureMin { get => _brakePressureMin; set { if (SetMin(ref _brakePressureMin, ref _brakePressureMax, value)) { Raise(); Raise(nameof(BrakePressureMax)); } } }
+    public double BrakePressureMax { get => _brakePressureMax; set { if (SetMax(ref _brakePressureMin, ref _brakePressureMax, value)) { Raise(); Raise(nameof(BrakePressureMin)); } } }
 
-    [JsonPropertyOrder(1)]
-    public double BrakeBalanceMin { get => _brakeBalanceMin; set => SetMinMax(ref _brakeBalanceMin, value, ref _brakeBalanceMax); }
-    private double _brakeBalanceMin = 40;
-
-    [JsonPropertyOrder(0)]
-    public double BrakeBalanceMax { get => _brakeBalanceMax; set => SetMaxMin(ref _brakeBalanceMax, value, BrakeBalanceMin, _brakeBalanceMin); }
-    private double _brakeBalanceMax = 70;
-
-    [JsonPropertyOrder(1)]
-    public double BrakePressureMin { get => _brakePressureMin; set => SetMinMax(ref _brakePressureMin, value, ref _brakePressureMax); }
-    private double _brakePressureMin = 50;
-
-    [JsonPropertyOrder(0)]
-    public double BrakePressureMax { get => _brakePressureMax; set => SetMaxMin(ref _brakePressureMax, value, BrakePressureMin, _brakePressureMin); }
-    private double _brakePressureMax = 200;
-
-    [JsonPropertyOrder(1)]
-    public double FinalDriveMin { get => _finalDriveMin; set => SetMinMax(ref _finalDriveMin, Math.Max(value, 0.1), ref _finalDriveMax); }
+    // ── Final Drive ───────────────────────────────────────────────────
     private double _finalDriveMin = 2.2;
+    private double _finalDriveMax = 6.0;
+    public double FinalDriveMin { get => _finalDriveMin; set { if (value < 0.1) value = 0.1; if (SetMin(ref _finalDriveMin, ref _finalDriveMax, value)) { Raise(); Raise(nameof(FinalDriveMax)); } } }
+    public double FinalDriveMax { get => _finalDriveMax; set { if (SetMax(ref _finalDriveMin, ref _finalDriveMax, value)) { Raise(); Raise(nameof(FinalDriveMin)); } } }
 
-    [JsonPropertyOrder(0)]
-    public double FinalDriveMax { get => _finalDriveMax; set => SetMaxMin(ref _finalDriveMax, value, FinalDriveMin, _finalDriveMin); }
-    private double _finalDriveMax = 6.1;
+    // ── Center Diff Bias ──────────────────────────────────────────────
+    public double CenterDiffBias { get; set; } = 50;
+
+    // ── Data-driven bounds refresh ────────────────────────────────────
+    public void ApplyPhysicsBounds(CarCard car, SelectedParts parts, Fh6DatabaseService db)
+    {
+        const double kgfToN = 9.80665;
+
+        var fSp = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
+        var rSp = TuningPhysicsContext.RearSpringDamper(car, parts, db);
+
+        if (fSp != null)
+        {
+            SpringFrontMin = fSp.MinSpringRate * kgfToN;
+            SpringFrontMax = fSp.MaxSpringRate * kgfToN;
+            RideHeightFrontMin = fSp.MinRideHeight * 1000.0;
+            RideHeightFrontMax = fSp.MaxRideHeight * 1000.0;
+        }
+        if (rSp != null)
+        {
+            SpringRearMin = rSp.MinSpringRate * kgfToN;
+            SpringRearMax = rSp.MaxSpringRate * kgfToN;
+            RideHeightRearMin = rSp.MinRideHeight * 1000.0;
+            RideHeightRearMax = rSp.MaxRideHeight * 1000.0;
+        }
+
+        var fArb = TuningPhysicsContext.FrontArb(car, parts, db);
+        var rArb = TuningPhysicsContext.RearArb(car, parts, db);
+        if (fArb != null)
+        {
+            ARBFrontMin = fArb.MinSwaybarStiffness;
+            ARBFrontMax = fArb.MaxSwaybarStiffness;
+        }
+        if (rArb != null)
+        {
+            ARBRearMin = rArb.MinSwaybarStiffness;
+            ARBRearMax = rArb.MaxSwaybarStiffness;
+        }
+
+        var dbCar = db.GetCar(car.CarDbId);
+        if (dbCar != null)
+        {
+            AeroFrontMin = 0;
+            AeroFrontMax = Math.Max(0, dbCar.FrontDownforceClampKG);
+            AeroRearMin = 0;
+            AeroRearMax = Math.Max(0, dbCar.RearDownforceClampKG);
+        }
+
+        var brakes = TuningPhysicsContext.Brakes(car, parts, db);
+        if (brakes != null)
+        {
+            double frictionScale = brakes.GameFrictionScaleBraking > 0.1 ? brakes.GameFrictionScaleBraking : 1.0;
+            double torqueSlider = brakes.BrakeTorqueSlider > 0.01 ? brakes.BrakeTorqueSlider : 1.0;
+            BrakePressureMin = 20.0;
+            BrakePressureMax = Math.Round(200.0 / frictionScale / torqueSlider);
+
+            if (brakes.FrontBrakeTorqueClamp > 0 && brakes.RearBrakeTorqueClamp > 0)
+            {
+                double totalClamp = brakes.FrontBrakeTorqueClamp + brakes.RearBrakeTorqueClamp;
+                double maxFrontBias = brakes.FrontBrakeTorqueClamp / totalClamp * 100.0;
+                BrakeBalanceMin = Math.Max(20.0, 100.0 - maxFrontBias - 5.0);
+                BrakeBalanceMax = Math.Min(80.0, maxFrontBias + 5.0);
+            }
+        }
+    }
+
+    // ── Pair correction helpers ───────────────────────────────────────
+    private static bool SetMin(ref double min, ref double max, double value)
+    {
+        if (Math.Abs(min - value) < 0.0001) return false;
+        min = value;
+        if (min > max) max = min;
+        return true;
+    }
+
+    private static bool SetMax(ref double min, ref double max, double value)
+    {
+        if (Math.Abs(max - value) < 0.0001) return false;
+        max = value;
+        if (min > max) min = max;
+        return true;
+    }
 }

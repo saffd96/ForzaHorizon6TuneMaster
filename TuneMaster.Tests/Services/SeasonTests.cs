@@ -44,9 +44,11 @@ public class SeasonTests
     public void Generate_SpringRates_WinterSofterThanSummer()
     {
         var c = CarFactory.RelaxedConstraints();
+        var car = CarFactory.DefaultCar();
+        car.TotalMass = 800;
 
-        var summer = _sut.Generate(CarFactory.DefaultCar(), Track(Season.Summer), c);
-        var winter = _sut.Generate(CarFactory.DefaultCar(), Track(Season.Winter), c);
+        var summer = _sut.Generate(car, Track(Season.Summer), c);
+        var winter = _sut.Generate(car, Track(Season.Winter), c);
 
         Assert.True(winter.SpringFront < summer.SpringFront,
             $"SpringFront: Summer={summer.SpringFront:F4}, Winter={winter.SpringFront:F4}");

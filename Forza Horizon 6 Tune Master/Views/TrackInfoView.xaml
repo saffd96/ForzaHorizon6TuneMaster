@@ -116,43 +116,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <Style x:Key="GenerateButton" TargetType="Button">
-            <Setter Property="Margin"     Value="0,0,0,0"/>
-            <Setter Property="Cursor"     Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="bd"
-                                Background="{StaticResource AccentBrush}"
-                                BorderBrush="{StaticResource AccentBrush}"
-                                BorderThickness="0"
-                                CornerRadius="6"
-                                Padding="0">
-                            <StackPanel Margin="14,10" HorizontalAlignment="Center">
-                                <TextBlock x:Name="Icon"  FontSize="24" HorizontalAlignment="Center"
-                                           Text="{TemplateBinding Tag}"/>
-                                <TextBlock x:Name="Label" FontSize="13" FontFamily="Segoe UI"
-                                           FontWeight="Bold" HorizontalAlignment="Center"
-                                           Margin="0,4,0,0"
-                                           Foreground="White"
-                                           Text="{TemplateBinding Content}"/>
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="bd"    Property="Background"   Value="{StaticResource AccentPressedBrush}"/>
-                                <Setter TargetName="bd"    Property="BorderBrush"  Value="{StaticResource AccentPressedBrush}"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentHoverBrush}"/>
-                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource AccentHoverBrush}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -232,13 +195,6 @@
                                  ToolTip="{l:Loc SeasonWinterTooltip}"/>
                 </UniformGrid>
             </Border>
-
-            <!-- Generate button — styled like discipline buttons -->
-            <Button Tag="🔧" Content="{l:Loc GenerateButton}"
-                    Style="{StaticResource GenerateButton}"
-                    Command="{Binding GenerateCommand}"
-                    Margin="0,8,0,0"
-                    Visibility="{Binding IsAutoGenerate, Converter={StaticResource IBV}}"/>
 
         </StackPanel>
     </ScrollViewer>

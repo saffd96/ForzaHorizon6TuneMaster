@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using Forza_Horizon_6_Tune_Master.Services;
@@ -40,5 +41,18 @@ public partial class App : Application
     {
         base.OnStartup(e);
         LocalizationService.Instance.InitializeFromSystem();
+        _ = InitializeDatabaseAsync();
+    }
+
+    private static async Task InitializeDatabaseAsync()
+    {
+        try
+        {
+            await Fh6DatabaseService.Instance.InitializeAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"DB init failed: {ex.Message}");
+        }
     }
 }

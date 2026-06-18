@@ -5,38 +5,49 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 public class TuneGeneratorService
 {
-    public TuneResult Generate(CarCard car, TrackInfo track, TuningConstraints c)
+    public TuneResult Generate(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db)
     {
         var r  = new TuneResult { Car = car, Track = track };
         var ex = r.Explanations;
 
-        AeroCalculator.CalculateAero(car, track, c, r, ex);
+        // Refresh power/torque/RPM to reflect currently selected engine parts.
+        PowerCalculator.Calculate(car, parts);
+        double inertiaFactor = car.RotationalInertiaFactor;
+        if (Math.Abs(inertiaFactor - 1.0) > 0.005)
+            ex["Inertia"] = string.Format(CalculationHelpers.L("Expl_Inertia"), inertiaFactor);
+
+        AeroCalculator.CalculateAero(car, track, parts, db, r, ex);
         double effectiveMaxKmh = CalculationHelpers.ComputeEffectiveMaxSpeedKmh(car, r);
-        AeroCalculator.CalculateAero(car, track, c, r, ex, effectiveMaxKmh);
+        AeroCalculator.CalculateAero(car, track, parts, db, r, ex, effectiveMaxKmh);
         double prevMaxKmh = effectiveMaxKmh;
         effectiveMaxKmh = CalculationHelpers.ComputeEffectiveMaxSpeedKmh(car, r);
         if (Math.Abs(effectiveMaxKmh - prevMaxKmh) > 1)
         {
-            AeroCalculator.CalculateAero(car, track, c, r, ex, effectiveMaxKmh);
+            AeroCalculator.CalculateAero(car, track, parts, db, r, ex, effectiveMaxKmh);
             effectiveMaxKmh = CalculationHelpers.ComputeEffectiveMaxSpeedKmh(car, r);
         }
 
-        TireCalculator.CalculateTirePressure(car, track, c, r, ex);
-        AlignmentCalculator.CalculateCamber(car, track, c, r, ex, effectiveMaxKmh);
-        AlignmentCalculator.CalculateToe(car, track, c, r, ex, effectiveMaxKmh);
-        AlignmentCalculator.CalculateCaster(car, track, c, r, ex, effectiveMaxKmh);
-        SuspensionCalculator.CalculateARB(car, track, c, r, ex);
-        SuspensionCalculator.CalculateSprings(car, track, c, r, ex);
-        SuspensionCalculator.CalculateRideHeight(car, track, c, r, ex);
-        SuspensionCalculator.CalculateDampers(car, track, c, r, ex);
-        BrakeCalculator.CalculateBrakes(car, track, c, r, ex, effectiveMaxKmh);
-        DifferentialCalculator.CalculateDifferential(car, track, c, r, ex);
-        GearingCalculator.CalculateGearing(car, track, c, r, ex, effectiveMaxKmh);
+        TireCalculator.CalculateTirePressure(car, track, parts, db, r, ex);
+        AlignmentCalculator.CalculateCamber(car, track, parts, r, ex, effectiveMaxKmh);
+        AlignmentCalculator.CalculateToe(car, track, parts, r, ex, effectiveMaxKmh);
+        AlignmentCalculator.CalculateCaster(car, track, parts, r, ex, effectiveMaxKmh);
+        SuspensionCalculator.CalculateARB(car, track, parts, r, ex);
+        SuspensionCalculator.CalculateSprings(car, track, parts, r, ex);
+        SuspensionCalculator.CalculateRideHeight(car, track, parts, r, ex);
+        SuspensionCalculator.CalculateDampers(car, track, parts, r, ex);
+        BrakeCalculator.CalculateBrakes(car, track, parts, db, r, ex, effectiveMaxKmh);
+        DifferentialCalculator.CalculateDifferential(car, track, parts, db, r, ex);
+        GearingCalculator.CalculateGearing(car, track, parts, db, r, ex, effectiveMaxKmh);
         if (track.Discipline == Discipline.Drag)
             LaunchControlCalculator.CalculateLaunchControl(car, track, r);
 
-        GearingCalculator.PostValidateAndRecalculate(car, track, c, r, ex, ref effectiveMaxKmh);
+        GearingCalculator.PostValidateAndRecalculate(car, track, parts, db, r, ex, ref effectiveMaxKmh);
 
         return r;
     }
+
+    // Backward-compat overload for tests that pass TuningConstraints
+    [Obsolete("Use Generate(CarCard, TrackInfo, SelectedParts, Fh6DatabaseService)")]
+    public TuneResult Generate(CarCard car, TrackInfo track, TuningConstraints _) =>
+        Generate(car, track, new SelectedParts(), Fh6DatabaseService.Instance);
 }

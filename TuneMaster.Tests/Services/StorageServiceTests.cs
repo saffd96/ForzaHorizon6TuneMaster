@@ -168,7 +168,6 @@ public class StorageServiceTests : IDisposable
             Track = new TrackInfo { Discipline = Discipline.Road },
             Constraints = new TuningConstraints(),
             LastResult = new TuneResult { TirePressureFront = 2.5 },
-            AiEstimatedFields = new List<string> { "Wheelbase" },
         };
 
         _storage.Save("TestProfile", profile);
@@ -179,7 +178,6 @@ public class StorageServiceTests : IDisposable
         Assert.Equal("Car", loaded.Car.Model);
         Assert.Equal(Discipline.Road, loaded.Track.Discipline);
         Assert.Equal(2.5, loaded.LastResult!.TirePressureFront);
-        Assert.Contains("Wheelbase", loaded.AiEstimatedFields);
     }
 
     [Fact]

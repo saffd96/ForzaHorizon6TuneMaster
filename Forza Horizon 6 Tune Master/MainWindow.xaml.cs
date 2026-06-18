@@ -1,9 +1,9 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using Forza_Horizon_6_Tune_Master.Services;
@@ -45,7 +45,8 @@ public partial class MainWindow : Window
         _hwnd = new WindowInteropHelper(this).Handle;
         _hwndSource = HwndSource.FromHwnd(_hwnd);
         _hwndSource?.AddHook(WndProc);
-        RegisterHotKey(_hwnd, HOTKEY_ID, MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT, VK_O);
+        if (!RegisterHotKey(_hwnd, HOTKEY_ID, MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT, VK_O))
+            Debug.WriteLine("RegisterHotKey failed (Ctrl+Shift+O already in use?)");
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -93,30 +94,10 @@ public partial class MainWindow : Window
         }
     }
 
-    private void AiSpecStatusOverlay_PreviewMouseDown(object sender, MouseButtonEventArgs e)
-    {
-        if (DataContext is MainViewModel vm)
-        {
-            bool highlight = vm.NeedsCarSelectionHighlight;
-            vm.DismissAiSpecStatusCommand.Execute(null);
-            if (highlight)
-            {
-                ScrollToCarSelection();
-                FlashCarSelection();
-            }
-        }
-    }
-
     private void ScrollToCarSelection()
     {
         var sv = FindScrollViewer(this);
         sv?.ScrollToHome();
-    }
-
-    private void FlashCarSelection()
-    {
-        var carView = FindVisualChild<CarCardView>(this);
-        carView?.FlashCarSelection();
     }
 
     private static System.Windows.Controls.ScrollViewer? FindScrollViewer(DependencyObject parent)
@@ -126,18 +107,6 @@ public partial class MainWindow : Window
             var child = VisualTreeHelper.GetChild(parent, i);
             if (child is System.Windows.Controls.ScrollViewer sv) return sv;
             var found = FindScrollViewer(child);
-            if (found != null) return found;
-        }
-        return null;
-    }
-
-    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
-    {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-        {
-            var child = VisualTreeHelper.GetChild(parent, i);
-            if (child is T t) return t;
-            var found = FindVisualChild<T>(child);
             if (found != null) return found;
         }
         return null;
@@ -193,5 +162,22 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainViewModel vm)
             vm.SelectedProfile = null;
+    }
+
+    private void CarSearchBox_GotFocus(object sender, RoutedEventArgs e)
+    {
+        CarDropdownPopup.IsOpen = true;
+    }
+
+    private void CarSearchBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (!CarListBox.IsKeyboardFocusWithin)
+            CarDropdownPopup.IsOpen = false;
+    }
+
+    private void CarListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (CarListBox.SelectedItem != null)
+            CarDropdownPopup.IsOpen = false;
     }
 }

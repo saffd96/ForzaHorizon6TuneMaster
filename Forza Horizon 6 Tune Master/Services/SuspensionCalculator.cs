@@ -1,367 +1,407 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Forza_Horizon_6_Tune_Master.Models;
 
 namespace Forza_Horizon_6_Tune_Master.Services;
 
 internal static class SuspensionCalculator
 {
-    public static void CalculateARB(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
+    // Spring rates in the DB are stored as kgf/mm; the game display uses the same unit.
+    private const double KgfMmToNmm = 9.807;
+    private const double MmToM = 0.001;
+
+    public static void CalculateARB(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateARB(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex);
+
+    public static void CalculateARB(CarCard car, TrackInfo track, SelectedParts parts, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateARB(car, track, parts, Fh6DatabaseService.Instance, r, ex);
+
+    public static void CalculateARB(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex)
     {
-        double massScale = Math.Pow(car.TotalMass / CalculationHelpers.RefMassKg, 0.6);
+        var frontPhys = TuningPhysicsContext.FrontArb(car, parts, db);
+        var rearPhys = TuningPhysicsContext.RearArb(car, parts, db);
 
-        double wd = CalculationHelpers.EffectiveWtDist(car);
-        double wdDev = (wd - 50) / 50.0;
+        bool hasFront = frontPhys != null && (car.HasFrontARB || frontPhys.MaxSwaybarStiffness > frontPhys.MinSwaybarStiffness);
+        bool hasRear = rearPhys != null && (car.HasRearARB || rearPhys.MaxSwaybarStiffness > rearPhys.MinSwaybarStiffness);
 
-        double wdWeight = (track.Discipline, car.DriveType) switch
+        if (!hasFront && !hasRear)
         {
-            (Discipline.Drag, _)             => 0.0,
-            (Discipline.Drift, _)            => 2.0,
-            (Discipline.Rally, _)            => 6.0,
-            (Discipline.CrossCountry, _)     => 5.0,
-            (Discipline.Touge, _)            => 5.0,
-            (Discipline.Street, Models.DriveType.FWD) => 5.0,
-            (Discipline.Street, _)           => 4.0,
-            (_, Models.DriveType.FWD)        => 5.0,
-            (_, _)                           => 4.0
-        };
-
-        (double baseF, double baseR, string arbNoteKey) = (track.Discipline, car.DriveType) switch
-        {
-            (Discipline.Drag, _)             => (2.0, 10.0, "Expl_ARBNote_Drag"),
-            (Discipline.Drift, Models.DriveType.RWD) => (3.0,  50.0, "Expl_ARBNote_DriftRWD"),
-            (Discipline.Drift, _)            => (18.0, 52.0, "Expl_ARBNote_DriftAWD"),
-            (Discipline.Rally, _)            => (14.0, 12.0, "Expl_ARBNote_Rally"),
-            (Discipline.CrossCountry, _)     => (10.0, 10.0, "Expl_ARBNote_CrossCountry"),
-            (Discipline.Touge, Models.DriveType.RWD) => (18.0, 32.0, "Expl_ARBNote_TougeRWD"),
-            (Discipline.Touge, Models.DriveType.FWD) => (9.0,  34.0, "Expl_ARBNote_TougeFWD"),
-            (Discipline.Touge, _)            => (20.0, 35.0, "Expl_ARBNote_TougeAWD"),
-            (Discipline.Street, Models.DriveType.RWD) => (20.0, 30.0, "Expl_ARBNote_StreetRWD"),
-            (Discipline.Street, Models.DriveType.FWD) => (10.0, 32.0, "Expl_ARBNote_StreetFWD"),
-            (_, Models.DriveType.RWD)        => (20.0, 32.0, "Expl_ARBNote_RoadRWD"),
-            (_, Models.DriveType.FWD)        => (13.0, 34.0, "Expl_ARBNote_RoadFWD"),
-            (_, _)                           => (22.0, 38.0, "Expl_ARBNote_RoadAWD")
-        };
-        string note = CalculationHelpers.L(arbNoteKey);
-
-        double avgTrack   = (car.FrontTrack > 0 && car.RearTrack > 0)
-            ? (car.FrontTrack + car.RearTrack) / 2.0
-            : Math.Max(car.FrontTrack, car.RearTrack);
-        double trackFactor = avgTrack > 0 ? CalculationHelpers.RefFrontTrackMm / avgTrack : 1.0;
-        double arbF = baseF * massScale * trackFactor;
-        double arbR = baseR * massScale * trackFactor;
-
-        arbF += wdDev * wdWeight;
-        arbR -= wdDev * wdWeight;
-
-        if (track.Discipline != Discipline.Drag)
-        {
-            double cgH = CalculationHelpers.EstimateCGHeight(car);
-            double rollAdj = CalculationHelpers.Clamp((cgH - 420.0) / 420.0 * 6.0, -3.0, 8.0);
-            arbF += rollAdj;
-            arbR += rollAdj;
-        }
-
-        double seasonFactorArb = CalculationHelpers.GetSeasonGripFactor(track.Season);
-        double arbSeasonMul = 1.0 - (1.0 - seasonFactorArb) * 0.65;
-        arbF *= arbSeasonMul;
-        arbR *= arbSeasonMul;
-
-        bool hasFront = car.HasFrontARB;
-        bool hasRear  = car.HasRearARB;
-        if (hasFront)
-            r.ARBFront = Math.Round(CalculationHelpers.Clamp(arbF, c.ARBFrontMin, c.ARBFrontMax), 1);
-        if (hasRear)
-            r.ARBRear  = Math.Round(CalculationHelpers.Clamp(arbR, c.ARBRearMin,  c.ARBRearMax), 1);
-        if (hasFront || hasRear)
-            ex["ARB"] = string.Format(CalculationHelpers.L("Expl_ARB_Fmt"), r.ARBFront, r.ARBRear, note);
-    }
-
-    public static void CalculateSprings(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
-    {
-        if (!car.SuspensionAllowsAdvancedTuning)
-        {
-            ex["Springs"] = CalculationHelpers.L("Expl_Springs_Disabled");
+            ex["ARB"] = CalculationHelpers.L("Expl_ARB_None");
             return;
         }
 
         double wdF = CalculationHelpers.EffectiveWtDist(car) / 100.0;
         double wdR = 1.0 - wdF;
 
-        (double hzF, double hzR) = track.Discipline switch
+        // Base ARB balance: RWD likes stiffer rear, FWD stiffer front, AWD balanced.
+        (double baseFrontFraction, double baseRearFraction, string noteKey) = (track.Discipline, car.DriveType) switch
         {
-            Discipline.Drag when track.DragDistance == DragDistance.Quarter => (1.5, 0.95),
-            Discipline.Drag when track.DragDistance == DragDistance.Half    => (1.5, 1.0),
-            Discipline.Drag when track.DragDistance == DragDistance.Mile    => (1.5, 1.15),
-            Discipline.Drag                                                 => (1.5, 0.9),
-            Discipline.Drift        => (1.3, 1.6),
-            Discipline.Rally        => (1.45, 1.6),
-            Discipline.CrossCountry => (1.0, 1.1),
-            Discipline.Touge        => (1.65, 1.6),
-            Discipline.Street       => (1.8, 1.7),
-            _                       => (1.8, 1.9)
+            (Discipline.Drag, _)             => (0.85, 0.15, "Expl_ARBNote_Drag"),
+            (Discipline.Drift, DriveType.RWD) => (0.55, 0.95, "Expl_ARBNote_DriftRWD"),
+            (Discipline.Drift, DriveType.AWD) => (0.45, 0.85, "Expl_ARBNote_DriftAWD"),
+            (Discipline.Drift, _)            => (0.40, 0.80, "Expl_ARBNote_DriftFWD"),
+            (Discipline.Rally, _)            => (0.40, 0.45, "Expl_ARBNote_Rally"),
+            (Discipline.CrossCountry, _)     => (0.30, 0.40, "Expl_ARBNote_CrossCountry"),
+            (Discipline.Touge, DriveType.RWD) => (0.60, 0.85, "Expl_ARBNote_TougeRWD"),
+            (Discipline.Touge, DriveType.FWD) => (0.70, 0.60, "Expl_ARBNote_TougeFWD"),
+            (Discipline.Touge, _)            => (0.60, 0.75, "Expl_ARBNote_TougeAWD"),
+            (Discipline.Street, DriveType.RWD) => (0.55, 0.80, "Expl_ARBNote_StreetRWD"),
+            (Discipline.Street, DriveType.FWD) => (0.75, 0.60, "Expl_ARBNote_StreetFWD"),
+            (_, DriveType.RWD)               => (0.50, 0.80, "Expl_ARBNote_RoadRWD"),
+            (_, DriveType.FWD)               => (0.75, 0.55, "Expl_ARBNote_RoadFWD"),
+            (_, _)                           => (0.55, 0.70, "Expl_ARBNote_RoadAWD")
         };
 
-        if (car.DriveType == Models.DriveType.RWD) { hzR += 0.15; hzF -= 0.05; }
-        if (car.DriveType == Models.DriveType.FWD) { hzF += 0.15; hzR -= 0.05; }
+        // Adjust balance for weight distribution: move stiffness toward the heavier axle.
+        double wdShiftF = (wdF - 0.5) * 0.20;
+        double wdShiftR = (wdR - 0.5) * 0.20;
 
-        double pwrHz    = Math.Max(0, (car.PowerHP - CalculationHelpers.PowerBaselineHP) / 300.0 * 0.25);
-        double torqueHz = Math.Min(0.4, Math.Max(0, (car.TorqueNm - CalculationHelpers.TorqueBaselineNm) / 600.0 * 0.25));
-        double squat    = Math.Min(0.40, pwrHz + torqueHz);
-        if (car.DriveType == Models.DriveType.FWD)
-            hzF += squat;
-        else
-            hzR += squat;
+        double seasonFactor = CalculationHelpers.GetSeasonGripFactor(track.Season);
+        // Lower grip -> slightly softer ARB to let the tire work.
+        double seasonMul = 0.85 + seasonFactor * 0.15;
 
-        const double CorrectSpringHzToNmm = 0.039478;
+        // Wider track reduces the need for stiff anti-roll bars.
+        double avgTrack = (car.FrontTrack + car.RearTrack) / 2.0;
+        double trackMul = 1.0 - CalculationHelpers.Clamp((avgTrack - 1500.0) / 1000.0, -0.2, 0.3) * 0.15;
 
-        // Formula produces values in game spring units (displayed as "kgf/mm").
-        // Multiply by GameSpringUnitToNmm to store canonically in N/mm.
-        double sprF = CorrectSpringHzToNmm * hzF * hzF * car.TotalMass * wdF * CalculationHelpers.GameSpringUnitToNmm;
-        double sprR = CorrectSpringHzToNmm * hzR * hzR * car.TotalMass * wdR * CalculationHelpers.GameSpringUnitToNmm;
+        // Heavier cars need a little more roll resistance.
+        double massMul = 1.0 + (car.TotalMass - 1500.0) / 1000.0 * 0.10;
 
-        double cgH_spr    = CalculationHelpers.EstimateCGHeight(car);
-        double avgProfile_spr = (car.FrontTireProfile + car.RearTireProfile) / 2.0;
-        cgH_spr = Math.Max(250.0, cgH_spr - (45.0 - avgProfile_spr) * 0.5);
-        double cgFactor   = CalculationHelpers.Clamp(1.0 + (cgH_spr - 420.0) / 700.0 * 0.22, 0.90, 1.25);
-        double avgTrack_s = car.FrontTrack > 0 && car.RearTrack > 0
-            ? (car.FrontTrack + car.RearTrack) / 2.0 : 1600.0;
-        double trackRollF = Math.Pow(Math.Max(1100.0, avgTrack_s) / 1600.0, -0.18);
-        sprF *= cgFactor * trackRollF;
-        sprR *= cgFactor * trackRollF;
+        double ComputeArb(DbAntiSwayPhysics phys, double baseFrac, double wdShift)
+        {
+            double frac = CalculationHelpers.Clamp(baseFrac + wdShift, 0.0, 1.0);
+            double val = phys.MinSwaybarStiffness + (phys.MaxSwaybarStiffness - phys.MinSwaybarStiffness) * frac;
+            return Math.Round(CalculationHelpers.Clamp(val * seasonMul * trackMul * massMul, phys.MinSwaybarStiffness, phys.MaxSwaybarStiffness), 1);
+        }
 
-        bool offRoadDisc = track.Discipline is Discipline.Rally or Discipline.CrossCountry;
-        double suspMul = offRoadDisc
-            ? car.SuspensionUpgrade switch
-            {
-                SuspensionUpgrade.Race    => 1.10,
-                SuspensionUpgrade.Sport   => 1.00,
-                SuspensionUpgrade.Street  => 0.88,
-                SuspensionUpgrade.Rally   => 0.85,
-                SuspensionUpgrade.Drift   => 0.85,
-                SuspensionUpgrade.Offroad => 0.80,
-                _                         => 0.72
-            }
-            : car.SuspensionUpgrade switch
-            {
-                SuspensionUpgrade.Race    => 1.08,
-                SuspensionUpgrade.Sport   => 1.04,
-                SuspensionUpgrade.Street  => 0.96,
-                SuspensionUpgrade.Rally   => 0.92,
-                SuspensionUpgrade.Drift   => 0.90,
-                SuspensionUpgrade.Offroad => 0.85,
-                _                         => 0.85
-            };
-        sprF *= suspMul;
-        sprR *= suspMul;
+        if (hasFront)
+            r.ARBFront = ComputeArb(frontPhys!, baseFrontFraction, wdShiftF);
+        if (hasRear)
+            r.ARBRear  = ComputeArb(rearPhys!,  baseRearFraction,  wdShiftR);
 
-        if (car.PowertrainType == PowertrainType.Hybrid)
-        { sprF *= 1.05; sprR *= 1.05; }
-        double aspSpring = CalculationHelpers.GetPowerDeliveryFactors(car.PowertrainType, car.AspirationType, car.AntiLag).Spring;
-        if (car.DriveType == Models.DriveType.FWD)
-            sprF *= aspSpring;
-        else
-            sprR *= aspSpring;
-
-        double seasonFactorSpr = CalculationHelpers.GetSeasonGripFactor(track.Season);
-        double springSeasonMul = 0.65 + seasonFactorSpr * 0.35;
-        sprF *= springSeasonMul;
-        sprR *= springSeasonMul;
-
-        r.SpringFront = Math.Round(CalculationHelpers.Clamp(sprF, c.SpringFrontMin, c.SpringFrontMax), 1);
-        r.SpringRear  = Math.Round(CalculationHelpers.Clamp(sprR, c.SpringRearMin,  c.SpringRearMax),  1);
-        ex["Springs"] = string.Format(CalculationHelpers.L("Expl_Springs_Fmt"), r.SpringFront, r.SpringRear, hzF, hzR, CalculationHelpers.L($"Enum_SuspensionUpgrade_{car.SuspensionUpgrade}"));
+        string note = CalculationHelpers.L(noteKey);
+        ex["ARB"] = string.Format(CalculationHelpers.L("Expl_ARB_Fmt"), r.ARBFront, r.ARBRear, note);
     }
 
-    public static void CalculateRideHeight(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
+    public static void CalculateSprings(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateSprings(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, c);
+
+    public static void CalculateSprings(CarCard car, TrackInfo track, SelectedParts parts, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateSprings(car, track, parts, Fh6DatabaseService.Instance, r, ex);
+
+    public static void CalculateSprings(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, TuningConstraints? constraints = null)
     {
+        var c = constraints ?? new TuningConstraints();
+        var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
+        var rearPhys = TuningPhysicsContext.RearSpringDamper(car, parts, db);
+        if (frontPhys == null || rearPhys == null)
+        {
+            ex["Springs"] = CalculationHelpers.L("Expl_Springs_Disabled");
+            return;
+        }
+
         if (!car.SuspensionAllowsAdvancedTuning)
+        {
+            r.SpringFront = 0;
+            r.SpringRear  = 0;
+            ex["Springs"] = CalculationHelpers.L("Expl_Springs_Disabled");
+            return;
+        }
+
+        double wdF = CalculationHelpers.EffectiveWtDist(car) / 100.0;
+        double massF = car.TotalMass * wdF / 2.0;
+        double massR = car.TotalMass * (1.0 - wdF) / 2.0;
+
+        (double hzF, double hzR) = TargetNaturalFrequency(track.Discipline, car.DriveType);
+
+        // Heavier or more powerful cars can tolerate slightly higher frequencies.
+        double massRef = 1500.0;
+        double ptw = car.PowerHP / Math.Max(car.TotalMass, 1.0);
+        double ptwRef = 0.25;
+        double massFactor = Math.Pow(Math.Max(car.TotalMass / massRef, 0.5), 0.15);
+        double powerFactor = 1.0 + Math.Max(0, (ptw - ptwRef) / ptwRef) * 0.10;
+
+        hzF *= massFactor * powerFactor;
+        hzR *= massFactor * powerFactor;
+
+        // Softer springs in low-grip seasons and with off-road suspension.
+        double seasonFactor = CalculationHelpers.GetSeasonGripFactor(track.Season);
+        double seasonMul = 0.70 + seasonFactor * 0.30;
+        if (car.SuspensionUpgrade == SuspensionUpgrade.Offroad)
+            seasonMul *= 0.90;
+        hzF *= seasonMul;
+        hzR *= seasonMul;
+
+        double springF_kgfmm = SpringFromHz(hzF, massF, frontPhys);
+        double springR_kgfmm = SpringFromHz(hzR, massR, rearPhys);
+
+        double springF_nmm = springF_kgfmm * KgfMmToNmm;
+        double springR_nmm = springR_kgfmm * KgfMmToNmm;
+
+        // Clamp to the user's adjustable constraints.
+        springF_nmm = CalculationHelpers.Clamp(springF_nmm, c.SpringFrontMin, c.SpringFrontMax);
+        springR_nmm = CalculationHelpers.Clamp(springR_nmm, c.SpringRearMin,  c.SpringRearMax);
+
+        r.SpringFront = Math.Round(springF_nmm, 1);
+        r.SpringRear  = Math.Round(springR_nmm, 1);
+
+        ex["Springs"] = string.Format(CalculationHelpers.L("Expl_Springs_Fmt"),
+            r.SpringFront, r.SpringRear, hzF, hzR, CalculationHelpers.L($"Enum_SuspensionUpgrade_{car.SuspensionUpgrade}"));
+    }
+
+    public static void CalculateRideHeight(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateRideHeight(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, c);
+
+    public static void CalculateRideHeight(CarCard car, TrackInfo track, SelectedParts parts, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateRideHeight(car, track, parts, Fh6DatabaseService.Instance, r, ex);
+
+    public static void CalculateRideHeight(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, TuningConstraints? constraints = null)
+    {
+        var c = constraints ?? new TuningConstraints();
+        var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
+        var rearPhys = TuningPhysicsContext.RearSpringDamper(car, parts, db);
+        if (frontPhys == null || rearPhys == null)
         {
             ex["RideHeight"] = CalculationHelpers.L("Expl_RideHeight_Disabled");
             return;
         }
 
-        double rangeF = c.RideHeightFrontMax - c.RideHeightFrontMin;
-        double rangeR = c.RideHeightRearMax - c.RideHeightRearMin;
-        if (rangeF <= 0 || rangeR <= 0)
+        if (!car.SuspensionAllowsAdvancedTuning)
         {
-            r.RideHeightFront = c.RideHeightFrontMin;
-            r.RideHeightRear = c.RideHeightRearMin;
-            ex["RideHeight"] = string.Format(CalculationHelpers.L("Expl_RideHeight_Fmt"), r.RideHeightFront, r.RideHeightRear, "-");
+            r.RideHeightFront = 0;
+            r.RideHeightRear  = 0;
+            ex["RideHeight"] = CalculationHelpers.L("Expl_RideHeight_Disabled");
             return;
         }
 
-        (double baseFFactor, double baseRFactor, string note) = track.Discipline switch
+        (double fFrac, double rFrac, string noteKey) = RideHeightFractions(track.Discipline, car.DriveType);
+
+        // Rake: front engine cars keep a little nose-down attitude for turn-in.
+        double rake = car.EnginePosition switch
         {
-            Discipline.Drag when track.DragDistance == DragDistance.Half    => (0.15, 0.50, CalculationHelpers.L("Expl_RideHeightNote_Drag")),
-            Discipline.Drag when track.DragDistance == DragDistance.Mile    => (0.20, 0.40, CalculationHelpers.L("Expl_RideHeightNote_Drag")),
-            Discipline.Drag                                                 => (0.10, 0.65, CalculationHelpers.L("Expl_RideHeightNote_Drag")),
-            Discipline.Drift        => (0.15, 0.19, CalculationHelpers.L("Expl_RideHeightNote_Drift")),
-            Discipline.Rally        => (0.40, 0.45, CalculationHelpers.L("Expl_RideHeightNote_Rally")),
-            Discipline.CrossCountry => (0.60, 0.65, CalculationHelpers.L("Expl_RideHeightNote_CrossCountry")),
-            _                       => (0.22, 0.28, CalculationHelpers.L("Expl_RideHeightNote_Road"))
+            EnginePosition.Front => -0.03,
+            EnginePosition.Rear  =>  0.03,
+            _                    =>  0.0
         };
+        fFrac += rake;
+        rFrac -= rake;
 
-        double rhFFactor = baseFFactor;
-        double rhRFactor = baseRFactor;
-
-        double suspOffFrac = car.SuspensionUpgrade switch
-        {
-            SuspensionUpgrade.Race    => -0.12,
-            SuspensionUpgrade.Sport   =>  0.00,
-            SuspensionUpgrade.Street  =>  0.08,
-            SuspensionUpgrade.Rally   =>  0.30,
-            SuspensionUpgrade.Drift   => -0.10,
-            SuspensionUpgrade.Offroad =>  0.40,
-            _                         =>  0.00
-        };
-        rhFFactor += suspOffFrac;
-        rhRFactor += suspOffFrac;
-
-        double rake = car.EnginePosition switch { EnginePosition.Front => 2, EnginePosition.Rear => -1, _ => 0 };
-        rhFFactor -= rake * 0.2 / rangeF;
-        rhRFactor += rake * 0.2 / rangeR;
-
+        // Larger diameter wheels need more ride height to keep the same suspension geometry.
         double avgRim = (car.FrontRimDiameter + car.RearRimDiameter) / 2.0;
-        double rimAdj = (avgRim - CalculationHelpers.RefRimDiameterInch) * 0.8;
-        rhFFactor += rimAdj / rangeF;
-        rhRFactor += rimAdj / rangeR;
+        double rimOffset = (avgRim - 19.0) * 0.005;
+        fFrac += rimOffset;
+        rFrac += rimOffset;
 
-        double avgProfile = (car.FrontTireProfile + car.RearTireProfile) / 2.0;
-        double profileAdj = (CalculationHelpers.ProfileBaseline - avgProfile) * 0.3;
-        rhFFactor += profileAdj / rangeF;
-        rhRFactor += profileAdj / rangeR;
+        // Softer disciplines (dirt) run higher; lower for road.
+        double seasonFactor = CalculationHelpers.GetSeasonGripFactor(track.Season);
+        double seasonOffset = (1.0 - seasonFactor) * 0.08;
+        fFrac += seasonOffset;
+        rFrac += seasonOffset;
 
-        rhFFactor = CalculationHelpers.Clamp(rhFFactor, 0.0, 1.0);
-        rhRFactor = CalculationHelpers.Clamp(rhRFactor, 0.0, 1.0);
+        double rhF = InterpolateHeight(frontPhys, CalculationHelpers.Clamp(fFrac, 0.0, 1.0));
+        double rhR = InterpolateHeight(rearPhys,  CalculationHelpers.Clamp(rFrac, 0.0, 1.0));
 
-        double rhF = c.RideHeightFrontMin + rangeF * rhFFactor;
-        double rhR = c.RideHeightRearMin + rangeR * rhRFactor;
+        // Clamp to the user's adjustable constraints if they are provided.
+        rhF = CalculationHelpers.Clamp(rhF, c.RideHeightFrontMin, c.RideHeightFrontMax);
+        rhR = CalculationHelpers.Clamp(rhR, c.RideHeightRearMin,  c.RideHeightRearMax);
 
         r.RideHeightFront = Math.Round(rhF, 1);
         r.RideHeightRear  = Math.Round(rhR, 1);
-        ex["RideHeight"] = string.Format(CalculationHelpers.L("Expl_RideHeight_Fmt"), r.RideHeightFront, r.RideHeightRear, note);
+        ex["RideHeight"] = string.Format(CalculationHelpers.L("Expl_RideHeight_Fmt"), r.RideHeightFront, r.RideHeightRear, CalculationHelpers.L(noteKey));
     }
 
-    public static bool SpringRideHeightFix(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r)
+    public static void CalculateDampers(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateDampers(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex);
+
+    public static void CalculateDampers(CarCard car, TrackInfo track, SelectedParts parts, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateDampers(car, track, parts, Fh6DatabaseService.Instance, r, ex);
+
+    public static void CalculateDampers(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex)
     {
-        if (!car.SuspensionAllowsAdvancedTuning) return false;
+        var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
+        var rearPhys = TuningPhysicsContext.RearSpringDamper(car, parts, db);
+        if (frontPhys == null || rearPhys == null)
+        {
+            ex["Dampers"] = CalculationHelpers.L("Expl_Dampers_Disabled");
+            return;
+        }
 
-        bool offRoad = track.Discipline is Discipline.Rally or Discipline.CrossCountry;
-
-        double rhRangeF = Math.Max(1.0, c.RideHeightFrontMax - c.RideHeightFrontMin);
-        double rhRangeR = Math.Max(1.0, c.RideHeightRearMax - c.RideHeightRearMin);
-        double rhFracF = (r.RideHeightFront - c.RideHeightFrontMin) / rhRangeF;
-        double rhFracR = (r.RideHeightRear - c.RideHeightRearMin) / rhRangeR;
-
-        double sprRangeF = Math.Max(1.0, c.SpringFrontMax - c.SpringFrontMin);
-        double sprRangeR = Math.Max(1.0, c.SpringRearMax - c.SpringRearMin);
-        double sprFracF = (r.SpringFront - c.SpringFrontMin) / sprRangeF;
-        double sprFracR = (r.SpringRear - c.SpringRearMin) / sprRangeR;
+        if (!car.SuspensionAllowsAdvancedTuning)
+        {
+            r.ReboundFront = 0;
+            r.ReboundRear  = 0;
+            r.BumpFront    = 0;
+            r.BumpRear     = 0;
+            ex["Dampers"] = CalculationHelpers.L("Expl_Dampers_Disabled");
+            return;
+        }
 
         double wdF = CalculationHelpers.EffectiveWtDist(car) / 100.0;
-        double physFloorF = CalculationHelpers.SpringHzToNmm * 4.0 * car.TotalMass * wdF * CalculationHelpers.SpringPhysicalFloorFactor * CalculationHelpers.GameSpringUnitToNmm;
-        double physFloorR = CalculationHelpers.SpringHzToNmm * 4.0 * car.TotalMass * (1 - wdF) * CalculationHelpers.SpringPhysicalFloorFactor * CalculationHelpers.GameSpringUnitToNmm;
+        double massF = car.TotalMass * wdF / 2.0;
+        double massR = car.TotalMass * (1.0 - wdF) / 2.0;
 
-        bool changed = false;
+        double springF_Nm = r.SpringFront > 0 ? r.SpringFront * 1000.0 : frontPhys.DefSpringRate * KgfMmToNmm * 1000.0;
+        double springR_Nm = r.SpringRear  > 0 ? r.SpringRear  * 1000.0 : rearPhys.DefSpringRate  * KgfMmToNmm * 1000.0;
 
-        if (!offRoad && rhFracF < 0.25 && sprFracF < 0.40 && r.SpringFront < physFloorF)
+        double dampingRatio = track.Discipline switch
         {
-            double newSpr = Math.Max(physFloorF, c.SpringFrontMin + sprRangeF * 0.50);
-            r.SpringFront = Math.Round(CalculationHelpers.Clamp(newSpr, c.SpringFrontMin, c.SpringFrontMax), 1);
-            changed = true;
-        }
-
-        if (!offRoad && rhFracR < 0.25 && sprFracR < 0.40 && r.SpringRear < physFloorR)
-        {
-            double newSpr = Math.Max(physFloorR, c.SpringRearMin + sprRangeR * 0.50);
-            r.SpringRear = Math.Round(CalculationHelpers.Clamp(newSpr, c.SpringRearMin, c.SpringRearMax), 1);
-            changed = true;
-        }
-
-        if (rhFracF > 0.75 && sprFracF > 0.85)
-        {
-            double newSpr = Math.Max(physFloorF, c.SpringFrontMin + sprRangeF * 0.65);
-            r.SpringFront = Math.Round(CalculationHelpers.Clamp(newSpr, c.SpringFrontMin, c.SpringFrontMax), 1);
-            changed = true;
-        }
-
-        if (rhFracR > 0.75 && sprFracR > 0.85)
-        {
-            double newSpr = Math.Max(physFloorR, c.SpringRearMin + sprRangeR * 0.65);
-            r.SpringRear = Math.Round(CalculationHelpers.Clamp(newSpr, c.SpringRearMin, c.SpringRearMax), 1);
-            changed = true;
-        }
-
-        return changed;
-    }
-
-    public static void CalculateDampers(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
-    {
-        double sprF = (r.SpringFront > 0 ? r.SpringFront : 100.0) / CalculationHelpers.GameSpringUnitToNmm;
-        double sprR = (r.SpringRear > 0 ? r.SpringRear : 100.0) / CalculationHelpers.GameSpringUnitToNmm;
-
-        double wdF = CalculationHelpers.EffectiveWtDist(car) / 100.0;
-        double massF = car.TotalMass * wdF;
-        double massR = car.TotalMass * (1.0 - wdF);
-
-        double rebF = 3.0 + Math.Sqrt(sprF * massF) / 35.0;
-        double rebR = 3.0 + Math.Sqrt(sprR * massR) / 35.0;
-
-        double discRebMul = track.Discipline switch
-        {
-            Discipline.Drag => 0.75,
-            Discipline.Drift => 0.65,
-            Discipline.Rally => 1.15,
-            Discipline.CrossCountry => 1.20,
-            Discipline.Touge => 1.10,
-            Discipline.Street => 0.95,
-            _ => 1.0
-        };
-        rebF *= discRebMul;
-        rebR *= discRebMul;
-
-        double powerReb  = Math.Max(0, (car.PowerHP  - CalculationHelpers.PowerBaselineHP)  / CalculationHelpers.PowerStepHP * 0.5);
-        double torqueReb = Math.Max(0, (car.TorqueNm - CalculationHelpers.TorqueBaselineNm) / 500.0       * 0.5);
-        double squatReb  = Math.Min(3.0, powerReb + torqueReb);
-        if (car.DriveType == Models.DriveType.FWD) rebF += squatReb;
-        else                                        rebR += squatReb;
-
-        if (car.DriveType == Models.DriveType.RWD) rebR += 0.5;
-
-        double bumpRatio = (track.Discipline, car.SuspensionUpgrade) switch
-        {
-            (Discipline.Rally or Discipline.CrossCountry, _) => 0.65,
-            (Discipline.Drag, _) => 0.45,
-            (Discipline.Drift, _) => 0.50,
-            (_, SuspensionUpgrade.Race) => 0.60,
-            (_, SuspensionUpgrade.Sport) => 0.55,
-            _ => 0.50
+            Discipline.Drag         => 0.55,
+            Discipline.Drift        => 0.55,
+            Discipline.Rally        => 0.75,
+            Discipline.CrossCountry => 0.80,
+            Discipline.Touge        => 0.70,
+            Discipline.Street       => 0.65,
+            _                       => 0.68
         };
 
-        double bmpF = rebF * bumpRatio;
-        double bmpR = rebR * bumpRatio;
+        double bumpRatio = track.Discipline switch
+        {
+            Discipline.Drag         => 0.45,
+            Discipline.Drift        => 0.50,
+            Discipline.Rally        => 0.65,
+            Discipline.CrossCountry => 0.70,
+            Discipline.Touge        => 0.58,
+            Discipline.Street       => 0.56,
+            _                       => 0.58
+        };
 
-        double seasonFactorDmp = CalculationHelpers.GetSeasonGripFactor(track.Season);
-        double dampSeasonMul = 1.0 - (1.0 - seasonFactorDmp) * 0.25;
-        rebF *= dampSeasonMul; rebR *= dampSeasonMul;
-        bmpF *= dampSeasonMul; bmpR *= dampSeasonMul;
+        // High-power cars need a touch more damping to control weight transfer.
+        double ptwD = car.PowerHP / Math.Max(car.TotalMass, 1.0);
+        double powerFactorD = 1.0 + Math.Max(0, ptwD - 0.25) * 0.20;
+        dampingRatio *= powerFactorD;
 
-        double aspDamper = CalculationHelpers.GetPowerDeliveryFactors(car.PowertrainType, car.AspirationType, car.AntiLag).Damper;
-        if (car.DriveType == Models.DriveType.FWD)
-        { rebF *= aspDamper; bmpF *= aspDamper; }
-        else
-        { rebR *= aspDamper; bmpR *= aspDamper; }
+        double seasonFactor = CalculationHelpers.GetSeasonGripFactor(track.Season);
+        double seasonMul = 0.70 + seasonFactor * 0.35;
 
-        r.ReboundFront = Math.Round(CalculationHelpers.Clamp(rebF, c.ReboundFrontMin, c.ReboundFrontMax), 1);
-        r.ReboundRear  = Math.Round(CalculationHelpers.Clamp(rebR, c.ReboundRearMin,  c.ReboundRearMax), 1);
-        r.BumpFront    = Math.Round(CalculationHelpers.Clamp(bmpF, c.BumpFrontMin,    c.BumpFrontMax), 1);
-        r.BumpRear     = Math.Round(CalculationHelpers.Clamp(bmpR, c.BumpRearMin,     c.BumpRearMax), 1);
-        
+        double rebF = DampingFromSpringAndMass(springF_Nm, massF, frontPhys, dampingRatio, true) * seasonMul;
+        double rebR = DampingFromSpringAndMass(springR_Nm, massR, rearPhys,  dampingRatio, true) * seasonMul;
+        double bmpF = DampingFromSpringAndMass(springF_Nm, massF, frontPhys, dampingRatio * bumpRatio, false) * seasonMul;
+        double bmpR = DampingFromSpringAndMass(springR_Nm, massR, rearPhys,  dampingRatio * bumpRatio, false) * seasonMul;
+
+        r.ReboundFront = Math.Round(CalculationHelpers.Clamp(rebF, frontPhys.MinDampenReboundRate, frontPhys.MaxDampenReboundRate), 1);
+        r.ReboundRear  = Math.Round(CalculationHelpers.Clamp(rebR, rearPhys.MinDampenReboundRate,  rearPhys.MaxDampenReboundRate), 1);
+        r.BumpFront    = Math.Round(CalculationHelpers.Clamp(bmpF, frontPhys.MinDampenBumpRate,    frontPhys.MaxDampenBumpRate), 1);
+        r.BumpRear     = Math.Round(CalculationHelpers.Clamp(bmpR, rearPhys.MinDampenBumpRate,     rearPhys.MaxDampenBumpRate), 1);
+
         ex["Dampers"] = string.Format(CalculationHelpers.L("Expl_Dampers_Fmt"),
             r.ReboundFront, r.ReboundRear, r.BumpFront, r.BumpRear,
             rebF > 0 ? bmpF / rebF * 100 : 0,
             rebR > 0 ? bmpR / rebR * 100 : 0);
     }
+
+    // Spring / ride-height safety fix: if the selected spring is far outside the usable
+    // range for the selected ride height, push it back into the workable band.
+    public static bool SpringRideHeightFix(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r) =>
+        SpringRideHeightFix(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r);
+
+    public static bool SpringRideHeightFix(CarCard car, TrackInfo track, SelectedParts parts, TuneResult r) =>
+        SpringRideHeightFix(car, track, parts, Fh6DatabaseService.Instance, r);
+
+    public static bool SpringRideHeightFix(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r)
+    {
+        var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
+        var rearPhys = TuningPhysicsContext.RearSpringDamper(car, parts, db);
+        if (frontPhys == null || rearPhys == null) return false;
+        if (!car.SuspensionAllowsAdvancedTuning) return false;
+
+        bool changed = false;
+        bool offRoad = track.Discipline is Discipline.Rally or Discipline.CrossCountry;
+
+        // If the car is very low and the spring is near the soft end, stiffen it to avoid bottoming.
+        double rhMinF = frontPhys.MinRideHeight / MmToM;
+        double rhMaxF = frontPhys.MaxRideHeight / MmToM;
+        double rhMinR = rearPhys.MinRideHeight / MmToM;
+        double rhMaxR = rearPhys.MaxRideHeight / MmToM;
+
+        double rhFracF = (r.RideHeightFront - rhMinF) / Math.Max(1.0, rhMaxF - rhMinF);
+        double rhFracR = (r.RideHeightRear  - rhMinR) / Math.Max(1.0, rhMaxR - rhMinR);
+
+        double sprMinF = frontPhys.MinSpringRate * KgfMmToNmm;
+        double sprMaxF = frontPhys.MaxSpringRate * KgfMmToNmm;
+        double sprMinR = rearPhys.MinSpringRate * KgfMmToNmm;
+        double sprMaxR = rearPhys.MaxSpringRate * KgfMmToNmm;
+
+        double sprFracF = (r.SpringFront - sprMinF) / Math.Max(1.0, sprMaxF - sprMinF);
+        double sprFracR = (r.SpringRear  - sprMinR) / Math.Max(1.0, sprMaxR - sprMinR);
+
+        if (!offRoad && rhFracF < 0.10 && sprFracF < 0.15)
+        {
+            r.SpringFront = Math.Round(sprMinF + (sprMaxF - sprMinF) * 0.45, 1);
+            changed = true;
+        }
+        if (!offRoad && rhFracR < 0.10 && sprFracR < 0.15)
+        {
+            r.SpringRear = Math.Round(sprMinR + (sprMaxR - sprMinR) * 0.45, 1);
+            changed = true;
+        }
+        if (rhFracF > 0.90 && sprFracF > 0.85)
+        {
+            r.SpringFront = Math.Round(sprMinF + (sprMaxF - sprMinF) * 0.65, 1);
+            changed = true;
+        }
+        if (rhFracR > 0.90 && sprFracR > 0.85)
+        {
+            r.SpringRear = Math.Round(sprMinR + (sprMaxR - sprMinR) * 0.65, 1);
+            changed = true;
+        }
+        return changed;
+    }
+
+    private static double SpringFromHz(double hz, double cornerMassKg, DbSpringDamperPhysics phys)
+    {
+        // k [N/m] = (2*pi*f)^2 * m
+        double kNpm = Math.Pow(2.0 * Math.PI * hz, 2.0) * cornerMassKg;
+        double kgfmm = kNpm / 1000.0 / 9.807;
+        return CalculationHelpers.Clamp(kgfmm, phys.MinSpringRate, phys.MaxSpringRate);
+    }
+
+    private static double DampingFromSpringAndMass(double springNm, double cornerMassKg, DbSpringDamperPhysics phys, double dampingRatio, bool rebound)
+    {
+        // critical damping cc = 2 * sqrt(k * m)   [N/(m/s)]
+        double cc = 2.0 * Math.Sqrt(springNm * cornerMassKg);
+        double desiredForce = dampingRatio * cc;
+
+        // Derive a game-unit scale from the physics default values: at the default spring
+        // and an estimated default corner mass the default damper should represent a
+        // reference damping ratio (0.65 for rebound, 0.40 for bump).
+        double defaultSpringNm = phys.DefSpringRate * 9.807 * 1000.0;
+        double defaultMass = 350.0; // representative unsprung corner mass reference
+        double defaultCc = defaultSpringNm > 0 ? 2.0 * Math.Sqrt(defaultSpringNm * defaultMass) : 1.0;
+        double referenceRatio = rebound ? 0.65 : 0.40;
+        double referenceValue = rebound ? phys.DefDampenReboundRate : phys.DefDampenBumpRate;
+        double unitsPerNs = referenceValue / (referenceRatio * defaultCc);
+
+        return desiredForce * unitsPerNs;
+    }
+
+    private static double InterpolateHeight(DbSpringDamperPhysics phys, double fraction)
+    {
+        double minM = phys.MinRideHeight;
+        double maxM = phys.MaxRideHeight;
+        return (minM + (maxM - minM) * fraction) / MmToM;
+    }
+
+    private static (double f, double r, string noteKey) RideHeightFractions(Discipline d, DriveType dt) => d switch
+    {
+        Discipline.Drag when dt == DriveType.RWD => (0.10, 0.55, "Expl_RideHeightNote_Drag"),
+        Discipline.Drag                          => (0.12, 0.45, "Expl_RideHeightNote_Drag"),
+        Discipline.Drift                         => (0.18, 0.22, "Expl_RideHeightNote_Drift"),
+        Discipline.Rally                         => (0.50, 0.55, "Expl_RideHeightNote_Rally"),
+        Discipline.CrossCountry                  => (0.65, 0.70, "Expl_RideHeightNote_CrossCountry"),
+        Discipline.Touge                         => (0.18, 0.22, "Expl_RideHeightNote_Touge"),
+        Discipline.Street                        => (0.15, 0.20, "Expl_RideHeightNote_Street"),
+        _                                        => (0.18, 0.22, "Expl_RideHeightNote_Road")
+    };
+
+    private static (double f, double r) TargetNaturalFrequency(Discipline d, DriveType dt) => d switch
+    {
+        Discipline.Drag when dt == DriveType.RWD => (2.8, 1.5),
+        Discipline.Drag                          => (2.8, 1.6),
+        Discipline.Drift                         => (2.4, 2.0),
+        Discipline.Rally                         => (2.3, 2.1),
+        Discipline.CrossCountry                  => (2.1, 1.9),
+        Discipline.Touge                         => (2.9, 3.1),
+        Discipline.Street                        => (2.7, 2.9),
+        _                                        => (2.8, 3.0)
+    };
 }

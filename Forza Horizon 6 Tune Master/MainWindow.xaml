@@ -14,11 +14,6 @@
     </Window.Icon>
 
     <Window.Resources>
-        <cv:EqualityConverter x:Key="Eq"/>
-        <cv:EqualityVisibilityConverter x:Key="EqVis"/>
-        <cv:BoolToVisibilityConverter x:Key="BoolVis"/>
-        <cv:InverseBoolToVisibilityConverter x:Key="BoolToCollapsed"/>
-        <cv:NullToVisibilityConverter x:Key="NullVis"/>
         <Style x:Key="IconButton" TargetType="Button">
             <Setter Property="OverridesDefaultStyle" Value="True"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -252,8 +247,60 @@
                 </Grid.RowDefinitions>
 
                 <!-- Content area: Car -->
-                <views:CarCardView Grid.Row="0"
-                    DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}"/>
+                <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto"
+                              DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}">
+                    <StackPanel Margin="12,8">
+                        <Label Content="{l:Loc CarSearchLabel}"/>
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" x:Name="CarSearchBox"
+                                     Text="{Binding CarSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     GotFocus="CarSearchBox_GotFocus"
+                                     LostFocus="CarSearchBox_LostFocus"/>
+                            <Button Grid.Column="1" Content="✕"
+                                    Style="{StaticResource IconButton}"
+                                    Width="26" Height="26"
+                                    Margin="4,0,0,0"
+                                    Command="{Binding ClearCarSelectionCommand}"
+                                    Visibility="{Binding SelectedCar, Converter={StaticResource NullVis}}"/>
+                            <Popup x:Name="CarDropdownPopup"
+                                   PlacementTarget="{Binding ElementName=CarSearchBox}"
+                                   Placement="Bottom"
+                                   StaysOpen="True"
+                                   AllowsTransparency="True"
+                                   PopupAnimation="Slide"
+                                   HorizontalOffset="-2">
+                                <Border Background="{StaticResource ElevatedBrush}"
+                                        BorderBrush="{StaticResource BorderBrush}"
+                                        BorderThickness="1"
+                                        MinWidth="{Binding ActualWidth, ElementName=CarSearchBox}"
+                                        MaxHeight="180">
+                                    <ListBox x:Name="CarListBox"
+                                             ItemsSource="{Binding FilteredCarDatabase}"
+                                             DisplayMemberPath="DisplayName"
+                                             SelectedItem="{Binding SelectedCar}"
+                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                             SelectionChanged="CarListBox_SelectionChanged"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
+
+                        <!-- Sub-views (each gets its sub-VM as DataContext) -->
+                        <StackPanel Visibility="{Binding IsElectricCar, Converter={StaticResource BoolToCollapsed}}">
+                            <views:SwapsView DataContext="{Binding SwapsVM}"/>
+                            <views:EnginePartsView DataContext="{Binding EngineVM}"/>
+                        </StackPanel>
+                        <views:MotorPartsView DataContext="{Binding MotorVM}"
+                                              Visibility="{Binding IsElectricCar, Converter={StaticResource BoolVis}}"/>
+                        <views:SuspensionView DataContext="{Binding SuspensionVM}"/>
+                        <views:TransmissionView DataContext="{Binding TransmissionVM}"/>
+                        <views:TiresWheelsView DataContext="{Binding TiresWheelsVM}"/>
+                        <views:AeroVisualView DataContext="{Binding AeroVisualVM}"/>
+                    </StackPanel>
+                </ScrollViewer>
 
                 <!-- Bottom bar: discipline + generate + auto -->
                 <Border Grid.Row="1"
@@ -305,30 +352,7 @@
             </Border>
         </Grid>
 
-        <!-- ══ AI Spec Status overlay ═══════════════════════════════════ -->
-        <Grid Grid.RowSpan="3"
-              Visibility="{Binding HasAiSpecStatus, Converter={StaticResource BoolVis}}"
-              ZIndex="99"
-              IsHitTestVisible="True"
-              PreviewMouseDown="AiSpecStatusOverlay_PreviewMouseDown">
-            <Rectangle Fill="#000000" Opacity="0.55"/>
-            <Border Background="{StaticResource CardBrush}"
-                    BorderBrush="{StaticResource AccentBrush}"
-                    BorderThickness="1"
-                    CornerRadius="12"
-                    Padding="40,32"
-                    Width="360"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-                <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Text="{Binding AiSpecStatusMessage}"
-                               Foreground="{StaticResource TextBrush}"
-                               FontSize="14" FontWeight="SemiBold"
-                               TextAlignment="Center"
-                               TextWrapping="Wrap"/>
-                </StackPanel>
-            </Border>
-        </Grid>
+
 
         <!-- ══ Status Bar ══════════════════════════════════════════════ -->
         <Border Grid.Row="2"

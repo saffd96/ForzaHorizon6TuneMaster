@@ -22,14 +22,17 @@ public class ProfileService
         return $"{car.Year} {car.Make} {car.Model} {dt} {et} {disc} {season}".Trim();
     }
 
-    public string Save(CarCard car, TrackInfo track, TuningConstraints constraints, TuneResult? result, List<string> aiEstimatedFields)
+    public string Save(CarCard car, TrackInfo track, TuningConstraints _, TuneResult? result) =>
+        Save(car, track, new SelectedParts(), result);
+
+    public string Save(CarCard car, TrackInfo track, SelectedParts parts, TuneResult? result, TuningConstraints? constraints = null)
     {
         string name = AutoProfileName(car, track);
         car.Name = name;
         _storage.Save(name, new SavedProfile
         {
-            Car = car, Track = track, Constraints = constraints, LastResult = result,
-            AiEstimatedFields = aiEstimatedFields,
+            Car = car, Track = track, Parts = parts, LastResult = result,
+            Constraints = constraints ?? new TuningConstraints(),
             Version = SavedProfile.ProfileVersion
         });
         return name;

@@ -13,7 +13,7 @@ public class TuningConstraintsTests
         Assert.Equal(3.8, c.TirePressureFrontMax);
         Assert.Equal(-5.0, c.CamberFrontMin);
         Assert.Equal(5.0, c.CamberFrontMax);
-        Assert.Equal(560, c.SpringFrontMin);
+        Assert.Equal(50, c.SpringFrontMin);
         Assert.Equal(2800, c.SpringFrontMax);
         Assert.Equal(50.0, c.RideHeightFrontMin);
         Assert.Equal(250.0, c.RideHeightFrontMax);

@@ -6,85 +6,31 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 internal static class DifferentialCalculator
 {
-    public static void CalculateDifferential(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex)
+    public static void CalculateDifferential(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateDifferential(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex);
+
+    public static void CalculateDifferential(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex)
     {
-        if (car.DifferentialUpgrade == DifferentialUpgrade.Stock ||
-            car.DifferentialUpgrade == DifferentialUpgrade.Street)
+        var diff = TuningPhysicsContext.Differential(car, parts, db);
+        if (diff == null)
         {
             ex["Differential"] = CalculationHelpers.L("Expl_Differential_Stock");
             return;
         }
 
-        const double maxAccel = 100.0, maxDecel = 100.0;
+        bool hasDecel = car.DifferentialUpgrade != DifferentialUpgrade.Stock && car.DifferentialUpgrade != DifferentialUpgrade.Sport;
 
-        double accel, decel;
-        switch (track.Discipline)
-        {
-            case Discipline.Drag:
-                (accel, decel) = car.DriveType switch
-                {
-                    Models.DriveType.RWD => (85.0, 5.0),
-                    Models.DriveType.AWD => (78.0, 0.0),
-                    _                    => (70.0, 0.0)
-                };
-                break;
-            case Discipline.Drift:
-                bool isElectricDrift = car.PowertrainType == PowertrainType.Electric;
-                (accel, decel) = (car.DriveType, isElectricDrift) switch
-                {
-                    (Models.DriveType.RWD, true)  => (72.0, 0.0),
-                    (Models.DriveType.RWD, false)  => (90.0, 10.0),
-                    (Models.DriveType.AWD, true)   => (65.0, 8.0),
-                    (Models.DriveType.AWD, false)  => (75.0, 10.0),
-                    (Models.DriveType.FWD, _)      => (30.0, 5.0),
-                    _                              => (0.0, 0.0)
-                };
-                break;
-            case Discipline.Rally:
-                (accel, decel) = car.DriveType switch
-                {
-                    Models.DriveType.AWD => (55.0, 20.0),
-                    _                    => (45.0, 20.0)
-                };
-                break;
-            case Discipline.CrossCountry:
-                (accel, decel) = car.DriveType switch
-                {
-                    Models.DriveType.AWD => (50.0, 25.0),
-                    _                    => (40.0, 25.0)
-                };
-                break;
-            default:
-                (accel, decel) = car.DriveType switch
-                {
-                    Models.DriveType.RWD => (50.0, 20.0),
-                    Models.DriveType.FWD => (60.0, 5.0),
-                    _                    => (55.0, 30.0)
-                };
-                break;
-        }
+        // Adjust for power delivery: more torque needs more lock, but very high torque
+        // on a light car is easier to break loose, so we cap the increase.
+        double ptw = car.PowerHP / Math.Max(car.TotalMass, 1.0);
+        double powerMul = 1.0 + Math.Min(0.25, (ptw - 0.20) * 0.25);
 
-        accel += Math.Max(0, (car.PowerHP - CalculationHelpers.PowerBaselineHP) / CalculationHelpers.PowerStepHP * 2.5);
-        accel += Math.Max(0, (car.TorqueNm - CalculationHelpers.TorqueBaselineNm) / 300.0 * 1.5);
-        accel += (car.TotalMass - CalculationHelpers.MassBaselineKg) / 100.0 * 0.5;
-        accel += car.EnginePosition switch { EnginePosition.Rear => 4.0, EnginePosition.Mid => 2.0, _ => 0.0 };
-        accel -= (car.Wheelbase - CalculationHelpers.RefWheelbaseMm) / 500.0 * 1.5;
-        
-        accel *= CalculationHelpers.GetPowerDeliveryFactors(car.PowertrainType, car.AspirationType, car.AntiLag).Diff;
+        // Longer wheelbase makes the car more stable, so we can run slightly less lock.
+        double wheelbaseFactor = 1.0 - CalculationHelpers.Clamp((car.Wheelbase - 2600.0) / 1000.0, -0.2, 0.3) * 0.10;
 
-        double seasonFactorDiff = CalculationHelpers.GetSeasonGripFactor(track.Season);
-        double seasonPenalty = (1.0 - seasonFactorDiff) * 15.0;
-        accel -= seasonPenalty;
-        decel -= seasonPenalty * 0.6;
-
-        accel = Math.Min(accel, maxAccel);
-        decel = Math.Min(decel, maxDecel);
-
-        bool hasDecel = car.DifferentialUpgrade != DifferentialUpgrade.Sport;
-
-        r.DiffAccel = Math.Round(CalculationHelpers.Clamp(accel, c.DiffAccelMin, c.DiffAccelMax));
-        if (hasDecel)
-            r.DiffDecel = Math.Round(CalculationHelpers.Clamp(decel, c.DiffDecelMin, c.DiffDecelMax));
+        // Less grip in winter -> less diff lock to avoid understeer/power-on instability.
+        double seasonFactor = CalculationHelpers.GetSeasonGripFactor(track.Season);
+        double seasonMul = 0.85 + seasonFactor * 0.15;
 
         string aspLabel = car.AspirationType switch
         {
@@ -104,71 +50,132 @@ internal static class DifferentialCalculator
         };
         string diag = string.Format(CalculationHelpers.L("Expl_Differential_DiagFmt"), car.PowerHP, aspLabel, engPosLabel, car.Wheelbase);
 
-        if (car.DriveType == Models.DriveType.AWD)
+        if (car.DriveType == DriveType.AWD)
         {
-            double bias = (100.0 - CalculationHelpers.EffectiveWtDist(car)) / 100.0;
-            
-            double biasAdj = track.Discipline switch
+            // ── AWD: front + rear + center ──────────────────────────────────
+            (double rearAccelTarget, double rearDecelTarget) = RearLockTargets(track.Discipline, car.DriveType);
+            rearAccelTarget *= powerMul * wheelbaseFactor * seasonMul;
+            rearDecelTarget *= powerMul * wheelbaseFactor * seasonMul;
+
+            double rearAccel = ClampToMax(rearAccelTarget, diff.RearLimitedSlipTorqueAccel);
+            double rearDecel = hasDecel ? ClampToMax(rearDecelTarget, diff.RearLimitedSlipTorqueDecel) : 0.0;
+
+            (double frontAccelTarget, double frontDecelTarget) = FrontLockTargets(track.Discipline);
+            frontAccelTarget *= seasonMul;
+            frontDecelTarget *= seasonMul;
+            double frontAccel = ClampToMax(frontAccelTarget, diff.FrontLimitedSlipTorqueAccel);
+            double frontDecel = hasDecel ? ClampToMax(frontDecelTarget, diff.FrontLimitedSlipTorqueDecel) : 0.0;
+
+            // Centre bias: start from the part's rear torque split, then nudge per discipline.
+            double centerBias = diff.RearToqueSplit;
+            centerBias += track.Discipline switch
             {
-                Discipline.Drag         => 0.15,
+                Discipline.Drag         => 0.12,
                 Discipline.Drift        => 0.05,
-                Discipline.Rally        => 0.10,
-                Discipline.CrossCountry => 0.08,
-                _                       => 0.05
+                Discipline.Rally        => 0.08,
+                Discipline.CrossCountry => 0.06,
+                _                       => 0.03
             };
-            
-            bias += biasAdj;
-            bias += (car.Wheelbase - CalculationHelpers.RefWheelbaseMm) / 500.0 * 0.03;
-            bias = CalculationHelpers.Clamp(bias, 0.30, 0.85);
+            if (car.EnginePosition == EnginePosition.Rear) centerBias += 0.03;
+            centerBias = CalculationHelpers.Clamp(centerBias, 0.30, 0.85);
 
-            double fAccel = track.Discipline switch
-            {
-                Discipline.Drag         => 55,
-                Discipline.Drift        => 30,
-                Discipline.Rally        => 40,
-                Discipline.CrossCountry => 45,
-                _                       => 45
-            };
-            double fDecel = track.Discipline switch
-            {
-                Discipline.Drag         => 3,
-                Discipline.Drift        => 5,
-                Discipline.Rally        => 20,
-                Discipline.CrossCountry => 15,
-                _                       => 10
-            };
-
-            double wdFront_awd = CalculationHelpers.EffectiveWtDist(car);
-            fAccel += (wdFront_awd - 50.0) * 0.5;
-            fAccel += car.EnginePosition switch
-            {
-                EnginePosition.Front   =>  5.0,
-                EnginePosition.Mid     =>  0.0,
-                EnginePosition.Rear    => -8.0,
-                _                      =>  0.0
-            };
-            fAccel = Math.Clamp(fAccel, 10.0, 65.0);
-
-            double frontFactor = 1.2 - bias * 0.4;
-            double rearFactor  = 0.8 + bias * 0.4;
-
-            r.DiffAccel = Math.Round(CalculationHelpers.Clamp(accel * rearFactor, c.DiffAccelMin, c.DiffAccelMax));
+            // Re-bias the rear diff output to account for the centre split.
+            double rearFactor = 0.85 + centerBias * 0.15;
+            r.DiffAccel = Math.Round(CalculationHelpers.Clamp(rearAccel * rearFactor, 0.0, diff.RearLimitedSlipTorqueAccel) * 100.0);
             if (hasDecel)
-                r.DiffDecel = Math.Round(CalculationHelpers.Clamp(decel * rearFactor, c.DiffDecelMin, c.DiffDecelMax));
+                r.DiffDecel = Math.Round(CalculationHelpers.Clamp(rearDecel * rearFactor, 0.0, diff.RearLimitedSlipTorqueDecel) * 100.0);
 
-            r.DiffFrontAccel = Math.Round(CalculationHelpers.Clamp(Math.Min(fAccel, maxAccel) * frontFactor, c.DiffAccelMin, c.DiffAccelMax));
+            r.DiffFrontAccel = Math.Round(frontAccel * 100.0);
             if (hasDecel)
-                r.DiffFrontDecel = Math.Round(CalculationHelpers.Clamp(Math.Min(fDecel, maxDecel) * frontFactor, c.DiffDecelMin, c.DiffDecelMax));
-            r.CenterDiffBias = Math.Round(bias * 100);
-        }
+                r.DiffFrontDecel = Math.Round(frontDecel * 100.0);
+            r.CenterDiffBias = Math.Round(centerBias * 100.0);
 
-        if (r.DiffFrontAccel.HasValue)
             ex["Differential"] = hasDecel
                 ? string.Format(CalculationHelpers.L("Expl_Differential_AWDFmt"), r.DiffAccel, r.DiffDecel, r.DiffFrontAccel, r.DiffFrontDecel, r.CenterDiffBias, diag)
                 : string.Format(CalculationHelpers.L("Expl_Differential_AWDFmtAccelOnly"), r.DiffAccel, r.DiffFrontAccel, r.CenterDiffBias, diag);
-        else
+        }
+        else if (car.DriveType == DriveType.FWD)
+        {
+            // ── FWD: main diff is on the front axle ─────────────────────────
+            (double accelTarget, double decelTarget) = FrontLockTargets(track.Discipline);
+            accelTarget *= powerMul * wheelbaseFactor * seasonMul;
+            decelTarget *= powerMul * wheelbaseFactor * seasonMul;
+
+            double accel = ClampToMax(accelTarget, diff.FrontLimitedSlipTorqueAccel);
+            double decel = hasDecel ? ClampToMax(decelTarget, diff.FrontLimitedSlipTorqueDecel) : 0.0;
+
+            r.DiffAccel = Math.Round(accel * 100.0);
+            if (hasDecel)
+                r.DiffDecel = Math.Round(decel * 100.0);
+
             ex["Differential"] = hasDecel
                 ? string.Format(CalculationHelpers.L("Expl_Differential_Fmt"), r.DiffAccel, r.DiffDecel, diag)
                 : string.Format(CalculationHelpers.L("Expl_Differential_FmtAccelOnly"), r.DiffAccel, diag);
+        }
+        else
+        {
+            // ── RWD: main diff is on the rear axle ──────────────────────────
+            (double accelTarget, double decelTarget) = RearLockTargets(track.Discipline, car.DriveType);
+            accelTarget *= powerMul * wheelbaseFactor * seasonMul;
+            decelTarget *= powerMul * wheelbaseFactor * seasonMul;
+
+            double accel = ClampToMax(accelTarget, diff.RearLimitedSlipTorqueAccel);
+            double decel = hasDecel ? ClampToMax(decelTarget, diff.RearLimitedSlipTorqueDecel) : 0.0;
+
+            r.DiffAccel = Math.Round(accel * 100.0);
+            if (hasDecel)
+                r.DiffDecel = Math.Round(decel * 100.0);
+
+            ex["Differential"] = hasDecel
+                ? string.Format(CalculationHelpers.L("Expl_Differential_Fmt"), r.DiffAccel, r.DiffDecel, diag)
+                : string.Format(CalculationHelpers.L("Expl_Differential_FmtAccelOnly"), r.DiffAccel, diag);
+        }
     }
+
+    private static double ClampToMax(double target, double max)
+    {
+        if (max <= 0) return CalculationHelpers.Clamp(target, 0.0, 1.0);
+        return CalculationHelpers.Clamp(target, 0.0, max);
+    }
+
+    private static (double accel, double decel) RearLockTargets(Discipline d, DriveType drive) => d switch
+    {
+        Discipline.Drag => drive switch
+        {
+            DriveType.RWD => (0.85, 0.05),
+            DriveType.AWD => (0.75, 0.0),
+            _             => (0.70, 0.0)
+        },
+        Discipline.Drift => drive switch
+        {
+            DriveType.AWD => (0.65, 0.08),
+            DriveType.FWD => (0.35, 0.05),
+            _             => (0.90, 0.10)
+        },
+        Discipline.Rally => drive switch
+        {
+            DriveType.AWD => (0.55, 0.20),
+            _             => (0.45, 0.20)
+        },
+        Discipline.CrossCountry => drive switch
+        {
+            DriveType.AWD => (0.50, 0.25),
+            _             => (0.40, 0.25)
+        },
+        _ => drive switch
+        {
+            DriveType.RWD => (0.50, 0.20),
+            DriveType.FWD => (0.60, 0.05),
+            _             => (0.55, 0.30)
+        }
+    };
+
+    private static (double accel, double decel) FrontLockTargets(Discipline d) => d switch
+    {
+        Discipline.Drag         => (0.45, 0.03),
+        Discipline.Drift        => (0.30, 0.05),
+        Discipline.Rally        => (0.40, 0.20),
+        Discipline.CrossCountry => (0.45, 0.15),
+        _                       => (0.45, 0.10)
+    };
 }

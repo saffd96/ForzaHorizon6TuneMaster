@@ -22,7 +22,7 @@ public class ProfileServiceTests : IDisposable
         var track = CarFactory.DefaultTrack();
         var constraints = CarFactory.RelaxedConstraints();
 
-        string name = _service.Save(car, track, constraints, null, new List<string>());
+        string name = _service.Save(car, track, constraints, null);
 
         var loaded = _service.Load(name);
         Assert.NotNull(loaded);
@@ -37,7 +37,7 @@ public class ProfileServiceTests : IDisposable
         var constraints = CarFactory.RelaxedConstraints();
         var result = new TuneResult();
 
-        string name = _service.Save(car, track, constraints, result, new List<string>());
+        string name = _service.Save(car, track, constraints, result);
 
         var loaded = _service.Load(name);
         Assert.NotNull(loaded);

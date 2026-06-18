@@ -7,6 +7,12 @@ internal static class LaunchControlCalculator
 {
     public static void CalculateLaunchControl(CarCard car, TrackInfo track, TuneResult r)
     {
+        var db = Fh6DatabaseService.Instance;
+        CalculateLaunchControl(car, track, new SelectedParts(), db, r);
+    }
+
+    public static void CalculateLaunchControl(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r)
+    {
         if (car.PowertrainType == PowertrainType.Electric)
         {
             r.LaunchControlRpm = null;
@@ -19,7 +25,7 @@ internal static class LaunchControlCalculator
         double baseLaunch = car.AspirationType switch
         {
             AspirationType.TwinTurbo when car.AntiLag
-                => Math.Max(maxRpm * 0.40, torquePeak * 0.65), 
+                => Math.Max(maxRpm * 0.40, torquePeak * 0.65),
             AspirationType.TwinTurbo
                 => Math.Max(maxRpm * 0.35, torquePeak * 0.60),
             AspirationType.SingleTurbo when car.AntiLag
@@ -43,28 +49,20 @@ internal static class LaunchControlCalculator
 
         double excessTorque = Math.Max(0, car.TorqueNm - CalculationHelpers.TorqueBaselineNm);
         double torqueFactor;
-
         if (car.DriveType == DriveType.AWD)
-        {
             torqueFactor = Math.Clamp(1.0 - excessTorque / 4000.0, 0.85, 1.0);
-        }
         else
-        {
             torqueFactor = Math.Clamp(1.0 - excessTorque / 1200.0, 0.60, 1.0);
-        }
 
-        double tireFactor = car.TireType switch
-        {
-            TireType.Drag => 1.15,
-            TireType.Slick => 1.10,
-            TireType.SemiSlick => 1.05,
-            _ => 1.00
-        };
+        // Use the selected tyre compound's longitudinal grip to scale launch RPM.
+        var compound = TuningPhysicsContext.TireCompound(car, parts, db);
+        var baseCompound = compound != null ? db.GetTireCompound(compound.TireCompoundID) : null;
+        double longGrip = baseCompound?.TorqueFreeLongFrictionScaleAccel0 ?? 1.0;
+        double tireFactor = 0.85 + longGrip * 0.15;
 
         double disciplineFactor = track.Discipline == Discipline.Drag ? 1.15 : 1.00;
 
         double launch = baseLaunch * driveAdj * torqueFactor * tireFactor * disciplineFactor;
-
         launch = Math.Clamp(launch, 1200, maxRpm * 0.80);
 
         r.LaunchControlRpm = (int)(Math.Round(launch / 100.0) * 100);

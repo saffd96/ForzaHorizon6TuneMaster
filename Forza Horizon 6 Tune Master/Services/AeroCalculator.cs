@@ -6,74 +6,63 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 internal static class AeroCalculator
 {
-    public static void CalculateAero(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex, double? overrideSpeedKmh = null)
+    public static void CalculateAero(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex, double? overrideSpeedKmh = null) =>
+        CalculateAero(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, overrideSpeedKmh);
+
+    public static void CalculateAero(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, double? overrideSpeedKmh = null)
     {
-        if (!car.HasFrontAero && !car.HasRearAero)
+        var rearWing = TuningPhysicsContext.RearWingAero(car, parts, db);
+        var dbCar = db.GetCar(car.CarDbId);
+
+        if ((!car.HasFrontAero && !car.HasRearAero) || rearWing == null)
         {
-            r.AeroFront = 0; r.AeroRear = 0;
+            r.AeroFront = 0;
+            r.AeroRear = 0;
             ex["Aero"] = CalculationHelpers.L("Expl_Aero_None");
             return;
         }
 
+        double rearMin = rearWing.Downforce0;
+        double rearMax = rearWing.Downforce1;
+        double frontDownforceClamp = dbCar?.FrontDownforceClampKG ?? 0.0;
+        double frontMin = 0.0;
+        double frontMax = car.HasFrontAero && frontDownforceClamp > 0
+            ? Math.Min(frontDownforceClamp, rearMax * 0.75)
+            : 0.0;
+
+        (double rearFraction, double frontFraction, string noteKey) = AeroFractions(track.Discipline, car.DriveType);
+
+        // Power/speed correction: very low-power cars cannot afford much aero drag;
+        // very high-power cars can run more downforce without losing top speed.
+        double ptw = car.PowerHP / Math.Max(car.TotalMass, 1.0);
+        double ptwRef = 0.25;
+        double powerFactor = 1.0 - CalculationHelpers.Clamp((ptw - ptwRef) / ptwRef, -0.5, 0.5) * 0.20;
+        rearFraction *= powerFactor;
+        frontFraction *= powerFactor;
+
+        double rearAero = rearMin + (rearMax - rearMin) * CalculationHelpers.Clamp(rearFraction, 0.0, 1.0);
+        double frontAero = frontMin + (frontMax - frontMin) * CalculationHelpers.Clamp(frontFraction, 0.0, 1.0);
+
+        r.AeroRear = car.HasRearAero ? Math.Round(CalculationHelpers.Clamp(rearAero, rearMin, rearMax)) : 0;
+        r.AeroFront = car.HasFrontAero ? Math.Round(CalculationHelpers.Clamp(frontAero, frontMin, frontMax)) : 0;
+
         double speed = overrideSpeedKmh ?? car.MaxSpeedKmh;
-
-        double speedFactor = Math.Min(1.2, Math.Pow(speed / 380.0, 1.1)); 
-        double pwrFactor = 1.0 + Math.Max(0, (car.PowerHP - CalculationHelpers.PowerBaselineHP) / CalculationHelpers.PowerStepHP * 0.12);
-        pwrFactor = Math.Min(1.5, pwrFactor); 
-        
-        double aeroMultiplier = speedFactor * pwrFactor;
-
-        double fwBase, rwBase;
-        switch (car.DriveType)
-        {
-            case Models.DriveType.RWD:
-                bool isFrontEngineRwd = car.EnginePosition == Models.EnginePosition.Front; 
-                fwBase = isFrontEngineRwd ? 0.45 : 0.55;
-                rwBase = isFrontEngineRwd ? 0.75 : 0.65;
-                break;
-            case Models.DriveType.FWD:
-                fwBase = 0.65; rwBase = 0.50;
-                break;
-            case Models.DriveType.AWD:
-                fwBase = 0.55; 
-                rwBase = 0.75; 
-                break;
-            default:
-                fwBase = 0.55; rwBase = 0.60;
-                break;
-        }
-
-        double aeroF = 0, aeroR = 0;
-
-        switch (track.Discipline)
-        {
-            case Discipline.Drag:
-                aeroF = c.AeroFrontMin;
-                double dragRearFactor = Math.Min(0.45, 0.05 + (pwrFactor - 1.0) * 0.80); 
-                aeroR = car.HasRearAero ? c.AeroRearMin + (c.AeroRearMax - c.AeroRearMin) * dragRearFactor : 0;
-                break;
-
-            case Discipline.Drift:
-                aeroF = car.HasFrontAero ? c.AeroFrontMin + (c.AeroFrontMax - c.AeroFrontMin) * 0.15 * aeroMultiplier : 0;
-                aeroR = car.HasRearAero  ? c.AeroRearMin  + (c.AeroRearMax  - c.AeroRearMin)  * 0.15 * aeroMultiplier : 0;
-                break;
-
-            case Discipline.CrossCountry:
-            case Discipline.Rally:
-                double offroadFactor = track.Discipline == Discipline.Rally ? 0.65 : 0.50;
-                aeroF = car.HasFrontAero ? c.AeroFrontMin + (c.AeroFrontMax - c.AeroFrontMin) * offroadFactor * aeroMultiplier : 0;
-                aeroR = car.HasRearAero  ? c.AeroRearMin  + (c.AeroRearMax  - c.AeroRearMin)  * (offroadFactor + 0.10) * aeroMultiplier : 0;
-                break;
-
-            default:
-                aeroF = car.HasFrontAero ? c.AeroFrontMin + (c.AeroFrontMax - c.AeroFrontMin) * fwBase * aeroMultiplier : 0;
-                aeroR = car.HasRearAero  ? c.AeroRearMin  + (c.AeroRearMax  - c.AeroRearMin)  * rwBase * aeroMultiplier : 0;
-                break;
-        }
-
-        r.AeroFront = car.HasFrontAero ? Math.Round(CalculationHelpers.Clamp(aeroF, c.AeroFrontMin, c.AeroFrontMax)) : 0;
-        r.AeroRear  = car.HasRearAero  ? Math.Round(CalculationHelpers.Clamp(aeroR, c.AeroRearMin,  c.AeroRearMax))  : 0;
-        
-        ex["Aero"] = string.Format(CalculationHelpers.L("Expl_Aero_Fmt"), r.AeroFront, r.AeroRear, car.MaxSpeedKmh, car.PowerHP);
+        ex["Aero"] = string.Format(CalculationHelpers.L("Expl_Aero_Fmt"), r.AeroFront, r.AeroRear, speed, car.PowerHP);
     }
+
+    private static (double rearFraction, double frontFraction, string noteKey) AeroFractions(Discipline d, DriveType drive) => d switch
+    {
+        Discipline.Drag         => (0.10, 0.00, "Expl_AeroNote_Drag"),
+        Discipline.Drift        => (0.15, 0.05, "Expl_AeroNote_Drift"),
+        Discipline.Rally        => (0.25, 0.10, "Expl_AeroNote_Rally"),
+        Discipline.CrossCountry => (0.15, 0.05, "Expl_AeroNote_CrossCountry"),
+        Discipline.Touge        => (0.90, 0.70, "Expl_AeroNote_Touge"),
+        Discipline.Street       => (0.70, 0.50, "Expl_AeroNote_Street"),
+        _ => drive switch
+        {
+            DriveType.RWD => (0.80, 0.45, "Expl_AeroNote_RoadRWD"),
+            DriveType.FWD => (0.55, 0.70, "Expl_AeroNote_RoadFWD"),
+            _             => (0.70, 0.60, "Expl_AeroNote_RoadAWD")
+        }
+    };
 }

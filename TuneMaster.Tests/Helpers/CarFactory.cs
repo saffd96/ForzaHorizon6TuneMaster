@@ -11,7 +11,7 @@ public static class CarFactory
         Model = "TestModel",
         Year = 2024,
         TotalMass = 1400,
-        WeightDistributionFront = 50,
+        // WeightDistributionFront left at field default (50, not explicitly set)
         PowerHP = 300,
         TorqueNm = 400,
         MaxRPM = 7000,
@@ -35,13 +35,15 @@ public static class CarFactory
         RearTrack = 1570,
         Cd = 0,
         FrontalAreaM2 = 0,
-        HasFrontAero = true,
-        HasRearAero = true,
-        HasFrontARB = true,
-        HasRearARB = true,
+        RearWingPartId = 1,
+        ArbFrontPartId = 1,
+        ArbRearPartId = 1,
         SuspensionUpgrade = SuspensionUpgrade.Race,
         DifferentialUpgrade = DifferentialUpgrade.Race,
         BrakesUpgrade = BrakesUpgrade.Race,
+        HasFrontARB = true,
+        HasRearARB = true,
+        HasRearAero = true,
     };
 
     public static CarCard FWDStockCar() => new()
@@ -70,8 +72,6 @@ public static class CarFactory
         TireType = TireType.Stock,
         SuspensionUpgrade = SuspensionUpgrade.Stock,
         DifferentialUpgrade = DifferentialUpgrade.Stock,
-        HasFrontAero = false,
-        HasRearAero = false,
     };
 
     public static CarCard AWDPerformanceCar() => new()
@@ -104,8 +104,9 @@ public static class CarFactory
         RearTrack = 1600,
         Cd = 0.32,
         FrontalAreaM2 = 2.15,
-        HasFrontAero = true,
-        HasRearAero = true,
+        RearWingPartId = 1,
+        ArbFrontPartId = 1,
+        ArbRearPartId = 1,
         SuspensionUpgrade = SuspensionUpgrade.Race,
         DifferentialUpgrade = DifferentialUpgrade.Race,
         BrakesUpgrade = BrakesUpgrade.Race,
@@ -135,8 +136,6 @@ public static class CarFactory
         FrontRimDiameter = 21,
         RearRimDiameter = 21,
         TireType = TireType.Sport,
-        HasFrontAero = false,
-        HasRearAero = false,
         SuspensionUpgrade = SuspensionUpgrade.Sport,
         DifferentialUpgrade = DifferentialUpgrade.Sport,
     };
@@ -160,8 +159,8 @@ public static class CarFactory
         CasterMin = 0, CasterMax = 15,
         ARBFrontMin = 0, ARBFrontMax = 100,
         ARBRearMin = 0, ARBRearMax = 100,
-        SpringFrontMin = 100, SpringFrontMax = 3000,
-        SpringRearMin = 100, SpringRearMax = 3000,
+        SpringFrontMin = 50, SpringFrontMax = 3000,
+        SpringRearMin = 50, SpringRearMax = 3000,
         RideHeightFrontMin = 10, RideHeightFrontMax = 400,
         RideHeightRearMin = 10, RideHeightRearMax = 400,
         ReboundFrontMin = 0, ReboundFrontMax = 30,

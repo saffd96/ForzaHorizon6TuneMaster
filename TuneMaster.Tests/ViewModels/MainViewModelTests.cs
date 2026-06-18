@@ -248,16 +248,6 @@ public class MainViewModelTests : IDisposable
     }
 
     [Fact]
-    public void SetPowerDisplay_KW_ConvertsBack()
-    {
-        var vm = new MainViewModel();
-        vm.PowerUnit = PowerUnit.KW;
-        vm.PowerDisplay = 224; // ~300 HP
-
-        Assert.Equal(300, Math.Round(vm.Car.PowerHP));
-    }
-
-    [Fact]
     public void UnitToggleLabel_SwitchesWithUnitSystem()
     {
         var vm = new MainViewModel();
@@ -432,13 +422,6 @@ public class MainViewModelTests : IDisposable
     }
 
     [Fact]
-    public void ClearCacheCommand_DoesNotThrow()
-    {
-        var vm = new MainViewModel();
-        vm.ClearCacheCommand.Execute(null);
-    }
-
-    [Fact]
     public void SpringDisplay_NMm_Roundtrips()
     {
         var vm = new MainViewModel();
@@ -480,10 +463,10 @@ public class MainViewModelTests : IDisposable
     }
 
     [Fact]
-    public void IsAutoGenerate_FalseByDefault()
+    public void IsAutoGenerate_AlwaysTrue()
     {
         var vm = new MainViewModel();
-        Assert.False(vm.IsAutoGenerate);
+        Assert.True(vm.IsAutoGenerate);
     }
 
     [Fact]
@@ -515,32 +498,10 @@ public class MainViewModelTests : IDisposable
     }
 
     [Fact]
-    public void IsFetchingAiSpecs_True_SetsIsBusy()
-    {
-        var vm = new MainViewModel();
-        vm.IsLoadingCars = false;
-        vm.IsFetchingAiSpecs = true;
-        Assert.True(vm.IsBusy);
-        vm.IsFetchingAiSpecs = false;
-        Assert.False(vm.IsBusy);
-    }
-
-    [Fact]
-    public void IsLoadingCarSpecs_True_SetsIsBusy()
-    {
-        var vm = new MainViewModel();
-        vm.IsLoadingCars = false;
-        vm.IsLoadingCarSpecs = true;
-        Assert.True(vm.IsBusy);
-        vm.IsLoadingCarSpecs = false;
-        Assert.False(vm.IsBusy);
-    }
-
-    [Fact]
     public void BusyMessage_DefaultEmpty()
     {
         var vm = new MainViewModel();
-        Assert.NotEqual("", vm.BusyMessage);
+        Assert.Equal("", vm.BusyMessage);
     }
 
     [Fact]
@@ -565,17 +526,6 @@ public class MainViewModelTests : IDisposable
         var vm = new MainViewModel();
         vm.StatusMessage = "Custom status";
         Assert.Equal("Custom status", vm.StatusMessage);
-    }
-
-    [Fact]
-    public void AiEstimatedFields_AllFalseByDefault()
-    {
-        var vm = new MainViewModel();
-        Assert.False(vm.IsWheelbaseAiEstimated);
-        Assert.False(vm.IsFrontTrackAiEstimated);
-        Assert.False(vm.IsRearTrackAiEstimated);
-        Assert.False(vm.IsCdAiEstimated);
-        Assert.False(vm.IsFrontalAreaAiEstimated);
     }
 
     [Fact]
@@ -683,37 +633,6 @@ public class MainViewModelTests : IDisposable
         var imperialLabel = vm.UnitToggleLabel;
 
         Assert.NotEqual(metricLabel, imperialLabel);
-    }
-
-    [Fact]
-    public void RefreshCarDatabaseCommand_CanExecute()
-    {
-        var vm = new MainViewModel();
-        vm.IsLoadingCars = false;
-        Assert.True(vm.RefreshCarDatabaseCommand.CanExecute(null));
-    }
-
-    [Fact]
-    public void FetchAiCarSpecsCommand_CanExecute()
-    {
-        var vm = new MainViewModel();
-        vm.IsLoadingCars = false;
-        Assert.True(vm.FetchAiCarSpecsCommand.CanExecute(null));
-    }
-
-    [Fact]
-    public void FetchAiCarSpecsCommand_InFetching_ReturnsFalse()
-    {
-        var vm = new MainViewModel();
-        vm.IsFetchingAiSpecs = true;
-        Assert.False(vm.FetchAiCarSpecsCommand.CanExecute(null));
-    }
-
-    [Fact]
-    public void ClearAiCacheCommand_DoesNotThrow()
-    {
-        var vm = new MainViewModel();
-        vm.ClearAiCacheCommand.Execute(null);
     }
 
     [Fact]

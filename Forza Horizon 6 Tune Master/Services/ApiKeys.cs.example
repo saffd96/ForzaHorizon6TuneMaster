@@ -1,6 +1,0 @@
-namespace Forza_Horizon_6_Tune_Master.Services;
-
-internal static class ApiKeys
-{
-    public const string Cerebras = "csk-...ваш-ключ...";
-}
