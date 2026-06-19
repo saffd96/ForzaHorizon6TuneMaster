@@ -59,12 +59,14 @@ public class TuningConstraints : INotifyPropertyChanged
     public double ARBRearMax { get => _arbRearMax; set { if (SetMax(ref _arbRearMin, ref _arbRearMax, value)) { Raise(); Raise(nameof(ARBRearMin)); } } }
 
     // ── Spring ──────────────────────────────────────────────────────────
-    private double _springFrontMin = 50;
-    private double _springFrontMax = 2800;
+    // Bounds are in N/mm (the canonical spring unit). DB spring rates span ~20-200 N/mm, so
+    // these defaults are a wide safety band; per-car bounds come from ApplyPhysicsBounds.
+    private double _springFrontMin = 10;
+    private double _springFrontMax = 300;
     public double SpringFrontMin { get => _springFrontMin; set { if (SetMin(ref _springFrontMin, ref _springFrontMax, value)) { Raise(); Raise(nameof(SpringFrontMax)); } } }
     public double SpringFrontMax { get => _springFrontMax; set { if (SetMax(ref _springFrontMin, ref _springFrontMax, value)) { Raise(); Raise(nameof(SpringFrontMin)); } } }
-    private double _springRearMin = 50;
-    private double _springRearMax = 2000;
+    private double _springRearMin = 10;
+    private double _springRearMax = 300;
     public double SpringRearMin { get => _springRearMin; set { if (SetMin(ref _springRearMin, ref _springRearMax, value)) { Raise(); Raise(nameof(SpringRearMax)); } } }
     public double SpringRearMax { get => _springRearMax; set { if (SetMax(ref _springRearMin, ref _springRearMax, value)) { Raise(); Raise(nameof(SpringRearMin)); } } }
 
@@ -140,22 +142,21 @@ public class TuningConstraints : INotifyPropertyChanged
     // ── Data-driven bounds refresh ────────────────────────────────────
     public void ApplyPhysicsBounds(CarCard car, SelectedParts parts, Fh6DatabaseService db)
     {
-        const double kgfToN = 9.80665;
-
         var fSp = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
         var rSp = TuningPhysicsContext.RearSpringDamper(car, parts, db);
 
+        // DB spring rates are already in N/mm (the unit the constraints store internally).
         if (fSp != null)
         {
-            SpringFrontMin = fSp.MinSpringRate * kgfToN;
-            SpringFrontMax = fSp.MaxSpringRate * kgfToN;
+            SpringFrontMin = fSp.MinSpringRate;
+            SpringFrontMax = fSp.MaxSpringRate;
             RideHeightFrontMin = fSp.MinRideHeight * 1000.0;
             RideHeightFrontMax = fSp.MaxRideHeight * 1000.0;
         }
         if (rSp != null)
         {
-            SpringRearMin = rSp.MinSpringRate * kgfToN;
-            SpringRearMax = rSp.MaxSpringRate * kgfToN;
+            SpringRearMin = rSp.MinSpringRate;
+            SpringRearMax = rSp.MaxSpringRate;
             RideHeightRearMin = rSp.MinRideHeight * 1000.0;
             RideHeightRearMax = rSp.MaxRideHeight * 1000.0;
         }
@@ -186,16 +187,18 @@ public class TuningConstraints : INotifyPropertyChanged
         if (brakes != null)
         {
             double frictionScale = brakes.GameFrictionScaleBraking > 0.1 ? brakes.GameFrictionScaleBraking : 1.0;
-            double torqueSlider = brakes.BrakeTorqueSlider > 0.01 ? brakes.BrakeTorqueSlider : 1.0;
+            // Normalise the brake-torque slider against its 0.5 default (see BrakeCalculator).
+            double torqueSliderFactor = brakes.BrakeTorqueSlider > 0.01 ? 0.5 / brakes.BrakeTorqueSlider : 1.0;
             BrakePressureMin = 20.0;
-            BrakePressureMax = Math.Round(200.0 / frictionScale / torqueSlider);
+            BrakePressureMax = Math.Round(200.0 / frictionScale * torqueSliderFactor);
 
             if (brakes.FrontBrakeTorqueClamp > 0 && brakes.RearBrakeTorqueClamp > 0)
             {
                 double totalClamp = brakes.FrontBrakeTorqueClamp + brakes.RearBrakeTorqueClamp;
                 double maxFrontBias = brakes.FrontBrakeTorqueClamp / totalClamp * 100.0;
-                BrakeBalanceMin = Math.Max(20.0, 100.0 - maxFrontBias - 5.0);
-                BrakeBalanceMax = Math.Min(80.0, maxFrontBias + 5.0);
+                // Symmetric clamps (the norm) should leave a wide adjustable band, not pin it near 50%.
+                BrakeBalanceMin = Math.Max(20.0, 100.0 - maxFrontBias - 20.0);
+                BrakeBalanceMax = Math.Min(80.0, maxFrontBias + 20.0);
             }
         }
     }

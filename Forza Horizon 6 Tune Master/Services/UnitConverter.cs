@@ -8,15 +8,17 @@ internal static class UnitConverter
     internal static double TirePressureToDisplay(double bar, bool imperial) => imperial ? Math.Round(bar * 14.504, 1) : bar;
     internal static double TirePressureFromDisplay(double val, bool imperial) => imperial ? Math.Round(val / 14.504, 2) : val;
 
+    // The game's kgf/mm spring readout is scaled x10 (e.g. 40-200 N/mm shows as ~41-204),
+    // so the kgf/mm display multiplies the true kgf/mm value by 10 to match the in-game numbers.
     internal static double SpringToDisplay(double nmm, SpringUnit unit) => unit switch
     {
-        SpringUnit.KgfMm => Math.Round(nmm / 9.807, 2),
+        SpringUnit.KgfMm => Math.Round(nmm / 9.807 * 10.0, 2),
         SpringUnit.LbsIn => Math.Round(nmm * 5.710, 1),
         _                => Math.Round(nmm, 1)
     };
     internal static double SpringFromDisplay(double val, SpringUnit unit) => unit switch
     {
-        SpringUnit.KgfMm => val * 9.807,
+        SpringUnit.KgfMm => val / 10.0 * 9.807,
         SpringUnit.LbsIn => val / 5.710,
         _                => val
     };

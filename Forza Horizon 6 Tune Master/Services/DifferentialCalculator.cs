@@ -18,7 +18,11 @@ internal static class DifferentialCalculator
             return;
         }
 
-        bool hasDecel = car.DifferentialUpgrade != DifferentialUpgrade.Stock && car.DifferentialUpgrade != DifferentialUpgrade.Sport;
+        // Decel lock is tunable whenever the fitted differential actually supports it.
+        // Deriving this from the resolved part (rather than the DifferentialUpgrade enum)
+        // is robust to the DB Level→enum mapping, which is not 1:1 (DB levels skip 4),
+        // so e.g. a race diff would otherwise be misread as "Sport" and hide decel.
+        bool hasDecel = Math.Max(diff.RearLimitedSlipTorqueDecel, diff.FrontLimitedSlipTorqueDecel) > 0.01;
 
         // Adjust for power delivery: more torque needs more lock, but very high torque
         // on a light car is easier to break loose, so we cap the increase.
@@ -61,8 +65,8 @@ internal static class DifferentialCalculator
             double rearDecel = hasDecel ? ClampToMax(rearDecelTarget, diff.RearLimitedSlipTorqueDecel) : 0.0;
 
             (double frontAccelTarget, double frontDecelTarget) = FrontLockTargets(track.Discipline);
-            frontAccelTarget *= seasonMul;
-            frontDecelTarget *= seasonMul;
+            frontAccelTarget *= wheelbaseFactor * seasonMul;
+            frontDecelTarget *= wheelbaseFactor * seasonMul;
             double frontAccel = ClampToMax(frontAccelTarget, diff.FrontLimitedSlipTorqueAccel);
             double frontDecel = hasDecel ? ClampToMax(frontDecelTarget, diff.FrontLimitedSlipTorqueDecel) : 0.0;
 

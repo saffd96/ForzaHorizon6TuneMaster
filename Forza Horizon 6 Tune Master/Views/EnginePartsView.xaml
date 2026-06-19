@@ -3,68 +3,64 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services">
     <StackPanel>
-        <TextBlock Text="{l:Loc SectionEngineValvetrain}" Style="{StaticResource SectionHeader}"/>
-        <UniformGrid Columns="6" HorizontalAlignment="Stretch" Margin="0,0,0,6">
-            <ComboBox ItemsSource="{Binding Camshafts}" SelectedItem="{Binding SelectedCamshaft}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Camshafts.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding Displacements}" SelectedItem="{Binding SelectedDisplacement}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Displacements.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding Valves}" SelectedItem="{Binding SelectedValves}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Valves.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding Pistons}" SelectedItem="{Binding SelectedPistons}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Pistons.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding Flywheels}" SelectedItem="{Binding SelectedFlywheel}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Flywheels.Count, Converter={StaticResource CountVis}}"/>
-        </UniformGrid>
-
-        <TextBlock Text="{l:Loc SectionEngineAirFuel}" Style="{StaticResource SectionHeader}"/>
+        <TextBlock Text="{l:Loc ModuleEngine}" Style="{StaticResource SectionHeader}"/>
         <UniformGrid Columns="6" HorizontalAlignment="Stretch" Margin="0,0,0,6">
             <ComboBox ItemsSource="{Binding Intakes}" SelectedItem="{Binding SelectedIntake}"
                       HorizontalAlignment="Stretch" MinHeight="26"
                       FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
                       Visibility="{Binding Intakes.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding Manifolds}" SelectedItem="{Binding SelectedManifold}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Manifolds.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding Exhausts}" SelectedItem="{Binding SelectedExhaust}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Exhausts.Count, Converter={StaticResource CountVis}}"/>
             <ComboBox ItemsSource="{Binding FuelSystems}" SelectedItem="{Binding SelectedFuelSystem}"
                       HorizontalAlignment="Stretch" MinHeight="26"
                       FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
                       Visibility="{Binding FuelSystems.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding Intercoolers}" SelectedItem="{Binding SelectedIntercooler}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Intercoolers.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding Restrictors}" SelectedItem="{Binding SelectedRestrictor}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Restrictors.Count, Converter={StaticResource CountVis}}"/>
-        </UniformGrid>
-
-        <TextBlock Text="{l:Loc SectionEngineIgnitionCooling}" Style="{StaticResource SectionHeader}"/>
-        <UniformGrid Columns="6" HorizontalAlignment="Stretch" Margin="0,0,0,6">
             <ComboBox ItemsSource="{Binding Ignitions}" SelectedItem="{Binding SelectedIgnition}"
                       HorizontalAlignment="Stretch" MinHeight="26"
                       FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
                       Visibility="{Binding Ignitions.Count, Converter={StaticResource CountVis}}"/>
+            <ComboBox ItemsSource="{Binding Exhausts}" SelectedItem="{Binding SelectedExhaust}"
+                      HorizontalAlignment="Stretch" MinHeight="26"
+                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
+                      Visibility="{Binding Exhausts.Count, Converter={StaticResource CountVis}}"/>
+            <ComboBox ItemsSource="{Binding Camshafts}" SelectedItem="{Binding SelectedCamshaft}"
+                      HorizontalAlignment="Stretch" MinHeight="26"
+                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
+                      Visibility="{Binding Camshafts.Count, Converter={StaticResource CountVis}}"/>
+            <ComboBox ItemsSource="{Binding Valves}" SelectedItem="{Binding SelectedValves}"
+                      HorizontalAlignment="Stretch" MinHeight="26"
+                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
+                      Visibility="{Binding Valves.Count, Converter={StaticResource CountVis}}"/>
+            <ComboBox ItemsSource="{Binding Displacements}" SelectedItem="{Binding SelectedDisplacement}"
+                      HorizontalAlignment="Stretch" MinHeight="26"
+                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
+                      Visibility="{Binding Displacements.Count, Converter={StaticResource CountVis}}"/>
+            <ComboBox ItemsSource="{Binding Pistons}" SelectedItem="{Binding SelectedPistons}"
+                      HorizontalAlignment="Stretch" MinHeight="26"
+                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
+                      Visibility="{Binding Pistons.Count, Converter={StaticResource CountVis}}"/>
+            <ComboBox ItemsSource="{Binding ForcedInductionLevels}" SelectedItem="{Binding SelectedForcedInductionLevel}"
+                      HorizontalAlignment="Stretch" MinHeight="26"
+                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
+                      Visibility="{Binding ForcedInductionLevels.Count, Converter={StaticResource CountVis}}"/>
+            <ComboBox ItemsSource="{Binding Intercoolers}" SelectedItem="{Binding SelectedIntercooler}"
+                      HorizontalAlignment="Stretch" MinHeight="26"
+                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
+                      Visibility="{Binding Intercoolers.Count, Converter={StaticResource CountVis}}"/>
             <ComboBox ItemsSource="{Binding OilCoolings}" SelectedItem="{Binding SelectedOilCooling}"
                       HorizontalAlignment="Stretch" MinHeight="26"
                       FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
                       Visibility="{Binding OilCoolings.Count, Converter={StaticResource CountVis}}"/>
+            <ComboBox ItemsSource="{Binding Manifolds}" SelectedItem="{Binding SelectedManifold}"
+                      HorizontalAlignment="Stretch" MinHeight="26"
+                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
+                      Visibility="{Binding Manifolds.Count, Converter={StaticResource CountVis}}"/>
+            <ComboBox ItemsSource="{Binding Flywheels}" SelectedItem="{Binding SelectedFlywheel}"
+                      HorizontalAlignment="Stretch" MinHeight="26"
+                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
+                      Visibility="{Binding Flywheels.Count, Converter={StaticResource CountVis}}"/>
+            <ComboBox ItemsSource="{Binding Restrictors}" SelectedItem="{Binding SelectedRestrictor}"
+                      HorizontalAlignment="Stretch" MinHeight="26"
+                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
+                      Visibility="{Binding Restrictors.Count, Converter={StaticResource CountVis}}"/>
         </UniformGrid>
     </StackPanel>
 </UserControl>

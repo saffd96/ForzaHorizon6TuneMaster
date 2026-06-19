@@ -173,22 +173,11 @@ public class PartDisplayNameResolver
                 key = r.IsStock ? "Upgrades_IDS_Name_161" : "Upgrades_IDS_Name_270";
                 break;
             case DbUpgradeTurboSingle ts:
-                {
-                    int stockLevel = GetStockLevel(ts);
-                    if (stockLevel >= 0 && ts.Level - stockLevel >= 4)
-                        key = "Upgrades_IDS_Name_312";
-                    else
-                        key = OffsetLevelKey(ts, 27);
-                }
+                // Tier 4 is the race turbo with anti-lag.
+                key = ts.Level >= 4 ? "Upgrades_IDS_Name_312" : OffsetLevelKey(ts, 27);
                 break;
             case DbUpgradeTurboTwin tt:
-                {
-                    int stockLevel = GetStockLevel(tt);
-                    if (stockLevel >= 0 && tt.Level - stockLevel >= 4)
-                        key = "Upgrades_IDS_Name_313";
-                    else
-                        key = OffsetLevelKey(tt, 236);
-                }
+                key = tt.Level >= 4 ? "Upgrades_IDS_Name_313" : OffsetLevelKey(tt, 236);
                 break;
             case DbUpgradeCSC csc:
                 key = OffsetLevelKey(csc, 35);
@@ -205,11 +194,19 @@ public class PartDisplayNameResolver
                 key = ResolveTireCompoundKey(tc);
                 break;
             case DbUpgradeSpringDamper sd:
-                {
-                    int rank = GetRank(sd);
-                    key = rank is >= 0 and <= 3 ? LevelKey(47, rank) : null;
-                    break;
-                }
+                // Absolute tier: 0 Stock, 1 Street, 2 Sport, 3 Race, 4 Rally, 5 Drift.
+                key = sd.IsStock
+                    ? "Upgrades_IDS_Name_47"
+                    : sd.Level switch
+                    {
+                        1 => "Upgrades_IDS_Name_48",  // Street
+                        2 => "Upgrades_IDS_Name_49",  // Sport
+                        3 => "Upgrades_IDS_Name_50",  // Race
+                        4 => "Upgrades_IDS_Name_272", // Rally
+                        5 => "Upgrades_IDS_Name_278", // Drift
+                        _ => null
+                    };
+                break;
             case DbUpgradeBrakes b:
                 key = OffsetLevelKey(b, 43);
                 break;
@@ -220,36 +217,59 @@ public class PartDisplayNameResolver
                 key = OffsetLevelKey(ar, 244);
                 break;
             case DbUpgradeRearWing w:
-                key = OffsetLevelKey(w, 90);
-                break;
+                {
+                    string? k = OffsetLevelKey(w, 90);
+                    if (k == null) return false;
+                    name = WithManufacturer(T(k), w);
+                    return name != "";
+                }
+
+            // ── Body kits ──────────────────────────────────────────────────
+            // Multiple options share the same tier and differ only by brand, so the
+            // manufacturer name is what disambiguates them in the dropdown.
+            case DbUpgradeFrontBumper fb:
+                {
+                    string? k = OffsetLevelKey(fb, 86);
+                    if (k == null) return false;
+                    name = WithManufacturer(T(k), fb);
+                    return name != "";
+                }
+            case DbUpgradeRearBumper rb:
+                {
+                    string? k = OffsetLevelKey(rb, 94);
+                    if (k == null) return false;
+                    name = WithManufacturer(T(k), rb);
+                    return name != "";
+                }
+            case DbUpgradeSideSkirt ss:
+                {
+                    // Side skirts only have Stock (98) and Street (99) game strings.
+                    string baseName = T(ss.IsStock ? "Upgrades_IDS_Name_98" : "Upgrades_IDS_Name_99");
+                    name = WithManufacturer(baseName, ss);
+                    return name != "";
+                }
 
             // ── Drivetrain parts ───────────────────────────────────────────
+            case DbUpgradeTransmission t when t.IsStock:
+                key = "Upgrades_IDS_Name_55"; // Stock Transmission
+                break;
             case DbUpgradeTransmission t:
-                if (t.Level >= 7)
+                // Map by absolute Level to match the game's Upgrades table (TypeId 15).
+                key = t.Level switch
                 {
-                    key = t.NumGears switch
-                    {
-                        6 => "Upgrades_IDS_Name_293",
-                        7 => "Upgrades_IDS_Name_294",
-                        8 => "Upgrades_IDS_Name_295",
-                        9 => "Upgrades_IDS_Name_296",
-                        10 => "Upgrades_IDS_Name_297",
-                        _ => null
-                    };
-                }
-                else
-                {
-                    key = (t.Level, t.NumGears) switch
-                    {
-                        (0, _) => "Upgrades_IDS_Name_55",
-                        (1, _) => "Upgrades_IDS_Name_55",
-                        (2, _) => "Upgrades_IDS_Name_56",
-                        (3, _) => "Upgrades_IDS_Name_57",
-                        (4, _) => "Upgrades_IDS_Name_58",
-                        (_, 4)  => null, // Drift (Level 5/6) — fall back to PartName
-                        _       => null
-                    };
-                }
+                    0  => "Upgrades_IDS_Name_55",  // Stock Transmission
+                    1  => "Upgrades_IDS_Name_56",  // Street Transmission
+                    2  => "Upgrades_IDS_Name_57",  // Sport Transmission
+                    3  => "Upgrades_IDS_Name_58",  // Race Transmission
+                    4  => "Upgrades_IDS_Name_271", // Rally Transmission
+                    6  => "Upgrades_IDS_Name_293", // Race Transmission: 6 Speed
+                    7  => "Upgrades_IDS_Name_294", // Race Transmission: 7 Speed
+                    8  => "Upgrades_IDS_Name_295", // Race Transmission: 8 Speed
+                    9  => "Upgrades_IDS_Name_296", // Race Transmission: 9 Speed
+                    10 => "Upgrades_IDS_Name_297", // Race Transmission: 10 Speed
+                    11 => "Upgrades_IDS_Name_302", // Drift Transmission: 4 Speed
+                    _  => null
+                };
                 break;
             case DbUpgradeClutch c:
                 key = OffsetLevelKey(c, 59);
@@ -257,16 +277,20 @@ public class PartDisplayNameResolver
             case DbUpgradeDriveline d:
                 key = OffsetLevelKey(d, 67);
                 break;
+            case DbUpgradeDifferential diff when diff.IsStock:
+                key = "Upgrades_IDS_Name_71"; // Stock Diff
+                break;
             case DbUpgradeDifferential diff:
+                // Map by absolute Level to match the game's Upgrades table (TypeId 19).
                 key = diff.Level switch
                 {
-                    1 => "Upgrades_IDS_Name_71",
-                    2 => "Upgrades_IDS_Name_72",
-                    3 => "Upgrades_IDS_Name_73",
-                    4 => "Upgrades_IDS_Name_74",
-                    5 => "Upgrades_IDS_Name_291",
-                    6 => "Upgrades_IDS_Name_292",
-                    7 => "Upgrades_IDS_Name_301",
+                    0 => "Upgrades_IDS_Name_71",  // Stock Diff
+                    1 => "Upgrades_IDS_Name_72",  // Street Diff
+                    2 => "Upgrades_IDS_Name_73",  // Sport Diff
+                    3 => "Upgrades_IDS_Name_74",  // Race Diff
+                    5 => "Upgrades_IDS_Name_291", // Rally Diff
+                    6 => "Upgrades_IDS_Name_292", // Drift Diff
+                    7 => "Upgrades_IDS_Name_301", // Offroad Diff
                     _ => null
                 };
                 break;
@@ -278,18 +302,21 @@ public class PartDisplayNameResolver
             case DbUpgradeChassisStiffness cs:
                 key = OffsetLevelKey(cs, 248);
                 break;
+            // Tire width / rim size: the game's generic "Modified tire width" / "Modified
+            // rim size" strings are identical across every option, so show the actual
+            // dimension instead. That is what disambiguates the choices in the dropdown.
             case DbUpgradeTireWidthFront twf:
-                key = twf.IsStock ? "Upgrades_IDS_Name_84" : "Upgrades_IDS_Name_116";
-                break;
+                name = FormatTireWidth(twf.FrontTireWidth, twf.IsStock);
+                return true;
             case DbUpgradeTireWidthRear twr:
-                key = twr.IsStock ? "Upgrades_IDS_Name_149" : "Upgrades_IDS_Name_151";
-                break;
+                name = FormatTireWidth(twr.RearTireWidth, twr.IsStock);
+                return true;
             case DbUpgradeRimFront rf:
-                key = rf.IsStock ? "Upgrades_IDS_Name_82" : "Upgrades_IDS_Name_120";
-                break;
+                name = FormatRimSize(rf.FrontWheelDiameter, rf.IsStock);
+                return true;
             case DbUpgradeRimRear rr:
-                key = rr.IsStock ? "Upgrades_IDS_Name_257" : "Upgrades_IDS_Name_258";
-                break;
+                name = FormatRimSize(rr.RearWheelDiameter, rr.IsStock);
+                return true;
             case DbUpgradeTireAspectRatioFront tarf:
                 key = tarf.IsStock ? "Upgrades_IDS_Name_304" : "Upgrades_IDS_Name_305";
                 break;
@@ -314,15 +341,19 @@ public class PartDisplayNameResolver
         return name != key;
     }
 
+    // The game stores an *absolute* tier in Level (0 = Stock, 1 = Street, 2 = Sport,
+    // 3 = Race), independent of which tier the car happens to ship with. The stock part
+    // for a given car may already sit at a non-zero tier (e.g. a Sport-grade engine
+    // block), so we must not compute the tier relative to the stock entry — that shifts
+    // every label down. The only special case is the stock entry itself, which the game
+    // always presents as "Stock <category>" regardless of its physical tier.
     private string? OffsetLevelKey(DbUpgradePart part, int baseId, int raceId = -1)
     {
-        int stockLevel = GetStockLevel(part);
-        if (stockLevel < 0) return null;
-        int offset = part.Level - stockLevel;
-        if (offset < 0 || offset > 3) return null;
-        if (raceId > 0 && offset == 3)
+        int tier = part.IsStock ? 0 : part.Level;
+        if (tier < 0 || tier > 3) return null;
+        if (raceId > 0 && tier == 3)
             return $"Upgrades_IDS_Name_{raceId}";
-        return LevelKey(baseId, offset);
+        return LevelKey(baseId, tier);
     }
 
     private int GetStockLevel(DbUpgradePart part)
@@ -340,10 +371,9 @@ public class PartDisplayNameResolver
         if (engine?.Diesel == true)
         {
             // Diesel only has Stock/Street/Sport fuel system strings (212-214).
-            int stockLevel = GetStockLevel(fs);
-            int offset = fs.Level - stockLevel;
-            if (offset is >= 0 and <= 2)
-                return LevelKey(212, offset);
+            int tier = fs.IsStock ? 0 : fs.Level;
+            if (tier is >= 0 and <= 2)
+                return LevelKey(212, tier);
             return null;
         }
         if (engine?.Carbureted == true)
@@ -367,6 +397,29 @@ public class PartDisplayNameResolver
         if (string.IsNullOrEmpty(tc.TireModelName)) return null;
         string root = NormalizeTireModelName(tc.TireModelName);
         return TireCompoundNameIds.TryGetValue(root, out var key) ? key : null;
+    }
+
+    // Appends the manufacturer brand to a part name, so options that share a tier
+    // (e.g. several street front bumpers) are distinguishable. Stock parts and the
+    // generic "Stock" manufacturer (id 0/1) keep their plain tier name.
+    private static string WithManufacturer(string baseName, DbUpgradePart part)
+    {
+        if (part.IsStock || part.ManufacturerID <= 1) return baseName;
+        string m = T($"List_PartManufacturer_IDS_PartManufacturer_{part.ManufacturerID}");
+        if (string.IsNullOrEmpty(m) || m.StartsWith("List_PartManufacturer")) return baseName;
+        return $"{baseName} ({m})";
+    }
+
+    private static string FormatTireWidth(int widthMm, bool isStock)
+    {
+        string s = $"{widthMm} {T("UnitMm")}";
+        return isStock ? $"{s} ({T("Part_Stock")})" : s;
+    }
+
+    private static string FormatRimSize(int diameterIn, bool isStock)
+    {
+        string s = $"R{diameterIn}";
+        return isStock ? $"{s} ({T("Part_Stock")})" : s;
     }
 
     private static string? LevelKey(int baseId, int offset)

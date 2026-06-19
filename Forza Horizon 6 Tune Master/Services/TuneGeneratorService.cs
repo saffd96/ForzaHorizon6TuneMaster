@@ -39,7 +39,7 @@ public class TuneGeneratorService
         DifferentialCalculator.CalculateDifferential(car, track, parts, db, r, ex);
         GearingCalculator.CalculateGearing(car, track, parts, db, r, ex, effectiveMaxKmh);
         if (track.Discipline == Discipline.Drag)
-            LaunchControlCalculator.CalculateLaunchControl(car, track, r);
+            LaunchControlCalculator.CalculateLaunchControl(car, track, parts, db, r);
 
         GearingCalculator.PostValidateAndRecalculate(car, track, parts, db, r, ex, ref effectiveMaxKmh);
 

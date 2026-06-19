@@ -86,8 +86,10 @@ public class CountToVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
+        // Hide dropdowns that offer nothing to choose: an empty list, or one that
+        // contains only the single stock option (no upgrades available for this car).
         if (value is int count)
-            return count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            return count > 1 ? Visibility.Visible : Visibility.Collapsed;
         return Visibility.Visible;
     }
 
@@ -129,14 +131,14 @@ public class UnitValueConverter : IMultiValueConverter
         if (v1 == DependencyProperty.UnsetValue)
             v1 = UnitSystem.Metric;
         bool imp = v1 is UnitSystem us ? us == UnitSystem.Imperial : v1 is bool b && b;
-        SpringUnit su = v1 is SpringUnit sv ? sv : SpringUnit.KgfMm;
+        SpringUnit su = v1 is SpringUnit sv ? sv : SpringUnit.NMm;
         PowerUnit  pu = v1 is PowerUnit  pv ? pv : PowerUnit.HP;
 
         var loc = LocalizationService.Instance;
         return (parameter as string) switch
         {
             "pressure" => imp ? $"{val * 14.504:F1} {loc.T("UnitPsi")}"      : $"{val:F2} {loc.T("UnitBar")}",
-            "spring"   => su == SpringUnit.KgfMm   ? $"{val / 9.807:F2} {loc.T("UnitKgfMm")}"
+            "spring"   => su == SpringUnit.KgfMm   ? $"{val / 9.807 * 10.0:F2} {loc.T("UnitKgfMm")}"
                         : su == SpringUnit.LbsIn  ? $"{val * 5.710:F1} {loc.T("UnitLbsInch")}"
                         :                           $"{val:F1} {loc.T("UnitNmm")}",
             "height"   => imp ? $"{val / 25.4:F2}{loc.T("UnitInch")}" : $"{val:F0} {loc.T("UnitMm")}",

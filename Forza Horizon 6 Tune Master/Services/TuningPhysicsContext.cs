@@ -159,13 +159,11 @@ internal static class TuningPhysicsContext
         }
         else flyMI = stockFlyMI;
 
-        // Current forced-induction inertia
-        double fiMI = 0;
-        if (parts.ForcedInductionPartId.HasValue)
-        {
-            var fi = db.GetForcedInductionById(parts.ForcedInductionPartId.Value) as DbUpgradeForcedInduction;
-            if (fi != null) fiMI = fi.MomentInertia;
-        }
+        // NOTE: forced-induction rotational inertia is deliberately excluded here. This
+        // factor scales the whole torque/power curve, and a turbo's spool inertia is a lag
+        // characteristic — it must not cut PEAK power. Including it made adding a turbo to a
+        // naturally-aspirated engine drop the factor to its 0.7 floor and lose ~30% power,
+        // cancelling the boost. The boost itself is modelled in PowerCalculator.
 
         // Current driveline inertia
         double drivelineMI = 0;
@@ -176,7 +174,7 @@ internal static class TuningPhysicsContext
         }
         else drivelineMI = stockDrivelineMI;
 
-        double currentTotal = engineMI + flyMI + fiMI + drivelineMI;
+        double currentTotal = engineMI + flyMI + drivelineMI;
         if (currentTotal <= 0) return 1.0;
 
         return Math.Clamp(stockTotal / currentTotal, 0.7, 1.3);
@@ -222,8 +220,9 @@ internal static class TuningPhysicsContext
         double levelMul = race ? 1.0 : sport ? 0.75 : 0.55;
         double minRide = 0.080;
         double maxRide = 0.180;
-        double minSpring = 4.0 * levelMul;
-        double maxSpring = 90.0 * levelMul;
+        // Spring rates are in N/mm, matching the real DB (adjustable race ≈ 40-200 N/mm).
+        double minSpring = 30.0 * levelMul;
+        double maxSpring = 220.0 * levelMul;
         double defSpring = (minSpring + maxSpring) / 2.0;
         double defRebound = race ? 12.0 : sport ? 10.0 : 8.0;
         double defBump = race ? 7.5 : sport ? 6.0 : 5.0;

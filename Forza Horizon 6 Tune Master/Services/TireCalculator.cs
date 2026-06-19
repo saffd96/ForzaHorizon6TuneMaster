@@ -8,10 +8,10 @@ internal static class TireCalculator
 {
     private const double PsiToBar = 0.0689476;
 
-    public static void CalculateTirePressure(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex) =>
-        CalculateTirePressure(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex);
+    public static void CalculateTirePressure(CarCard car, TrackInfo track, TuningConstraints c, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateTirePressure(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, c);
 
-    public static void CalculateTirePressure(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex)
+    public static void CalculateTirePressure(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, TuningConstraints? constraints = null)
     {
         var compound = TuningPhysicsContext.TireCompound(car, parts, db);
         var baseCompound = compound != null ? db.GetTireCompound(compound.TireCompoundID) : null;
@@ -102,9 +102,12 @@ internal static class TireCalculator
         barF += seasonPressAdj;
         barR += seasonPressAdj;
 
-        const double tpMin = 1.0, tpMax = 3.5;
-        r.TirePressureFront = Math.Round(CalculationHelpers.Clamp(barF, tpMin, tpMax), 2);
-        r.TirePressureRear  = Math.Round(CalculationHelpers.Clamp(barR, tpMin, tpMax), 2);
+        double tpMinF = constraints?.TirePressureFrontMin ?? 1.0;
+        double tpMaxF = constraints?.TirePressureFrontMax ?? 5.0;
+        double tpMinR = constraints?.TirePressureRearMin  ?? 0.5;
+        double tpMaxR = constraints?.TirePressureRearMax  ?? 5.0;
+        r.TirePressureFront = Math.Round(CalculationHelpers.Clamp(barF, tpMinF, tpMaxF), 2);
+        r.TirePressureRear  = Math.Round(CalculationHelpers.Clamp(barR, tpMinR, tpMaxR), 2);
         ex["TirePressure"] = string.Format(CalculationHelpers.L("Expl_TirePressure_Fmt"), r.TirePressureFront, r.TirePressureRear, reason);
     }
 }

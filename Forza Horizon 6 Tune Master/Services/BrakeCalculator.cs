@@ -93,8 +93,10 @@ internal static class BrakeCalculator
             };
         }
 
-        // Pressure: base 100 scaled by brake friction (race brakes need less pedal effort)
-        // and by mass (heavier cars need more torque).
+        // Pressure: in-game brake pressure defaults to 100% and a firm race tune sits a bit
+        // above that. Base 125 keeps the typical car around 110-130%. Brake friction only
+        // mildly reduces the needed pedal effort (sqrt, not full division — full division
+        // pushed race brakes well under 100% which is too soft), and heavier cars need more.
         double frictionScale = brakes.GameFrictionScaleBraking > 0.1 ? brakes.GameFrictionScaleBraking : 1.0;
         double massRef = 1500.0;
         double massFactor = Math.Pow(car.TotalMass / massRef, 0.55);
@@ -102,19 +104,26 @@ internal static class BrakeCalculator
         // Faster cars / longer straights can use a touch more pressure for repeatability.
         double speedFactor = 1.0 + Math.Max(0, effectiveMaxKmh - 200.0) / 400.0 * 0.10;
 
-        // BrakeTorqueSlider: higher torque = stronger brakes = less pressure needed.
-        double torqueSliderFactor = brakes.BrakeTorqueSlider > 0.01 ? 1.0 / brakes.BrakeTorqueSlider : 1.0;
+        // BrakeTorqueSlider is the in-game brake-torque slider; its neutral/default position
+        // is 0.5 (= 100% torque), so normalise against 0.5 rather than inverting it directly.
+        // A raw 1.0/slider treated 0.5 as a 2x multiplier and inflated every car's pressure
+        // toward the 200 cap. Normalised, the common 0.5 value yields a neutral factor of 1.
+        double torqueSliderFactor = brakes.BrakeTorqueSlider > 0.01 ? 0.5 / brakes.BrakeTorqueSlider : 1.0;
 
-        double pressure = 100.0 / frictionScale * massFactor * speedFactor * torqueSliderFactor;
+        double pressure = 125.0 / Math.Sqrt(frictionScale) * massFactor * speedFactor * torqueSliderFactor;
 
-        // Dynamic balance limits from the brake's physical torque capacity.
+        // Dynamic balance limits from the brake's physical torque capacity. The torque clamps
+        // are symmetric (250/250) for almost every car, so a tight +/-2 window around the
+        // front-torque share collapsed the whole band to ~48-52% and erased the weight- and
+        // drivetrain-based bias above. Use a generous half-width so the band only narrows for
+        // genuinely lopsided hardware while leaving the normal 30-70 range intact.
         double balanceMin = 30.0, balanceMax = 70.0;
         if (brakes.FrontBrakeTorqueClamp > 0 && brakes.RearBrakeTorqueClamp > 0)
         {
             double totalClamp = brakes.FrontBrakeTorqueClamp + brakes.RearBrakeTorqueClamp;
             double frontRatio = brakes.FrontBrakeTorqueClamp / totalClamp * 100.0;
-            balanceMax = CalculationHelpers.Clamp(frontRatio + 2.0, 30.0, 70.0);
-            balanceMin = CalculationHelpers.Clamp(100.0 - frontRatio - 2.0, 30.0, 70.0);
+            balanceMax = CalculationHelpers.Clamp(frontRatio + 20.0, 30.0, 70.0);
+            balanceMin = CalculationHelpers.Clamp(100.0 - frontRatio - 20.0, 30.0, 70.0);
         }
 
         const double pressureMin = 50.0, pressureMax = 200.0;

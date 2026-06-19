@@ -6,8 +6,10 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 internal static class SuspensionCalculator
 {
-    // Spring rates in the DB are stored as kgf/mm; the game display uses the same unit.
-    private const double KgfMmToNmm = 9.807;
+    // Spring rates in the DB (MinSpringRate / DefSpringRate / MaxSpringRate) are stored in
+    // N/mm — the same unit the tune result and the constraints use internally. Earlier code
+    // mistook them for kgf/mm and multiplied by 9.807, inflating every spring ~9.8x and
+    // pinning the result to the minimum. No spring-rate unit conversion is needed here.
     private const double MmToM = 0.001;
 
     public static void CalculateARB(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex) =>
@@ -132,11 +134,8 @@ internal static class SuspensionCalculator
         hzF *= seasonMul;
         hzR *= seasonMul;
 
-        double springF_kgfmm = SpringFromHz(hzF, massF, frontPhys);
-        double springR_kgfmm = SpringFromHz(hzR, massR, rearPhys);
-
-        double springF_nmm = springF_kgfmm * KgfMmToNmm;
-        double springR_nmm = springR_kgfmm * KgfMmToNmm;
+        double springF_nmm = SpringFromHz(hzF, massF, frontPhys);
+        double springR_nmm = SpringFromHz(hzR, massR, rearPhys);
 
         // Clamp to the user's adjustable constraints.
         springF_nmm = CalculationHelpers.Clamp(springF_nmm, c.SpringFrontMin, c.SpringFrontMax);
@@ -240,8 +239,9 @@ internal static class SuspensionCalculator
         double massF = car.TotalMass * wdF / 2.0;
         double massR = car.TotalMass * (1.0 - wdF) / 2.0;
 
-        double springF_Nm = r.SpringFront > 0 ? r.SpringFront * 1000.0 : frontPhys.DefSpringRate * KgfMmToNmm * 1000.0;
-        double springR_Nm = r.SpringRear  > 0 ? r.SpringRear  * 1000.0 : rearPhys.DefSpringRate  * KgfMmToNmm * 1000.0;
+        // Spring rates are N/mm; *1000 -> N/m for the critical-damping math.
+        double springF_Nm = r.SpringFront > 0 ? r.SpringFront * 1000.0 : frontPhys.DefSpringRate * 1000.0;
+        double springR_Nm = r.SpringRear  > 0 ? r.SpringRear  * 1000.0 : rearPhys.DefSpringRate  * 1000.0;
 
         double dampingRatio = track.Discipline switch
         {
@@ -316,10 +316,10 @@ internal static class SuspensionCalculator
         double rhFracF = (r.RideHeightFront - rhMinF) / Math.Max(1.0, rhMaxF - rhMinF);
         double rhFracR = (r.RideHeightRear  - rhMinR) / Math.Max(1.0, rhMaxR - rhMinR);
 
-        double sprMinF = frontPhys.MinSpringRate * KgfMmToNmm;
-        double sprMaxF = frontPhys.MaxSpringRate * KgfMmToNmm;
-        double sprMinR = rearPhys.MinSpringRate * KgfMmToNmm;
-        double sprMaxR = rearPhys.MaxSpringRate * KgfMmToNmm;
+        double sprMinF = frontPhys.MinSpringRate;
+        double sprMaxF = frontPhys.MaxSpringRate;
+        double sprMinR = rearPhys.MinSpringRate;
+        double sprMaxR = rearPhys.MaxSpringRate;
 
         double sprFracF = (r.SpringFront - sprMinF) / Math.Max(1.0, sprMaxF - sprMinF);
         double sprFracR = (r.SpringRear  - sprMinR) / Math.Max(1.0, sprMaxR - sprMinR);
@@ -349,10 +349,10 @@ internal static class SuspensionCalculator
 
     private static double SpringFromHz(double hz, double cornerMassKg, DbSpringDamperPhysics phys)
     {
-        // k [N/m] = (2*pi*f)^2 * m
+        // k [N/m] = (2*pi*f)^2 * m, converted to N/mm (the DB / tune unit) by /1000.
         double kNpm = Math.Pow(2.0 * Math.PI * hz, 2.0) * cornerMassKg;
-        double kgfmm = kNpm / 1000.0 / 9.807;
-        return CalculationHelpers.Clamp(kgfmm, phys.MinSpringRate, phys.MaxSpringRate);
+        double kNmm = kNpm / 1000.0;
+        return CalculationHelpers.Clamp(kNmm, phys.MinSpringRate, phys.MaxSpringRate);
     }
 
     private static double DampingFromSpringAndMass(double springNm, double cornerMassKg, DbSpringDamperPhysics phys, double dampingRatio, bool rebound)
@@ -361,12 +361,10 @@ internal static class SuspensionCalculator
         double cc = 2.0 * Math.Sqrt(springNm * cornerMassKg);
         double desiredForce = dampingRatio * cc;
 
-        // Derive a game-unit scale from the physics default values: at the default spring
-        // and an estimated default corner mass the default damper should represent a
-        // reference damping ratio (0.65 for rebound, 0.40 for bump).
-        double defaultSpringNm = phys.DefSpringRate * 9.807 * 1000.0;
-        double defaultMass = 350.0; // representative unsprung corner mass reference
-        double defaultCc = defaultSpringNm > 0 ? 2.0 * Math.Sqrt(defaultSpringNm * defaultMass) : 1.0;
+        // Derive a game-unit scale: at the default spring and the same corner mass the
+        // default damper represents a reference damping ratio (0.65 rebound, 0.40 bump).
+        double defaultSpringNm = phys.DefSpringRate * 1000.0;
+        double defaultCc = defaultSpringNm > 0 ? 2.0 * Math.Sqrt(defaultSpringNm * cornerMassKg) : 1.0;
         double referenceRatio = rebound ? 0.65 : 0.40;
         double referenceValue = rebound ? phys.DefDampenReboundRate : phys.DefDampenBumpRate;
         double unitsPerNs = referenceValue / (referenceRatio * defaultCc);

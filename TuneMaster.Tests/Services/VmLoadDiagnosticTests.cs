@@ -89,15 +89,19 @@ public class VmLoadDiagnosticTests
         var parts = new SelectedParts();
         parts.SetCarData(car);
 
+        // Drivetrain swap selector now lives in SwapsViewModel (top Swaps section).
+        var swapsVm = new SwapsViewModel();
+        swapsVm.LoadForCar(car, parts);
+
         var vm = new TransmissionViewModel();
         vm.LoadForCar(car, parts);
 
-        Assert.True(vm.DrivetrainSwaps.Count > 1, $"Expected drivetrain swaps for car {car.CarDbId}, got {vm.DrivetrainSwaps.Count}");
+        Assert.True(swapsVm.DrivetrainSwaps.Count > 1, $"Expected drivetrain swaps for car {car.CarDbId}, got {swapsVm.DrivetrainSwaps.Count}");
         Assert.NotNull(parts.DrivetrainSwapPartId);
         var oldTransmissionId = parts.TransmissionPartId;
         var oldDifferentialId = parts.DifferentialPartId;
 
-        var rwdSwap = vm.DrivetrainSwaps.Select(o => Fh6DatabaseService.Instance.GetDrivetrainSwapById(o.Id))
+        var rwdSwap = swapsVm.DrivetrainSwaps.Select(o => Fh6DatabaseService.Instance.GetDrivetrainSwapById(o.Id))
             .FirstOrDefault(s => s != null && s.DriveTypeID == 1); // RWD
         if (rwdSwap != null)
         {

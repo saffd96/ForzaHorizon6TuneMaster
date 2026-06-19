@@ -29,6 +29,10 @@ public class EnginePartsViewModel : INotifyPropertyChanged
     public ObservableCollection<PartOption> OilCoolings { get; } = new();
     public ObservableCollection<PartOption> Restrictors { get; } = new();
     public ObservableCollection<PartOption> Intercoolers { get; } = new();
+    // Forced-induction LEVEL lives in the engine module; the TYPE is chosen in the swaps
+    // module (SwapsViewModel). The level list is rebuilt from the DB whenever the type
+    // (and thus ForcedInductionPartId) changes — see ReloadForcedInductionLevels.
+    public ObservableCollection<PartOption> ForcedInductionLevels { get; } = new();
 
     public PartOption? SelectedCamshaft     { get => Pick(_parts.CamshaftPartId, Camshafts);     set { if (value != null) _parts.CamshaftPartId = value.Id; } }
     public PartOption? SelectedDisplacement { get => Pick(_parts.DisplacementPartId, Displacements); set { if (value != null) _parts.DisplacementPartId = value.Id; } }
@@ -43,6 +47,18 @@ public class EnginePartsViewModel : INotifyPropertyChanged
     public PartOption? SelectedOilCooling   { get => Pick(_parts.OilCoolingPartId, OilCoolings); set { if (value != null) _parts.OilCoolingPartId = value.Id; } }
     public PartOption? SelectedRestrictor   { get => Pick(_parts.RestrictorPartId, Restrictors); set { if (value != null) _parts.RestrictorPartId = value.Id; } }
     public PartOption? SelectedIntercooler  { get => Pick(_parts.IntercoolerPartId, Intercoolers); set { if (value != null) _parts.IntercoolerPartId = value.Id; } }
+    public PartOption? SelectedForcedInductionLevel
+    {
+        get => ForcedInductionLevels.FirstOrDefault(o => o.Id == _parts.ForcedInductionPartId);
+        set { if (value != null) _parts.ForcedInductionPartId = value.Id; }
+    }
+
+    // Called from MainViewModel when forced induction changes (e.g. type picked in swaps).
+    public void ReloadForcedInductionLevels()
+    {
+        RebuildFiLevels();
+        OnPropertyChanged(nameof(SelectedForcedInductionLevel));
+    }
 
     public void LoadForCar(CarCard car, SelectedParts parts)
     {
@@ -128,13 +144,22 @@ public class EnginePartsViewModel : INotifyPropertyChanged
         Populate(OilCoolings,   _db.GetOilCooling(engineId));
         Populate(Restrictors,   _db.GetRestrictors(engineId));
         LoadIntercoolers(engineId);
+        RebuildFiLevels();
         RefreshSelections();
     }
 
     private void LoadIntercoolers(int engineId)
     {
         if (_parts.ForcedInductionPartId.HasValue)
-            Populate(Intercoolers, _db.GetIntercoolers(engineId));
+        {
+            var intercoolers = _db.GetIntercoolers(engineId);
+            Populate(Intercoolers, intercoolers);
+            // With forced induction installed the intercooler row becomes available; default
+            // it to the stock part (the "no upgraded intercooler" option) so the selection is
+            // never left empty when a turbo/supercharger is picked.
+            if (_parts.IntercoolerPartId == null || intercoolers.All(p => p.Id != _parts.IntercoolerPartId))
+                _parts.IntercoolerPartId = PickStock(intercoolers)?.Id;
+        }
         else
         {
             Intercoolers.Clear();
@@ -157,6 +182,35 @@ public class EnginePartsViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedOilCooling));
         OnPropertyChanged(nameof(SelectedRestrictor));
         OnPropertyChanged(nameof(SelectedIntercooler));
+        OnPropertyChanged(nameof(SelectedForcedInductionLevel));
+    }
+
+    private void RebuildFiLevels()
+    {
+        ForcedInductionLevels.Clear();
+        FiKind kind = _parts.ForcedInductionPartId.HasValue
+            ? _db.GetForcedInductionById(_parts.ForcedInductionPartId.Value) switch
+            {
+                DbUpgradeTurboSingle => FiKind.SingleTurbo,
+                DbUpgradeTurboTwin   => FiKind.TwinTurbo,
+                DbUpgradeCSC         => FiKind.Centrifugal,
+                DbUpgradeDSC         => FiKind.PositiveDisplacement,
+                _                    => FiKind.None
+            }
+            : FiKind.None;
+        if (kind == FiKind.None) return;
+
+        int engineId = _parts.EngineId ?? 0;
+        System.Collections.Generic.List<DbUpgradePart> parts = kind switch
+        {
+            FiKind.SingleTurbo          => _db.GetTurbosSingle(engineId).Cast<DbUpgradePart>().ToList(),
+            FiKind.TwinTurbo            => _db.GetTurbosTwin(engineId).Cast<DbUpgradePart>().ToList(),
+            FiKind.Centrifugal          => _db.GetCSC(engineId).Cast<DbUpgradePart>().ToList(),
+            FiKind.PositiveDisplacement => _db.GetDSC(engineId).Cast<DbUpgradePart>().ToList(),
+            _                           => new System.Collections.Generic.List<DbUpgradePart>()
+        };
+        foreach (var o in _resolver.ToOptions(parts, _makeId))
+            ForcedInductionLevels.Add(o);
     }
 
     private void Populate<T>(ObservableCollection<PartOption> target, System.Collections.Generic.List<T> source) where T : DbUpgradePart

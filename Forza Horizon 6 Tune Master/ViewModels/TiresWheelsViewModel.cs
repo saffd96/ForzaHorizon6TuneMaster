@@ -23,6 +23,7 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
     public ObservableCollection<PartOption> TireAspectRatiosRear { get; } = new();
     public ObservableCollection<PartOption> RimsFront { get; } = new();
     public ObservableCollection<PartOption> RimsRear { get; } = new();
+    public ObservableCollection<RimMassOption> RimStyles { get; } = new();
     public ObservableCollection<PartOption> TrackSpacingsFront { get; } = new();
     public ObservableCollection<PartOption> TrackSpacingsRear { get; } = new();
 
@@ -33,6 +34,18 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
     public PartOption? SelectedTireAspectRatioRear  { get => Pick(_parts.TireAspectRatioRearPartId, TireAspectRatiosRear);   set { if (value != null) _parts.TireAspectRatioRearPartId = value.Id; } }
     public PartOption? SelectedRimFront             { get => Pick(_parts.RimFrontPartId, RimsFront);                 set { if (value != null) _parts.RimFrontPartId = value.Id; } }
     public PartOption? SelectedRimRear              { get => Pick(_parts.RimRearPartId, RimsRear);                   set { if (value != null) _parts.RimRearPartId = value.Id; } }
+
+    public RimMassOption? SelectedRimStyle
+    {
+        get => _parts.RimMass.HasValue
+            ? RimStyles.FirstOrDefault(o => !o.IsStock && System.Math.Abs(o.Mass - _parts.RimMass.Value) < 0.001)
+            : RimStyles.FirstOrDefault(o => o.IsStock);
+        set
+        {
+            if (value == null) return;
+            _parts.RimMass = value.IsStock ? (double?)null : value.Mass;
+        }
+    }
     public PartOption? SelectedTrackSpacingFront    { get => Pick(_parts.TrackSpacingFrontPartId, TrackSpacingsFront); set { if (value != null) _parts.TrackSpacingFrontPartId = value.Id; } }
     public PartOption? SelectedTrackSpacingRear     { get => Pick(_parts.TrackSpacingRearPartId, TrackSpacingsRear);   set { if (value != null) _parts.TrackSpacingRearPartId = value.Id; } }
 
@@ -63,7 +76,26 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
         Populate(RimsRear,              _db.GetRimsRear(ordinal));
         Populate(TrackSpacingsFront,    _db.GetTrackSpacingsFront(carBodyId));
         Populate(TrackSpacingsRear,     _db.GetTrackSpacingsRear(carBodyId));
+        BuildRimStyles();
         RefreshSelections();
+    }
+
+    private void BuildRimStyles()
+    {
+        RimStyles.Clear();
+        double stock = _parts.StockRimMass;
+        if (stock <= 0) return; // no stock rim mass known for this car
+
+        string kg = LocalizationService.Instance.T("UnitKg");
+        if (kg == "UnitKg") kg = "кг";
+        string stockTag = LocalizationService.Instance.T("Part_Stock");
+
+        RimStyles.Add(new RimMassOption { Mass = stock, IsStock = true, DisplayName = $"{stock:0.#} {kg} ({stockTag})" });
+        foreach (var m in _db.GetWheelMassOptions())
+        {
+            if (System.Math.Abs(m - stock) < 0.001) continue; // skip duplicate of stock mass
+            RimStyles.Add(new RimMassOption { Mass = m, DisplayName = $"{m:0.#} {kg}" });
+        }
     }
 
     private void RefreshSelections()
@@ -75,6 +107,7 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedTireAspectRatioRear));
         OnPropertyChanged(nameof(SelectedRimFront));
         OnPropertyChanged(nameof(SelectedRimRear));
+        OnPropertyChanged(nameof(SelectedRimStyle));
         OnPropertyChanged(nameof(SelectedTrackSpacingFront));
         OnPropertyChanged(nameof(SelectedTrackSpacingRear));
     }

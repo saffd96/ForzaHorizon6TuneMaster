@@ -51,6 +51,15 @@ public class Fh6DatabaseService
     private readonly ConcurrentDictionary<int, List<DbUpgradeAntiSwayFront>> _antiSwayFrontByOrdinal = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeAntiSwayRear>> _antiSwayRearByOrdinal = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeRearWing>> _rearWingsByOrdinal = new();
+    private readonly ConcurrentDictionary<int, List<DbUpgradeFrontBumper>> _frontBumpersByCarBodyId = new();
+    private readonly ConcurrentDictionary<int, List<DbUpgradeRearBumper>> _rearBumpersByCarBodyId = new();
+    private readonly ConcurrentDictionary<int, List<DbUpgradeSideSkirt>> _sideSkirtsByCarBodyId = new();
+    // Rim "appearance" reduces to rim mass: stock mass per car (by MediaName) and the
+    // distinct aftermarket wheel masses available in the catalog. ConcurrentDictionary
+    // because InitializeAsync can run from several threads (parallel tests) before the
+    // _initialized guard is set — a plain Dictionary corrupts under concurrent writes.
+    private readonly ConcurrentDictionary<string, double> _stockWheelMassByMedia = new();
+    private volatile List<double> _wheelMassOptions = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeWeightReduction>> _weightReductionsByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeChassisStiffness>> _chassisStiffnessByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeTireWidthFront>> _tireWidthsFrontByCarBodyId = new();
@@ -64,30 +73,41 @@ public class Fh6DatabaseService
     private readonly ConcurrentDictionary<int, List<DbUpgradeMotorSwap>> _motorSwapsByOrdinal = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeMotorPart>> _motorPartsByMotorId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeDrivetrain>> _drivetrainsByOrdinal = new();
-    private readonly Dictionary<string, DbUpgradePartInfo> _upgradePartInfoByTableName = new();
+    // ConcurrentDictionary: InitializeAsync can run from several threads before the
+    // _initialized guard is set; a plain Dictionary corrupts under concurrent writes.
+    private readonly ConcurrentDictionary<string, DbUpgradePartInfo> _upgradePartInfoByTableName = new();
 
     // CarPartNames lookup: (PartsString, Level) → OptionalName1
     private readonly ConcurrentDictionary<(string PartsString, int Level), string> _carPartNames = new();
 
     private volatile bool _initialized;
+    private static readonly object _initLock = new();
 
     public async Task InitializeAsync()
     {
         if (_initialized) return;
 
-        try
+        // Double-checked lock: several callers (app startup, parallel tests) may invoke this
+        // at once. The bare _initialized check is not atomic, so without this guard multiple
+        // threads ran LoadAllTables concurrently and corrupted the lookup collections.
+        lock (_initLock)
         {
-            Batteries_V2.Init();
-            byte[] dbBytes = LoadEmbeddedDb();
-            using var conn = OpenEmbeddedDb(dbBytes);
-            LoadAllTables(conn);
+            if (_initialized) return;
 
-            _initialized = true;
-        }
-        catch (Exception ex)
-        {
-            System.Windows.MessageBox.Show($"Ошибка загрузки БД: {ex.Message}\n\n{ex.StackTrace}",
-                "Ошибка инициализации", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            try
+            {
+                Batteries_V2.Init();
+                byte[] dbBytes = LoadEmbeddedDb();
+                using var conn = OpenEmbeddedDb(dbBytes);
+                LoadAllTables(conn);
+
+                _initialized = true;
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Ошибка загрузки БД: {ex.Message}\n\n{ex.StackTrace}",
+                    "Ошибка инициализации", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
 
         await Task.CompletedTask;
@@ -156,6 +176,9 @@ public class Fh6DatabaseService
         LoadAntiSwayFront(conn);
         LoadAntiSwayRear(conn);
         LoadRearWings(conn);
+        LoadFrontBumpers(conn);
+        LoadRearBumpers(conn);
+        LoadSideSkirts(conn);
         LoadWeightReductions(conn);
         LoadChassisStiffness(conn);
         LoadTireWidthsFront(conn);
@@ -168,8 +191,29 @@ public class Fh6DatabaseService
         LoadTrackSpacingsRear(conn);
         LoadMotorSwaps(conn);
         LoadMotorParts(conn);
+        LoadWheels(conn);
         LoadCarPartNames(conn);
     }
+
+    private void LoadWheels(SqliteConnection conn)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT MediaName,Mass,IsStock FROM List_Wheels";
+        using var r = cmd.ExecuteReader();
+        var masses = new SortedSet<double>();
+        while (r.Read())
+        {
+            string media = S(r, 0); double mass = D(r, 1); bool stock = B(r, 2);
+            if (stock) { if (!string.IsNullOrEmpty(media)) _stockWheelMassByMedia[media] = mass; }
+            else if (mass > 0) masses.Add(mass);
+        }
+        _wheelMassOptions = masses.ToList();
+    }
+
+    public double? GetStockWheelMass(string? mediaName) =>
+        !string.IsNullOrEmpty(mediaName) && _stockWheelMassByMedia.TryGetValue(mediaName, out var m) ? m : null;
+
+    public IReadOnlyList<double> GetWheelMassOptions() => _wheelMassOptions;
 
     private static T Read<T>(SqliteDataReader r, int i) =>
         r.IsDBNull(i) ? default! : (T)r.GetValue(i);
@@ -1016,6 +1060,59 @@ public class Fh6DatabaseService
         }
     }
 
+    private void LoadFrontBumpers(SqliteConnection conn)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Id,CarBodyID,Level,IsStock,ManufacturerId,MassDiff," +
+            "DragScale,WindInstabilityScale,Price,AeroPhysicsID FROM List_UpgradeCarBodyFrontBumper";
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            AddToGroupedDict(_frontBumpersByCarBodyId, I(r, 1), new DbUpgradeFrontBumper
+            {
+                Id = I(r, 0), CarBodyId = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
+                ManufacturerID = I(r, 4), MassDiff = D(r, 5), DragScale = D(r, 6),
+                WindInstabilityScale = D(r, 7), Price = I(r, 8), AeroPhysicsID = I(r, 9)
+            });
+        }
+    }
+
+    private void LoadRearBumpers(SqliteConnection conn)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Id,CarBodyID,Level,IsStock,ManufacturerId,MassDiff," +
+            "DragScale,WindInstabilityScale,Price,BodyAeroForwardDownforceFront," +
+            "BodyAeroForwardDownforceRear FROM List_UpgradeCarBodyRearBumper";
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            AddToGroupedDict(_rearBumpersByCarBodyId, I(r, 1), new DbUpgradeRearBumper
+            {
+                Id = I(r, 0), CarBodyId = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
+                ManufacturerID = I(r, 4), MassDiff = D(r, 5), DragScale = D(r, 6),
+                WindInstabilityScale = D(r, 7), Price = I(r, 8),
+                BodyAeroForwardDownforceFront = D(r, 9), BodyAeroForwardDownforceRear = D(r, 10)
+            });
+        }
+    }
+
+    private void LoadSideSkirts(SqliteConnection conn)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Id,CarBodyID,Level,IsStock,ManufacturerId,MassDiff," +
+            "DragScale,WindInstabilityScale,Price FROM List_UpgradeCarBodySideSkirt";
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            AddToGroupedDict(_sideSkirtsByCarBodyId, I(r, 1), new DbUpgradeSideSkirt
+            {
+                Id = I(r, 0), CarBodyId = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
+                ManufacturerID = I(r, 4), MassDiff = D(r, 5), DragScale = D(r, 6),
+                WindInstabilityScale = D(r, 7), Price = I(r, 8)
+            });
+        }
+    }
+
     private void LoadWeightReductions(SqliteConnection conn)
     {
         using var cmd = conn.CreateCommand();
@@ -1317,6 +1414,12 @@ public class Fh6DatabaseService
         _antiSwayRearByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
     public List<DbUpgradeRearWing> GetRearWings(int ordinal) =>
         _rearWingsByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    public List<DbUpgradeFrontBumper> GetFrontBumpers(int carBodyId) =>
+        _frontBumpersByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    public List<DbUpgradeRearBumper> GetRearBumpers(int carBodyId) =>
+        _rearBumpersByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    public List<DbUpgradeSideSkirt> GetSideSkirts(int carBodyId) =>
+        _sideSkirtsByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
     public List<DbUpgradeWeightReduction> GetWeightReductions(int carBodyId) =>
         _weightReductionsByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
     public List<DbUpgradeChassisStiffness> GetChassisStiffness(int carBodyId) =>
@@ -1388,8 +1491,18 @@ public class Fh6DatabaseService
         _springDampersByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
     public DbUpgradeBrakes? GetBrakesById(int id) =>
         _brakesByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeDifferential? GetDifferentialById(int id) =>
-        _differentialsByDrivetrainId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
+    public DbUpgradeDifferential? GetDifferentialById(int id)
+    {
+        foreach (var list in _differentialsByDrivetrainId.Values)
+        {
+            if (list == null) continue;
+            foreach (var item in list)
+            {
+                if (item != null && item.Id == id) return item;
+            }
+        }
+        return null;
+    }
     public DbUpgradeTransmission? GetTransmissionById(int id) =>
         _transmissionsByDrivetrainId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
     public DbUpgradeClutch? GetClutchById(int id) =>
@@ -1398,6 +1511,12 @@ public class Fh6DatabaseService
         _drivelinesByDrivetrainId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
     public DbUpgradeRearWing? GetRearWingById(int id) =>
         _rearWingsByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
+    public DbUpgradeFrontBumper? GetFrontBumperById(int id) =>
+        _frontBumpersByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
+    public DbUpgradeRearBumper? GetRearBumperById(int id) =>
+        _rearBumpersByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
+    public DbUpgradeSideSkirt? GetSideSkirtById(int id) =>
+        _sideSkirtsByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
     public DbUpgradeAntiSwayFront? GetArbFrontById(int id) =>
         _antiSwayFrontByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
     public DbUpgradeAntiSwayRear? GetArbRearById(int id) =>

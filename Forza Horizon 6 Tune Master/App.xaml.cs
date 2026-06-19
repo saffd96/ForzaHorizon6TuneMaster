@@ -37,22 +37,21 @@ public partial class App : Application
         };
     }
 
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
         LocalizationService.Instance.InitializeFromSystem();
-        _ = InitializeDatabaseAsync();
-    }
 
-    private static async Task InitializeDatabaseAsync()
-    {
         try
         {
-            await Fh6DatabaseService.Instance.InitializeAsync().ConfigureAwait(false);
+            await Fh6DatabaseService.Instance.InitializeAsync();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"DB init failed: {ex.Message}");
         }
+
+        var mainWindow = new MainWindow();
+        mainWindow.Show();
     }
 }

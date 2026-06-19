@@ -22,18 +22,16 @@ internal static class AeroCalculator
             return;
         }
 
-        double rearMin = rearWing.Downforce0;
-        double rearMax = rearWing.Downforce1;
+        double aeroScale = dbCar?.GameDownforceScale > 0 ? dbCar.GameDownforceScale : 1.0;
+        double rearMin = rearWing.Downforce0 * aeroScale;
+        double rearMax = rearWing.Downforce1 * aeroScale;
+        double rearClampKg = dbCar?.RearDownforceClampKG ?? 0.0;
+        if (rearClampKg > 0 && rearMax > rearClampKg)
+            rearMax = rearClampKg;
         double frontDownforceClamp = dbCar?.FrontDownforceClampKG ?? 0.0;
-        double frontMin = 0.0;
-        double frontMax = car.HasFrontAero && frontDownforceClamp > 0
-            ? Math.Min(frontDownforceClamp, rearMax * 0.75)
-            : 0.0;
 
         (double rearFraction, double frontFraction, string noteKey) = AeroFractions(track.Discipline, car.DriveType);
 
-        // Power/speed correction: very low-power cars cannot afford much aero drag;
-        // very high-power cars can run more downforce without losing top speed.
         double ptw = car.PowerHP / Math.Max(car.TotalMass, 1.0);
         double ptwRef = 0.25;
         double powerFactor = 1.0 - CalculationHelpers.Clamp((ptw - ptwRef) / ptwRef, -0.5, 0.5) * 0.20;
@@ -41,6 +39,11 @@ internal static class AeroCalculator
         frontFraction *= powerFactor;
 
         double rearAero = rearMin + (rearMax - rearMin) * CalculationHelpers.Clamp(rearFraction, 0.0, 1.0);
+
+        double frontMin = 0.0;
+        double frontMax = car.HasFrontAero && frontDownforceClamp > 0
+            ? Math.Min(frontDownforceClamp, rearAero)
+            : 0.0;
         double frontAero = frontMin + (frontMax - frontMin) * CalculationHelpers.Clamp(frontFraction, 0.0, 1.0);
 
         r.AeroRear = car.HasRearAero ? Math.Round(CalculationHelpers.Clamp(rearAero, rearMin, rearMax)) : 0;

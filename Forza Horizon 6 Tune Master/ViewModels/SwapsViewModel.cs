@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -7,6 +8,9 @@ using Forza_Horizon_6_Tune_Master.Services;
 
 namespace Forza_Horizon_6_Tune_Master.ViewModels;
 
+// "Кузовные комплекты и модификации" module: the big swaps — engine, drivetrain and
+// forced induction (a turbo/supercharger conversion is itself a swap). Forced induction
+// is a two-step choice: first the type, then the level within that type. All from the DB.
 public class SwapsViewModel : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -17,7 +21,8 @@ public class SwapsViewModel : INotifyPropertyChanged
     private int _makeId;
 
     public ObservableCollection<PartOption> EngineSwaps { get; } = new();
-    public ObservableCollection<PartOption> ForcedInductions { get; } = new();
+    public ObservableCollection<PartOption> DrivetrainSwaps { get; } = new();
+    public ObservableCollection<FiTypeOption> ForcedInductionTypes { get; } = new();
 
     public PartOption? SelectedEngineSwap
     {
@@ -25,11 +30,28 @@ public class SwapsViewModel : INotifyPropertyChanged
         set { if (value != null) _parts.EngineSwapPartId = value.Id; }
     }
 
-    public PartOption? SelectedForcedInduction
+    public PartOption? SelectedDrivetrainSwap
     {
-        get => ForcedInductions.FirstOrDefault(o => o.Id == _parts.ForcedInductionPartId);
-        set { if (value != null) _parts.ForcedInductionPartId = value.Id; }
+        get => DrivetrainSwaps.FirstOrDefault(o => o.Id == _parts.DrivetrainSwapPartId);
+        set { if (value != null) _parts.DrivetrainSwapPartId = value.Id; }
     }
+
+    public FiTypeOption? SelectedForcedInductionType
+    {
+        get { var kind = CurrentFiKind(); return ForcedInductionTypes.FirstOrDefault(t => t.Kind == kind); }
+        set
+        {
+            if (value == null) return;
+            // Picking a type sets FI to that type's lowest tier (the base of that type);
+            // the engine module rebuilds the level list from the DB off this change.
+            _parts.ForcedInductionPartId = value.Kind == FiKind.None
+                ? null
+                : FiPartsOfKind(EngineId, value.Kind).OrderBy(p => p.Level).FirstOrDefault()?.Id;
+            OnPropertyChanged(nameof(SelectedForcedInductionType));
+        }
+    }
+
+    private int EngineId => _parts.EngineId ?? 0;
 
     public void LoadForCar(CarCard car, SelectedParts parts)
     {
@@ -37,95 +59,89 @@ public class SwapsViewModel : INotifyPropertyChanged
         _makeId = _db.GetCar(car.CarDbId)?.MakeID ?? 0;
 
         int ordinal = car.CarDbId;
-        int engineId = parts.EngineId ?? 0;
 
-        if (!parts.EngineSwapPartId.HasValue)
-        {
-            var list = _db.GetEngineSwaps(ordinal);
-            parts.EngineSwapPartId = PickStock(list)?.Id;
-            ReplaceAll(EngineSwaps, _resolver.ToOptions(list, _makeId));
-        }
-        else
-            ReplaceAll(EngineSwaps, _resolver.ToOptions(_db.GetEngineSwaps(ordinal), _makeId));
+        var engineSwaps = _db.GetEngineSwaps(ordinal);
+        parts.EngineSwapPartId ??= PickStock(engineSwaps)?.Id;
+        ReplaceAll(EngineSwaps, _resolver.ToOptions(engineSwaps, _makeId));
 
-        if (!parts.ForcedInductionPartId.HasValue) parts.ForcedInductionPartId = null;
-        bool canShowFi = !IsEngineSwapStock() || HasStockForcedInduction(engineId);
-        if (canShowFi)
-            ReplaceAll(ForcedInductions, MergeForcedInductionOptions(engineId));
-        else
-        {
-            ForcedInductions.Clear();
-            _parts.ForcedInductionPartId = null;
-        }
+        // Loaded before TransmissionVM.LoadForCar so the default drivetrain-swap id is
+        // available when the transmission/clutch/diff sections resolve their drivetrain.
+        var drivetrainSwaps = _db.GetDrivetrainSwaps(ordinal);
+        parts.DrivetrainSwapPartId ??= PickStock(drivetrainSwaps)?.Id;
+        ReplaceAll(DrivetrainSwaps, _resolver.ToOptions(drivetrainSwaps, _makeId));
+
+        // Forced induction default: factory FI part if any, otherwise none (NA). Set here
+        // (before EngineVM.LoadForCar) so the engine module's intercooler resolves correctly.
+        if (!parts.ForcedInductionPartId.HasValue)
+            parts.ForcedInductionPartId = StockFiPart(EngineId)?.Id;
+        BuildFiTypes(EngineId);
 
         RefreshSelections();
     }
 
-    public void ReloadForcedInduction(int engineId)
+    // Called on an engine swap: rebuild forced-induction type/level for the new engine.
+    public void ResetForcedInductionForEngine(int engineId)
     {
-        bool canShowFi = !IsEngineSwapStock() || HasStockForcedInduction(engineId);
-        if (canShowFi)
-            ReplaceAll(ForcedInductions, MergeForcedInductionOptions(engineId));
-        else
-        {
-            ForcedInductions.Clear();
-            _parts.ForcedInductionPartId = null;
-        }
-    }
-
-    public void ResetForcedInductionToStock(int engineId)
-    {
-        bool canShowFi = !IsEngineSwapStock() || HasStockForcedInduction(engineId);
-        if (canShowFi)
-        {
-            ReplaceAll(ForcedInductions, MergeForcedInductionOptions(engineId));
-            _parts.ForcedInductionPartId = ForcedInductions.FirstOrDefault(o => o.IsStock)?.Id;
-            if (!_parts.ForcedInductionPartId.HasValue && ForcedInductions.Count > 0)
-                _parts.ForcedInductionPartId = ForcedInductions[0].Id;
-        }
-        else
-        {
-            ForcedInductions.Clear();
-            _parts.ForcedInductionPartId = null;
-        }
-        OnPropertyChanged(nameof(SelectedForcedInduction));
+        _parts.ForcedInductionPartId = StockFiPart(engineId)?.Id;
+        BuildFiTypes(engineId);
+        OnPropertyChanged(nameof(SelectedForcedInductionType));
     }
 
     private void RefreshSelections()
     {
         OnPropertyChanged(nameof(SelectedEngineSwap));
-        OnPropertyChanged(nameof(SelectedForcedInduction));
+        OnPropertyChanged(nameof(SelectedDrivetrainSwap));
+        OnPropertyChanged(nameof(SelectedForcedInductionType));
     }
 
-    private ObservableCollection<PartOption> MergeForcedInductionOptions(int engineId)
+    // ── Forced induction helpers ─────────────────────────────────────────────
+    private FiKind CurrentFiKind()
     {
-        var all = new System.Collections.Generic.List<PartOption>();
-        foreach (var p in _db.GetTurbosSingle(engineId))
-            all.Add(new PartOption { Id = p.Id, DisplayName = _resolver.Resolve(p, _makeId), IsStock = p.IsStock });
-        foreach (var p in _db.GetTurbosTwin(engineId))
-            all.Add(new PartOption { Id = p.Id, DisplayName = _resolver.Resolve(p, _makeId), IsStock = p.IsStock });
-        foreach (var p in _db.GetCSC(engineId))
-            all.Add(new PartOption { Id = p.Id, DisplayName = _resolver.Resolve(p, _makeId), IsStock = p.IsStock });
-        foreach (var p in _db.GetDSC(engineId))
-            all.Add(new PartOption { Id = p.Id, DisplayName = _resolver.Resolve(p, _makeId), IsStock = p.IsStock });
-        var col = new ObservableCollection<PartOption>();
-        foreach (var o in all) col.Add(o);
-        return col;
+        if (!_parts.ForcedInductionPartId.HasValue) return FiKind.None;
+        return _db.GetForcedInductionById(_parts.ForcedInductionPartId.Value) switch
+        {
+            DbUpgradeTurboSingle => FiKind.SingleTurbo,
+            DbUpgradeTurboTwin   => FiKind.TwinTurbo,
+            DbUpgradeCSC         => FiKind.Centrifugal,
+            DbUpgradeDSC         => FiKind.PositiveDisplacement,
+            _                    => FiKind.None
+        };
     }
 
-    private bool IsEngineSwapStock()
+    private List<DbUpgradePart> FiPartsOfKind(int engineId, FiKind kind) => kind switch
     {
-        if (!_parts.EngineSwapPartId.HasValue) return true;
-        var stock = EngineSwaps.FirstOrDefault(o => o.IsStock);
-        return stock != null && _parts.EngineSwapPartId.Value == stock.Id;
+        FiKind.SingleTurbo          => _db.GetTurbosSingle(engineId).Cast<DbUpgradePart>().ToList(),
+        FiKind.TwinTurbo            => _db.GetTurbosTwin(engineId).Cast<DbUpgradePart>().ToList(),
+        FiKind.Centrifugal          => _db.GetCSC(engineId).Cast<DbUpgradePart>().ToList(),
+        FiKind.PositiveDisplacement => _db.GetDSC(engineId).Cast<DbUpgradePart>().ToList(),
+        _                           => new List<DbUpgradePart>()
+    };
+
+    private DbUpgradePart? StockFiPart(int engineId)
+    {
+        foreach (var kind in new[] { FiKind.SingleTurbo, FiKind.TwinTurbo, FiKind.Centrifugal, FiKind.PositiveDisplacement })
+        {
+            var stock = FiPartsOfKind(engineId, kind).FirstOrDefault(p => p.IsStock);
+            if (stock != null) return stock;
+        }
+        return null;
     }
 
-    private bool HasStockForcedInduction(int engineId)
+    private void BuildFiTypes(int engineId)
     {
-        return _db.GetTurbosSingle(engineId).Any(p => p.IsStock)
-            || _db.GetTurbosTwin(engineId).Any(p => p.IsStock)
-            || _db.GetCSC(engineId).Any(p => p.IsStock)
-            || _db.GetDSC(engineId).Any(p => p.IsStock);
+        ForcedInductionTypes.Clear();
+        ForcedInductionTypes.Add(new FiTypeOption { Kind = FiKind.None, DisplayName = Aspir(1) });
+        if (_db.GetTurbosSingle(engineId).Count > 0) ForcedInductionTypes.Add(new FiTypeOption { Kind = FiKind.SingleTurbo, DisplayName = Aspir(2) });
+        if (_db.GetTurbosTwin(engineId).Count > 0)   ForcedInductionTypes.Add(new FiTypeOption { Kind = FiKind.TwinTurbo, DisplayName = Aspir(3) });
+        if (_db.GetCSC(engineId).Count > 0)          ForcedInductionTypes.Add(new FiTypeOption { Kind = FiKind.Centrifugal, DisplayName = Aspir(6) });
+        if (_db.GetDSC(engineId).Count > 0)          ForcedInductionTypes.Add(new FiTypeOption { Kind = FiKind.PositiveDisplacement, DisplayName = Aspir(5) });
+    }
+
+    private static string Aspir(int id)
+    {
+        string key = $"List_Aspiration_IDS_DisplayName_{id}";
+        string v = LocalizationService.Instance.T(key);
+        return v == key ? key : v;
     }
 
     private static void ReplaceAll(ObservableCollection<PartOption> target, ObservableCollection<PartOption> source)
@@ -134,6 +150,6 @@ public class SwapsViewModel : INotifyPropertyChanged
         foreach (var o in source) target.Add(o);
     }
 
-    private static T? PickStock<T>(System.Collections.Generic.List<T> parts) where T : DbUpgradePart =>
+    private static T? PickStock<T>(List<T> parts) where T : DbUpgradePart =>
         parts.FirstOrDefault(p => p.IsStock) ?? parts.FirstOrDefault();
 }

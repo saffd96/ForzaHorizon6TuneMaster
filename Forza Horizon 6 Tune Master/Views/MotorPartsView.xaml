@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services">
     <StackPanel>
-        <TextBlock Text="{l:Loc SectionMotor}" Style="{StaticResource SectionHeader}"/>
+        <TextBlock Text="{l:Loc ModuleElectric}" Style="{StaticResource SectionHeader}"/>
         <UniformGrid Columns="6" HorizontalAlignment="Stretch" Margin="0,0,0,6">
             <ComboBox ItemsSource="{Binding MotorSwaps}" SelectedItem="{Binding SelectedMotorSwap}"
                       HorizontalAlignment="Stretch" MinHeight="26"

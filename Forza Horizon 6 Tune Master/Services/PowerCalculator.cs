@@ -15,11 +15,10 @@ public static class PowerCalculator
         if (dbCar == null) return;
 
         parts ??= new SelectedParts();
-        double fiPowerScale = 1.0;
         if (dbCar.PowertrainID == 1)
             CalcElectric(car, dbCar, db, parts);
         else
-            fiPowerScale = CalcIce(car, dbCar, db, parts);
+            CalcIce(car, dbCar, db, parts);
 
         // Apply rotational inertia factor
         double inertiaFactor = TuningPhysicsContext.ComputeRotationalInertiaFactor(car, parts, db);
@@ -32,15 +31,12 @@ public static class PowerCalculator
 
         car.CachedPowerCurveHP = ComputePowerCurveFromTorque(car.CachedTorqueCurveNm, car.MaxRPM);
 
+        // Power is derived purely from the (already forced-induction-scaled) torque curve.
+        // Forced induction must NOT apply a second, separate power multiplier — doing so
+        // double-counts the boost and inflates power roughly 5× (turbo torque scale + a
+        // bogus power scale). See CalcIce / ApplyForcedInduction.
         if (car.CachedPowerCurveHP is { Length: > 0 })
-        {
-            if (fiPowerScale > 1.01 || fiPowerScale < 0.99)
-            {
-                for (int i = 0; i < car.CachedPowerCurveHP.Length; i++)
-                    car.CachedPowerCurveHP[i] = Math.Round(car.CachedPowerCurveHP[i] * fiPowerScale, 1);
-            }
             car.PowerHP = Math.Round(car.CachedPowerCurveHP.Max(), 1);
-        }
     }
 
     private static void CalcElectric(CarCard car, DbCar dbCar, Fh6DatabaseService db, SelectedParts? parts = null)
@@ -57,16 +53,22 @@ public static class PowerCalculator
         car.TorqueNm = Math.Round(peakTorqueNm);
         car.PowerHP = Math.Round(peakPowerW / 745.7, 1);
 
-        car.CachedTorqueCurveNm = LoadTorqueCurve(motor.TorqueCurveFullThrottleID, db, 1.0)
+        car.CachedTorqueCurveNm = LoadTorqueCurve(motor.TorqueCurveFullThrottleID, db, 1.0, maxRpm, maxRpm)
             ?? GenerateElectricTorqueCurve(peakTorqueNm, (int)Math.Round(maxRpm));
     }
 
-    private static double CalcIce(CarCard car, DbCar dbCar, Fh6DatabaseService db, SelectedParts parts)
+    private static void CalcIce(CarCard car, DbCar dbCar, Fh6DatabaseService db, SelectedParts parts)
     {
+        // Resolve the effective engine (stock or swap) so we use its true torque/power baseline.
+        int effectiveEngineId = ResolveEffectiveEngineId(car, dbCar, db, parts);
+        var effectiveEngine = db.GetEngine(effectiveEngineId);
+
         double redlineRPM = dbCar.SimRedlineAngVel * RadSToRPM;
-        double peakTorqueNm = dbCar.SimPeakTorque;
-        double peakPowerW = dbCar.SimPeakPower;
-        double torqueScale = dbCar.GameTorqueScale;
+        double peakTorqueNm = effectiveEngine?.EngineGraphingMaxTorque ?? dbCar.SimPeakTorque;
+        double peakPowerW = effectiveEngine?.EngineGraphingMaxPower ?? dbCar.SimPeakPower;
+        // GameTorqueScale is a stock-engine correction for the original car.
+        // Engine swaps bring their own torque curves with their natural scale — no correction needed.
+        double torqueScale = parts.EngineSwapPartId != null ? 1.0 : dbCar.GameTorqueScale;
 
         double partRedlineRPM = redlineRPM;
         int? torqueCurveId = null;
@@ -89,8 +91,7 @@ public static class PowerCalculator
         double partScale = AccumulatePartTorqueScales(parts, db);
 
         double fiTorqueScale = 1.0;
-        double fiPowerScale = 1.0;
-        ApplyForcedInduction(parts, db, ref fiTorqueScale, ref fiPowerScale);
+        ApplyForcedInduction(parts, db, ref fiTorqueScale);
 
         double intercoolerScale = 1.0;
         if (parts.ForcedInductionPartId != null && parts.IntercoolerPartId != null)
@@ -102,12 +103,11 @@ public static class PowerCalculator
 
         double totalTorqueScale = torqueScale * Math.Max(0.1, partScale) * Math.Max(0.1, fiTorqueScale) * intercoolerScale;
         totalTorqueScale = Math.Min(totalTorqueScale, 20.0);
-        double totalPowerScale = Math.Min(Math.Max(0.1, fiPowerScale), 5.0);
 
         double[] torqueCurve;
         if (torqueCurveId != null)
         {
-            torqueCurve = LoadTorqueCurve(torqueCurveId.Value, db, totalTorqueScale)
+            torqueCurve = LoadTorqueCurve(torqueCurveId.Value, db, totalTorqueScale, torqueCurveMaxRPM, partRedlineRPM)
                 ?? GenerateIceTorqueCurve(dbCar, peakTorqueNm * totalTorqueScale, partRedlineRPM);
         }
         else
@@ -117,7 +117,6 @@ public static class PowerCalculator
 
         car.CachedTorqueCurveNm = torqueCurve;
         car.TorqueNm = Math.Round(torqueCurve.Max());
-        return totalPowerScale;
     }
 
     private static int ResolveEffectiveEngineId(CarCard car, DbCar dbCar, Fh6DatabaseService db, SelectedParts? parts = null)
@@ -151,7 +150,7 @@ public static class PowerCalculator
         if (scales.Count == 0) return 1.0;
 
         double product = scales.Aggregate(1.0, (p, s) => p * s);
-        return Math.Pow(product, 1.0 / Math.Sqrt(scales.Count));
+        return product;
     }
 
     private static void AddTorqueScaleIfNotStock<T>(Fh6DatabaseService db, int? partId, Func<int, T?> getter, System.Collections.Generic.List<double> scales)
@@ -166,7 +165,11 @@ public static class PowerCalculator
         scales.Add(s);
     }
 
-    private static void ApplyForcedInduction(SelectedParts parts, Fh6DatabaseService db, ref double torqueScale, ref double powerScale)
+    // Forced induction is modelled as a torque-curve multiplier only. Power is computed
+    // downstream from the resulting torque curve, so it must NOT be scaled again here.
+    // Note: turbo PowerMaxScale is NOT a multiplier (DB values range ~15–1000); it is the
+    // turbo's rated power and must never be applied as a scale factor.
+    private static void ApplyForcedInduction(SelectedParts parts, Fh6DatabaseService db, ref double torqueScale)
     {
         if (parts.ForcedInductionPartId == null) return;
 
@@ -174,32 +177,46 @@ public static class PowerCalculator
         if (fi == null) return;
 
         if (fi is DbUpgradeTurboSingle ts)
-        {
             torqueScale *= ts.MaxScale;
-            powerScale *= ts.PowerMaxScale;
-        }
         else if (fi is DbUpgradeTurboTwin tt)
-        {
             torqueScale *= tt.MaxScale;
-            powerScale *= tt.PowerMaxScale;
-        }
         else if (fi is DbUpgradeCSC csc)
-        {
             torqueScale *= csc.RedlineRPMScale;
-            powerScale *= csc.RedlineRPMScale;
-        }
         else if (fi is DbUpgradeDSC dsc)
-        {
             torqueScale *= dsc.RedlineRPMScale;
-            powerScale *= dsc.RedlineRPMScale;
-        }
     }
 
-    private static double[]? LoadTorqueCurve(int curveId, Fh6DatabaseService db, double scale)
+    // DB torque curves are sampled uniformly over [0, curveMaxRPM], where the trailing
+    // entries sit past the redline and the final value is a negative fuel-cut sentinel.
+    // Consumers (power calc + chart) assume the array spans 0..MaxRPM, so we resample onto
+    // a uniform [0, targetMaxRPM] grid — dropping the over-rev tail and the sentinel that
+    // would otherwise plot as a spike crashing to the floor at the right edge of the graph.
+    private static double[]? LoadTorqueCurve(int curveId, Fh6DatabaseService db, double scale, double curveMaxRPM, double targetMaxRPM)
     {
         var tc = db.GetTorqueCurve(curveId);
         if (tc?.V == null || tc.V.Length == 0) return null;
-        return tc.V.Select(v => Math.Round(v * tc.TorqueScale * scale, 1)).ToArray();
+
+        double[] raw = tc.V.Select(v => v * tc.TorqueScale * scale).ToArray();
+        int rawN = raw.Length;
+        // Replace any negative fuel-cut sentinels with the previous valid value.
+        for (int i = 0; i < rawN; i++)
+            if (raw[i] < 0) raw[i] = i > 0 ? raw[i - 1] : 0.0;
+
+        if (curveMaxRPM <= 0) curveMaxRPM = targetMaxRPM;
+        if (targetMaxRPM <= 0 || rawN < 2) return raw.Select(v => Math.Round(v, 1)).ToArray();
+
+        const int outN = 24;
+        double[] outc = new double[outN];
+        for (int i = 0; i < outN; i++)
+        {
+            double rpm = targetMaxRPM * i / (outN - 1);
+            double pos = CalculationHelpers.Clamp(rpm / curveMaxRPM, 0.0, 1.0) * (rawN - 1);
+            int lo = (int)Math.Floor(pos);
+            int hi = Math.Min(lo + 1, rawN - 1);
+            double val = raw[lo] + (raw[hi] - raw[lo]) * (pos - lo);
+            outc[i] = Math.Round(Math.Max(val, 0.0), 1);
+        }
+        return outc;
     }
 
     private static double[] GenerateIceTorqueCurve(DbCar dbCar, double peakTorque, double redlineRPM)
@@ -213,12 +230,12 @@ public static class PowerCalculator
         {
             double rpm = redlineRPM * i / (points - 1);
             if (rpm <= torquePeakRPM)
-                curve[i] = peakTorque * (0.65 + 0.35 * rpm / Math.Max(torquePeakRPM, 1));
+                curve[i] = peakTorque * (0.60 + 0.40 * rpm / Math.Max(torquePeakRPM, 1));
             else if (rpm <= powerPeakRPM)
-                curve[i] = peakTorque * (1.0 - 0.15 * (rpm - torquePeakRPM) / Math.Max(powerPeakRPM - torquePeakRPM, 1));
+                curve[i] = peakTorque * (1.0 - 0.08 * (rpm - torquePeakRPM) / Math.Max(powerPeakRPM - torquePeakRPM, 1));
             else
-                curve[i] = peakTorque * 0.85 * (1.0 - (rpm - powerPeakRPM) / Math.Max(redlineRPM - powerPeakRPM, 1) * 0.7);
-            curve[i] = Math.Round(Math.Max(curve[i], peakTorque * 0.15), 1);
+                curve[i] = peakTorque * 0.92 * (1.0 - (rpm - powerPeakRPM) / Math.Max(redlineRPM - powerPeakRPM, 1) * 0.35);
+            curve[i] = Math.Round(Math.Max(curve[i], peakTorque * 0.20), 1);
         }
         return curve;
     }

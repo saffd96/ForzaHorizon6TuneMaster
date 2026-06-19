@@ -437,7 +437,7 @@ public class MainViewModelTests : IDisposable
         var vm = new MainViewModel();
         vm.SpringUnit = SpringUnit.KgfMm;
 
-        vm.SpringFrontMinDisplay = 10.0; // ~98.07 N/mm
+        vm.SpringFrontMinDisplay = 100.0; // kgf/mm display is scaled x10 => 100/10*9.807 = 98.07 N/mm
         Assert.True(Math.Abs(vm.Constraints.SpringFrontMin - 98.07) < 0.1);
     }
 

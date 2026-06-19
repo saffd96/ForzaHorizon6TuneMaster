@@ -38,6 +38,26 @@ public class SelectedParts : NotifyBase
     [ResetToStock]
     public int? RearWingPartId { get => _rearWingPartId; set { if (Set(ref _rearWingPartId, value)) OnPartChanged(); } }
 
+    private int? _frontBumperPartId;
+    [ResetToStock]
+    public int? FrontBumperPartId { get => _frontBumperPartId; set { if (Set(ref _frontBumperPartId, value)) OnPartChanged(); } }
+
+    private int? _rearBumperPartId;
+    [ResetToStock]
+    public int? RearBumperPartId { get => _rearBumperPartId; set { if (Set(ref _rearBumperPartId, value)) OnPartChanged(); } }
+
+    private int? _sideSkirtPartId;
+    [ResetToStock]
+    public int? SideSkirtPartId { get => _sideSkirtPartId; set { if (Set(ref _sideSkirtPartId, value)) OnPartChanged(); } }
+
+    // Rim appearance reduced to mass: null = stock rim mass (no delta), otherwise the
+    // chosen wheel mass (kg). Weight contribution = chosen mass − stock rim mass.
+    private double? _rimMass;
+    [ResetToStock]
+    public double? RimMass { get => _rimMass; set { if (Set(ref _rimMass, value)) OnPartChanged(); } }
+    private double _stockRimMass;
+    public double StockRimMass => _stockRimMass;
+
     private int? _weightReductionPartId;
 
     [ResetToStock]
@@ -227,6 +247,7 @@ public class SelectedParts : NotifyBase
         var stockDt = _db.GetStockDrivetrain(car.CarDbId);
         DrivetrainId = stockDt?.DrivetrainID;
         CarBodyOrdinal = car.CarBodyId;
+        _stockRimMass = _db.GetStockWheelMass(_db.GetCar(car.CarDbId)?.MediaName) ?? 0.0;
         if (resetParts)
             ResetAllToStock();
     }
@@ -285,6 +306,9 @@ public class SelectedParts : NotifyBase
         total += PartMassDiff(_clutchPartId, id => _db.GetClutchById(id));
         total += PartMassDiff(_drivelinePartId, id => _db.GetDrivelineById(id));
         total += PartMassDiff(_rearWingPartId, id => _db.GetRearWingById(id));
+        total += PartMassDiff(_frontBumperPartId, id => _db.GetFrontBumperById(id));
+        total += PartMassDiff(_rearBumperPartId, id => _db.GetRearBumperById(id));
+        total += PartMassDiff(_sideSkirtPartId, id => _db.GetSideSkirtById(id));
         total += PartMassDiff(_antiSwayFrontPartId, id => _db.GetArbFrontById(id));
         total += PartMassDiff(_antiSwayRearPartId, id => _db.GetArbRearById(id));
         total += PartMassDiff(_tireWidthFrontPartId, id => _db.GetTireWidthFrontById(id));
@@ -300,6 +324,9 @@ public class SelectedParts : NotifyBase
         total += PartMassDiff(_motorPartId, id => _db.GetMotorPartById(id));
         total += PartMassDiff(_weightReductionPartId, id => _db.GetWeightReductionById(id));
         total += PartMassDiff(_chassisStiffnessPartId, id => _db.GetChassisStiffnessById(id));
+        // Rim appearance: delta is the chosen wheel mass relative to the stock rim mass.
+        if (_rimMass.HasValue && _stockRimMass > 0)
+            total += _rimMass.Value - _stockRimMass;
         return Math.Max(total, 1.0);
     }
 

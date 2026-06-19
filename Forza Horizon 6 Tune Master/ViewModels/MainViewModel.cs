@@ -113,13 +113,18 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
                 ? Fh6DatabaseService.Instance.GetEngineSwapById(_selectedParts.EngineSwapPartId.Value)?.EngineID ?? Car.EngineDbId
                 : Car.EngineDbId;
             Car.EngineDbId = engineId;
+            // Reset forced induction (in the swaps module) first so the engine module's
+            // intercooler resolves against the new engine's FI before it reloads.
+            SwapsVM.ResetForcedInductionForEngine(engineId);
             EngineVM.ResetToStockForEngine(engineId);
-            SwapsVM.ResetForcedInductionToStock(engineId);
         }
 
         if (_selectedParts.ForcedInductionPartId != _lastForcedInductionPartId)
         {
             _lastForcedInductionPartId = _selectedParts.ForcedInductionPartId;
+            // FI type is chosen in the swaps module; rebuild the engine module's level
+            // dropdown (and intercooler) from the DB for the new forced induction.
+            EngineVM.ReloadForcedInductionLevels();
             EngineVM.ReloadIntercooler(_selectedParts.EngineId ?? Car.EngineDbId);
             UpdateAspirationTypeFromForcedInduction();
         }
@@ -185,8 +190,14 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     }
     public bool HasResult        => _tuneResult != null;
     public bool HasAWDFrontDiff  => Car.DriveType == Models.DriveType.AWD && _tuneResult?.CenterDiffBias.HasValue == true;
-    public bool HasDiffDecel     => Car.DifferentialUpgrade != DifferentialUpgrade.Stock
-                                     && Car.DifferentialUpgrade != DifferentialUpgrade.Sport;
+    public bool HasDiffDecel
+    {
+        get
+        {
+            var diff = TuningPhysicsContext.Differential(Car, _selectedParts, Fh6DatabaseService.Instance);
+            return Math.Max(diff.RearLimitedSlipTorqueDecel, diff.FrontLimitedSlipTorqueDecel) > 0.01;
+        }
+    }
     public bool HasLaunchControl => _tuneResult?.LaunchControlRpm.HasValue == true;
 
     private bool _isElectricCar;
@@ -407,7 +418,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             var nmm = Constraints.SpringFrontMin;
             return _springUnit switch
             {
-                SpringUnit.KgfMm => Math.Round(nmm / 9.807, 1),
+                SpringUnit.KgfMm => Math.Round(nmm / 9.807 * 10.0, 1),
                 SpringUnit.LbsIn => Math.Round(nmm / 0.175127, 1),
                 _ => nmm
             };
@@ -416,7 +427,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         {
             Constraints.SpringFrontMin = _springUnit switch
             {
-                SpringUnit.KgfMm => value * 9.807,
+                SpringUnit.KgfMm => value / 10.0 * 9.807,
                 SpringUnit.LbsIn => value * 0.175127,
                 _ => value
             };
@@ -952,7 +963,9 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         var (savedMs, savedPu, savedSu) = LocalizationService.Instance.LoadUnitSettings();
         if (savedMs != null && Enum.TryParse<UnitSystem>(savedMs, out var ms)) MeasurementSystem = ms;
         if (savedPu != null && Enum.TryParse<PowerUnit>(savedPu, out var pu)) PowerUnit = pu;
-        if (savedSu != null && Enum.TryParse<SpringUnit>(savedSu, out var su)) SpringUnit = su;
+        // Spring unit always starts at N/mm to match the in-game tuning screen (e.g. 43-214.8),
+        // so a previously persisted kgf/mm no longer overrides it. Users can still switch in-session.
+        _ = savedSu;
 
         RefreshProfiles();
         RecalculateOutdatedProfiles();
@@ -980,6 +993,10 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     TiresWheelsVM.LoadForCar(car, parts);
     AeroVisualVM.LoadForCar(car, parts);
         SelectedParts = parts;
+        // SetCarData/ResetAllToStock above fire CarMassUpdated before this VM subscribes
+        // (subscription happens in the SelectedParts setter), so push the car's actual
+        // mass now — otherwise TotalMass would stay at its 1400 kg default.
+        Car.TotalMass = parts.ComputeTotalMass();
         _lastEngineSwapPartId = parts.EngineSwapPartId;
         _lastForcedInductionPartId = parts.ForcedInductionPartId;
         _lastMotorSwapPartId = parts.MotorSwapPartId;
@@ -1060,7 +1077,10 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             id => db.GetDifferentialById(id)?.Level ?? 0);
 
         car.HasRearAero = _selectedParts.RearWingPartId != null;
-        car.HasFrontAero = false;
+        // A non-stock front bumper/splitter with an aero physics profile adds front downforce.
+        var frontBumper = _selectedParts.FrontBumperPartId != null
+            ? db.GetFrontBumperById(_selectedParts.FrontBumperPartId.Value) : null;
+        car.HasFrontAero = frontBumper is { IsStock: false, AeroPhysicsID: > 0 };
         car.HasFrontARB = _selectedParts.AntiSwayFrontPartId != null;
         car.HasRearARB = _selectedParts.AntiSwayRearPartId != null;
     }
@@ -1068,7 +1088,17 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     private void UpdateAspirationTypeFromForcedInduction()
     {
         var db = Fh6DatabaseService.Instance;
-        var fi = db.GetForcedInductionById(_selectedParts.ForcedInductionPartId!.Value);
+
+        // No forced-induction part = naturally aspirated (the synthetic "Stock / NA"
+        // option on a naturally-aspirated engine maps back to a null part id).
+        if (!_selectedParts.ForcedInductionPartId.HasValue)
+        {
+            Car.AspirationType = Models.AspirationType.Natural;
+            Car.AntiLag = false;
+            return;
+        }
+
+        var fi = db.GetForcedInductionById(_selectedParts.ForcedInductionPartId.Value);
         Car.AspirationType = fi switch
         {
             DbUpgradeTurboSingle => Models.AspirationType.SingleTurbo,
@@ -1078,18 +1108,13 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             _                    => Car.AspirationType
         };
 
-        if (fi is DbUpgradeTurboSingle ts)
+        // Tier 4 is the race turbo with anti-lag (absolute Level, like the resolver).
+        Car.AntiLag = fi switch
         {
-            var stockLevel = db.GetTurbosSingle(ts.EngineID).FirstOrDefault(p => p.IsStock)?.Level;
-            Car.AntiLag = stockLevel.HasValue && ts.Level - stockLevel.Value >= 4;
-        }
-        else if (fi is DbUpgradeTurboTwin tt)
-        {
-            var stockLevel = db.GetTurbosTwin(tt.EngineID).FirstOrDefault(p => p.IsStock)?.Level;
-            Car.AntiLag = stockLevel.HasValue && tt.Level - stockLevel.Value >= 4;
-        }
-        else
-            Car.AntiLag = false;
+            DbUpgradeTurboSingle ts => ts.Level >= 4,
+            DbUpgradeTurboTwin tt   => tt.Level >= 4,
+            _                       => false
+        };
     }
 
     private void UpdateTireAndWheelData()
@@ -1227,7 +1252,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             StatusMessage = string.Format(T("StatusTuneGenerated"), Car.Make, Car.Model, $"{discLocalized}  •  {DateTime.Now:HH:mm}");
 
             _tuneGenerationCount++;
-            if (_tuneGenerationCount % 25 == 0)
+            if (_tuneGenerationCount % 100 == 0)
             {
                 var owner = Application.Current?.MainWindow;
                 if (owner != null)

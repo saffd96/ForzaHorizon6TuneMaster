@@ -728,4 +728,15 @@
                    VerticalAlignment="Center"/>
     </DataTemplate>
 
+    <!-- Implicit templates so both the dropdown items and the selected box render the
+         localized DisplayName (DisplayMemberPath isn't honoured by the selection box). -->
+    <DataTemplate DataType="{x:Type models:FiTypeOption}">
+        <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
+                   VerticalAlignment="Center"/>
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type models:RimMassOption}">
+        <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
+                   VerticalAlignment="Center"/>
+    </DataTemplate>
+
 </ResourceDictionary>

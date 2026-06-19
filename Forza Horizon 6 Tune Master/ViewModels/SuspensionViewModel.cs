@@ -20,11 +20,15 @@ public class SuspensionViewModel : INotifyPropertyChanged
     public ObservableCollection<PartOption> Brakes { get; } = new();
     public ObservableCollection<PartOption> AntiSwayFront { get; } = new();
     public ObservableCollection<PartOption> AntiSwayRear { get; } = new();
+    public ObservableCollection<PartOption> WeightReductions { get; } = new();
+    public ObservableCollection<PartOption> ChassisStiffness { get; } = new();
 
     public PartOption? SelectedSpringDamper  { get => Pick(_parts.SpringDamperPartId, SpringDampers);  set { if (value != null) _parts.SpringDamperPartId = value.Id; } }
     public PartOption? SelectedBrake         { get => Pick(_parts.BrakePartId, Brakes);                set { if (value != null) _parts.BrakePartId = value.Id; } }
     public PartOption? SelectedAntiSwayFront { get => Pick(_parts.AntiSwayFrontPartId, AntiSwayFront); set { if (value != null) _parts.AntiSwayFrontPartId = value.Id; } }
     public PartOption? SelectedAntiSwayRear  { get => Pick(_parts.AntiSwayRearPartId, AntiSwayRear);   set { if (value != null) _parts.AntiSwayRearPartId = value.Id; } }
+    public PartOption? SelectedWeightReduction { get => Pick(_parts.WeightReductionPartId, WeightReductions); set { if (value != null) _parts.WeightReductionPartId = value.Id; } }
+    public PartOption? SelectedChassisStiffness { get => Pick(_parts.ChassisStiffnessPartId, ChassisStiffness); set { if (value != null) _parts.ChassisStiffnessPartId = value.Id; } }
 
     public void LoadForCar(CarCard car, SelectedParts parts)
     {
@@ -32,16 +36,21 @@ public class SuspensionViewModel : INotifyPropertyChanged
         _makeId = _db.GetCar(car.CarDbId)?.MakeID ?? 0;
 
         int ordinal = car.CarDbId;
+        int carBodyId = car.CarBodyId;
 
-        _parts.SpringDamperPartId  ??= PickStock(_db.GetSpringDampers(ordinal))?.Id;
-        _parts.BrakePartId         ??= PickStock(_db.GetBrakes(ordinal))?.Id;
-        _parts.AntiSwayFrontPartId ??= PickStock(_db.GetAntiSwayFront(ordinal))?.Id;
-        _parts.AntiSwayRearPartId  ??= PickStock(_db.GetAntiSwayRear(ordinal))?.Id;
+        _parts.SpringDamperPartId    ??= PickStock(_db.GetSpringDampers(ordinal))?.Id;
+        _parts.BrakePartId           ??= PickStock(_db.GetBrakes(ordinal))?.Id;
+        _parts.AntiSwayFrontPartId   ??= PickStock(_db.GetAntiSwayFront(ordinal))?.Id;
+        _parts.AntiSwayRearPartId    ??= PickStock(_db.GetAntiSwayRear(ordinal))?.Id;
+        _parts.WeightReductionPartId ??= PickStock(_db.GetWeightReductions(carBodyId))?.Id;
+        _parts.ChassisStiffnessPartId??= PickStock(_db.GetChassisStiffness(carBodyId))?.Id;
 
-        Populate(SpringDampers,  _db.GetSpringDampers(ordinal));
-        Populate(Brakes,         _db.GetBrakes(ordinal));
-        Populate(AntiSwayFront,  _db.GetAntiSwayFront(ordinal));
-        Populate(AntiSwayRear,   _db.GetAntiSwayRear(ordinal));
+        Populate(SpringDampers,    _db.GetSpringDampers(ordinal));
+        Populate(Brakes,           _db.GetBrakes(ordinal));
+        Populate(AntiSwayFront,    _db.GetAntiSwayFront(ordinal));
+        Populate(AntiSwayRear,     _db.GetAntiSwayRear(ordinal));
+        Populate(WeightReductions, _db.GetWeightReductions(carBodyId));
+        Populate(ChassisStiffness, _db.GetChassisStiffness(carBodyId));
         RefreshSelections();
     }
 
@@ -51,6 +60,8 @@ public class SuspensionViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedBrake));
         OnPropertyChanged(nameof(SelectedAntiSwayFront));
         OnPropertyChanged(nameof(SelectedAntiSwayRear));
+        OnPropertyChanged(nameof(SelectedWeightReduction));
+        OnPropertyChanged(nameof(SelectedChassisStiffness));
     }
 
     private void Populate<T>(ObservableCollection<PartOption> target, System.Collections.Generic.List<T> source) where T : DbUpgradePart

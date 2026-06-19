@@ -431,6 +431,27 @@ public sealed record DbUpgradeRearWing : DbUpgradePart
     [JsonIgnore] public string DisplayName => $"Wing Lv{Level}";
 }
 
+public sealed record DbUpgradeFrontBumper : DbUpgradePart
+{
+    public int CarBodyId { get; init; }
+    public int AeroPhysicsID { get; init; }
+    [JsonIgnore] public string DisplayName => $"FrontBumper Lv{Level}";
+}
+
+public sealed record DbUpgradeRearBumper : DbUpgradePart
+{
+    public int CarBodyId { get; init; }
+    public double BodyAeroForwardDownforceFront { get; init; }
+    public double BodyAeroForwardDownforceRear { get; init; }
+    [JsonIgnore] public string DisplayName => $"RearBumper Lv{Level}";
+}
+
+public sealed record DbUpgradeSideSkirt : DbUpgradePart
+{
+    public int CarBodyId { get; init; }
+    [JsonIgnore] public string DisplayName => $"SideSkirt Lv{Level}";
+}
+
 public sealed record DbAeroPhysics
 {
     public int AeroPhysicsID { get; init; }

@@ -17,13 +17,12 @@ public class TransmissionViewModel : INotifyPropertyChanged
     private int _makeId;
     private int _carDbId;
 
-    public ObservableCollection<PartOption> DrivetrainSwaps { get; } = new();
+    // Drivetrain swap selector now lives in SwapsViewModel (top Swaps section, issue 0).
     public ObservableCollection<PartOption> Transmissions { get; } = new();
     public ObservableCollection<PartOption> Clutches { get; } = new();
     public ObservableCollection<PartOption> Drivelines { get; } = new();
     public ObservableCollection<PartOption> Differentials { get; } = new();
 
-    public PartOption? SelectedDrivetrainSwap { get => Pick(_parts.DrivetrainSwapPartId, DrivetrainSwaps); set { if (value != null) _parts.DrivetrainSwapPartId = value.Id; } }
     public PartOption? SelectedTransmission  { get => Pick(_parts.TransmissionPartId, Transmissions); set { if (value != null) _parts.TransmissionPartId = value.Id; } }
     public PartOption? SelectedClutch        { get => Pick(_parts.ClutchPartId, Clutches);            set { if (value != null) _parts.ClutchPartId = value.Id; } }
     public PartOption? SelectedDriveline     { get => Pick(_parts.DrivelinePartId, Drivelines);        set { if (value != null) _parts.DrivelinePartId = value.Id; } }
@@ -35,10 +34,8 @@ public class TransmissionViewModel : INotifyPropertyChanged
         _carDbId = car.CarDbId;
         _makeId = _db.GetCar(car.CarDbId)?.MakeID ?? 0;
 
-        var swaps = _db.GetDrivetrainSwaps(car.CarDbId);
-        _parts.DrivetrainSwapPartId ??= PickStock(swaps)?.Id;
-
-        Populate(DrivetrainSwaps, swaps);
+        // Drivetrain swap dropdown + default id are handled by SwapsViewModel, which
+        // runs before this VM; we just resolve the sections for the selected drivetrain.
         LoadForSelectedDrivetrain();
     }
 
@@ -97,7 +94,6 @@ public class TransmissionViewModel : INotifyPropertyChanged
 
     private void RefreshSelections()
     {
-        OnPropertyChanged(nameof(SelectedDrivetrainSwap));
         OnPropertyChanged(nameof(SelectedTransmission));
         OnPropertyChanged(nameof(SelectedClutch));
         OnPropertyChanged(nameof(SelectedDriveline));

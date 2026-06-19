@@ -99,6 +99,15 @@
                                             </MultiBinding>
                                         </Run.Text>
                                     </Run>
+                                    <Run Text="  •  "                            Foreground="{StaticResource TextMutedBrush}"/>
+                                    <Run Foreground="{StaticResource TextDimBrush}">
+                                        <Run.Text>
+                                            <MultiBinding Converter="{StaticResource UV}" ConverterParameter="mass" Mode="OneWay">
+                                                <Binding Path="TuneResult.Car.TotalMass"/>
+                                                <Binding Path="UseImperial"/>
+                                            </MultiBinding>
+                                        </Run.Text>
+                                    </Run>
                                 </TextBlock>
                             </StackPanel>
                             <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">

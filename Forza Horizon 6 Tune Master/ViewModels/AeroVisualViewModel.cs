@@ -7,6 +7,8 @@ using Forza_Horizon_6_Tune_Master.Services;
 
 namespace Forza_Horizon_6_Tune_Master.ViewModels;
 
+// "Аэродинамика и внешний вид" module: front/rear bumper, side skirts, rear wing.
+// Weight reduction and chassis stiffness moved to the chassis module (SuspensionViewModel).
 public class AeroVisualViewModel : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -16,9 +18,16 @@ public class AeroVisualViewModel : INotifyPropertyChanged
     private SelectedParts _parts = null!;
     private int _makeId;
 
+    public ObservableCollection<PartOption> FrontBumpers { get; } = new();
     public ObservableCollection<PartOption> RearWings { get; } = new();
-    public ObservableCollection<PartOption> WeightReductions { get; } = new();
-    public ObservableCollection<PartOption> ChassisStiffness { get; } = new();
+    public ObservableCollection<PartOption> RearBumpers { get; } = new();
+    public ObservableCollection<PartOption> SideSkirts { get; } = new();
+
+    public PartOption? SelectedFrontBumper
+    {
+        get => FrontBumpers.FirstOrDefault(o => o.Id == _parts.FrontBumperPartId);
+        set { if (value != null) _parts.FrontBumperPartId = value.Id; }
+    }
 
     public PartOption? SelectedRearWing
     {
@@ -26,16 +35,16 @@ public class AeroVisualViewModel : INotifyPropertyChanged
         set { if (value != null) _parts.RearWingPartId = value.Id; }
     }
 
-    public PartOption? SelectedWeightReduction
+    public PartOption? SelectedRearBumper
     {
-        get => WeightReductions.FirstOrDefault(o => o.Id == _parts.WeightReductionPartId);
-        set { if (value != null) _parts.WeightReductionPartId = value.Id; }
+        get => RearBumpers.FirstOrDefault(o => o.Id == _parts.RearBumperPartId);
+        set { if (value != null) _parts.RearBumperPartId = value.Id; }
     }
 
-    public PartOption? SelectedChassisStiffness
+    public PartOption? SelectedSideSkirt
     {
-        get => ChassisStiffness.FirstOrDefault(o => o.Id == _parts.ChassisStiffnessPartId);
-        set { if (value != null) _parts.ChassisStiffnessPartId = value.Id; }
+        get => SideSkirts.FirstOrDefault(o => o.Id == _parts.SideSkirtPartId);
+        set { if (value != null) _parts.SideSkirtPartId = value.Id; }
     }
 
     public void LoadForCar(CarCard car, SelectedParts parts)
@@ -46,41 +55,33 @@ public class AeroVisualViewModel : INotifyPropertyChanged
         int ordinal = car.CarDbId;
         int carBodyId = car.CarBodyId;
 
-        if (!parts.RearWingPartId.HasValue)
-        {
-            var list = _db.GetRearWings(ordinal);
-            parts.RearWingPartId = PickStock(list)?.Id;
-            ReplaceAll(RearWings, _resolver.ToOptions(list, _makeId));
-        }
-        else
-            ReplaceAll(RearWings, _resolver.ToOptions(_db.GetRearWings(ordinal), _makeId));
-
-        if (!parts.WeightReductionPartId.HasValue)
-        {
-            var list = _db.GetWeightReductions(carBodyId);
-            parts.WeightReductionPartId = PickStock(list)?.Id;
-            ReplaceAll(WeightReductions, _resolver.ToOptions(list, _makeId));
-        }
-        else
-            ReplaceAll(WeightReductions, _resolver.ToOptions(_db.GetWeightReductions(carBodyId), _makeId));
-
-        if (!parts.ChassisStiffnessPartId.HasValue)
-        {
-            var list = _db.GetChassisStiffness(carBodyId);
-            parts.ChassisStiffnessPartId = PickStock(list)?.Id;
-            ReplaceAll(ChassisStiffness, _resolver.ToOptions(list, _makeId));
-        }
-        else
-            ReplaceAll(ChassisStiffness, _resolver.ToOptions(_db.GetChassisStiffness(carBodyId), _makeId));
+        LoadBodyKit(FrontBumpers, _db.GetFrontBumpers(carBodyId), () => parts.FrontBumperPartId,
+            id => parts.FrontBumperPartId = id);
+        LoadBodyKit(RearWings, _db.GetRearWings(ordinal), () => parts.RearWingPartId,
+            id => parts.RearWingPartId = id);
+        LoadBodyKit(RearBumpers, _db.GetRearBumpers(carBodyId), () => parts.RearBumperPartId,
+            id => parts.RearBumperPartId = id);
+        LoadBodyKit(SideSkirts, _db.GetSideSkirts(carBodyId), () => parts.SideSkirtPartId,
+            id => parts.SideSkirtPartId = id);
 
         RefreshSelections();
     }
 
     private void RefreshSelections()
     {
+        OnPropertyChanged(nameof(SelectedFrontBumper));
         OnPropertyChanged(nameof(SelectedRearWing));
-        OnPropertyChanged(nameof(SelectedWeightReduction));
-        OnPropertyChanged(nameof(SelectedChassisStiffness));
+        OnPropertyChanged(nameof(SelectedRearBumper));
+        OnPropertyChanged(nameof(SelectedSideSkirt));
+    }
+
+    private void LoadBodyKit<T>(ObservableCollection<PartOption> target,
+        System.Collections.Generic.List<T> list, System.Func<int?> getId, System.Action<int?> setId)
+        where T : DbUpgradePart
+    {
+        if (!getId().HasValue)
+            setId(PickStock(list)?.Id);
+        ReplaceAll(target, _resolver.ToOptions(list, _makeId));
     }
 
     private static void ReplaceAll(ObservableCollection<PartOption> target, ObservableCollection<PartOption> source)

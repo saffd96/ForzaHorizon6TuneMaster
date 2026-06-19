@@ -99,13 +99,9 @@ internal static class AlignmentCalculator
         if (car.DriveType == DriveType.RWD) { baseR += 0.05; baseF -= 0.02; }
         if (car.DriveType == DriveType.FWD) { baseF -= 0.05; baseR += 0.02; }
 
-        double toeF = staticF + baseF;
-        double toeR = staticR + baseR;
-
-        // High-speed cars need less aggressive toe to avoid instability.
         double speedFactor = CalculationHelpers.Clamp((effectiveMaxKmh - 120.0) / 250.0, 0, 1);
-        toeF *= (1.0 - speedFactor * 0.25);
-        toeR *= (1.0 - speedFactor * 0.15);
+        double toeF = staticF + baseF * (1.0 - speedFactor * 0.25);
+        double toeR = staticR + baseR * (1.0 - speedFactor * 0.15);
 
         r.ToeFront = Math.Round(CalculationHelpers.Clamp(toeF, ToeMin, ToeMax), 2);
         r.ToeRear  = Math.Round(CalculationHelpers.Clamp(toeR, ToeMin, ToeMax), 2);
