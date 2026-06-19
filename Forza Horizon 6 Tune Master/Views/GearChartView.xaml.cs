@@ -138,7 +138,7 @@ public partial class GearChartView : UserControl
         double h = ChartCanvas.ActualHeight;
         if (w <= 0 || h <= 0) return;
 
-        const double padL = 48, padR = 56, padT = 28, padB = 32;
+        const double padL = 48, padR = 150, padT = 24, padB = 48;
         double cw = w - padL - padR;
         double ch = h - padT - padB;
         if (cw <= 0 || ch <= 0) return;
@@ -235,7 +235,7 @@ public partial class GearChartView : UserControl
         };
         ChartCanvas.Children.Add(axisLbl);
         Canvas.SetLeft(axisLbl, padL + cw * 0.5 - 28);
-        Canvas.SetTop(axisLbl, h - 8);
+        Canvas.SetTop(axisLbl, h - 24);
 
         axisLbl = new TextBlock
         {
@@ -266,7 +266,7 @@ public partial class GearChartView : UserControl
             FontFamily = lblFamily
         };
         ChartCanvas.Children.Add(refLbl);
-        double refLabelLeft = Math.Min(w - padR + 4, w - 80);
+        double refLabelLeft = w - padR - 60;
         Canvas.SetLeft(refLbl, refLabelLeft);
         Canvas.SetTop(refLbl, refY - 8);
 
@@ -363,7 +363,7 @@ public partial class GearChartView : UserControl
             };
             ChartCanvas.Children.Add(speedLbl);
             Canvas.SetLeft(speedLbl, x1 + 6);
-            Canvas.SetTop(speedLbl, padT - 14);
+            Canvas.SetTop(speedLbl, 4);
         }
 
         // vertical dashed line at actual max speed
@@ -471,5 +471,70 @@ public partial class GearChartView : UserControl
         });
         Canvas.SetLeft(ChartCanvas.Children[^1], curX - 3);
         Canvas.SetTop(ChartCanvas.Children[^1], curY - 3);
+
+        // ── legend ──
+        double legX = w - padR + 46;
+        double legY = padT + 4;
+
+        // trajectory (white solid)
+        ChartCanvas.Children.Add(new Line
+        {
+            X1 = legX, X2 = legX + 14, Y1 = legY + 6, Y2 = legY + 6,
+            Stroke = trajBrush,
+            StrokeThickness = 3
+        });
+        var trajLbl = new TextBlock
+        {
+            Text = locSvc.T("GearLegendTrajectory"),
+            Foreground = lblBrush,
+            FontSize = 9,
+            FontFamily = lblFamily
+        };
+        ChartCanvas.Children.Add(trajLbl);
+        Canvas.SetLeft(trajLbl, legX + 18);
+        Canvas.SetTop(trajLbl, legY);
+
+        // rev limit (red dashed)
+        double revLegY = legY + 16;
+        ChartCanvas.Children.Add(new Line
+        {
+            X1 = legX, X2 = legX + 14, Y1 = revLegY + 6, Y2 = revLegY + 6,
+            Stroke = new SolidColorBrush(Color.FromArgb(0x70, 0xEF, 0x44, 0x44)),
+            StrokeThickness = 1.5,
+            StrokeDashArray = new DoubleCollection([6, 4])
+        });
+        var revLbl = new TextBlock
+        {
+            Text = locSvc.T("ChartRevLimitLabel"),
+            Foreground = new SolidColorBrush(Color.FromArgb(0xAA, 0xEF, 0x44, 0x44)),
+            FontSize = 9,
+            FontFamily = lblFamily
+        };
+        ChartCanvas.Children.Add(revLbl);
+        Canvas.SetLeft(revLbl, legX + 18);
+        Canvas.SetTop(revLbl, revLegY);
+
+        // max speed (green dashed) — conditional
+        if (actualMaxKmh > 0 && actualMaxKmh <= speedCap)
+        {
+            double maxLegY = revLegY + 16;
+            ChartCanvas.Children.Add(new Line
+            {
+                X1 = legX, X2 = legX + 14, Y1 = maxLegY + 6, Y2 = maxLegY + 6,
+                Stroke = new SolidColorBrush(Color.FromArgb(0x99, 0x22, 0xC5, 0x5E)),
+                StrokeThickness = 1.5,
+                StrokeDashArray = new DoubleCollection([5, 4])
+            });
+            var maxLbl = new TextBlock
+            {
+                Text = locSvc.T("GearLegendMaxSpeed"),
+                Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 0x22, 0xC5, 0x5E)),
+                FontSize = 9,
+                FontFamily = lblFamily
+            };
+            ChartCanvas.Children.Add(maxLbl);
+            Canvas.SetLeft(maxLbl, legX + 18);
+            Canvas.SetTop(maxLbl, maxLegY);
+        }
     }
 }

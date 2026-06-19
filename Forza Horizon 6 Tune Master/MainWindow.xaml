@@ -5,8 +5,8 @@
         xmlns:cv="clr-namespace:Forza_Horizon_6_Tune_Master.Converters"
         xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services"
         Title="{l:Loc MainTitle}"
-        Width="1536" Height="864"
         MinWidth="900" MinHeight="560"
+        WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
         FontFamily="{StaticResource AppFontFamily}"
         Background="{StaticResource BgBrush}">

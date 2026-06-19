@@ -16,6 +16,7 @@
         <cv:DateDisplayConverter             x:Key="DateDisplay"/>
         <cv:GenericEnumLabelConverter        x:Key="EnumLabel"/>
         <cv:ValueToRangeConverter            x:Key="VTR"/>
+        <cv:PercentToRatioConverter          x:Key="P2R"/>
         <cv:EnumToBoolConverter              x:Key="E2B"/>
 
         <!-- Result card -->
@@ -352,26 +353,27 @@
                             <TextBlock Text="{l:Loc ResultDiff}" Style="{StaticResource RCardHeader}"/>
                             <UniformGrid Columns="2">
                                 <v:ResultParam Label="{l:Loc ResultDiffAccel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="0,0,6,0"
-                                               Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}"
-                                               ValueText="{Binding TuneResult.DiffFrontAccel, StringFormat='{}{0:F0}% П'}">
+                                               Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
+                                    <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffFrontAccel"/><Binding Path="DataContext.DiffFrontSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffFrontAccel"/><Binding Path="Constraints.DiffAccelMin"/><Binding Path="Constraints.DiffAccelMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
                                 <v:ResultParam Label="{l:Loc ResultDiffDecel}" Hint="{Binding TuneResult.Explanations[Differential]}"
-                                               Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}"
-                                               ValueText="{Binding TuneResult.DiffFrontDecel, StringFormat='{}{0:F0}% П'}">
+                                               Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
+                                    <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffFrontDecel"/><Binding Path="DataContext.DiffFrontSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffFrontDecel"/><Binding Path="Constraints.DiffDecelMin"/><Binding Path="Constraints.DiffDecelMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultDiffAccel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="0,0,6,0"
-                                               ValueText="{Binding TuneResult.DiffAccel, StringFormat='{}{0:F0}%'}">
+                                <v:ResultParam Label="{l:Loc ResultDiffAccel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="0,0,6,0">
+                                    <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffAccel"/><Binding Path="DataContext.DiffMainAxleSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffAccel"/><Binding Path="Constraints.DiffAccelMin"/><Binding Path="Constraints.DiffAccelMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
                                 <v:ResultParam Label="{l:Loc ResultDiffDecel}" Hint="{Binding TuneResult.Explanations[Differential]}"
-                                               Visibility="{Binding HasDiffDecel, Converter={StaticResource B2V}}"
-                                               ValueText="{Binding TuneResult.DiffDecel, StringFormat='{}{0:F0}%'}">
+                                               Visibility="{Binding HasRearDiffDecel, Converter={StaticResource B2V}}">
+                                    <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffDecel"/><Binding Path="DataContext.DiffMainAxleSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffDecel"/><Binding Path="Constraints.DiffDecelMin"/><Binding Path="Constraints.DiffDecelMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
                                 <v:ResultParam Label="{l:Loc ResultDiffCenterBias}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="0,0,6,0"
                                                Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}"
+                                               Progress="{Binding TuneResult.CenterDiffBias, Converter={StaticResource P2R}}"
                                                ValueText="{Binding TuneResult.CenterDiffBias, StringFormat='{}{0:F0}%'}"/>
                             </UniformGrid>
                         </StackPanel>

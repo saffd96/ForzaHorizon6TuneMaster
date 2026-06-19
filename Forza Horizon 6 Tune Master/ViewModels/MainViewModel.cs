@@ -74,6 +74,8 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             NotifyCarDisplayProperties();
             OnPropertyChanged(nameof(HasCenterDiffBias));
             OnPropertyChanged(nameof(HasAWDFrontDiff));
+            OnPropertyChanged(nameof(HasRearDiffDecel));
+            OnPropertyChanged(nameof(DiffMainAxleSuffix));
             OnPropertyChanged(nameof(SelectedCarDisplayText));
             OnModelChanged(null, null!);
             if (!_isLoadingProfile)
@@ -152,6 +154,8 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
                 TransmissionVM.ResetToStockForDrivetrain(swap.DrivetrainID);
                 OnPropertyChanged(nameof(HasCenterDiffBias));
                 OnPropertyChanged(nameof(HasAWDFrontDiff));
+                OnPropertyChanged(nameof(HasRearDiffDecel));
+                OnPropertyChanged(nameof(DiffMainAxleSuffix));
             }
         }
 
@@ -185,6 +189,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasResult));
             OnPropertyChanged(nameof(HasAWDFrontDiff));
+            OnPropertyChanged(nameof(HasRearDiffDecel));
             OnPropertyChanged(nameof(HasLaunchControl));
         }
     }
@@ -198,6 +203,18 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             return Math.Max(diff.RearLimitedSlipTorqueDecel, diff.FrontLimitedSlipTorqueDecel) > 0.01;
         }
     }
+    // On AWD the rear decel should always be shown alongside the front decel
+    // (which is gated only by HasAWDFrontDiff), so the two axles stay symmetric
+    // and the center-bias row drops to the bottom instead of floating up.
+    public bool HasRearDiffDecel => HasAWDFrontDiff || HasDiffDecel;
+
+    // Localized axle suffix for differential values (RU: П/З, EN: F/R).
+    // The dedicated front-diff rows (AWD only) are always the front axle; the
+    // main-diff row is the front axle on FWD and the rear axle otherwise.
+    public string DiffFrontSuffix => LocalizationService.Instance.T("ResultDiffSuffixFront");
+    public string DiffMainAxleSuffix => Car.DriveType == Models.DriveType.FWD
+        ? LocalizationService.Instance.T("ResultDiffSuffixFront")
+        : LocalizationService.Instance.T("ResultDiffSuffixRear");
     public bool HasLaunchControl => _tuneResult?.LaunchControlRpm.HasValue == true;
 
     private bool _isElectricCar;
@@ -661,6 +678,8 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         OnPropertyChanged(nameof(StatusMessage));
         OnPropertyChanged(nameof(BusyMessage));
         OnPropertyChanged(nameof(SelectedCarDisplayText));
+        OnPropertyChanged(nameof(DiffFrontSuffix));
+        OnPropertyChanged(nameof(DiffMainAxleSuffix));
         RefreshUnitOptionLabels();
         RefreshLanguageLabels();
         // Force all ComboBox selection boxes to re-render with new labels
@@ -835,9 +854,14 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         {
             OnPropertyChanged(nameof(HasCenterDiffBias));
             OnPropertyChanged(nameof(HasAWDFrontDiff));
+            OnPropertyChanged(nameof(HasRearDiffDecel));
+            OnPropertyChanged(nameof(DiffMainAxleSuffix));
         }
         if (e.PropertyName == nameof(CarCard.DifferentialUpgrade))
+        {
             OnPropertyChanged(nameof(HasDiffDecel));
+            OnPropertyChanged(nameof(HasRearDiffDecel));
+        }
         if (e.PropertyName is nameof(CarCard.Make) or nameof(CarCard.Model) or nameof(CarCard.Year))
             OnPropertyChanged(nameof(SelectedCarDisplayText));
         if (e.PropertyName == nameof(CarCard.TotalMass))

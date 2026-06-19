@@ -300,6 +300,25 @@ public class DateDisplayConverter : IValueConverter
         Binding.DoNothing;
 }
 
+// Maps a percentage value (0..100, optionally a different max via ConverterParameter)
+// onto a 0..1 progress ratio. Used for bars that have no min/max constraint of their own,
+// e.g. the centre-diff bias.
+public class PercentToRatioConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not double v) return 0.0;
+        double max = 100.0;
+        if (parameter is string s && double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var p) && p > 0)
+            max = p;
+        double ratio = v / max;
+        return ratio < 0.0 ? 0.0 : ratio > 1.0 ? 1.0 : ratio;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        Binding.DoNothing;
+}
+
 public class ValueToRangeConverter : IMultiValueConverter
 {
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)

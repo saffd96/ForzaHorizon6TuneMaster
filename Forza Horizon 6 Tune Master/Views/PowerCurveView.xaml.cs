@@ -86,7 +86,7 @@ public partial class PowerCurveView : UserControl
         double h = ChartCanvas.ActualHeight;
         if (w <= 0 || h <= 0) return;
 
-        const double padL = 44, padR = 44, padT = 14, padB = 18;
+        const double padL = 48, padR = 150, padT = 48, padB = 48;
         double cw = w - padL - padR;
         double ch = h - padT - padB;
         if (cw <= 0 || ch <= 0) return;
@@ -190,7 +190,7 @@ public partial class PowerCurveView : UserControl
         };
         ChartCanvas.Children.Add(tAxisLbl);
         Canvas.SetLeft(tAxisLbl, 4);
-        Canvas.SetTop(tAxisLbl, 10);
+        Canvas.SetTop(tAxisLbl, 8);
 
         var pAxisLbl = new TextBlock
         {
@@ -201,8 +201,8 @@ public partial class PowerCurveView : UserControl
             TextAlignment = TextAlignment.Center
         };
         ChartCanvas.Children.Add(pAxisLbl);
-        Canvas.SetLeft(pAxisLbl, w - padR + 4);
-        Canvas.SetTop(pAxisLbl, 10);
+        Canvas.SetLeft(pAxisLbl, w - padR + 0);
+        Canvas.SetTop(pAxisLbl, 0);
 
         var rpmAxisLbl = new TextBlock
         {
@@ -214,7 +214,7 @@ public partial class PowerCurveView : UserControl
         };
         ChartCanvas.Children.Add(rpmAxisLbl);
         Canvas.SetLeft(rpmAxisLbl, padL + cw * 0.5 - 14);
-        Canvas.SetTop(rpmAxisLbl, h - 8);
+        Canvas.SetTop(rpmAxisLbl, h - 24);
 
         // ── torque curve (filled polygon + line) ──
         var torqueColor = Color.FromRgb(0x1A, 0xBC, 0xFE);
@@ -336,8 +336,8 @@ public partial class PowerCurveView : UserControl
         Canvas.SetTop(ChartCanvas.Children[^1], ppY - 3.5);
 
         // ── legend ──
-        double legendX = padL + cw - 120;
-        double legendY = padT + 4;
+        double legendX = w - padR + 46;
+        double legendY = 36;
 
         // torque legend
         var tLegendLine = new Line
