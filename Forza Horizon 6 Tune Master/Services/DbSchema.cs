@@ -595,6 +595,9 @@ public sealed record DbWheel
     public int Id { get; init; }
     public string DisplayName { get; init; } = "";
     public double Mass { get; init; }
+    // Lightness tier (0 = heaviest … 4 = lightest). This — not Mass — drives the
+    // in-game weight change when fitting a wheel style.
+    public int MassLevel { get; init; }
     public int ManufacturerId { get; init; }
     public bool IsStock { get; init; }
 }

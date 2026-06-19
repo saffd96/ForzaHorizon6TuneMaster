@@ -692,6 +692,20 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         OnPropertyChanged(nameof(TuneResult));
         _tuneResult = tr;
         OnPropertyChanged(nameof(TuneResult));
+
+        // Re-populate all part dropdowns with the new language.  LoadForCar is safe to
+        // call again — ??= / !HasValue guards prevent resetting user selections, while
+        // Populate/Clear+Add rebuild every PartOption.DisplayName from the resolver.
+        if (_car.CarDbId != 0)
+        {
+            SwapsVM.LoadForCar(_car, _selectedParts);
+            EngineVM.LoadForCar(_car, _selectedParts);
+            MotorVM.LoadForCar(_car, _selectedParts);
+            SuspensionVM.LoadForCar(_car, _selectedParts);
+            TransmissionVM.LoadForCar(_car, _selectedParts);
+            TiresWheelsVM.LoadForCar(_car, _selectedParts);
+            AeroVisualVM.LoadForCar(_car, _selectedParts);
+        }
     }
 
     private void RefreshUnitOptionLabels()

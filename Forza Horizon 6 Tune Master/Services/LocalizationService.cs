@@ -193,24 +193,33 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
             dict = new Dictionary<string, string>(entries, StringComparer.OrdinalIgnoreCase);
 
-            // Optional game-extracted strings (e.g. Upgrades, List_DriveType, List_Aspiration)
-            var gameResourceName = $"Forza_Horizon_6_Tune_Master.Localization.GameStrings.{code}.json";
-            using var gameStream = asm.GetManifestResourceStream(gameResourceName);
-            if (gameStream != null)
+            // Optional game-extracted strings (e.g. Upgrades, List_DriveType, List_Aspiration).
+            // Isolated in its own try-catch so a malformed or oversized GameStrings file
+            // doesn't break the entire language load — the base strings still work.
+            try
             {
-                using var gameReader = new StreamReader(gameStream);
-                var gameJson = gameReader.ReadToEnd();
-                var gameTables = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(gameJson);
-                if (gameTables != null)
+                var gameResourceName = $"Forza_Horizon_6_Tune_Master.Localization.GameStrings.{code}.json";
+                using var gameStream = asm.GetManifestResourceStream(gameResourceName);
+                if (gameStream != null)
                 {
-                    foreach (var (table, tableEntries) in gameTables)
+                    using var gameReader = new StreamReader(gameStream);
+                    var gameJson = gameReader.ReadToEnd();
+                    var gameTables = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(gameJson);
+                    if (gameTables != null)
                     {
-                        foreach (var (id, value) in tableEntries)
+                        foreach (var (table, tableEntries) in gameTables)
                         {
-                            dict[$"{table}_{id}"] = value;
+                            foreach (var (id, value) in tableEntries)
+                            {
+                                dict[$"{table}_{id}"] = value;
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LocalizationService] Failed to load GameStrings.{code}.json: {ex.Message}");
             }
 
             return true;

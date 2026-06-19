@@ -59,6 +59,11 @@ public class SelectedParts : NotifyBase
     public int? WheelRearId { get => _wheelRearId; set { if (Set(ref _wheelRearId, value)) OnPartChanged(); } }
     private double _stockRimMass;
     public double StockRimMass => _stockRimMass;
+    // Stock wheel lightness tier + stock wheel/tyre geometry — baseline for the
+    // wheel-style weight delta (see ComputeTotalMassDiff / WheelTierMassDiff).
+    private int _stockRimTier;
+    private int _stockFrontDiameterIn, _stockRearDiameterIn;
+    private int _stockFrontTireWidthMm, _stockRearTireWidthMm;
 
     private int? _weightReductionPartId;
 
@@ -244,12 +249,18 @@ public class SelectedParts : NotifyBase
     public void SetCarData(CarCard car, bool resetParts = true)
     {
         _curbWeight = car.CurbWeightKg;
-        _makeId = _db.GetCar(car.CarDbId)?.MakeID ?? 0;
+        var dbCar = _db.GetCar(car.CarDbId);
+        _makeId = dbCar?.MakeID ?? 0;
         EngineId = car.EngineDbId;
         var stockDt = _db.GetStockDrivetrain(car.CarDbId);
         DrivetrainId = stockDt?.DrivetrainID;
         CarBodyOrdinal = car.CarBodyId;
-        _stockRimMass = _db.GetStockWheelMass(_db.GetCar(car.CarDbId)?.MediaName) ?? 0.0;
+        _stockRimMass = _db.GetStockWheelMass(dbCar?.MediaName) ?? 0.0;
+        _stockRimTier = _db.GetStockWheelTier(dbCar?.MediaName) ?? 0;
+        _stockFrontDiameterIn = dbCar?.FrontWheelDiameterIN ?? 0;
+        _stockRearDiameterIn = dbCar?.RearWheelDiameterIN ?? 0;
+        _stockFrontTireWidthMm = dbCar?.FrontTireWidthMM ?? 0;
+        _stockRearTireWidthMm = dbCar?.RearTireWidthMM ?? 0;
         if (resetParts)
             ResetAllToStock();
     }
@@ -326,18 +337,37 @@ public class SelectedParts : NotifyBase
         total += PartMassDiff(_motorPartId, id => _db.GetMotorPartById(id));
         total += PartMassDiff(_weightReductionPartId, id => _db.GetWeightReductionById(id));
         total += PartMassDiff(_chassisStiffnessPartId, id => _db.GetChassisStiffnessById(id));
-        // Wheel appearance: each axle contributes half the delta from stock.
-        if (_wheelFrontId.HasValue && _stockRimMass > 0)
-        {
-            var wf = _db.GetWheelMassById(_wheelFrontId.Value);
-            if (wf.HasValue) total += (wf.Value - _stockRimMass) / 2;
-        }
-        if (_wheelRearId.HasValue && _stockRimMass > 0)
-        {
-            var wr = _db.GetWheelMassById(_wheelRearId.Value);
-            if (wr.HasValue) total += (wr.Value - _stockRimMass) / 2;
-        }
+        // Wheel style: the game's weight change is driven by the wheel's lightness
+        // tier (List_Wheels.MassLevel), NOT its raw Mass. Δ per axle scales with the
+        // fitted rim diameter² and tyre width. (Reverse-engineered from in-game
+        // readings; see WheelTierMassDiff.)
+        total += WheelTierMassDiff(_wheelFrontId, _stockFrontDiameterIn, _stockFrontTireWidthMm,
+            _rimFrontPartId, id => _db.GetRimFrontById(id)?.FrontWheelDiameter,
+            _tireWidthFrontPartId, id => _db.GetTireWidthFrontById(id)?.FrontTireWidth);
+        total += WheelTierMassDiff(_wheelRearId, _stockRearDiameterIn, _stockRearTireWidthMm,
+            _rimRearPartId, id => _db.GetRimRearById(id)?.RearWheelDiameter,
+            _tireWidthRearPartId, id => _db.GetTireWidthRearById(id)?.RearTireWidth);
         return Math.Max(total, 1.0);
+    }
+
+    // Per-tier kg ≈ COEF · D² · W for the whole car; each axle is half of that.
+    // COEF fitted to in-game weight readings across several cars/rim sizes.
+    private const double WheelTierMassCoef = 6.8e-5;
+
+    private double WheelTierMassDiff(int? wheelId, int stockDiameterIn, int stockTireWidthMm,
+        int? rimPartId, Func<int, int?> rimDiameter,
+        int? tireWidthPartId, Func<int, int?> tireWidth)
+    {
+        if (wheelId == null) return 0;
+        var tier = _db.GetWheelTierById(wheelId.Value);
+        if (tier == null) return 0;
+
+        double d = rimPartId != null ? rimDiameter(rimPartId.Value) ?? stockDiameterIn : stockDiameterIn;
+        double w = tireWidthPartId != null ? tireWidth(tireWidthPartId.Value) ?? stockTireWidthMm : stockTireWidthMm;
+        if (d <= 0 || w <= 0) return 0;
+
+        // Higher tier = lighter wheel ⇒ negative when fitting a lighter wheel than stock.
+        return (_stockRimTier - tier.Value) * WheelTierMassCoef * d * d * w * 0.5;
     }
 
     public double? ComputeTotalWeightDistDiff()
