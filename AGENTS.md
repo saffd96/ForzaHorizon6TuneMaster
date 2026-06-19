@@ -1,135 +1,82 @@
-# Forza Horizon 6 Tune Master
+# AGENTS.md
 
-.NET 8 WPF app that generates car tunes from vehicle specs + track discipline + user constraints. Parts are selected through per-category sub-viewmodels backed by an embedded SQLite database.
+WPF / .NET 8 desktop app (Windows-only) that generates car tunes for Forza Horizon 6 from an embedded SQLite database extracted from the game files. Root namespace `Forza_Horizon_6_Tune_Master` (underscores, not dots). Russian UI, English secondary.
 
 ## Build & Test
 
 ```powershell
-dotnet build                                                   # Debug
-dotnet build -c Release                                        # Release (strips debug symbols)
-dotnet test TuneMaster.Tests\TuneMaster.Tests.csproj           # All ~23 test files
-dotnet test TuneMaster.Tests\TuneMaster.Tests.csproj --filter "FullyQualifiedName~TuneGeneratorService"  # Single class
+dotnet build                                                   # Debug (WPF app only — see below)
+dotnet build -c Release                                        # Release: no debug symbols, self-contained
+dotnet test TuneMaster.Tests\TuneMaster.Tests.csproj           # Full xUnit suite
+dotnet test TuneMaster.Tests\TuneMaster.Tests.csproj --filter "FullyQualifiedName~TuneGeneratorService"  # One class
 ```
 
-Windows + .NET 8 SDK required (WPF is Windows-only). Only NuGet dep: `System.Text.Json 8.0.5`.
-**No linter, formatter, or typecheck config exists in repo.**
+**The `.sln` contains only the WPF app.** Test (`TuneMaster.Tests/`) and validator (`TuneValidator/`) projects are not in it — always reference `.csproj` explicitly. Requires Windows + .NET 8 SDK (WPF). NuGet: `System.Text.Json 8.0.5`, `Microsoft.Data.Sqlite 8.0.5`. No linter/formatter/typecheck config exists.
 
 ## Projects
 
-| Project | Type | In `.sln`? |
+| Path | Type | In `.sln`? |
 |---|---|---|
-| `Forza Horizon 6 Tune Master/` | WPF app (WinExe, `net8.0-windows`) | Yes |
-| `TuneMaster.Tests/` | xUnit (`net8.0-windows`, `UseWPF=true`) | No — run `.csproj` directly |
-| `TuneValidator/` | Console harness (`net8.0`) | No — manual formula verification |
+| `Forza Horizon 6 Tune Master/` | WPF app (`WinExe`, `net8.0-windows`) | Yes |
+| `TuneMaster.Tests/` | xUnit (`net8.0-windows`, `UseWPF=true`) | No |
+| `TuneValidator/` | Console harness (`net8.0`) for formula checks | No |
+| `DUMPER/` | Throwaway DB scripts (gitignored) | No |
 
-## Architecture
+## Architecture (no DI)
 
-- **TuneGeneratorService** (42 lines) — thin orchestrator. Heavy formulas live in per-domain `static` calculators under `Services/`: `AeroCalculator`, `TireCalculator`, `SuspensionCalculator`, `AlignmentCalculator`, `BrakeCalculator`, `DifferentialCalculator`, `GearingCalculator`, `LaunchControlCalculator`. Only 3 `switch` on `Discipline` remain (Aero, Differential, Tire).
-- **MainViewModel** (~1321 lines) — single ViewModel, constructs services inline (no DI). Implements `INotifyPropertyChanged` directly.
-- **No DI**: `MainWindow.DataContext = new MainViewModel()`. Custom `RelayCommand` with `Raise()` for manual `CanExecuteChanged`.
-- **INPC**: Custom `NotifyBase` with `Set<T>(ref field, value)`. No CommunityToolkit.
-- **Root namespace**: `Forza_Horizon_6_Tune_Master` (underscores, not dots).
-- **Empty dirs**: `Services/Abstractions/` and `Data/` are unused.
+`MainWindow.DataContext = new MainViewModel()`. Services are static singletons or static calculators. INPC hand-rolled via `NotifyBase.Set<T>(ref field, value)`. Commands use custom `RelayCommand`.
 
-## Data Flow
+**Layer 1 — `Models/SelectedParts.cs`** (~430 lines) holds all upgrade part IDs as nullable ints (`int?`). Fires `PartsChanged` and `CarMassUpdated` events when any part changes. Computes `ComputeTotalMass()` by summing `MassDiff` from every part via `Fh6DatabaseService`. Also computes wheel-tier mass deltas. `SetCarData(car)` initializes resolved IDs (EngineId, DrivetrainId, etc.) from the car.
 
-1. User selects car from `CarListBox` → `MainViewModel.SelectedCar` setter → `CarSpecController.SelectCar()` → `PopulateCarFromDb()` fills `CarCard` (CarDbId, CarBodyId, EngineDbId, etc.)
-2. `LoadSubViewModels()` creates `SelectedParts`, calls `SetCarData()`, then loads all 7 sub-VMs: SwapsVM, EnginePartsVM, MotorPartsVM, SuspensionVM, TransmissionVM, TiresWheelsVM, AeroVisualVM
-3. Each sub-VM queries `Fh6DatabaseService` for applicable parts using `car.CarDbId` (Ordinal, e.g. 247) or `car.CarBodyId` (CarBodyId, e.g. 247000)
-4. User adjusts parts, fills discipline + season in `TrackInfoView`
-5. Clicks "Сгенерировать" → `MainViewModel.GenerateCommand` → `TuneGeneratorService.Generate(Car, Track, Constraints)` → `TuneResult`
-6. `TuneResultView` binds to `MainViewModel.TuneResult`
+**Layer 2 — 7 sub-ViewModels** each expose `ObservableCollection<PartOption>` for ComboBox binding: `SwapsVM`, `EngineVM`, `MotorVM`, `SuspensionVM`, `TransmissionVM`, `TiresWheelsVM`, `AeroVisualVM`. When a sub-VM selects a part, it writes to `SelectedParts.*PartId`, which fires `PartsChanged`.
 
-## Key Entrypoints
+**Layer 3 — Static calculators** in `Services/`. `TuneGeneratorService.Generate(CarCard, TrackInfo, SelectedParts, Fh6DatabaseService)` calls them in order: Power → Aero (iterative, up to 3×) → Tire → Alignment (camber→toe→caster) → ARB → Springs → RideHeight → Dampers → Brakes → Differential → Gearing → LaunchControl (Drag only) → `GearingCalculator.PostValidateAndRecalculate`. Each writes into `TuneResult` and its `Explanations`.
 
-- `App.xaml.cs` / `MainWindow.xaml.cs` — app startup
-- `Services/TuneGeneratorService.cs` — orchestrates calculators
-- `Services/CalculationHelpers.cs` — shared constants (`SpringHzToNmm = 0.019739`, baselines) + utilities (`EffectiveWtDist`, `GetSeasonGripFactor`, `ComputeEffectiveMaxSpeedKmh`, `L(key)` shorthand)
-- `ViewModels/MainViewModel.cs` — all UI logic, calls `LoadSubViewModels()` in `SelectedCar` setter
-- `ViewModels/CarSpecController.cs` — async car spec fetch coordination
-- `Services/StorageService.cs` — also contains `SavedProfile` class (not in Models/)
-- `Services/Fh6DatabaseService.cs` — embedded SQLite DB, loads all part tables on startup
-- `Services/PartDisplayNameResolver.cs` — resolves `DbUpgradePart` → localized display name using `Data_UpgradePart.PartName` + `Localization/ru.json` / `en.json`
-- `ViewModels/SwapsViewModel.cs` — engine swaps, forced induction (hidden for stock engines without stock FI)
-- `ViewModels/EnginePartsViewModel.cs` — camshaft, displacement, valves, pistons, fuel, ignition, exhaust, intake, flywheel, manifold, oil cooling, restrictor, intercooler
-- `ViewModels/MotorPartsViewModel.cs` — motor swaps + motor upgrades (electric cars only)
-- `ViewModels/SuspensionViewModel.cs` — spring dampers, brakes, tire compounds, anti-roll bars
-- `ViewModels/TransmissionViewModel.cs` — transmission, clutch, driveline, differential
-- `ViewModels/TiresWheelsViewModel.cs` — tire compounds, widths, profiles, rims, track spacing
-- `ViewModels/AeroVisualViewModel.cs` — rear wings, weight reduction, chassis stiffness
-- `Models/SelectedParts.cs` — holds all selected part IDs, `SetCarData()` sets EngineId/DrivetrainId/CarBodyOrdinal
-- `Models/PartOption.cs` — `Id` + `DisplayName` + `IsStock` for ComboBox binding
-- `Converters/Converters.cs` — contains `CountToVisibilityConverter` (hides empty ComboBoxes)
+**Layer 4 — `Fh6DatabaseService`** (~1582 lines) singleton. `InitializeAsync` loads all DB tables into `ConcurrentDictionary` at startup (embedded via `..\DUMPER\fh6_db.sqlite`). All dictionaries must remain `ConcurrentDictionary` — parallel tests can race on `InitializeAsync`.
 
-## Calculator Patterns
+## App startup
 
-- Each `Calculate*` method signature: `(CarCard, TrackInfo, TuningConstraints, TuneResult, Dictionary<string,string> explanations)` — side effects only to `TuneResult` and `Explanations`.
-- Calculators are now DB-driven / physics-first: springs from target natural frequency using `List_SpringDamperPhysics` bounds, ARB from `List_AntiSwayPhysics`, aero from `List_AeroPhysics`, diff/gearing/brakes from drivetrain DB parts, tire pressure from `List_TireCompound`. Synthetic/test cars without DB records fall back to plausible physics-based defaults.
-- Aero convergence: `CalculateAero` called up to 3× iteratively (speed-dependent downforce).
-- Post-validation: `GearingCalculator.PostValidateAndRecalculate()` runs geometric gear fix + max-speed reconvergence (up to 3 iterations).
-- `CalculationHelpers.EffectiveWtDist()`: if `WeightDistributionFront == 50.0` (default, never set), engine position overrides: Front→55, Mid→48, Rear→40.
+`App.OnStartup` → `LocalizationService.InitializeFromSystem()` → `await Fh6DatabaseService.Instance.InitializeAsync()` → `new MainWindow().Show()`. Global `DispatcherUnhandledException` / `UnhandledException` handlers show localized message box.
 
-## Test Pattern
+## DB keying — Ordinal ≠ CarBodyId (#1 source of bugs)
 
-Tests use `TuneMaster.Tests/Helpers/CarFactory.cs` (preset cars, tracks, `RelaxedConstraints()`):
-```csharp
-var result = new TuneGeneratorService().Generate(
-    CarFactory.DefaultCar(), CarFactory.DefaultTrack(), CarFactory.RelaxedConstraints());
-```
-**Test isolation**: `TestingEnvironment` class calls `ForzaPaths.SetTestRoot()` to redirect `%APPDATA%` paths to a temp dir (disposed after test).
+| Key | Value | Used by |
+|---|---|---|
+| **Ordinal** | `Data_Car.Id` (= `car.CarDbId`) | Engine/spring-damper/brakes/anti-sway/tire-compound/rim/rear-wing upgrades |
+| **CarBodyId** | `car.CarDbId × 1000` | Car-body weight, chassis stiffness, tire width/aspect, track spacing, bumpers/skirts |
+| **EngineID** | from engine swap | Camshaft, valves, pistons, turbo, etc. |
+| **DrivetrainID** | from `List_UpgradeDrivetrain` | Transmission, clutch, driveline, differential |
 
-## Profile Persistence
+Drivetrain parts keyed by `DrivetrainID`, *not* `DriveTypeID` (FWD/RWD/AWD). See `DbIntegrationCalculatorTests.cs` for asserted relationships.
 
-- `SavedProfile` (Car + Track + Constraints + LastResult) serialized as indented JSON to `%APPDATA%\ForzaTuneMaster\profiles\<name>.json`.
-- Profile names sanitized by replacing `Path.GetInvalidFileNameChars()` with underscores.
-- Current `ProfileVersion = "v2.0"` (in `StorageService.cs:12`).
-- `ForzaPaths` static class centralizes all `%APPDATA%` paths.
+## Domain quirks
 
-## UI Conventions
+- Spring rates stored as **N/mm** in DB and `TuneResult` — do *not* multiply by 9.807. XAML binds to `*Display` properties for conversion.
+- `CalculationHelpers.EffectiveWtDist`: when `WeightDistributionFront` is 50, engine position overrides (Front→55, Mid→48, Rear→40).
+- Aero runs iteratively (up to 3× with recomputed effective max speed).
+- Launch control only for `Discipline.Drag`.
+- Disciplines: Road, Touge, Rally, CrossCountry, Drift, Drag, Street.
 
-- **Language**: Russian. Add text in `Localization/ru.json` + same key in `en.json`.
-- **Game strings**: Selected Forza Horizon 6 string tables (`Upgrades`, `List_DriveType`, `List_Aspiration`, `List_PartManufacturer`, `List_EngineConfig`, `List_EnginePlacement`, `List_CarMake`) are extracted from the official `.str` archives and embedded as `Localization/GameStrings.en.json` and `Localization/GameStrings.ru.json`. `LocalizationService` merges them at runtime using flattened keys like `Upgrades_IDS_Name_78`. Regenerate them with `tools/extract_game_strings.py`.
-- **Part display names** use exact game strings via `PartDisplayNameResolver` whenever a reliable mapping exists (engine/motor names from `Data_Engine`/`Data_Motor`; drivetrain swaps; all upgrade categories from `Upgrades` `IDS_Name_*`). Fallback to `"Stock <Category>"` / `"<Category> Stage N"` only when no game string is available.
-- **Unit conversion**: XAML binds to `*Display` properties. `UnitValueConverter` (MultiBinding) with `ConverterParameter`: `"pressure"`, `"spring"`, `"height"`, `"speed"`, `"mass"`, `"power"`.
-- **Canonical storage**: Power→HP, Speed→km/h, Mass→kg, Spring→N/mm, Pressure→bar, Height→mm. Conversion only in `*Display` properties.
-- **Enum ↔ RadioButton**: `EnumToBoolConverter` TwoWay; `ConvertBack` returns `Binding.DoNothing` for unchecked.
-- **Numeric input**: `NumericBehavior.IsNumeric` attached property (normalises comma→dot).
-- **AWD differential**: `DiffFrontAccel/Decel` and `CenterDiffBias` are `double?` (non-null only for AWD). `HasAWDFrontDiff` controls XAML visibility.
-- **Theme**: `Resources/DarkTheme.xaml`. Never set `Height` on buttons — styles use auto-sizing via `Padding`.
-- **`[JsonIgnore]`** on all computed properties in model classes.
+## Localization
 
-## Key State Flags in MainViewModel
+`CalculationHelpers.L(key)` is the shorthand in calculators for explanation strings. UI strings in `Localization/ru.json` + `en.json` (add same key to both). Game part names in `Localization/GameStrings.{en,ru}.json`, merged at runtime via `PartDisplayNameResolver`.
 
-- `_isLoadingProfile` — suppresses async wiki/AI spec fetches during profile deserialization.
-- `CarCard.AllowGearCalculation` / `OnlyFinalDriveCalculation` — gates full gear ratio output.
-- `CarCard.CdA` — computed from `Cd × FrontalAreaM2` or estimated.
+## Persistence
 
-## API Keys
+All user data under `%APPDATA%\ForzaTuneMaster\`, centralized in `Services/ForzaPaths.cs`. `StorageService` / `ProfileService` serialize `SavedProfile` as indented JSON.
 
-`Services/ApiKeys.cs` reads env vars `FH6_CEREBRAS_API_KEY` / `FH6_OPENROUTER_API_KEY` with hardcoded fallbacks. `.gitignore` excludes `**/Services/ApiKeys.cs`; use `ApiKeys.cs.example` as template. **Bug**: `ApiKeys.OpenRouter` error message says "Cerebras API key not found" (copy-paste error).
+## Testing
 
-## Part DB Keying (CRITICAL — Ordinal ≠ CarBodyId)
+- `Helpers/CarFactory.cs` provides preset cars (`DefaultCar`, `FWDStockCar`, `AWDPerformanceCar`, `ElectricCar`), `DefaultTrack`, and `RelaxedConstraints()`.
+- **Filesystem isolation**: wrap tests in `TestingEnvironment` (`IDisposable`) — sets `ForzaPaths.SetTestRoot(tempDir)` so profile/cache/settings point at a temp dir deleted on dispose. Never write to real `%APPDATA%`.
+- `TuneGeneratorService` has an `[Obsolete]` `Generate(CarCard, TrackInfo, TuningConstraints)` overload for older tests; new code uses the 4-arg version.
 
-The embedded SQLite uses **two different key schemes** you MUST distinguish:
+## API keys (optional)
 
-| Key type | Value | Example | Tables |
-|---|---|---|---|
-| `Ordinal` | `Data_Car.Id` (no `* 1000`) | `247` | `List_UpgradeEngine`, `List_UpgradeRearWing`, `List_UpgradeSpringDamper`, `List_UpgradeBrakes`, `List_UpgradeAntiSway{Front,Rear}`, `List_UpgradeTireCompound`, `List_UpgradeRimSize{Front,Rear}` |
-| `CarBodyId` | `Data_Car.Id * 1000` | `247000` | `List_UpgradeCarBodyWeight`, `List_UpgradeCarBodyChassisStiffness`, `List_UpgradeCarBodyTireWidth{Front,Rear}` |
-| `EngineID` | from swap's `EngineID` | `1` | All `List_UpgradeEngine*` tables (camshaft, displacement, valves, etc.) |
-| `DrivetrainID` | specific drivetrain config from `List_UpgradeDrivetrain` | varies | `List_UpgradeDrivetrain*` tables |
+`Services/ApiKeys.cs` (gitignored) reads env vars `FH6_CEREBRAS_API_KEY` / `FH6_OPENROUTER_API_KEY`. Copy `ApiKeys.cs.example` to enable AI autofill.
 
-**Always use `car.CarDbId` for Ordinal lookups and `car.CarBodyId` for CarBodyId lookups.** Never use `parts.CarBodyOrdinal` (= CarBodyId) as Ordinal — this is the most common bug (was the root cause of empty dropdowns).
+## Leftover legacy
 
-**Drivetrain parts** (transmission, clutch, driveline, differential) are keyed by the car's specific `DrivetrainID` from `List_UpgradeDrivetrain` (stock entry or selected drivetrain swap), **not** by `Data_Car.DriveTypeID`. `Data_Car.DriveTypeID` only tells you FWD/RWD/AWD.
-- `SelectedParts.DrivetrainSwapPartId` controls the selected drivetrain swap. When it changes, `Car.DriveTypeID` and `Car.DriveType` are updated, and transmission/differential parts are reloaded for the new `DrivetrainID`.
-
-## Gotchas
-
-- `.sln` only contains the WPF app — `dotnet test` at solution level won't see test/validator projects.
-- `CLAUDE.md` exists but contains stale claims (e.g., references to `HtmlAgilityPack` dependency that doesn't exist in any `.csproj`, forward-slash paths). Cross-reference with this file.
-- `TuningConstraints` min/max setters auto-correct paired bounds via `SetMinMax()` / `SetMaxMin()` using `[CallerMemberName]` — never bypass setters.
-- `LaunchControlRpm` populated only for Drag discipline.
-- `TuningConstraints` now exposes `ApplyPhysicsBounds(CarCard, SelectedParts, Fh6DatabaseService)`; `MainViewModel` calls it after loading sub-VMs and on part changes so slider bounds match the selected car's actual DB physics.
-- `CarPartNames` table only has `ID, PartName` columns (cosmetic parts only: bumper, wing, exhaust). Upgrade part names come from `Data_UpgradePart.PartName` + localization; missing localization falls back to the raw `PartName`.
-- Test project: 563 total tests, 556 passed, 7 skipped (CarDatabaseService cache tests — no test cache), 0 failed.
+- `TuningConstraints.cs` still exists but is unused in new code path.
+- `UnitConverter.cs` still exists (formerly used by old XAML).
+- `CarCard` still carries enum properties (`TireType`, `SuspensionUpgrade`, etc.) and some legacy fields — these are vestigial from the pre-DB era and are not populated by the new DB-backed path.

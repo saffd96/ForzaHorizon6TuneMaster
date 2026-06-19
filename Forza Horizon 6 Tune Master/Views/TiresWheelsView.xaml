@@ -11,7 +11,16 @@
         <v:PartRow Label="{l:Loc Part_FrontAspectRatio}" Options="{Binding TireAspectRatiosFront}" Selected="{Binding SelectedTireAspectRatioFront}"/>
         <v:PartRow Label="{l:Loc Part_RearAspectRatio}"  Options="{Binding TireAspectRatiosRear}"  Selected="{Binding SelectedTireAspectRatioRear}"/>
 
-        <TextBlock Text="{l:Loc SectionRimParts}" Style="{StaticResource PartGroupHeader}"/>
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Text="{l:Loc SectionRimParts}" Style="{StaticResource PartGroupHeader}"/>
+            <Border Width="15" Height="15" CornerRadius="7.5" Margin="6,0,0,0"
+                    VerticalAlignment="Center" Cursor="Help"
+                    Background="{StaticResource AccentBrush}"
+                    ToolTip="{l:Loc RimWarningTooltip}">
+                <TextBlock Text="!" Foreground="White" FontWeight="Bold"
+                           FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+        </StackPanel>
 
         <!-- Front wheel style dropdown -->
         <v:PartRow Label="{l:Loc Part_RimStyleFront}" Options="{Binding WheelModels}" Selected="{Binding SelectedWheelFront}"/>
