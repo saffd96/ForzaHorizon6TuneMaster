@@ -86,7 +86,7 @@ public partial class PowerCurveView : UserControl
         double h = ChartCanvas.ActualHeight;
         if (w <= 0 || h <= 0) return;
 
-        const double padL = 48, padR = 48, padT = 28, padB = 32;
+        const double padL = 44, padR = 44, padT = 14, padB = 18;
         double cw = w - padL - padR;
         double ch = h - padT - padB;
         if (cw <= 0 || ch <= 0) return;
@@ -104,10 +104,10 @@ public partial class PowerCurveView : UserControl
         double TorqueToY(double t) => padT + ch - (t / maxTorque) * ch;
         double PowerToY(double p) => padT + ch - (p / maxPower) * ch;
 
-        var gridBrush = new SolidColorBrush(Color.FromRgb(0x2D, 0x35, 0x50));
+        var gridBrush = new SolidColorBrush(Color.FromRgb(0x20, 0x35, 0x50));
         var lblBrush = new SolidColorBrush(Color.FromRgb(0x88, 0x92, 0xA4));
         var dimLblBrush = new SolidColorBrush(Color.FromRgb(0x66, 0x70, 0x80));
-        var lblFamily = new FontFamily("Segoe UI");
+        var lblFamily = new FontFamily(new Uri("pack://application:,,,/"), "./Resources/Fonts/#JetBrains Mono");
         const double lblSize = 10;
 
         // ── gridlines (vertical — RPM) ──

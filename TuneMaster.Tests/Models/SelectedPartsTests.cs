@@ -28,7 +28,7 @@ public class SelectedPartsTests
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Count(p => p.IsDefined(typeof(ResetToStockAttribute), false));
 
-        // 39 original + FrontBumper/RearBumper/SideSkirt (body kits) + RimMass (rim mass).
-        Assert.Equal(43, count);
+        // 39 original + FrontBumper/RearBumper/SideSkirt (body kits) + RimMassFront/RimMassRear.
+        Assert.Equal(44, count);
     }
 }

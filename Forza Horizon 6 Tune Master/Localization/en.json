@@ -266,6 +266,8 @@
   "ResultBrakeBalance": "BALANCE F",
   "ResultBrakePressure": "PRESSURE",
   "ResultGearing": "GEARING",
+  "ResultGearChart": "Gear chart",
+  "ResultPowerCurve": "Power/torque curve",
   "ResultFinalDrive": "FINAL DRIVE",
   "ResultMaxSpeed": "MAX SPEED",
   "ResultMaxSpeedTooltip": "~ Estimated top speed at current gear ratios and RPM",
@@ -625,8 +627,9 @@
   "Part_AntiSwayRear": "Rear anti-roll bar",
   "Part_TireCompound": "Tire compound",
   "Part_RearWing": "Rear wing",
-  "Part_RimSizeFront": "Front rims",
-  "Part_RimSizeRear": "Rear rims",
+  "Part_RimSizeFront": "Front rim size",
+  "Part_RimSizeRear": "Rear rim size",
+  "Part_RimStyle": "Wheel model",
   "Part_Camshaft": "Camshaft",
   "Part_Valves": "Valves",
   "Part_Displacement": "Displacement",
@@ -661,6 +664,9 @@
   "Part_TrackSpacingRear": "Rear track spacing",
   "Part_FrontAspectRatio": "Front tire profile",
   "Part_RearAspectRatio": "Rear tire profile",
-  "Part_MotorParts": "Motor upgrade"
+  "Part_MotorParts": "Motor upgrade",
+  "Part_RimStyleFront": "Front wheels",
+  "Part_RimStyleRear": "Rear wheels",
+  "Part_SameRimsFrontRear": "Same front / rear"
 
 }

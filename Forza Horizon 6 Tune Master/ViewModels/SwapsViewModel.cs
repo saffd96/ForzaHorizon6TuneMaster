@@ -9,8 +9,9 @@ using Forza_Horizon_6_Tune_Master.Services;
 namespace Forza_Horizon_6_Tune_Master.ViewModels;
 
 // "Кузовные комплекты и модификации" module: the big swaps — engine, drivetrain and
-// forced induction (a turbo/supercharger conversion is itself a swap). Forced induction
-// is a two-step choice: first the type, then the level within that type. All from the DB.
+// forced induction. Forced induction is a SINGLE dropdown listing every option
+// (NA + each turbo/supercharger tier), so picking a different one directly changes
+// the installed part (and therefore the power). All data comes from the DB.
 public class SwapsViewModel : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -20,9 +21,11 @@ public class SwapsViewModel : INotifyPropertyChanged
     private SelectedParts _parts = null!;
     private int _makeId;
 
+    private const int NoneId = -1; // sentinel for the "no forced induction" (NA) option
+
     public ObservableCollection<PartOption> EngineSwaps { get; } = new();
     public ObservableCollection<PartOption> DrivetrainSwaps { get; } = new();
-    public ObservableCollection<FiTypeOption> ForcedInductionTypes { get; } = new();
+    public ObservableCollection<PartOption> ForcedInductions { get; } = new();
 
     public PartOption? SelectedEngineSwap
     {
@@ -36,18 +39,16 @@ public class SwapsViewModel : INotifyPropertyChanged
         set { if (value != null) _parts.DrivetrainSwapPartId = value.Id; }
     }
 
-    public FiTypeOption? SelectedForcedInductionType
+    public PartOption? SelectedForcedInduction
     {
-        get { var kind = CurrentFiKind(); return ForcedInductionTypes.FirstOrDefault(t => t.Kind == kind); }
+        get => _parts.ForcedInductionPartId.HasValue
+            ? ForcedInductions.FirstOrDefault(o => o.Id == _parts.ForcedInductionPartId.Value)
+            : ForcedInductions.FirstOrDefault(o => o.Id == NoneId);
         set
         {
             if (value == null) return;
-            // Picking a type sets FI to that type's lowest tier (the base of that type);
-            // the engine module rebuilds the level list from the DB off this change.
-            _parts.ForcedInductionPartId = value.Kind == FiKind.None
-                ? null
-                : FiPartsOfKind(EngineId, value.Kind).OrderBy(p => p.Level).FirstOrDefault()?.Id;
-            OnPropertyChanged(nameof(SelectedForcedInductionType));
+            _parts.ForcedInductionPartId = value.Id == NoneId ? (int?)null : value.Id;
+            OnPropertyChanged(nameof(SelectedForcedInduction));
         }
     }
 
@@ -74,40 +75,27 @@ public class SwapsViewModel : INotifyPropertyChanged
         // (before EngineVM.LoadForCar) so the engine module's intercooler resolves correctly.
         if (!parts.ForcedInductionPartId.HasValue)
             parts.ForcedInductionPartId = StockFiPart(EngineId)?.Id;
-        BuildFiTypes(EngineId);
+        BuildForcedInductions(EngineId);
 
         RefreshSelections();
     }
 
-    // Called on an engine swap: rebuild forced-induction type/level for the new engine.
+    // Called on an engine swap: rebuild the forced-induction list for the new engine.
     public void ResetForcedInductionForEngine(int engineId)
     {
         _parts.ForcedInductionPartId = StockFiPart(engineId)?.Id;
-        BuildFiTypes(engineId);
-        OnPropertyChanged(nameof(SelectedForcedInductionType));
+        BuildForcedInductions(engineId);
+        OnPropertyChanged(nameof(SelectedForcedInduction));
     }
 
     private void RefreshSelections()
     {
         OnPropertyChanged(nameof(SelectedEngineSwap));
         OnPropertyChanged(nameof(SelectedDrivetrainSwap));
-        OnPropertyChanged(nameof(SelectedForcedInductionType));
+        OnPropertyChanged(nameof(SelectedForcedInduction));
     }
 
     // ── Forced induction helpers ─────────────────────────────────────────────
-    private FiKind CurrentFiKind()
-    {
-        if (!_parts.ForcedInductionPartId.HasValue) return FiKind.None;
-        return _db.GetForcedInductionById(_parts.ForcedInductionPartId.Value) switch
-        {
-            DbUpgradeTurboSingle => FiKind.SingleTurbo,
-            DbUpgradeTurboTwin   => FiKind.TwinTurbo,
-            DbUpgradeCSC         => FiKind.Centrifugal,
-            DbUpgradeDSC         => FiKind.PositiveDisplacement,
-            _                    => FiKind.None
-        };
-    }
-
     private List<DbUpgradePart> FiPartsOfKind(int engineId, FiKind kind) => kind switch
     {
         FiKind.SingleTurbo          => _db.GetTurbosSingle(engineId).Cast<DbUpgradePart>().ToList(),
@@ -127,14 +115,14 @@ public class SwapsViewModel : INotifyPropertyChanged
         return null;
     }
 
-    private void BuildFiTypes(int engineId)
+    // One flat list: "Нет" + every turbo/supercharger tier available for the engine.
+    private void BuildForcedInductions(int engineId)
     {
-        ForcedInductionTypes.Clear();
-        ForcedInductionTypes.Add(new FiTypeOption { Kind = FiKind.None, DisplayName = Aspir(1) });
-        if (_db.GetTurbosSingle(engineId).Count > 0) ForcedInductionTypes.Add(new FiTypeOption { Kind = FiKind.SingleTurbo, DisplayName = Aspir(2) });
-        if (_db.GetTurbosTwin(engineId).Count > 0)   ForcedInductionTypes.Add(new FiTypeOption { Kind = FiKind.TwinTurbo, DisplayName = Aspir(3) });
-        if (_db.GetCSC(engineId).Count > 0)          ForcedInductionTypes.Add(new FiTypeOption { Kind = FiKind.Centrifugal, DisplayName = Aspir(6) });
-        if (_db.GetDSC(engineId).Count > 0)          ForcedInductionTypes.Add(new FiTypeOption { Kind = FiKind.PositiveDisplacement, DisplayName = Aspir(5) });
+        ForcedInductions.Clear();
+        ForcedInductions.Add(new PartOption { Id = NoneId, DisplayName = Aspir(1), IsStock = true });
+        foreach (var kind in new[] { FiKind.SingleTurbo, FiKind.TwinTurbo, FiKind.Centrifugal, FiKind.PositiveDisplacement })
+            foreach (var p in FiPartsOfKind(engineId, kind))
+                ForcedInductions.Add(new PartOption { Id = p.Id, DisplayName = _resolver.Resolve(p, _makeId), IsStock = p.IsStock });
     }
 
     private static string Aspir(int id)

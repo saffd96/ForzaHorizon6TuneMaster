@@ -1,0 +1,32 @@
+<UserControl x:Class="Forza_Horizon_6_Tune_Master.Views.ResultParam"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root">
+    <StackPanel Margin="0,0,0,5" ToolTip="{Binding Hint, ElementName=Root}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0"
+                       Text="{Binding Label, ElementName=Root}"
+                       Foreground="{StaticResource TextDimBrush}"
+                       FontSize="{DynamicResource FontXSmall}"
+                       VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis"
+                       Margin="0,0,6,0"/>
+            <TextBlock Grid.Column="1"
+                       Text="{Binding ValueText, ElementName=Root}"
+                       Foreground="{StaticResource CyanBrush}"
+                       FontFamily="{StaticResource MonoFontFamily}"
+                       FontSize="14"
+                       FontWeight="Bold"
+                       VerticalAlignment="Center"/>
+        </Grid>
+        <ProgressBar Height="3" Margin="0,3,0,0" Minimum="0" Maximum="1"
+                     Value="{Binding Progress, ElementName=Root}"
+                     Foreground="{StaticResource AccentBrush}"
+                     Background="{StaticResource CardBrush}"
+                     BorderThickness="0"/>
+    </StackPanel>
+</UserControl>

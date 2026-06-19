@@ -60,6 +60,7 @@ public class Fh6DatabaseService
     // _initialized guard is set — a plain Dictionary corrupts under concurrent writes.
     private readonly ConcurrentDictionary<string, double> _stockWheelMassByMedia = new();
     private volatile List<double> _wheelMassOptions = new();
+    private volatile List<DbWheel> _allWheelOptions = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeWeightReduction>> _weightReductionsByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeChassisStiffness>> _chassisStiffnessByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeTireWidthFront>> _tireWidthsFrontByCarBodyId = new();
@@ -198,22 +199,38 @@ public class Fh6DatabaseService
     private void LoadWheels(SqliteConnection conn)
     {
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT MediaName,Mass,IsStock FROM List_Wheels";
+        cmd.CommandText = "SELECT MediaName,Mass,IsStock,ID,DisplayName,PartManufacturerID FROM List_Wheels";
         using var r = cmd.ExecuteReader();
         var masses = new SortedSet<double>();
+        var all = new List<DbWheel>();
         while (r.Read())
         {
             string media = S(r, 0); double mass = D(r, 1); bool stock = B(r, 2);
+            int id = I(r, 3); string displayName = S(r, 4); int manId = I(r, 5);
             if (stock) { if (!string.IsNullOrEmpty(media)) _stockWheelMassByMedia[media] = mass; }
-            else if (mass > 0) masses.Add(mass);
+            if (!stock && mass > 0) masses.Add(mass);
+            if (!stock && displayName != "" && !displayName.StartsWith("_&"))
+            {
+                all.Add(new DbWheel { Id = id, DisplayName = displayName, Mass = mass, ManufacturerId = manId, IsStock = stock });
+            }
         }
         _wheelMassOptions = masses.ToList();
+        _allWheelOptions = all;
     }
 
     public double? GetStockWheelMass(string? mediaName) =>
         !string.IsNullOrEmpty(mediaName) && _stockWheelMassByMedia.TryGetValue(mediaName, out var m) ? m : null;
 
     public IReadOnlyList<double> GetWheelMassOptions() => _wheelMassOptions;
+
+    public IReadOnlyList<DbWheel> GetAllAftermarketWheels() =>
+        _allWheelOptions;
+
+    public double? GetWheelMassById(int id)
+    {
+        var w = _allWheelOptions.FirstOrDefault(x => x.Id == id);
+        return w?.Mass;
+    }
 
     private static T Read<T>(SqliteDataReader r, int i) =>
         r.IsDBNull(i) ? default! : (T)r.GetValue(i);

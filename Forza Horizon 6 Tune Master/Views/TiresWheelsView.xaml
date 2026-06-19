@@ -1,50 +1,55 @@
 <UserControl x:Class="Forza_Horizon_6_Tune_Master.Views.TiresWheelsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Forza_Horizon_6_Tune_Master.Views"
              xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services">
     <StackPanel>
-        <TextBlock Text="{l:Loc ModuleTiresWheels}" Style="{StaticResource SectionHeader}"/>
-        <UniformGrid Columns="6" HorizontalAlignment="Stretch" Margin="0,0,0,6">
-            <ComboBox ItemsSource="{Binding TireCompounds}" SelectedItem="{Binding SelectedTireCompound}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding TireCompounds.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding TireWidthsFront}" SelectedItem="{Binding SelectedTireWidthFront}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding TireWidthsFront.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding TireWidthsRear}" SelectedItem="{Binding SelectedTireWidthRear}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding TireWidthsRear.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding TireAspectRatiosFront}" SelectedItem="{Binding SelectedTireAspectRatioFront}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding TireAspectRatiosFront.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding TireAspectRatiosRear}" SelectedItem="{Binding SelectedTireAspectRatioRear}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding TireAspectRatiosRear.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding RimStyles}" SelectedItem="{Binding SelectedRimStyle}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding RimStyles.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding RimsFront}" SelectedItem="{Binding SelectedRimFront}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding RimsFront.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding RimsRear}" SelectedItem="{Binding SelectedRimRear}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding RimsRear.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding TrackSpacingsFront}" SelectedItem="{Binding SelectedTrackSpacingFront}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding TrackSpacingsFront.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding TrackSpacingsRear}" SelectedItem="{Binding SelectedTrackSpacingRear}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding TrackSpacingsRear.Count, Converter={StaticResource CountVis}}"/>
-        </UniformGrid>
+        <TextBlock Text="{l:Loc SectionTireParts}" Style="{StaticResource PartGroupHeader}" Margin="0,0,0,4"/>
+        <v:PartRow Label="{l:Loc Part_TireCompound}"     Options="{Binding TireCompounds}"        Selected="{Binding SelectedTireCompound}"/>
+        <v:PartRow Label="{l:Loc Part_TireWidthFront}"   Options="{Binding TireWidthsFront}"      Selected="{Binding SelectedTireWidthFront}"/>
+        <v:PartRow Label="{l:Loc Part_TireWidthRear}"    Options="{Binding TireWidthsRear}"       Selected="{Binding SelectedTireWidthRear}"/>
+        <v:PartRow Label="{l:Loc Part_FrontAspectRatio}" Options="{Binding TireAspectRatiosFront}" Selected="{Binding SelectedTireAspectRatioFront}"/>
+        <v:PartRow Label="{l:Loc Part_RearAspectRatio}"  Options="{Binding TireAspectRatiosRear}"  Selected="{Binding SelectedTireAspectRatioRear}"/>
+
+        <TextBlock Text="{l:Loc SectionRimParts}" Style="{StaticResource PartGroupHeader}"/>
+
+        <!-- Front wheel style dropdown -->
+        <v:PartRow Label="{l:Loc Part_RimStyleFront}" Options="{Binding WheelModels}" Selected="{Binding SelectedWheelFront}"/>
+
+        <!-- Same front/rear checkbox -->
+        <Grid Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="118"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <CheckBox Grid.Column="1"
+                      Content="{l:Loc Part_SameRimsFrontRear}"
+                      IsChecked="{Binding IsSameWheelsFrontRear}"
+                      FontSize="{DynamicResource FontSmall}"
+                      Margin="4,0,0,0"/>
+        </Grid>
+
+        <!-- Rear wheel style dropdown -->
+        <Grid Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="118"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="{l:Loc Part_RimStyleRear}" Style="{StaticResource PartRowLabel}"/>
+            <ComboBox Grid.Column="1"
+                      ItemsSource="{Binding WheelModels}"
+                      SelectedItem="{Binding SelectedWheelRear, Mode=TwoWay}"
+                      Height="28" MinHeight="28"
+                      FontSize="{DynamicResource FontSmall}"
+                      HorizontalAlignment="Stretch"
+                      IsEnabled="{Binding IsRearWheelEnabled}"/>
+        </Grid>
+
+        <v:PartRow Label="{l:Loc Part_RimSizeFront}"     Options="{Binding RimsFront}"            Selected="{Binding SelectedRimFront}"/>
+        <v:PartRow Label="{l:Loc Part_RimSizeRear}"      Options="{Binding RimsRear}"             Selected="{Binding SelectedRimRear}"/>
+
+        <TextBlock Text="{l:Loc SectionSpacerParts}" Style="{StaticResource PartGroupHeader}"/>
+        <v:PartRow Label="{l:Loc Part_TrackSpacingFront}" Options="{Binding TrackSpacingsFront}"  Selected="{Binding SelectedTrackSpacingFront}"/>
+        <v:PartRow Label="{l:Loc Part_TrackSpacingRear}"  Options="{Binding TrackSpacingsRear}"   Selected="{Binding SelectedTrackSpacingRear}"/>
     </StackPanel>
 </UserControl>

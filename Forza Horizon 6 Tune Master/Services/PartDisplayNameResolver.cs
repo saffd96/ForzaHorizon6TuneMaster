@@ -10,6 +10,9 @@ public class PartDisplayNameResolver
 {
     private readonly Fh6DatabaseService _db = Fh6DatabaseService.Instance;
 
+    public int StockFrontTireProfile { get; set; }
+    public int StockRearTireProfile { get; set; }
+
     // Cache of sorted distinct levels for each (part type, parent id) group.
     // Used to map a part's Level to Stock/Street/Sport/Rank regardless of gaps
     // or whether the stock entry starts at Level 0 or Level 1.
@@ -306,10 +309,10 @@ public class PartDisplayNameResolver
             // rim size" strings are identical across every option, so show the actual
             // dimension instead. That is what disambiguates the choices in the dropdown.
             case DbUpgradeTireWidthFront twf:
-                name = FormatTireWidth(twf.FrontTireWidth, twf.IsStock);
+                name = FormatTireWidth(twf.FrontTireWidth, StockFrontTireProfile, twf.IsStock);
                 return true;
             case DbUpgradeTireWidthRear twr:
-                name = FormatTireWidth(twr.RearTireWidth, twr.IsStock);
+                name = FormatTireWidth(twr.RearTireWidth, StockRearTireProfile, twr.IsStock);
                 return true;
             case DbUpgradeRimFront rf:
                 name = FormatRimSize(rf.FrontWheelDiameter, rf.IsStock);
@@ -318,11 +321,19 @@ public class PartDisplayNameResolver
                 name = FormatRimSize(rr.RearWheelDiameter, rr.IsStock);
                 return true;
             case DbUpgradeTireAspectRatioFront tarf:
-                key = tarf.IsStock ? "Upgrades_IDS_Name_304" : "Upgrades_IDS_Name_305";
-                break;
+            {
+                int finalProfile = StockFrontTireProfile + (int)tarf.FrontTireAspectRatioOffset;
+                string s = $"{finalProfile}";
+                name = tarf.IsStock ? $"{s} ({T("Part_Stock")})" : s;
+                return true;
+            }
             case DbUpgradeTireAspectRatioRear tarr:
-                key = tarr.IsStock ? "Upgrades_IDS_Name_308" : "Upgrades_IDS_Name_309";
-                break;
+            {
+                int finalProfile = StockRearTireProfile + (int)tarr.RearTireAspectRatioOffset;
+                string s = $"{finalProfile}";
+                name = tarr.IsStock ? $"{s} ({T("Part_Stock")})" : s;
+                return true;
+            }
             case DbUpgradeTrackSpacingFront tsf:
                 key = tsf.IsStock ? "Upgrades_IDS_Name_282" : "Upgrades_IDS_Name_283";
                 break;
@@ -410,9 +421,9 @@ public class PartDisplayNameResolver
         return $"{baseName} ({m})";
     }
 
-    private static string FormatTireWidth(int widthMm, bool isStock)
+    private static string FormatTireWidth(int widthMm, int profile, bool isStock)
     {
-        string s = $"{widthMm} {T("UnitMm")}";
+        string s = $"{widthMm}/{profile}";
         return isStock ? $"{s} ({T("Part_Stock")})" : s;
     }
 

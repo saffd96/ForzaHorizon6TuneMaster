@@ -16,13 +16,24 @@
     <sys:Double x:Key="FontHuge">32</sys:Double>
 
     <!-- ═══════════════════════════════════════════════════════════════
+         FONTS  — change the whole app's fonts HERE (two lines below).
+         • System font:  <FontFamily x:Key="AppFontFamily">Segoe UI</FontFamily>
+         • Bundled font: drop a .ttf into Resources/Fonts/ and use
+                         pack://application:,,,/Resources/Fonts/#<Font Family Name>
+           (the name after '#' is the font's internal family name, not the file name)
+         AppFontFamily  = all UI text;  MonoFontFamily = numeric values + chart labels.
+         ═══════════════════════════════════════════════════════════════ -->
+    <FontFamily x:Key="AppFontFamily">Segoe UI</FontFamily>
+    <FontFamily x:Key="MonoFontFamily">pack://application:,,,/Resources/Fonts/#JetBrains Mono</FontFamily>
+
+    <!-- ═══════════════════════════════════════════════════════════════
          BRUSHES
          ═══════════════════════════════════════════════════════════════ -->
     <SolidColorBrush x:Key="BgBrush"           Color="#0C0E16"/>
     <SolidColorBrush x:Key="SurfaceBrush"      Color="#131720"/>
     <SolidColorBrush x:Key="CardBrush"         Color="#1A1F2E"/>
     <SolidColorBrush x:Key="ElevatedBrush"     Color="#222840"/>
-    <SolidColorBrush x:Key="BorderBrush"       Color="#2D3550"/>
+    <SolidColorBrush x:Key="BorderBrush"       Color="#203550"/>
     <SolidColorBrush x:Key="AccentBrush"       Color="#FF5E0E"/>
     <SolidColorBrush x:Key="AccentHoverBrush"  Color="#FF7A35"/>
     <SolidColorBrush x:Key="AccentPressedBrush" Color="#CC4A0B"/>
@@ -39,8 +50,15 @@
          ═══════════════════════════════════════════════════════════════ -->
     <Style TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="FontSize"   Value="{DynamicResource FontNormal}"/>
+    </Style>
+
+    <Style TargetType="Label">
+        <Setter Property="Foreground" Value="{StaticResource TextDimBrush}"/>
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+        <Setter Property="FontSize"   Value="{DynamicResource FontSmall}"/>
+        <Setter Property="Padding"    Value="0,2"/>
     </Style>
 
     <Style x:Key="SectionHeader" TargetType="TextBlock">
@@ -48,9 +66,28 @@
         <Setter Property="FontSize"     Value="{DynamicResource FontNormal}"/>
         <Setter Property="FontWeight"   Value="Bold"/>
         <Setter Property="Margin"       Value="0,16,0,8"/>
-        <Setter Property="FontFamily"   Value="Segoe UI"/>
+        <Setter Property="FontFamily"   Value="{StaticResource AppFontFamily}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
+    <!-- Part row label (left of a dropdown in the parts accordions) -->
+    <Style x:Key="PartRowLabel" TargetType="TextBlock">
+        <Setter Property="Foreground"        Value="{StaticResource TextDimBrush}"/>
+        <Setter Property="FontSize"          Value="{DynamicResource FontSmall}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin"            Value="0,0,8,0"/>
+        <Setter Property="TextTrimming"      Value="CharacterEllipsis"/>
+        <Setter Property="FontFamily"        Value="{StaticResource AppFontFamily}"/>
+    </Style>
+
+    <!-- Orange uppercase subgroup header inside accordions / cards -->
+    <Style x:Key="PartGroupHeader" TargetType="TextBlock">
+        <Setter Property="Foreground"   Value="{StaticResource AccentBrush}"/>
+        <Setter Property="FontSize"     Value="{DynamicResource FontSmall}"/>
+        <Setter Property="FontWeight"   Value="Bold"/>
+        <Setter Property="Margin"       Value="0,8,0,4"/>
+        <Setter Property="FontFamily"   Value="{StaticResource AppFontFamily}"/>
     </Style>
 
     <Style x:Key="FormLabel" TargetType="TextBlock">
@@ -58,14 +95,14 @@
         <Setter Property="FontSize"          Value="{DynamicResource FontSmall}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Margin"            Value="0,0,10,0"/>
-        <Setter Property="FontFamily"        Value="Segoe UI"/>
+        <Setter Property="FontFamily"        Value="{StaticResource AppFontFamily}"/>
     </Style>
 
     <Style x:Key="ValueDisplay" TargetType="TextBlock">
         <Setter Property="Foreground"          Value="{StaticResource CyanBrush}"/>
         <Setter Property="FontSize"            Value="{DynamicResource ValueFontSize}"/>
         <Setter Property="FontWeight"          Value="Bold"/>
-        <Setter Property="FontFamily"          Value="Segoe UI"/>
+        <Setter Property="FontFamily"          Value="{StaticResource MonoFontFamily}"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
     </Style>
 
@@ -73,7 +110,7 @@
         <Setter Property="Foreground"          Value="{StaticResource TextDimBrush}"/>
         <Setter Property="FontSize"            Value="{DynamicResource FontMicro}"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
-        <Setter Property="FontFamily"          Value="Segoe UI"/>
+        <Setter Property="FontFamily"          Value="{StaticResource AppFontFamily}"/>
         <Setter Property="TextWrapping"        Value="Wrap"/>
         <Setter Property="TextAlignment"       Value="Center"/>
     </Style>
@@ -82,7 +119,7 @@
         <Setter Property="Foreground"   Value="{StaticResource TextDimBrush}"/>
         <Setter Property="FontSize"     Value="{DynamicResource FontXSmall}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
-        <Setter Property="FontFamily"   Value="Segoe UI"/>
+        <Setter Property="FontFamily"   Value="{StaticResource AppFontFamily}"/>
         <Setter Property="Margin"       Value="0,4,0,0"/>
     </Style>
 
@@ -92,14 +129,14 @@
         <Setter Property="BorderBrush"      Value="{StaticResource AccentBrush}"/>
         <Setter Property="BorderThickness"  Value="1"/>
         <Setter Property="FontSize"         Value="{DynamicResource FontSmall}"/>
-        <Setter Property="FontFamily"       Value="Segoe UI"/>
+        <Setter Property="FontFamily"       Value="{StaticResource AppFontFamily}"/>
         <Setter Property="MaxWidth"         Value="360"/>
         <Setter Property="Padding"          Value="10,7"/>
         <Setter Property="ContentTemplate">
             <Setter.Value>
                 <DataTemplate>
                     <TextBlock Text="{Binding}" TextWrapping="Wrap"
-                               FontFamily="Segoe UI"
+                               FontFamily="{StaticResource AppFontFamily}"
                                FontSize="12"
                                Foreground="{StaticResource TextDimBrush}"/>
                 </DataTemplate>
@@ -111,13 +148,13 @@
         <Setter Property="Foreground"  Value="{StaticResource TextBrush}"/>
         <Setter Property="FontSize"    Value="{DynamicResource FontTitle}"/>
         <Setter Property="FontWeight"  Value="Bold"/>
-        <Setter Property="FontFamily"  Value="Segoe UI"/>
+        <Setter Property="FontFamily"  Value="{StaticResource AppFontFamily}"/>
     </Style>
 
     <Style x:Key="SubtitleText" TargetType="TextBlock">
         <Setter Property="Foreground"  Value="{StaticResource AccentBrush}"/>
         <Setter Property="FontSize"    Value="{DynamicResource FontXSmall}"/>
-        <Setter Property="FontFamily"  Value="Segoe UI"/>
+        <Setter Property="FontFamily"  Value="{StaticResource AppFontFamily}"/>
         <Setter Property="FontWeight"  Value="SemiBold"/>
     </Style>
 
@@ -132,7 +169,7 @@
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding"       Value="8,6"/>
         <Setter Property="FontSize"      Value="{DynamicResource FontNormal}"/>
-        <Setter Property="FontFamily"    Value="Segoe UI"/>
+        <Setter Property="FontFamily"    Value="{StaticResource AppFontFamily}"/>
         <Setter Property="CaretBrush"    Value="{StaticResource AccentBrush}"/>
         <Setter Property="SelectionBrush" Value="{StaticResource AccentBrush}"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -181,7 +218,7 @@
         <Setter Property="Background"  Value="{StaticResource ElevatedBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
         <Setter Property="FontSize"    Value="{DynamicResource FontNormal}"/>
-        <Setter Property="FontFamily"  Value="Segoe UI"/>
+        <Setter Property="FontFamily"  Value="{StaticResource AppFontFamily}"/>
         <Setter Property="MinHeight"   Value="32"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -264,37 +301,50 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-        <Style.Resources>
-            <Style TargetType="ComboBoxItem">
-                <Setter Property="OverridesDefaultStyle" Value="True"/>
-                <Setter Property="SnapsToDevicePixels"   Value="True"/>
-                <Setter Property="Foreground"            Value="{StaticResource TextBrush}"/>
-                <Setter Property="FontFamily"            Value="Segoe UI"/>
-                <Setter Property="FontSize"              Value="{DynamicResource FontNormal}"/>
-                <Setter Property="Padding"               Value="10,6"/>
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="ComboBoxItem">
-                            <Border x:Name="Bd"
-                                    Padding="{TemplateBinding Padding}"
-                                    Background="{TemplateBinding Background}"
-                                    SnapsToDevicePixels="True">
-                                <ContentPresenter/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsHighlighted" Value="True">
-                                    <Setter TargetName="Bd" Property="Background" Value="#FF5E0E33"/>
-                                    <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                                </Trigger>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-        </Style.Resources>
+    </Style>
+
+    <!-- Global ComboBoxItem — dark popup rows, cyan selected + checkmark (matches web) -->
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="SnapsToDevicePixels"   Value="True"/>
+        <Setter Property="Foreground"            Value="{StaticResource TextBrush}"/>
+        <Setter Property="FontFamily"            Value="{StaticResource AppFontFamily}"/>
+        <Setter Property="FontSize"              Value="{DynamicResource FontSmall}"/>
+        <Setter Property="Padding"               Value="10,6"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="Bd"
+                            Padding="{TemplateBinding Padding}"
+                            Background="Transparent"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter Grid.Column="0" VerticalAlignment="Center"/>
+                            <Path x:Name="check" Grid.Column="1"
+                                  Data="M 2 8 L 6 12 L 14 4"
+                                  Stroke="{StaticResource CyanBrush}" StrokeThickness="2"
+                                  Width="14" Height="12" Stretch="Uniform"
+                                  Margin="8,0,0,0" VerticalAlignment="Center"
+                                  Visibility="Collapsed"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource ElevatedBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd"    Property="Background" Value="#103D52"/>
+                            <Setter TargetName="check" Property="Visibility" Value="Visible"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════
@@ -308,7 +358,7 @@
         <Setter Property="Padding"      Value="20,9"/>
         <Setter Property="FontSize"     Value="{DynamicResource FontNormal}"/>
         <Setter Property="FontWeight"   Value="SemiBold"/>
-        <Setter Property="FontFamily"   Value="Segoe UI"/>
+        <Setter Property="FontFamily"   Value="{StaticResource AppFontFamily}"/>
         <Setter Property="Cursor"       Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -346,7 +396,7 @@
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding"         Value="14,7"/>
         <Setter Property="FontSize"        Value="{DynamicResource FontSmall}"/>
-        <Setter Property="FontFamily"      Value="Segoe UI"/>
+        <Setter Property="FontFamily"      Value="{StaticResource AppFontFamily}"/>
         <Setter Property="Cursor"          Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -386,7 +436,7 @@
          ═══════════════════════════════════════════════════════════════ -->
     <Style x:Key="TabSwitcher" TargetType="RadioButton">
         <Setter Property="OverridesDefaultStyle" Value="True"/>
-        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
         <Setter Property="FontSize" Value="{DynamicResource FontSmall}"/>
         <Setter Property="Foreground" Value="{StaticResource TextDimBrush}"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -428,7 +478,7 @@
     <Style TargetType="CheckBox">
         <Setter Property="OverridesDefaultStyle"        Value="True"/>
         <Setter Property="Foreground"                   Value="{StaticResource TextBrush}"/>
-        <Setter Property="FontFamily"                   Value="Segoe UI"/>
+        <Setter Property="FontFamily"                   Value="{StaticResource AppFontFamily}"/>
         <Setter Property="FontSize"                     Value="{DynamicResource FontNormal}"/>
         <Setter Property="VerticalContentAlignment"     Value="Center"/>
         <Setter Property="Template">
@@ -474,7 +524,7 @@
     <Style TargetType="RadioButton">
         <Setter Property="OverridesDefaultStyle"    Value="True"/>
         <Setter Property="Foreground"               Value="{StaticResource TextBrush}"/>
-        <Setter Property="FontFamily"               Value="Segoe UI"/>
+        <Setter Property="FontFamily"               Value="{StaticResource AppFontFamily}"/>
         <Setter Property="FontSize"                 Value="{DynamicResource FontNormal}"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor"                   Value="Hand"/>
@@ -583,7 +633,7 @@
     <Style TargetType="TabItem">
         <Setter Property="OverridesDefaultStyle" Value="True"/>
         <Setter Property="Foreground"            Value="{StaticResource TextDimBrush}"/>
-        <Setter Property="FontFamily"            Value="Segoe UI"/>
+        <Setter Property="FontFamily"            Value="{StaticResource AppFontFamily}"/>
         <Setter Property="FontSize"              Value="{DynamicResource FontNormal}"/>
         <Setter Property="Padding"               Value="16,12"/>
         <Setter Property="Background"            Value="Transparent"/>
@@ -649,7 +699,7 @@
         <Setter Property="Background"            Value="{StaticResource ElevatedBrush}"/>
         <Setter Property="BorderBrush"           Value="{StaticResource BorderBrush}"/>
         <Setter Property="BorderThickness"       Value="1"/>
-        <Setter Property="FontFamily"            Value="Segoe UI"/>
+        <Setter Property="FontFamily"            Value="{StaticResource AppFontFamily}"/>
         <Setter Property="FontSize"              Value="{DynamicResource FontSmall}"/>
         <Setter Property="Foreground"            Value="{StaticResource TextBrush}"/>
         <Setter Property="Template">
@@ -671,7 +721,7 @@
     <Style TargetType="ListBoxItem">
         <Setter Property="OverridesDefaultStyle" Value="True"/>
         <Setter Property="Padding"               Value="10,6"/>
-        <Setter Property="FontFamily"            Value="Segoe UI"/>
+        <Setter Property="FontFamily"            Value="{StaticResource AppFontFamily}"/>
         <Setter Property="Cursor"                Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -722,19 +772,108 @@
         <Setter Property="Margin"     Value="0,8"/>
     </Style>
 
-    <!-- Implicit DataTemplate for PartOption — text trimming in ComboBox items -->
+    <!-- ═══════════════════════════════════════════════════════════════
+         ACCORDION (Expander) — matches web parts panel
+         ═══════════════════════════════════════════════════════════════ -->
+    <Style x:Key="AccordionExpander" TargetType="Expander">
+        <Setter Property="IsExpanded" Value="True"/>
+        <Setter Property="Margin"     Value="0,0,0,6"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Expander">
+                    <Border Background="{StaticResource BgBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            SnapsToDevicePixels="True">
+                        <DockPanel>
+                            <ToggleButton DockPanel.Dock="Top"
+                                          OverridesDefaultStyle="True"
+                                          Focusable="False"
+                                          Cursor="Hand"
+                                          IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="hdr"
+                                                Background="{StaticResource SurfaceBrush}"
+                                                CornerRadius="6,6,0,0"
+                                                Padding="12,8">
+                                            <Grid>
+                                                <TextBlock Text="{Binding Header, RelativeSource={RelativeSource AncestorType=Expander}}"
+                                                           FontWeight="Bold"
+                                                           FontSize="14"
+                                                           Foreground="{StaticResource TextBrush}"
+                                                           VerticalAlignment="Center"/>
+                                                <Path x:Name="chev"
+                                                      HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                      Data="M0,0 L4,4 L8,0"
+                                                      Stroke="{StaticResource AccentBrush}"
+                                                      StrokeThickness="1.6"
+                                                      Width="9" Height="5" Stretch="Fill"
+                                                      RenderTransformOrigin="0.5,0.5">
+                                                    <Path.RenderTransform>
+                                                        <RotateTransform Angle="0"/>
+                                                    </Path.RenderTransform>
+                                                </Path>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="hdr" Property="Background" Value="{StaticResource CardBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="chev" Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <RotateTransform Angle="180"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <Border x:Name="contentArea"
+                                    Background="{StaticResource BgBrush}"
+                                    CornerRadius="0,0,6,6"
+                                    Padding="10,8">
+                                <ContentPresenter/>
+                            </Border>
+                        </DockPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsExpanded" Value="False">
+                            <Setter TargetName="contentArea" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Implicit DataTemplate for PartOption — manufacturer + name in dropdowns -->
     <DataTemplate DataType="{x:Type models:PartOption}">
-        <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
-                   VerticalAlignment="Center"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0"
+                       Text="{Binding Manufacturer}"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource TextMutedBrush}"
+                       Margin="0,0,6,0"
+                       VerticalAlignment="Center"/>
+            <TextBlock Grid.Column="1"
+                       Text="{Binding DisplayName}"
+                       TextTrimming="CharacterEllipsis"
+                       VerticalAlignment="Center"/>
+        </Grid>
     </DataTemplate>
 
     <!-- Implicit templates so both the dropdown items and the selected box render the
          localized DisplayName (DisplayMemberPath isn't honoured by the selection box). -->
     <DataTemplate DataType="{x:Type models:FiTypeOption}">
-        <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
-                   VerticalAlignment="Center"/>
-    </DataTemplate>
-    <DataTemplate DataType="{x:Type models:RimMassOption}">
         <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
                    VerticalAlignment="Center"/>
     </DataTemplate>

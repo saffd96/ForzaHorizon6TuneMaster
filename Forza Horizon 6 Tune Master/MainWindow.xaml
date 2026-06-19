@@ -5,9 +5,10 @@
         xmlns:cv="clr-namespace:Forza_Horizon_6_Tune_Master.Converters"
         xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services"
         Title="{l:Loc MainTitle}"
-        Width="1400" Height="860"
-        MinWidth="1100" MinHeight="620"
+        Width="1536" Height="864"
+        MinWidth="900" MinHeight="560"
         WindowStartupLocation="CenterScreen"
+        FontFamily="{StaticResource AppFontFamily}"
         Background="{StaticResource BgBrush}">
     <Window.Icon>
         <BitmapImage UriSource="pack://application:,,,/icon.ico"/>
@@ -52,10 +53,14 @@
         </Style>
     </Window.Resources>
 
-    <Grid ClipToBounds="True">
+    <!-- Whole UI scales proportionally with the window (base design 2560×1440, 16:9).
+         Stretch="Fill" => scales independently on each axis for non-16:9 windows. -->
+    <Viewbox Stretch="Fill">
+    <Grid Width="2560" Height="1440" ClipToBounds="True">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- Title bar —  2-row, auto-sizes to content -->
+            <RowDefinition Height="Auto"/>  <!-- Title bar -->
             <RowDefinition Height="*"/>    <!-- Main content -->
+            <RowDefinition Height="Auto"/> <!-- Profiles / actions bar -->
             <RowDefinition Height="28"/>   <!-- Status bar -->
         </Grid.RowDefinitions>
 
@@ -66,13 +71,8 @@
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,0,0,1">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="50"/>
-                </Grid.RowDefinitions>
-
-                <!-- Row 0: Logo | Version + Units/Language (right) -->
-                <Grid Grid.Row="0" Margin="20,0">
+                <!-- Logo | Units/Language (right) -->
+                <Grid Margin="20,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -170,86 +170,29 @@
                                    FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="20,0,0,0"/>
                     </StackPanel>
                 </Grid>
-
-                <!-- Row 1: Profile management (centered) -->
-                <Border Grid.Row="1"
-                        BorderBrush="{StaticResource BorderBrush}"
-                        BorderThickness="0,1,0,0"
-                        Padding="20,4">
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Left" VerticalAlignment="Center">
-                        <TextBlock Text="{l:Loc ProfilesLabel}" Foreground="{StaticResource TextDimBrush}"
-                                   VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
-                        <Grid VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" x:Name="ProfileSearchBox"
-                                     Text="{Binding ProfileSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     MinWidth="140"
-                                     Background="{StaticResource ElevatedBrush}"
-                                     BorderBrush="{StaticResource BorderBrush}"
-                                     GotFocus="ProfileSearchBox_GotFocus"
-                                     LostFocus="ProfileSearchBox_LostFocus" />
-                            <Button Grid.Column="1" Content="✕"
-                                    Style="{StaticResource IconButton}"
-                                    Width="26" Height="26"
-                                    Margin="4,0,0,0"
-                                    Click="ClearProfileSelection_Click"
-                                    Visibility="{Binding SelectedProfile, Converter={StaticResource NullVis}}"/>
-                            <Popup x:Name="ProfileDropdownPopup"
-                                   PlacementTarget="{Binding ElementName=ProfileSearchBox}"
-                                   Placement="Bottom"
-                                   StaysOpen="True"
-                                   AllowsTransparency="True"
-                                   PopupAnimation="Slide">
-                                <Border Background="{StaticResource ElevatedBrush}"
-                                        BorderBrush="{StaticResource BorderBrush}"
-                                        BorderThickness="1"
-                                        MaxHeight="180">
-                                    <ListBox x:Name="ProfileListBox"
-                                             ItemsSource="{Binding FilteredProfiles}"
-                                             SelectedItem="{Binding SelectedProfile}"
-                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                             SelectionChanged="ProfileListBox_SelectionChanged" />
-                                </Border>
-                            </Popup>
-                        </Grid>
-                        <Button Content="{l:Loc ProfileSave}" Style="{StaticResource SecondaryButton}"
-                                Command="{Binding SaveCommand}" Margin="6,0,0,0" Padding="10,5"/>
-                        <Button Content="{l:Loc ProfileLoad}"    Style="{StaticResource SecondaryButton}"
-                                Command="{Binding LoadCommand}" Margin="4,0,0,0" Padding="10,5"/>
-                        <Button Content="{l:Loc ProfileDelete}"   Style="{StaticResource DangerButton}"
-                                Command="{Binding DeleteProfileCommand}" Margin="4,0,0,0" Padding="10,5"/>
-                        <Button Content="{l:Loc ProfileDeleteAll}" Style="{StaticResource DangerButton}"
-                                Command="{Binding DeleteAllProfilesCommand}" Margin="4,0,0,0" Padding="10,5"/>
-                        <Button Content="{l:Loc ProfileNew}"      Style="{StaticResource SecondaryButton}"
-                                Command="{Binding NewProfileCommand}" Margin="4,0,0,0" Padding="10,5"/>
-
-                    </StackPanel>
-                </Border>
             </Grid>
         </Border>
 
         <!-- ══ Main Content ═════════════════════════════════════════════ -->
         <Grid Grid.Row="1" ClipToBounds="True">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="460"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- ════════ LEFT PANEL (2/3) ════════════════════════════ -->
-            <Grid Grid.Column="0" Margin="0,0,1,0" ClipToBounds="True">
+            <!-- ════════ LEFT PANEL (parts) ════════════════════════════ -->
+            <Grid Grid.Column="0" Margin="0,0,1,0" ClipToBounds="True"
+                  DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>       <!-- Content -->
-                    <RowDefinition Height="Auto"/>    <!-- Bottom bar -->
+                    <RowDefinition Height="Auto"/>   <!-- Pinned car search -->
+                    <RowDefinition Height="*"/>      <!-- Scrolling accordions -->
                 </Grid.RowDefinitions>
 
-                <!-- Content area: Car -->
-                <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto"
-                              DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}">
-                    <StackPanel Margin="12,8">
+                <!-- Pinned car search (always on top) -->
+                <Border Grid.Row="0" Background="{StaticResource BgBrush}"
+                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1"
+                        Padding="12,8">
+                    <StackPanel>
                         <Label Content="{l:Loc CarSearchLabel}"/>
                         <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
@@ -277,7 +220,7 @@
                                         BorderBrush="{StaticResource BorderBrush}"
                                         BorderThickness="1"
                                         MinWidth="{Binding ActualWidth, ElementName=CarSearchBox}"
-                                        MaxHeight="180">
+                                        MaxHeight="280">
                                     <ListBox x:Name="CarListBox"
                                              ItemsSource="{Binding FilteredCarDatabase}"
                                              DisplayMemberPath="DisplayName"
@@ -287,29 +230,38 @@
                                 </Border>
                             </Popup>
                         </Grid>
-
-                        <!-- Sub-views (each gets its sub-VM as DataContext) -->
-                        <StackPanel Visibility="{Binding IsElectricCar, Converter={StaticResource BoolToCollapsed}}">
-                            <views:SwapsView DataContext="{Binding SwapsVM}"/>
-                            <views:EnginePartsView DataContext="{Binding EngineVM}"/>
-                        </StackPanel>
-                        <views:MotorPartsView DataContext="{Binding MotorVM}"
-                                              Visibility="{Binding IsElectricCar, Converter={StaticResource BoolVis}}"/>
-                        <views:SuspensionView DataContext="{Binding SuspensionVM}"/>
-                        <views:TransmissionView DataContext="{Binding TransmissionVM}"/>
-                        <views:TiresWheelsView DataContext="{Binding TiresWheelsVM}"/>
-                        <views:AeroVisualView DataContext="{Binding AeroVisualVM}"/>
                     </StackPanel>
-                </ScrollViewer>
-
-                <!-- Bottom bar: discipline + generate + auto -->
-                <Border Grid.Row="1"
-                        Background="{StaticResource SurfaceBrush}"
-                        BorderBrush="{StaticResource BorderBrush}"
-                        BorderThickness="0,1,0,0"
-                        Padding="12,8">
-                    <views:TrackInfoView/>
                 </Border>
+
+                <!-- Scrolling accordions -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="12,8">
+                            <StackPanel Visibility="{Binding IsElectricCar, Converter={StaticResource BoolToCollapsed}}">
+                                <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleSwaps}">
+                                    <views:SwapsView DataContext="{Binding SwapsVM}"/>
+                                </Expander>
+                                <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleEngine}">
+                                    <views:EnginePartsView DataContext="{Binding EngineVM}"/>
+                                </Expander>
+                            </StackPanel>
+                            <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleElectric}"
+                                      Visibility="{Binding IsElectricCar, Converter={StaticResource BoolVis}}">
+                                <views:MotorPartsView DataContext="{Binding MotorVM}"/>
+                            </Expander>
+                            <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleChassis}">
+                                <views:SuspensionView DataContext="{Binding SuspensionVM}"/>
+                            </Expander>
+                            <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleTransmission}">
+                                <views:TransmissionView DataContext="{Binding TransmissionVM}"/>
+                            </Expander>
+                            <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleTiresWheels}">
+                                <views:TiresWheelsView DataContext="{Binding TiresWheelsVM}"/>
+                            </Expander>
+                            <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleAero}">
+                                <views:AeroVisualView DataContext="{Binding AeroVisualVM}"/>
+                            </Expander>
+                        </StackPanel>
+                </ScrollViewer>
             </Grid>
 
             <!-- ════════ RIGHT PANEL (1/3) ═══════════════════════════ -->
@@ -323,7 +275,7 @@
         </Grid>
 
         <!-- ══ Busy overlay ════════════════════════════════════════════ -->
-        <Grid Grid.RowSpan="3"
+        <Grid Grid.RowSpan="4"
               Visibility="{Binding IsBusy, Converter={StaticResource BoolVis}}"
               ZIndex="100"
               IsHitTestVisible="True">
@@ -354,8 +306,69 @@
 
 
 
-        <!-- ══ Status Bar ══════════════════════════════════════════════ -->
+        <!-- ══ Profiles / actions bar ══════════════════════════════════ -->
         <Border Grid.Row="2"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="10,3">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{l:Loc ProfilesLabel}" Foreground="{StaticResource TextDimBrush}"
+                           VerticalAlignment="Center" Margin="0,0,6,0" FontSize="11"/>
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" x:Name="ProfileSearchBox"
+                             Text="{Binding ProfileSearchText, UpdateSourceTrigger=PropertyChanged}"
+                             MinWidth="130" Height="24" Padding="6,2" FontSize="11"
+                             Background="{StaticResource ElevatedBrush}"
+                             BorderBrush="{StaticResource BorderBrush}"
+                             GotFocus="ProfileSearchBox_GotFocus"
+                             LostFocus="ProfileSearchBox_LostFocus" />
+                    <Button Grid.Column="1" Content="✕"
+                            Style="{StaticResource IconButton}"
+                            Width="22" Height="22"
+                            Margin="4,0,0,0"
+                            Click="ClearProfileSelection_Click"
+                            Visibility="{Binding SelectedProfile, Converter={StaticResource NullVis}}"/>
+                    <Popup x:Name="ProfileDropdownPopup"
+                           PlacementTarget="{Binding ElementName=ProfileSearchBox}"
+                           Placement="Top"
+                           StaysOpen="True"
+                           AllowsTransparency="True"
+                           PopupAnimation="Slide">
+                        <Border Background="{StaticResource ElevatedBrush}"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"
+                                MaxHeight="220">
+                            <ListBox x:Name="ProfileListBox"
+                                     ItemsSource="{Binding FilteredProfiles}"
+                                     SelectedItem="{Binding SelectedProfile}"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     SelectionChanged="ProfileListBox_SelectionChanged" />
+                        </Border>
+                    </Popup>
+                </Grid>
+                <Button Content="{l:Loc ProfileSave}" Style="{StaticResource SecondaryButton}"
+                        Command="{Binding SaveCommand}" Margin="6,0,0,0" Padding="9,3" FontSize="11"/>
+                <Button Content="{l:Loc ProfileLoad}" Style="{StaticResource SecondaryButton}"
+                        Command="{Binding LoadCommand}" Margin="4,0,0,0" Padding="9,3" FontSize="11"/>
+                <Button Content="{l:Loc ProfileDelete}" Style="{StaticResource DangerButton}"
+                        Command="{Binding DeleteProfileCommand}" Margin="4,0,0,0" Padding="9,3" FontSize="11"/>
+                <Button Content="{l:Loc ProfileDeleteAll}" Style="{StaticResource DangerButton}"
+                        Command="{Binding DeleteAllProfilesCommand}" Margin="4,0,0,0" Padding="9,3" FontSize="11"/>
+
+                <TextBlock Text="{Binding StatusMessage}"
+                           Foreground="{StaticResource TextMutedBrush}"
+                           FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center"
+                           Margin="16,0,0,0" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ══ Status Bar ══════════════════════════════════════════════ -->
+        <Border Grid.Row="3"
                 Background="{StaticResource SurfaceBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,1,0,0">
@@ -366,4 +379,5 @@
         </Border>
 
     </Grid>
+    </Viewbox>
 </Window>

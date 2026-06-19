@@ -589,3 +589,12 @@ public sealed record DbUpgradePartInfo
     public bool HasRequiresGraphics { get; init; }
     public bool HasManufacturerId { get; init; }
 }
+
+public sealed record DbWheel
+{
+    public int Id { get; init; }
+    public string DisplayName { get; init; } = "";
+    public double Mass { get; init; }
+    public int ManufacturerId { get; init; }
+    public bool IsStock { get; init; }
+}

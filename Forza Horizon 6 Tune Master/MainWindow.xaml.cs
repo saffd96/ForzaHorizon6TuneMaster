@@ -129,16 +129,9 @@ public partial class MainWindow : Window
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        bool compact = ActualWidth < 1200;
-        var res = Application.Current.Resources;
-        res["FontNormal"]    = compact ? 12.0 : 13.0;
-        res["FontSmall"]     = compact ? 11.0 : 12.0;
-        res["FontXSmall"]    = compact ? 10.0 : 11.0;
-        res["FontMicro"]     = compact ?  9.0 : 10.0;
-        res["FontHeading"]   = compact ? 14.0 : 15.0;
-        res["ValueFontSize"] = compact ? 18.0 : 22.0;
-        res["FontTitle"]     = compact ? 20.0 : 24.0;
-        res["FontHuge"]      = compact ? 26.0 : 32.0;
+        // The whole UI now lives inside a Viewbox with a fixed design canvas, so it
+        // scales proportionally with the window on its own. Font sizes stay at their
+        // base values (scaling them here as well would double-scale the text).
     }
 
     private void ProfileSearchBox_GotFocus(object sender, RoutedEventArgs e)

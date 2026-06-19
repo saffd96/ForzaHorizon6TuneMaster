@@ -15,6 +15,7 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
     private readonly Fh6DatabaseService _db = Fh6DatabaseService.Instance;
     private SelectedParts _parts = null!;
     private int _makeId;
+    private System.Collections.Generic.List<PartOption> _allWheels = new();
 
     public ObservableCollection<PartOption> TireCompounds { get; } = new();
     public ObservableCollection<PartOption> TireWidthsFront { get; } = new();
@@ -23,9 +24,60 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
     public ObservableCollection<PartOption> TireAspectRatiosRear { get; } = new();
     public ObservableCollection<PartOption> RimsFront { get; } = new();
     public ObservableCollection<PartOption> RimsRear { get; } = new();
-    public ObservableCollection<RimMassOption> RimStyles { get; } = new();
     public ObservableCollection<PartOption> TrackSpacingsFront { get; } = new();
     public ObservableCollection<PartOption> TrackSpacingsRear { get; } = new();
+
+    // ── Wheel model dropdown ────────────────────────────────────────────────
+
+    public ObservableCollection<PartOption> WheelModels { get; } = new();
+
+    public PartOption? SelectedWheelFront
+    {
+        get => _find(_parts.WheelFrontId, WheelModels);
+        set
+        {
+            if (value == null) return;
+            _parts.WheelFrontId = value.IsStock ? null : value.Id;
+            OnPropertyChanged(nameof(SelectedWheelFront));
+            if (_isSameWheelsFrontRear)
+            {
+                _parts.WheelRearId = _parts.WheelFrontId;
+                OnPropertyChanged(nameof(SelectedWheelRear));
+            }
+        }
+    }
+
+    public PartOption? SelectedWheelRear
+    {
+        get => _find(_parts.WheelRearId, WheelModels);
+        set
+        {
+            if (value == null || _isSameWheelsFrontRear) return;
+            _parts.WheelRearId = value.IsStock ? null : value.Id;
+            OnPropertyChanged(nameof(SelectedWheelRear));
+        }
+    }
+
+    private bool _isSameWheelsFrontRear = true;
+    public bool IsSameWheelsFrontRear
+    {
+        get => _isSameWheelsFrontRear;
+        set
+        {
+            if (_isSameWheelsFrontRear == value) return;
+            _isSameWheelsFrontRear = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsRearWheelEnabled));
+            if (value)
+            {
+                _parts.WheelRearId = _parts.WheelFrontId;
+                OnPropertyChanged(nameof(SelectedWheelRear));
+            }
+        }
+    }
+    public bool IsRearWheelEnabled => !_isSameWheelsFrontRear;
+
+    // ── Other parts ─────────────────────────────────────────────────────────
 
     public PartOption? SelectedTireCompound         { get => Pick(_parts.TireCompoundPartId, TireCompounds);         set { if (value != null) _parts.TireCompoundPartId = value.Id; } }
     public PartOption? SelectedTireWidthFront       { get => Pick(_parts.TireWidthFrontPartId, TireWidthsFront);     set { if (value != null) _parts.TireWidthFrontPartId = value.Id; } }
@@ -34,18 +86,6 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
     public PartOption? SelectedTireAspectRatioRear  { get => Pick(_parts.TireAspectRatioRearPartId, TireAspectRatiosRear);   set { if (value != null) _parts.TireAspectRatioRearPartId = value.Id; } }
     public PartOption? SelectedRimFront             { get => Pick(_parts.RimFrontPartId, RimsFront);                 set { if (value != null) _parts.RimFrontPartId = value.Id; } }
     public PartOption? SelectedRimRear              { get => Pick(_parts.RimRearPartId, RimsRear);                   set { if (value != null) _parts.RimRearPartId = value.Id; } }
-
-    public RimMassOption? SelectedRimStyle
-    {
-        get => _parts.RimMass.HasValue
-            ? RimStyles.FirstOrDefault(o => !o.IsStock && System.Math.Abs(o.Mass - _parts.RimMass.Value) < 0.001)
-            : RimStyles.FirstOrDefault(o => o.IsStock);
-        set
-        {
-            if (value == null) return;
-            _parts.RimMass = value.IsStock ? (double?)null : value.Mass;
-        }
-    }
     public PartOption? SelectedTrackSpacingFront    { get => Pick(_parts.TrackSpacingFrontPartId, TrackSpacingsFront); set { if (value != null) _parts.TrackSpacingFrontPartId = value.Id; } }
     public PartOption? SelectedTrackSpacingRear     { get => Pick(_parts.TrackSpacingRearPartId, TrackSpacingsRear);   set { if (value != null) _parts.TrackSpacingRearPartId = value.Id; } }
 
@@ -53,6 +93,8 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
     {
         _parts = parts;
         _makeId = _db.GetCar(car.CarDbId)?.MakeID ?? 0;
+        _resolver.StockFrontTireProfile = car.StockFrontTireProfile;
+        _resolver.StockRearTireProfile = car.StockRearTireProfile;
 
         int ordinal = car.CarDbId;
         int carBodyId = car.CarBodyId;
@@ -76,26 +118,38 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
         Populate(RimsRear,              _db.GetRimsRear(ordinal));
         Populate(TrackSpacingsFront,    _db.GetTrackSpacingsFront(carBodyId));
         Populate(TrackSpacingsRear,     _db.GetTrackSpacingsRear(carBodyId));
-        BuildRimStyles();
+
+        // Load all wheel models into the dropdown collection
+        LoadAllWheels();
+        WheelModels.Clear();
+        foreach (var w in _allWheels)
+            WheelModels.Add(w);
         RefreshSelections();
     }
 
-    private void BuildRimStyles()
+    private void LoadAllWheels()
     {
-        RimStyles.Clear();
-        double stock = _parts.StockRimMass;
-        if (stock <= 0) return; // no stock rim mass known for this car
-
-        string kg = LocalizationService.Instance.T("UnitKg");
-        if (kg == "UnitKg") kg = "кг";
-        string stockTag = LocalizationService.Instance.T("Part_Stock");
-
-        RimStyles.Add(new RimMassOption { Mass = stock, IsStock = true, DisplayName = $"{stock:0.#} {kg} ({stockTag})" });
-        foreach (var m in _db.GetWheelMassOptions())
+        var list = _db.GetAllAftermarketWheels()
+            .Select(w => new PartOption
+            {
+                Id = w.Id,
+                DisplayName = w.DisplayName,
+                IsStock = w.IsStock,
+                Mass = w.Mass,
+                Manufacturer = w.ManufacturerId <= 1 ? "" : ResolveManufacturer(w.ManufacturerId)
+            })
+            .OrderBy(w => w.Manufacturer)
+            .ThenBy(w => w.DisplayName)
+            .ToList();
+        list.Insert(0, new PartOption
         {
-            if (System.Math.Abs(m - stock) < 0.001) continue; // skip duplicate of stock mass
-            RimStyles.Add(new RimMassOption { Mass = m, DisplayName = $"{m:0.#} {kg}" });
-        }
+            Id = -1,
+            DisplayName = LocalizationService.Instance.T("Part_Stock"),
+            IsStock = true,
+            Mass = 0,
+            Manufacturer = ""
+        });
+        _allWheels = list;
     }
 
     private void RefreshSelections()
@@ -107,7 +161,10 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedTireAspectRatioRear));
         OnPropertyChanged(nameof(SelectedRimFront));
         OnPropertyChanged(nameof(SelectedRimRear));
-        OnPropertyChanged(nameof(SelectedRimStyle));
+        OnPropertyChanged(nameof(SelectedWheelFront));
+        OnPropertyChanged(nameof(SelectedWheelRear));
+        OnPropertyChanged(nameof(IsSameWheelsFrontRear));
+        OnPropertyChanged(nameof(IsRearWheelEnabled));
         OnPropertyChanged(nameof(SelectedTrackSpacingFront));
         OnPropertyChanged(nameof(SelectedTrackSpacingRear));
     }
@@ -124,4 +181,15 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
 
     private static T? PickStock<T>(System.Collections.Generic.List<T> parts) where T : DbUpgradePart =>
         parts.FirstOrDefault(p => p.IsStock) ?? parts.FirstOrDefault();
+
+    private static PartOption? _find(int? id, ObservableCollection<PartOption> options) =>
+        id.HasValue ? options.FirstOrDefault(o => o.Id == id.Value)
+            : options.FirstOrDefault(o => o.IsStock);
+
+    private static string ResolveManufacturer(int manufacturerId)
+    {
+        string m = LocalizationService.Instance.T($"List_PartManufacturer_IDS_PartManufacturer_{manufacturerId}");
+        if (string.IsNullOrEmpty(m) || m.StartsWith("List_PartManufacturer")) return "";
+        return m;
+    }
 }

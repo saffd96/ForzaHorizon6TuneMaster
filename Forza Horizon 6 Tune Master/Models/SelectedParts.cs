@@ -50,11 +50,13 @@ public class SelectedParts : NotifyBase
     [ResetToStock]
     public int? SideSkirtPartId { get => _sideSkirtPartId; set { if (Set(ref _sideSkirtPartId, value)) OnPartChanged(); } }
 
-    // Rim appearance reduced to mass: null = stock rim mass (no delta), otherwise the
-    // chosen wheel mass (kg). Weight contribution = chosen mass − stock rim mass.
-    private double? _rimMass;
+    // Wheel model selection: Id from List_Wheels (null = stock).
+    private int? _wheelFrontId;
     [ResetToStock]
-    public double? RimMass { get => _rimMass; set { if (Set(ref _rimMass, value)) OnPartChanged(); } }
+    public int? WheelFrontId { get => _wheelFrontId; set { if (Set(ref _wheelFrontId, value)) OnPartChanged(); } }
+    private int? _wheelRearId;
+    [ResetToStock]
+    public int? WheelRearId { get => _wheelRearId; set { if (Set(ref _wheelRearId, value)) OnPartChanged(); } }
     private double _stockRimMass;
     public double StockRimMass => _stockRimMass;
 
@@ -324,9 +326,17 @@ public class SelectedParts : NotifyBase
         total += PartMassDiff(_motorPartId, id => _db.GetMotorPartById(id));
         total += PartMassDiff(_weightReductionPartId, id => _db.GetWeightReductionById(id));
         total += PartMassDiff(_chassisStiffnessPartId, id => _db.GetChassisStiffnessById(id));
-        // Rim appearance: delta is the chosen wheel mass relative to the stock rim mass.
-        if (_rimMass.HasValue && _stockRimMass > 0)
-            total += _rimMass.Value - _stockRimMass;
+        // Wheel appearance: each axle contributes half the delta from stock.
+        if (_wheelFrontId.HasValue && _stockRimMass > 0)
+        {
+            var wf = _db.GetWheelMassById(_wheelFrontId.Value);
+            if (wf.HasValue) total += (wf.Value - _stockRimMass) / 2;
+        }
+        if (_wheelRearId.HasValue && _stockRimMass > 0)
+        {
+            var wr = _db.GetWheelMassById(_wheelRearId.Value);
+            if (wr.HasValue) total += (wr.Value - _stockRimMass) / 2;
+        }
         return Math.Max(total, 1.0);
     }
 

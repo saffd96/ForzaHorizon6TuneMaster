@@ -266,6 +266,8 @@
   "ResultBrakeBalance": "БАЛАНС П",
   "ResultBrakePressure": "ДАВЛЕНИЕ",
   "ResultGearing": "ТРАНСМИССИЯ",
+  "ResultGearChart": "Диаграмма передач",
+  "ResultPowerCurve": "Кривая мощности/крут. момента",
   "ResultFinalDrive": "ГЛАВНАЯ ПАРА",
   "ResultMaxSpeed": "МАКС. СКОРОСТЬ",
   "ResultMaxSpeedTooltip": "~ Расчётная максимальная скорость при данных передаточных числах и оборотах",
@@ -625,8 +627,9 @@
   "Part_AntiSwayRear": "Стабилизатор зад",
   "Part_TireCompound": "Состав шин",
   "Part_RearWing": "Заднее крыло",
-  "Part_RimSizeFront": "Диски перед",
-  "Part_RimSizeRear": "Диски зад",
+  "Part_RimSizeFront": "Размер дисков перед",
+  "Part_RimSizeRear": "Размер дисков зад",
+  "Part_RimStyle": "Модель дисков",
   "Part_Camshaft": "Распредвал",
   "Part_Valves": "Клапаны",
   "Part_Displacement": "Объём",
@@ -661,6 +664,9 @@
   "Part_TrackSpacingRear": "Проставки зад",
   "Part_FrontAspectRatio": "Профиль шин перед",
   "Part_RearAspectRatio": "Профиль шин зад",
-  "Part_MotorParts": "Апгрейд мотора"
+  "Part_MotorParts": "Апгрейд мотора",
+  "Part_RimStyleFront": "Диски перед",
+  "Part_RimStyleRear": "Диски зад",
+  "Part_SameRimsFrontRear": "Одинаковые перед/зад"
 
 }

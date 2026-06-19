@@ -161,10 +161,10 @@ public partial class GearChartView : UserControl
         double SpeedToX(double s) => padL + (s / speedCap) * cw;
         double RpmToY(double r)   => padT + ch - (r / rpmCap) * ch;
 
-        var gridBrush     = new SolidColorBrush(Color.FromRgb(0x2D, 0x35, 0x50));
+        var gridBrush     = new SolidColorBrush(Color.FromRgb(0x20, 0x35, 0x50));
         var lblBrush      = new SolidColorBrush(Color.FromRgb(0x88, 0x92, 0xA4));
         var dimLblBrush   = new SolidColorBrush(Color.FromRgb(0x66, 0x70, 0x80));
-        var lblFamily     = new FontFamily("Segoe UI");
+        var lblFamily     = new FontFamily(new Uri("pack://application:,,,/"), "./Resources/Fonts/#JetBrains Mono");
         const double lblSize = 10;
 
         // ── gridlines (vertical – speed) ──

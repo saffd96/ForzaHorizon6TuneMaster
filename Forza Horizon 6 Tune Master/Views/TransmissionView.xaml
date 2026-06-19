@@ -1,26 +1,15 @@
 <UserControl x:Class="Forza_Horizon_6_Tune_Master.Views.TransmissionView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Forza_Horizon_6_Tune_Master.Views"
              xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services">
     <StackPanel>
-        <TextBlock Text="{l:Loc ModuleTransmission}" Style="{StaticResource SectionHeader}"/>
-        <UniformGrid Columns="6" HorizontalAlignment="Stretch" Margin="0,0,0,6">
-            <ComboBox ItemsSource="{Binding Clutches}" SelectedItem="{Binding SelectedClutch}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Clutches.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding Transmissions}" SelectedItem="{Binding SelectedTransmission}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Transmissions.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding Drivelines}" SelectedItem="{Binding SelectedDriveline}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Drivelines.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding Differentials}" SelectedItem="{Binding SelectedDifferential}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Differentials.Count, Converter={StaticResource CountVis}}"/>
-        </UniformGrid>
+        <TextBlock Text="{l:Loc SectionTransmissionClutch}" Style="{StaticResource PartGroupHeader}" Margin="0,0,0,4"/>
+        <v:PartRow Label="{l:Loc Part_Transmission}" Options="{Binding Transmissions}" Selected="{Binding SelectedTransmission}"/>
+        <v:PartRow Label="{l:Loc Part_Clutch}"       Options="{Binding Clutches}"      Selected="{Binding SelectedClutch}"/>
+
+        <TextBlock Text="{l:Loc SectionDrivelineDiff}" Style="{StaticResource PartGroupHeader}"/>
+        <v:PartRow Label="{l:Loc Part_Driveline}"    Options="{Binding Drivelines}"    Selected="{Binding SelectedDriveline}"/>
+        <v:PartRow Label="{l:Loc Part_Differential}" Options="{Binding Differentials}" Selected="{Binding SelectedDifferential}"/>
     </StackPanel>
 </UserControl>

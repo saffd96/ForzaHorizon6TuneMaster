@@ -8,6 +8,7 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         Background="{StaticResource BgBrush}"
+        FontFamily="{StaticResource AppFontFamily}"
         WindowStyle="SingleBorderWindow">
 
     <Grid>

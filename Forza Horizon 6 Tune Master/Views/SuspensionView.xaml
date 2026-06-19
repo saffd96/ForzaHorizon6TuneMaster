@@ -1,34 +1,19 @@
 <UserControl x:Class="Forza_Horizon_6_Tune_Master.Views.SuspensionView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Forza_Horizon_6_Tune_Master.Views"
              xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services">
     <StackPanel>
-        <TextBlock Text="{l:Loc ModuleChassis}" Style="{StaticResource SectionHeader}"/>
-        <UniformGrid Columns="6" HorizontalAlignment="Stretch" Margin="0,0,0,6">
-            <ComboBox ItemsSource="{Binding Brakes}" SelectedItem="{Binding SelectedBrake}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding Brakes.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding SpringDampers}" SelectedItem="{Binding SelectedSpringDamper}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding SpringDampers.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding AntiSwayFront}" SelectedItem="{Binding SelectedAntiSwayFront}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding AntiSwayFront.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding AntiSwayRear}" SelectedItem="{Binding SelectedAntiSwayRear}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding AntiSwayRear.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding ChassisStiffness}" SelectedItem="{Binding SelectedChassisStiffness}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding ChassisStiffness.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding WeightReductions}" SelectedItem="{Binding SelectedWeightReduction}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding WeightReductions.Count, Converter={StaticResource CountVis}}"/>
-        </UniformGrid>
+        <TextBlock Text="{l:Loc SectionSuspensionParts}" Style="{StaticResource PartGroupHeader}" Margin="0,0,0,4"/>
+        <v:PartRow Label="{l:Loc Part_SpringDamper}"   Options="{Binding SpringDampers}"  Selected="{Binding SelectedSpringDamper}"/>
+        <v:PartRow Label="{l:Loc Part_AntiSwayFront}"  Options="{Binding AntiSwayFront}"  Selected="{Binding SelectedAntiSwayFront}"/>
+        <v:PartRow Label="{l:Loc Part_AntiSwayRear}"   Options="{Binding AntiSwayRear}"   Selected="{Binding SelectedAntiSwayRear}"/>
+
+        <TextBlock Text="{l:Loc SectionBrakeParts}" Style="{StaticResource PartGroupHeader}"/>
+        <v:PartRow Label="{l:Loc Part_Brakes}"         Options="{Binding Brakes}"         Selected="{Binding SelectedBrake}"/>
+
+        <TextBlock Text="{l:Loc SectionWeightStiffness}" Style="{StaticResource PartGroupHeader}"/>
+        <v:PartRow Label="{l:Loc Part_ChassisStiffness}" Options="{Binding ChassisStiffness}" Selected="{Binding SelectedChassisStiffness}"/>
+        <v:PartRow Label="{l:Loc Part_WeightReduction}"  Options="{Binding WeightReductions}"  Selected="{Binding SelectedWeightReduction}"/>
     </StackPanel>
 </UserControl>

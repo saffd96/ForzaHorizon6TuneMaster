@@ -1,26 +1,13 @@
 <UserControl x:Class="Forza_Horizon_6_Tune_Master.Views.AeroVisualView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:Forza_Horizon_6_Tune_Master.Views"
              xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services">
     <StackPanel>
-        <TextBlock Text="{l:Loc ModuleAero}" Style="{StaticResource SectionHeader}"/>
-        <UniformGrid Columns="6" HorizontalAlignment="Stretch" Margin="0,0,0,6">
-            <ComboBox ItemsSource="{Binding FrontBumpers}" SelectedItem="{Binding SelectedFrontBumper}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding FrontBumpers.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding RearWings}" SelectedItem="{Binding SelectedRearWing}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding RearWings.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding RearBumpers}" SelectedItem="{Binding SelectedRearBumper}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding RearBumpers.Count, Converter={StaticResource CountVis}}"/>
-            <ComboBox ItemsSource="{Binding SideSkirts}" SelectedItem="{Binding SelectedSideSkirt}"
-                      HorizontalAlignment="Stretch" MinHeight="26"
-                      FontSize="{DynamicResource FontSmall}" Margin="2,0,2,3"
-                      Visibility="{Binding SideSkirts.Count, Converter={StaticResource CountVis}}"/>
-        </UniformGrid>
+        <TextBlock Text="{l:Loc SectionAeroParts}" Style="{StaticResource PartGroupHeader}" Margin="0,0,0,4"/>
+        <v:PartRow Label="{l:Loc Part_FrontBumper}" Options="{Binding FrontBumpers}" Selected="{Binding SelectedFrontBumper}"/>
+        <v:PartRow Label="{l:Loc Part_RearWing}"    Options="{Binding RearWings}"    Selected="{Binding SelectedRearWing}"/>
+        <v:PartRow Label="{l:Loc Part_RearBumper}"  Options="{Binding RearBumpers}"  Selected="{Binding SelectedRearBumper}"/>
+        <v:PartRow Label="{l:Loc Part_SideSkirts}"  Options="{Binding SideSkirts}"   Selected="{Binding SelectedSideSkirt}"/>
     </StackPanel>
 </UserControl>

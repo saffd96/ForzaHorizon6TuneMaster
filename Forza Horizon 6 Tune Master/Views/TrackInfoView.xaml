@@ -26,7 +26,7 @@
                             <StackPanel Margin="10,8" HorizontalAlignment="Center">
                                 <TextBlock x:Name="Icon"  FontSize="20" HorizontalAlignment="Center"
                                            Text="{TemplateBinding Tag}"/>
-                                <TextBlock x:Name="Label" FontSize="{DynamicResource FontMicro}" FontFamily="Segoe UI"
+                                <TextBlock x:Name="Label" FontSize="{DynamicResource FontMicro}" FontFamily="{StaticResource AppFontFamily}"
                                            FontWeight="SemiBold" HorizontalAlignment="Center"
                                            Margin="0,3,0,0"
                                            Text="{TemplateBinding Content}"/>
@@ -62,7 +62,7 @@
                             <StackPanel Margin="6,5" HorizontalAlignment="Center">
                                 <TextBlock x:Name="Icon"  FontSize="14" HorizontalAlignment="Center"
                                            Text="{TemplateBinding Tag}"/>
-                                <TextBlock x:Name="Label" FontSize="10" FontFamily="Segoe UI"
+                                <TextBlock x:Name="Label" FontSize="10" FontFamily="{StaticResource AppFontFamily}"
                                            FontWeight="SemiBold" HorizontalAlignment="Center"
                                            Margin="0,1,0,0"
                                            Text="{TemplateBinding Content}"/>
@@ -89,7 +89,7 @@
             <Setter Property="Margin"     Value="0,0,10,0"/>
             <Setter Property="Padding"    Value="20,8"/>
             <Setter Property="FontSize"   Value="{DynamicResource FontNormal}"/>
-            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor"     Value="Hand"/>
             <Setter Property="Template">
