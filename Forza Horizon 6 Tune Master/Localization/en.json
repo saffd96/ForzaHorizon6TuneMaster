@@ -103,6 +103,7 @@
   "FuelGasoline": "Gasoline",
   "FuelDiesel": "Diesel",
   "AspirationLabel": "Aspiration",
+  "Part_ForcedInductionLevel": "Forced induction",
   "AntiLagLabel": "Anti-lag",
   "DriveTypeLabel": "Drive type",
   "GearCountLabel": "Gear count",
@@ -278,6 +279,7 @@
   "ResultGearFormat": "Gear ",
 
   "LaunchControlHeader": "🚦 LAUNCH CONTROL",
+  "LaunchControlLabel": "🚦 Launch control",
   "LaunchControlHint": "Optimal launch RPM. Hold throttle at this RPM before the green light.",
   "LaunchControlRpm": "RPM",
 
@@ -567,6 +569,8 @@
   "Expl_GearNote_CrossCountry": "Max acceleration off-road.",
   "Expl_GearNote_Touge": "Short gears for mountain switchbacks.",
   "Expl_GearNote_Road": "Road discipline ratios.",
+  "Expl_GearNote_Drag": "Straight-line ratios; final drive set by strip length.",
+  "Expl_GearNote_Street": "All-round street ratios.",
 
   "Expl_Inertia": "Rotational inertia: {0:F2} (torque factor).",
 

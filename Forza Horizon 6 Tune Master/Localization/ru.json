@@ -103,6 +103,7 @@
   "FuelGasoline": "Бензин / Газ",
   "FuelDiesel": "Дизель",
   "AspirationLabel": "Наддув",
+  "Part_ForcedInductionLevel": "Мощность наддува",
   "AntiLagLabel": "Антилаг",
   "DriveTypeLabel": "Тип привода",
   "GearCountLabel": "Кол-во передач",
@@ -278,6 +279,7 @@
   "ResultGearFormat": "Передача ",
 
   "LaunchControlHeader": "🚦 LAUNCH CONTROL",
+  "LaunchControlLabel": "🚦 Лаунч-контроль",
   "LaunchControlHint": "Оптимальные обороты для старта. Удержи педаль газа на этих оборотах перед спуском флага.",
   "LaunchControlRpm": "ОБ/МИН",
 
@@ -567,6 +569,8 @@
   "Expl_GearNote_CrossCountry": "Макс. ускорение на бездорожье.",
   "Expl_GearNote_Touge": "Короткие передачи для горных серпантинов.",
   "Expl_GearNote_Road": "Ряд под дорожные дисциплины.",
+  "Expl_GearNote_Drag": "Ряд под разгон по прямой; главная пара под длину заезда.",
+  "Expl_GearNote_Street": "Универсальный городской ряд.",
 
   "Expl_Inertia": "Инерция вращения: {0:F2} (фактор к моменту).",
 

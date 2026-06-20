@@ -15,7 +15,11 @@ public static class PowerCalculator
         if (dbCar == null) return;
 
         parts ??= new SelectedParts();
-        if (dbCar.PowertrainID == 1)
+        // Electric cars are identified by aspiration type 8 (matches CarSpecController).
+        // PowertrainID is an engine-layout category, NOT an electric flag — most ICE cars
+        // have PowertrainID == 1, so keying off it sent V8s down the (motor-less) electric
+        // path, which bailed out and left power/torque at their CarCard defaults (300 hp).
+        if (dbCar.AspirationTypeId == 8)
             CalcElectric(car, dbCar, db, parts);
         else
             CalcIce(car, dbCar, db, parts);
@@ -90,30 +94,34 @@ public static class PowerCalculator
 
         double partScale = AccumulatePartTorqueScales(parts, db);
 
-        double fiTorqueScale = 1.0;
-        ApplyForcedInduction(parts, db, ref fiTorqueScale);
+        // Base (naturally-aspirated) torque scale: engine baseline × bolt-on engine parts.
+        // Forced induction is applied separately, AS AN RPM-DEPENDENT CURVE (see below), so the
+        // boost characteristic (turbo lag low down, supercharger building with RPM, …) actually
+        // reshapes the graph instead of just lifting the whole curve by a flat factor.
+        double baseScale = torqueScale * Math.Max(0.1, partScale);
+        baseScale = Math.Min(baseScale, 20.0);
 
-        double intercoolerScale = 1.0;
+        // An intercooler raises the FI's peak boost; folded into the FI curve's top end.
+        double intercoolerMaxScale = 1.0;
         if (parts.ForcedInductionPartId != null && parts.IntercoolerPartId != null)
         {
             var ic = db.GetIntercoolerById(parts.IntercoolerPartId.Value);
             if (ic != null && ic.MaxScaleScale > 0.001)
-                intercoolerScale = ic.MaxScaleScale;
+                intercoolerMaxScale = ic.MaxScaleScale;
         }
-
-        double totalTorqueScale = torqueScale * Math.Max(0.1, partScale) * Math.Max(0.1, fiTorqueScale) * intercoolerScale;
-        totalTorqueScale = Math.Min(totalTorqueScale, 20.0);
 
         double[] torqueCurve;
         if (torqueCurveId != null)
         {
-            torqueCurve = LoadTorqueCurve(torqueCurveId.Value, db, totalTorqueScale, torqueCurveMaxRPM, partRedlineRPM)
-                ?? GenerateIceTorqueCurve(dbCar, peakTorqueNm * totalTorqueScale, partRedlineRPM);
+            torqueCurve = LoadTorqueCurve(torqueCurveId.Value, db, baseScale, torqueCurveMaxRPM, partRedlineRPM)
+                ?? GenerateIceTorqueCurve(dbCar, peakTorqueNm * baseScale, partRedlineRPM);
         }
         else
         {
-            torqueCurve = GenerateIceTorqueCurve(dbCar, peakTorqueNm * totalTorqueScale, partRedlineRPM);
+            torqueCurve = GenerateIceTorqueCurve(dbCar, peakTorqueNm * baseScale, partRedlineRPM);
         }
+
+        ApplyForcedInductionCurve(torqueCurve, car.MaxRPM, parts, db, intercoolerMaxScale);
 
         car.CachedTorqueCurveNm = torqueCurve;
         car.TorqueNm = Math.Round(torqueCurve.Max());
@@ -165,25 +173,84 @@ public static class PowerCalculator
         scales.Add(s);
     }
 
-    // Forced induction is modelled as a torque-curve multiplier only. Power is computed
-    // downstream from the resulting torque curve, so it must NOT be scaled again here.
+    // Forced induction reshapes the torque curve across RPM rather than lifting it by a flat
+    // factor — that is what makes each FI type look different on the graph. Power is computed
+    // downstream from the resulting torque curve, so FI must NOT be scaled into power again.
     // Note: turbo PowerMaxScale is NOT a multiplier (DB values range ~15–1000); it is the
     // turbo's rated power and must never be applied as a scale factor.
-    private static void ApplyForcedInduction(SelectedParts parts, Fh6DatabaseService db, ref double torqueScale)
+    private static void ApplyForcedInductionCurve(double[] curve, int maxRPM, SelectedParts parts, Fh6DatabaseService db, double intercoolerMaxScale)
     {
-        if (parts.ForcedInductionPartId == null) return;
+        if (parts.ForcedInductionPartId == null || curve.Length == 0 || maxRPM <= 0) return;
 
         var fi = db.GetForcedInductionById(parts.ForcedInductionPartId.Value);
-        if (fi == null) return;
+        if (fi is not DbUpgradeForcedInduction fiPart) return;
 
-        if (fi is DbUpgradeTurboSingle ts)
-            torqueScale *= ts.MaxScale;
-        else if (fi is DbUpgradeTurboTwin tt)
-            torqueScale *= tt.MaxScale;
-        else if (fi is DbUpgradeCSC csc)
-            torqueScale *= csc.RedlineRPMScale;
-        else if (fi is DbUpgradeDSC dsc)
-            torqueScale *= dsc.RedlineRPMScale;
+        int n = curve.Length;
+        for (int i = 0; i < n; i++)
+        {
+            double rpm = maxRPM * i / (double)(n - 1);
+            double m = FiScaleAtRpm(fiPart, rpm, maxRPM, intercoolerMaxScale);
+            curve[i] = Math.Round(curve[i] * m, 1);
+        }
+    }
+
+    private static double FiScaleAtRpm(DbUpgradeForcedInduction fi, double rpm, double maxRPM, double intercoolerMaxScale)
+    {
+        double frac = CalculationHelpers.Clamp(rpm / maxRPM, 0.0, 1.0);
+        return fi switch
+        {
+            DbUpgradeTurboSingle ts => TurboScaleAtRpm(ts.MinScale, ts.MaxScale * intercoolerMaxScale, ts, rpm, frac),
+            DbUpgradeTurboTwin   tt => TurboScaleAtRpm(tt.MinScale, tt.MaxScale * intercoolerMaxScale, tt, rpm, frac),
+            // Centrifugal blowers make boost roughly with the square of impeller (≈ engine) speed,
+            // so almost nothing low down and a steep climb up top.
+            DbUpgradeCSC csc => SuperchargerScaleAtRpm(csc.ZeroRPMScale, csc.RedlineRPMScale * intercoolerMaxScale, frac, centrifugal: true),
+            // Positive-displacement (Roots) blowers give near-constant boost from just off idle.
+            DbUpgradeDSC dsc => SuperchargerScaleAtRpm(dsc.ZeroRPMScale, dsc.RedlineRPMScale * intercoolerMaxScale, frac, centrifugal: false),
+            _ => 1.0
+        };
+    }
+
+    // Turbo: little/negative help while it spools (MinScale), rising to full boost (MaxScale)
+    // once on song, then tapering at very high RPM per the part's TorqueDropOff points. The
+    // spool fraction (~where full boost arrives) is the one modelled assumption — MinScale,
+    // MaxScale and the drop-off come straight from the DB.
+    private const double TurboSpoolFraction = 0.35;        // full boost by ~35% of redline
+    private const double TurboSpoolFractionAntiLag = 0.15; // anti-lag keeps it spooled → boost comes in much earlier
+    private static double TurboScaleAtRpm(double minScale, double maxScale, DbUpgradeForcedInduction fi, double rpm, double frac)
+    {
+        if (minScale <= 0.0) minScale = maxScale;
+        // Anti-lag (OffThrottleMomentInertia > 0) effectively eliminates turbo lag, so full boost
+        // arrives at lower RPM — i.e. the spool ramp shifts left on the graph.
+        double spool = fi.HasAntiLag ? TurboSpoolFractionAntiLag : TurboSpoolFraction;
+        double s;
+        if (frac <= spool && spool > 0.0)
+        {
+            double t = frac / spool;                  // 0..1 across the spool region
+            t = t * t * (3.0 - 2.0 * t);              // smoothstep: lag, then a quick build
+            s = minScale + (maxScale - minScale) * t;
+        }
+        else s = maxScale;
+        return s * FiDropOff(fi, rpm);
+    }
+
+    private static double SuperchargerScaleAtRpm(double zeroScale, double redlineScale, double frac, bool centrifugal)
+    {
+        double z = zeroScale <= 0.0 ? 1.0 : zeroScale;
+        double r = redlineScale <= 0.0 ? z : redlineScale;
+        double t = centrifugal ? frac * frac : frac;
+        return z + (r - z) * t;
+    }
+
+    // High-RPM boost taper from the part's TorqueDropOffRPM/Scale points. For most street
+    // engines the drop-off RPMs sit above redline, so this is a no-op there.
+    private static double FiDropOff(DbUpgradeForcedInduction fi, double rpm)
+    {
+        double rpm0 = fi.TorqueDropOffRPM0, rpm1 = fi.TorqueDropOffRPM1;
+        double s0 = fi.TorqueDropOffScale0 <= 0.0 ? 1.0 : fi.TorqueDropOffScale0;
+        double s1 = fi.TorqueDropOffScale1 <= 0.0 ? s0 : fi.TorqueDropOffScale1;
+        if (rpm1 <= rpm0 || rpm <= rpm0) return s0;
+        double t = CalculationHelpers.Clamp((rpm - rpm0) / (rpm1 - rpm0), 0.0, 1.0);
+        return s0 + (s1 - s0) * t;
     }
 
     // DB torque curves are sampled uniformly over [0, curveMaxRPM], where the trailing

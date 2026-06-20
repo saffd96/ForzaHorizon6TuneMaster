@@ -7,6 +7,6 @@
         <TextBlock Text="{l:Loc SectionSwaps}" Style="{StaticResource PartGroupHeader}" Margin="0,0,0,4"/>
         <v:PartRow Label="{l:Loc Part_Engine}"           Options="{Binding EngineSwaps}"          Selected="{Binding SelectedEngineSwap}"/>
         <v:PartRow Label="{l:Loc SectionDrivetrainSwap}" Options="{Binding DrivetrainSwaps}"       Selected="{Binding SelectedDrivetrainSwap}"/>
-        <v:PartRow Label="{l:Loc AspirationLabel}"       Options="{Binding ForcedInductions}"      Selected="{Binding SelectedForcedInduction}"/>
+        <v:PartRow Label="{l:Loc AspirationLabel}"       Options="{Binding ForcedInductionTypes}"  Selected="{Binding SelectedForcedInductionType}"/>
     </StackPanel>
 </UserControl>

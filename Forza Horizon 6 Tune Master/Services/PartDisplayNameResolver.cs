@@ -126,12 +126,8 @@ public class PartDisplayNameResolver
                     string baseName = drv.IsStock
                         ? T("Upgrades_IDS_Name_141") // Stock Drivetrain
                         : T("Upgrades_IDS_Name_142"); // Alternate Drivetrain
-                    string driveKey = drv.DriveTypeID switch
-                    {
-                        0 => "List_DriveType_IDS_DisplayName_1",
-                        2 => "List_DriveType_IDS_DisplayName_3",
-                        _ => "List_DriveType_IDS_DisplayName_2",
-                    };
+                    // DB drive-type IDs match the localization suffixes 1-to-1: 1 FWD / 2 RWD / 3 AWD.
+                    string driveKey = $"List_DriveType_IDS_DisplayName_{drv.DriveTypeID}";
                     string driveType = T(driveKey);
                     if (driveType == driveKey) driveType = drv.DriveTypeID.ToString();
                     name = drv.IsStock ? baseName : $"{baseName} ({driveType})";

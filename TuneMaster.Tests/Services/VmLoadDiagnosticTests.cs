@@ -102,7 +102,7 @@ public class VmLoadDiagnosticTests
         var oldDifferentialId = parts.DifferentialPartId;
 
         var rwdSwap = swapsVm.DrivetrainSwaps.Select(o => Fh6DatabaseService.Instance.GetDrivetrainSwapById(o.Id))
-            .FirstOrDefault(s => s != null && s.DriveTypeID == 1); // RWD
+            .FirstOrDefault(s => s != null && s.DriveTypeID == 2); // RWD (List_DriveType: 1 FWD / 2 RWD / 3 AWD)
         if (rwdSwap != null)
         {
             parts.DrivetrainSwapPartId = rwdSwap.Id;

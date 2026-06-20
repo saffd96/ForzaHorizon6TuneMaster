@@ -36,6 +36,8 @@ internal static class GearingCalculator
             Discipline.Rally => (4.0, 0.68, 0.78, "Expl_GearNote_Rally"),
             Discipline.CrossCountry => (4.5, 0.66, 0.75, "Expl_GearNote_CrossCountry"),
             Discipline.Touge => (3.8, 0.70, 0.84, "Expl_GearNote_Touge"),
+            Discipline.Drag => (3.2, 0.74, 0.86, "Expl_GearNote_Drag"),
+            Discipline.Street => (3.6, 0.69, 0.83, "Expl_GearNote_Street"),
             _ => (3.5, 0.68, 0.82, "Expl_GearNote_Road")
         };
         string note = CalculationHelpers.L(noteKey);
@@ -62,6 +64,71 @@ internal static class GearingCalculator
         }
     }
 
+    // Fraction of v-max actually reached at the end of the strip — used to target the final drive.
+    // A quarter mile tops out well short of v-max; a full mile nearly reaches it.
+    internal static double DragSpeedFactor(DragDistance dist) => dist switch
+    {
+        DragDistance.Quarter => 0.82,
+        DragDistance.Half    => 0.91,
+        _                    => 1.00, // Mile
+    };
+
+    // Shorter strips keep the gears closer together (less drop) so the car stays in the meat of its
+    // power band to the trap; longer strips spread them out for terminal speed.
+    internal static void ApplyDragDistanceSpacing(DragDistance dist, ref double stepMin, ref double stepMax)
+    {
+        switch (dist)
+        {
+            case DragDistance.Quarter: stepMin += 0.03; stepMax += 0.03; break;
+            case DragDistance.Mile:    stepMin -= 0.03; stepMax -= 0.03; break;
+            // Half = baseline
+        }
+    }
+
+    // Build a descending ratio set from the discipline's first-gear height and gear spacing:
+    // gear 1 = first, each next gear = previous × step, where step ramps from stepMin (big drops
+    // between the low gears) up to stepMax (close ratios up top).
+    //
+    // Naively multiplying down can underflow the legal minimum on cars with many gears, which used
+    // to leave the top gears all piled up on GearRatioMin (several identical 0.48 gears). To avoid
+    // that we build the raw ramped shape, then — only if it underflows — re-fit it in log space
+    // between the first gear and the floor, keeping every gear strictly descending and distinct.
+    internal static List<double> BuildDisciplineRatios(double first, double stepMin, double stepMax, int count)
+    {
+        var list = new List<double>();
+        if (count <= 0) return list;
+
+        first = CalculationHelpers.Clamp(first, CalculationHelpers.GearRatioMin, CalculationHelpers.GearRatioMax);
+        if (count == 1) { list.Add(Math.Round(first, 2)); return list; }
+
+        // Raw ramped progression (tighter steps up top).
+        var raw = new double[count];
+        raw[0] = first;
+        for (int i = 1; i < count; i++)
+        {
+            double t = count > 2 ? (double)(i - 1) / (count - 2) : 0.5;
+            double step = stepMin + (stepMax - stepMin) * CalculationHelpers.Clamp(t, 0.0, 1.0);
+            raw[i] = raw[i - 1] * step;
+        }
+
+        // Target top gear: the raw endpoint, but never below the floor and always below first.
+        double rawTop = raw[count - 1];
+        double top = Math.Min(Math.Max(rawTop, CalculationHelpers.GearRatioMin), first - 0.01);
+
+        double logFirst = Math.Log(first);
+        double denom = logFirst - Math.Log(rawTop);
+
+        for (int i = 0; i < count; i++)
+        {
+            // f: 0 at the first gear, 1 at the top gear — preserves the ramp's spacing shape.
+            double ratio = Math.Abs(denom) < 1e-9
+                ? first
+                : Math.Exp(logFirst - (logFirst - Math.Log(raw[i])) / denom * (logFirst - Math.Log(top)));
+            list.Add(Math.Round(CalculationHelpers.Clamp(ratio, CalculationHelpers.GearRatioMin, CalculationHelpers.GearRatioMax), 2));
+        }
+        return list;
+    }
+
     public static void CalculateGearing(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r,
         Dictionary<string, string> ex, double effectiveMaxKmh)
     {
@@ -84,19 +151,30 @@ internal static class GearingCalculator
             ? CalculationHelpers.RevLimitFraction
             : 0.95;
 
+        // On the drag strip the gearing targets the TERMINAL speed reached at that distance
+        // (a quarter mile tops out well short of v-max, a full mile nearly reaches it), which is
+        // what makes the strip length actually change the final drive.
         double targetKmh = track.Discipline == Discipline.Drag
-            ? effectiveMaxKmh
+            ? effectiveMaxKmh * DragSpeedFactor(track.DragDistance)
             : Math.Min(effectiveMaxKmh, CalculationHelpers.TargetSpeedCapKmh);
         double targetMs = targetKmh / 3.6;
 
         double tireCirc = Math.PI * car.DrivenWheelDiameterInch * 0.0254;
 
-        // Build the ratio list from the selected transmission, skipping invalid entries.
-        var ratios = trans.GearRatios
-            .Take(trans.NumGears)
-            .Where(g => g > 0)
-            .Select(g => Math.Round(CalculationHelpers.Clamp(g, CalculationHelpers.GearRatioMin, CalculationHelpers.GearRatioMax), 2))
-            .ToList();
+        // The number of usable gears comes from the transmission, but the ratios themselves are
+        // tailored to the DISCIPLINE (first-gear height + gear spacing) rather than copied from the
+        // stock box — so e.g. rally/cross-country run short, close gears while road/drag run a
+        // taller, wider spread. The final drive (below) then dials in the actual top speed.
+        int gearCount = trans.GearRatios.Take(trans.NumGears).Count(g => g > 0);
+
+        double pwRatio = car.PowerHP / Math.Max(car.TotalMass / 1000.0, 0.1);
+        var (firstGear, stepMin, stepMax, gearNote) =
+            GetDisciplineGearParams(track.Discipline, pwRatio, car.FuelType);
+        ApplyAspirationStepAdjustment(car.AspirationType, car.AntiLag, ref stepMin, ref stepMax);
+        if (track.Discipline == Discipline.Drag)
+            ApplyDragDistanceSpacing(track.DragDistance, ref stepMin, ref stepMax);
+
+        var ratios = BuildDisciplineRatios(firstGear, stepMin, stepMax, gearCount);
 
         if (ratios.Count == 0)
         {
@@ -122,7 +200,7 @@ internal static class GearingCalculator
         if (car.OnlyFinalDriveCalculation || ratios.Count == 1)
         {
             ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_OnlyFD"), r.FinalDrive, r.RecommendedGearCount)
-                + " " + CalculationHelpers.L("Expl_GearNote_Road");
+                + " " + gearNote;
             if (!car.OnlyFinalDriveCalculation)
                 r.GearRatios = ratios;
             return;
@@ -131,7 +209,7 @@ internal static class GearingCalculator
         r.GearRatios = ratios;
         string gearStr = string.Join("  ", ratios.Select((g, i) => $"{i + 1}: {g:F2}"));
         ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_MultiGear"),
-            r.FinalDrive, r.RecommendedGearCount, gearStr, effectiveMaxKmh, r.ActualMaxSpeedKmh, car.MaxRPM, CalculationHelpers.L("Expl_GearNote_Road"));
+            r.FinalDrive, r.RecommendedGearCount, gearStr, effectiveMaxKmh, r.ActualMaxSpeedKmh, car.MaxRPM, gearNote);
     }
 
     public static void PostValidateAndRecalculate(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db,
@@ -147,7 +225,7 @@ internal static class GearingCalculator
             {
                 double actual = r.ActualMaxSpeedKmh;
                 double target = track.Discipline == Discipline.Drag
-                    ? effectiveMaxKmh
+                    ? effectiveMaxKmh * DragSpeedFactor(track.DragDistance)
                     : Math.Min(effectiveMaxKmh, CalculationHelpers.TargetSpeedCapKmh);
 
                 if (actual > 0 && target > 0 && (actual < target * 0.97 || actual > target * 1.05))

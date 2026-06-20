@@ -386,7 +386,6 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
@@ -406,40 +405,52 @@
                                       VerticalAlignment="Center" Margin="12,0,0,0"/>
                         </StackPanel>
 
-                        <ItemsControl Grid.Row="1" ItemsSource="{Binding TuneResult.GearRatios}" AlternationCount="12" Margin="0,0,0,4">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                            BorderThickness="1" CornerRadius="4" Margin="0,0,6,4" Padding="10,3" MinWidth="48"
-                                            ToolTip="{Binding DataContext.TuneResult.Explanations[FinalDrive], RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                        <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AddOne}, Mode=OneWay}"
-                                                       Foreground="{StaticResource TextMutedBrush}" FontSize="10" HorizontalAlignment="Center"/>
-                                            <TextBlock Text="{Binding StringFormat='{}{0:F2}'}" Foreground="{StaticResource TextBrush}"
-                                                       FontFamily="{StaticResource MonoFontFamily}" FontWeight="Bold"
-                                                       FontSize="{DynamicResource FontSmall}" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <Grid Grid.Row="1" Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                        <Border Grid.Row="2" Visibility="{Binding HasLaunchControl, Converter={StaticResource B2V}}"
-                                Background="{StaticResource CardBrush}" BorderBrush="{StaticResource AccentBrush}"
-                                BorderThickness="2,0,0,0" CornerRadius="4" Margin="0,0,0,4" Padding="10,4">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{l:Loc LaunchControlRpm}" Foreground="{StaticResource TextDimBrush}"
-                                           FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="{Binding TuneResult.LaunchControlRpm, StringFormat='{}{0:F0}'}"
-                                           Foreground="{StaticResource CyanBrush}" FontFamily="{StaticResource MonoFontFamily}"
-                                           FontWeight="Bold" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
+                            <ItemsControl Grid.Column="0" VerticalAlignment="Center"
+                                          ItemsSource="{Binding TuneResult.GearRatios}" AlternationCount="12">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                                BorderThickness="1" CornerRadius="4" Margin="0,0,6,4" Padding="10,3" MinWidth="48"
+                                                ToolTip="{Binding DataContext.TuneResult.Explanations[FinalDrive], RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                            <StackPanel HorizontalAlignment="Center">
+                                                <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AddOne}, Mode=OneWay}"
+                                                           Foreground="{StaticResource TextMutedBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="{Binding StringFormat='{}{0:F2}'}" Foreground="{StaticResource TextBrush}"
+                                                           FontFamily="{StaticResource MonoFontFamily}" FontWeight="Bold"
+                                                           FontSize="{DynamicResource FontSmall}" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
 
-                        <Grid Grid.Row="3">
+                            <!-- Launch control RPM: to the right of the gear ratios (drag only) -->
+                            <Border Grid.Column="1" VerticalAlignment="Center"
+                                    Visibility="{Binding HasLaunchControl, Converter={StaticResource B2V}}"
+                                    Background="{StaticResource CardBrush}" BorderBrush="{StaticResource AccentBrush}"
+                                    BorderThickness="2,0,0,0" CornerRadius="4" Margin="6,0,0,4" Padding="10,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{l:Loc LaunchControlLabel}" Foreground="{StaticResource TextDimBrush}"
+                                               FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding TuneResult.LaunchControlRpm, StringFormat='{}{0:F0}'}"
+                                               Foreground="{StaticResource CyanBrush}" FontFamily="{StaticResource MonoFontFamily}"
+                                               FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                    <TextBlock Text="{l:Loc LaunchControlRpm}" Foreground="{StaticResource TextDimBrush}"
+                                               FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Grid Grid.Row="2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
@@ -502,10 +513,20 @@
                                              IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.CrossCountry}}"/>
                                 <RadioButton Style="{StaticResource DiscChip}" Tag="D"  Content="{l:Loc DisciplineDrift}" ToolTip="{l:Loc DisciplineDriftTooltip}"
                                              IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drift}}"/>
-                                <RadioButton Style="{StaticResource DiscChip}" Tag="Dr" Content="{l:Loc DisciplineDrag}" ToolTip="{l:Loc DisciplineDragTooltip}"
-                                             IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drag}}"/>
                                 <RadioButton Style="{StaticResource DiscChip}" Tag="S"  Content="{l:Loc DisciplineStreet}" ToolTip="{l:Loc DisciplineStreetTooltip}"
                                              IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Street}}"/>
+                                <RadioButton Style="{StaticResource DiscChip}" Tag="Dr" Content="{l:Loc DisciplineDrag}" ToolTip="{l:Loc DisciplineDragTooltip}"
+                                             IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drag}}"/>
+                                <!-- Drag distance — sits right next to the Drag button, only when Drag is selected -->
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0"
+                                            Visibility="{Binding Track.IsDrag, Converter={StaticResource B2V}}">
+                                    <RadioButton Style="{StaticResource DragChip}" Content="{l:Loc DragDistQuarter}"
+                                                 IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Quarter}}"/>
+                                    <RadioButton Style="{StaticResource DragChip}" Content="{l:Loc DragDistHalf}"
+                                                 IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Half}}"/>
+                                    <RadioButton Style="{StaticResource DragChip}" Content="{l:Loc DragDistMile}"
+                                                 IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Mile}}"/>
+                                </StackPanel>
                             </WrapPanel>
                             <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
                                 <RadioButton Style="{StaticResource SeasonChip}" Content="{l:Loc Enum_Season_Spring}"
@@ -518,14 +539,6 @@
                                              IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Winter}}"/>
                             </WrapPanel>
                         </Grid>
-                        <WrapPanel Margin="0,2,0,0" Visibility="{Binding Track.IsDrag, Converter={StaticResource B2V}}">
-                            <RadioButton Style="{StaticResource DragChip}" Content="{l:Loc DragDistQuarter}"
-                                         IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Quarter}}"/>
-                            <RadioButton Style="{StaticResource DragChip}" Content="{l:Loc DragDistHalf}"
-                                         IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Half}}"/>
-                            <RadioButton Style="{StaticResource DragChip}" Content="{l:Loc DragDistMile}"
-                                         IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Mile}}"/>
-                        </WrapPanel>
                     </StackPanel>
                 </Border>
             </Grid>

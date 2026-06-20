@@ -251,6 +251,11 @@ public abstract record DbUpgradeForcedInduction : DbUpgradePart
 {
     public int EngineID { get; init; }
     public double MomentInertia { get; init; }
+    // Off-throttle turbo inertia. The DB uses -1 for "normal" (spools down when you lift) and a
+    // large positive value (e.g. 300) for anti-lag (stays spooled). Superchargers leave it at the
+    // default. Anti-lag effectively kills turbo lag, so we treat it as an earlier boost onset.
+    public double OffThrottleMomentInertia { get; init; } = -1.0;
+    public bool HasAntiLag => OffThrottleMomentInertia > 0.0;
     public double RobScale { get; init; }
     public double TorqueDropOffRPM0 { get; init; }
     public double TorqueDropOffRPM1 { get; init; }

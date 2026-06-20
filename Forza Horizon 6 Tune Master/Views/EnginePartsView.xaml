@@ -16,6 +16,7 @@
         <v:PartRow Label="{l:Loc Part_Manifold}"          Options="{Binding Manifolds}"     Selected="{Binding SelectedManifold}"/>
         <v:PartRow Label="{l:Loc Part_Exhaust}"           Options="{Binding Exhausts}"      Selected="{Binding SelectedExhaust}"/>
         <v:PartRow Label="{l:Loc Part_FuelSystem}"        Options="{Binding FuelSystems}"   Selected="{Binding SelectedFuelSystem}"/>
+        <v:PartRow Label="{l:Loc Part_ForcedInductionLevel}" Options="{Binding ForcedInductionLevels}" Selected="{Binding SelectedForcedInductionLevel}"/>
         <v:PartRow Label="{l:Loc Part_Intercooler}"       Options="{Binding Intercoolers}"  Selected="{Binding SelectedIntercooler}"/>
         <v:PartRow Label="{l:Loc Part_RestrictorPlate}"   Options="{Binding Restrictors}"   Selected="{Binding SelectedRestrictor}"/>
 

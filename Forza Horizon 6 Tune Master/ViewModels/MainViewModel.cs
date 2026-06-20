@@ -172,10 +172,11 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         _ = DebounceGenerate();
     }
 
+    // DB drive-type IDs (List_DriveType): 1 = FWD, 2 = RWD, 3 = AWD.
     private static Models.DriveType MapDriveType(int driveTypeId) => driveTypeId switch
     {
-        0 => Models.DriveType.FWD,
-        2 => Models.DriveType.AWD,
+        1 => Models.DriveType.FWD,
+        3 => Models.DriveType.AWD,
         _ => Models.DriveType.RWD
     };
 
@@ -1073,10 +1074,11 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         var drivetrainSwap = _selectedParts.DrivetrainSwapPartId != null ? db.GetDrivetrainSwapById(_selectedParts.DrivetrainSwapPartId.Value) : null;
         if (drivetrainSwap != null)
             driveTypeId = drivetrainSwap.DriveTypeID;
+        // DB drive-type IDs (List_DriveType): 1 = FWD, 2 = RWD, 3 = AWD.
         car.DriveType = driveTypeId switch
         {
-            0 => Forza_Horizon_6_Tune_Master.Models.DriveType.FWD,
-            2 => Forza_Horizon_6_Tune_Master.Models.DriveType.AWD,
+            1 => Forza_Horizon_6_Tune_Master.Models.DriveType.FWD,
+            3 => Forza_Horizon_6_Tune_Master.Models.DriveType.AWD,
             _ => Forza_Horizon_6_Tune_Master.Models.DriveType.RWD
         };
         car.DriveTypeID = driveTypeId;

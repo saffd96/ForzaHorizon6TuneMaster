@@ -39,6 +39,17 @@ public class Fh6DatabaseService
     private readonly ConcurrentDictionary<int, List<DbUpgradeTurboTwin>> _turbosTwinByEngineId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeCSC>> _cscByEngineId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeDSC>> _dscByEngineId = new();
+
+    // Forced-induction part Ids are only unique WITHIN each table (Id ≈ EngineID*1000 + tier),
+    // so the same Id appears in e.g. TurboTwin and DSC for one engine. ForcedInductionPartId is a
+    // single int, and GetForcedInductionById returns the first table that matches — so a raw Id is
+    // ambiguous and a supercharger could resolve to a turbo. We disambiguate by shifting each kind
+    // into its own numeric range at load time (max raw FI Id is ~4.5M, well under the stride).
+    private const int FiKindStride = 100_000_000;
+    private const int FiOffsetSingle = 1 * FiKindStride;
+    private const int FiOffsetTwin   = 2 * FiKindStride;
+    private const int FiOffsetCsc    = 3 * FiKindStride;
+    private const int FiOffsetDsc    = 4 * FiKindStride;
     private readonly ConcurrentDictionary<int, List<DbUpgradeIntercooler>> _intercoolersByEngineId = new();
 
     private readonly ConcurrentDictionary<int, List<DbUpgradeTireCompound>> _tireCompoundsByOrdinal = new();
@@ -763,19 +774,19 @@ public class Fh6DatabaseService
         cmd.CommandText = "SELECT Id,EngineID,Level,IsStock,ManufacturerID,MassDiff," +
             "WeightDistDiff,Price,MomentInertia,MaxScale,PowerMaxScale,MinScale," +
             "PowerMinScale,RobScale,TorqueDropOffRPM0,TorqueDropOffRPM1," +
-            "TorqueDropOffScale0,TorqueDropOffScale1 FROM List_UpgradeEngineTurboSingle";
+            "TorqueDropOffScale0,TorqueDropOffScale1,OffThrottleMomentInertia FROM List_UpgradeEngineTurboSingle";
         using var r = cmd.ExecuteReader();
         while (r.Read())
         {
             AddToGroupedDict(_turbosSingleByEngineId, I(r, 1), new DbUpgradeTurboSingle
             {
-                Id = I(r, 0), EngineID = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
+                Id = I(r, 0) + FiOffsetSingle, EngineID = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
                 ManufacturerID = I(r, 4), MassDiff = D(r, 5), WeightDistDiff = D(r, 6),
                 Price = I(r, 7), MomentInertia = D(r, 8), MaxScale = D(r, 9),
                 PowerMaxScale = D(r, 10), MinScale = D(r, 11), PowerMinScale = D(r, 12),
                 RobScale = D(r, 13), TorqueDropOffRPM0 = D(r, 14),
                 TorqueDropOffRPM1 = D(r, 15), TorqueDropOffScale0 = D(r, 16),
-                TorqueDropOffScale1 = D(r, 17)
+                TorqueDropOffScale1 = D(r, 17), OffThrottleMomentInertia = D(r, 18)
             });
         }
     }
@@ -786,19 +797,19 @@ public class Fh6DatabaseService
         cmd.CommandText = "SELECT Id,EngineID,Level,IsStock,ManufacturerID,MassDiff," +
             "WeightDistDiff,Price,MomentInertia,MaxScale,PowerMaxScale,MinScale," +
             "PowerMinScale,RobScale,TorqueDropOffRPM0,TorqueDropOffRPM1," +
-            "TorqueDropOffScale0,TorqueDropOffScale1 FROM List_UpgradeEngineTurboTwin";
+            "TorqueDropOffScale0,TorqueDropOffScale1,OffThrottleMomentInertia FROM List_UpgradeEngineTurboTwin";
         using var r = cmd.ExecuteReader();
         while (r.Read())
         {
             AddToGroupedDict(_turbosTwinByEngineId, I(r, 1), new DbUpgradeTurboTwin
             {
-                Id = I(r, 0), EngineID = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
+                Id = I(r, 0) + FiOffsetTwin, EngineID = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
                 ManufacturerID = I(r, 4), MassDiff = D(r, 5), WeightDistDiff = D(r, 6),
                 Price = I(r, 7), MomentInertia = D(r, 8), MaxScale = D(r, 9),
                 PowerMaxScale = D(r, 10), MinScale = D(r, 11), PowerMinScale = D(r, 12),
                 RobScale = D(r, 13), TorqueDropOffRPM0 = D(r, 14),
                 TorqueDropOffRPM1 = D(r, 15), TorqueDropOffScale0 = D(r, 16),
-                TorqueDropOffScale1 = D(r, 17)
+                TorqueDropOffScale1 = D(r, 17), OffThrottleMomentInertia = D(r, 18)
             });
         }
     }
@@ -816,7 +827,7 @@ public class Fh6DatabaseService
         {
             AddToGroupedDict(_cscByEngineId, I(r, 1), new DbUpgradeCSC
             {
-                Id = I(r, 0), EngineID = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
+                Id = I(r, 0) + FiOffsetCsc, EngineID = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
                 ManufacturerID = I(r, 4), PartsStringID = I(r, 5), MassDiff = D(r, 6),
                 WeightDistDiff = D(r, 7), DragScale = D(r, 8),
                 WindInstabilityScale = D(r, 9), Price = I(r, 10),
@@ -841,7 +852,7 @@ public class Fh6DatabaseService
         {
             AddToGroupedDict(_dscByEngineId, I(r, 1), new DbUpgradeDSC
             {
-                Id = I(r, 0), EngineID = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
+                Id = I(r, 0) + FiOffsetDsc, EngineID = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
                 ManufacturerID = I(r, 4), PartsStringID = I(r, 5), MassDiff = D(r, 6),
                 WeightDistDiff = D(r, 7), DragScale = D(r, 8),
                 WindInstabilityScale = D(r, 9), Price = I(r, 10),

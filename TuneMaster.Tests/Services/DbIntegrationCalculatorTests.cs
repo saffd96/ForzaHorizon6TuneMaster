@@ -109,11 +109,11 @@ public class DbIntegrationCalculatorTests
         _ => Forza_Horizon_6_Tune_Master.Models.AspirationType.Natural
     };
 
+    // DB drive-type IDs (List_DriveType): 1 = FWD, 2 = RWD, 3 = AWD.
     private static DriveType DriveTypeFromId(int dtId) => dtId switch
     {
-        0 => DriveType.FWD,
-        1 => DriveType.RWD,
-        2 => DriveType.AWD,
+        1 => DriveType.FWD,
+        3 => DriveType.AWD,
         _ => DriveType.RWD
     };
 
