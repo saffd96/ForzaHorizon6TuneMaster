@@ -8,6 +8,7 @@ using Xunit;
 
 namespace TuneMaster.Tests.Services;
 
+[Collection("FileSystem")]
 public class DbIntegrationCalculatorTests
 {
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -989,10 +990,8 @@ public class DbIntegrationCalculatorTests
         PowerCalculator.Calculate(swappedCar, swappedParts);
         double swappedPower = swappedCar.PowerHP;
 
-        // Some engine swaps may not change power much; assert swap exists
-        Assert.Same(nonStock, nonStock); // placeholder
-        string msg = $"Stock power={stockPower} swapped power={swappedPower}";
-        Assert.True(msg.Length > 0);
+        // Power should change (increase or decrease) when engine is swapped
+        Assert.NotEqual(stockPower, swappedPower);
     }
 
     [Fact]

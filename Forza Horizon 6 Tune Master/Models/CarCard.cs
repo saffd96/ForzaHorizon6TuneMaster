@@ -68,8 +68,8 @@ public class CarCard : NotifyBase
         get => _weightDistributionFront;
         set
         {
-            HasExplicitWeightDistribution = true;
-            Set(ref _weightDistributionFront, value);
+            if (Set(ref _weightDistributionFront, value))
+                HasExplicitWeightDistribution = true;
         }
     }
 

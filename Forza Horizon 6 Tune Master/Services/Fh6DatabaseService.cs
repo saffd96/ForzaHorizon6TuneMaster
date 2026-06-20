@@ -62,6 +62,7 @@ public class Fh6DatabaseService
     private readonly ConcurrentDictionary<int, List<DbUpgradeAntiSwayFront>> _antiSwayFrontByOrdinal = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeAntiSwayRear>> _antiSwayRearByOrdinal = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeRearWing>> _rearWingsByOrdinal = new();
+    private readonly ConcurrentDictionary<(Type Type, int Id), object> _allPartsById = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeFrontBumper>> _frontBumpersByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeRearBumper>> _rearBumpersByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeSideSkirt>> _sideSkirtsByCarBodyId = new();
@@ -71,6 +72,7 @@ public class Fh6DatabaseService
     // _initialized guard is set — a plain Dictionary corrupts under concurrent writes.
     private readonly ConcurrentDictionary<string, int> _stockWheelTierByMedia = new();
     private volatile List<DbWheel> _allWheelOptions = new();
+    private readonly ConcurrentDictionary<int, DbWheel> _allWheelOptionsById = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeWeightReduction>> _weightReductionsByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeChassisStiffness>> _chassisStiffnessByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeTireWidthFront>> _tireWidthsFrontByCarBodyId = new();
@@ -88,11 +90,17 @@ public class Fh6DatabaseService
     // _initialized guard is set; a plain Dictionary corrupts under concurrent writes.
     private readonly ConcurrentDictionary<string, DbUpgradePartInfo> _upgradePartInfoByTableName = new();
 
-    // CarPartNames lookup: (PartsString, Level) → OptionalName1
+    // CarPartNames lookup: (PartsString, Level) в†’ OptionalName1
     private readonly ConcurrentDictionary<(string PartsString, int Level), string> _carPartNames = new();
 
     private volatile bool _initialized;
     private static readonly object _initLock = new();
+
+    private void EnsureInitialized()
+    {
+        if (!_initialized)
+            throw new InvalidOperationException("Fh6DatabaseService not initialized. Call InitializeAsync() first.");
+    }
 
     public async Task InitializeAsync()
     {
@@ -226,20 +234,13 @@ public class Fh6DatabaseService
             }
             if (!stock && displayName != "" && !displayName.StartsWith("_&"))
             {
-                all.Add(new DbWheel { Id = id, DisplayName = displayName, Mass = mass, MassLevel = massLevel, ManufacturerId = manId, IsStock = stock });
+                var wheel = new DbWheel { Id = id, DisplayName = displayName, Mass = mass, MassLevel = massLevel, ManufacturerId = manId, IsStock = stock };
+                all.Add(wheel);
+                _allWheelOptionsById.TryAdd(id, wheel);
             }
         }
         _allWheelOptions = all;
     }
-
-    public int? GetStockWheelTier(string? mediaName) =>
-        !string.IsNullOrEmpty(mediaName) && _stockWheelTierByMedia.TryGetValue(mediaName, out var t) ? t : null;
-
-    public int? GetWheelTierById(int id) =>
-        _allWheelOptions.FirstOrDefault(x => x.Id == id)?.MassLevel;
-
-    public IReadOnlyList<DbWheel> GetAllAftermarketWheels() =>
-        _allWheelOptions;
 
     private static T Read<T>(SqliteDataReader r, int i) =>
         r.IsDBNull(i) ? default! : (T)r.GetValue(i);
@@ -518,9 +519,21 @@ public class Fh6DatabaseService
         }
     }
 
-    private static void AddToGroupedDict<T>(ConcurrentDictionary<int, List<T>> dict, int key, T item)
+    private void AddToGroupedDict<T>(ConcurrentDictionary<int, List<T>> dict, int key, T item) where T : DbUpgradePart
     {
-        dict.AddOrUpdate(key, _ => [item], (_, list) => { list.Add(item); return list; });
+        var list = dict.GetOrAdd(key, _ => []);
+        lock (list) { list.Add(item); }
+        IndexPartById(item);
+    }
+
+    private void IndexPartById(DbUpgradePart item)
+    {
+        if (item != null) _allPartsById.TryAdd((item.GetType(), item.Id), item);
+    }
+
+    private T? GetById<T>(int id) where T : class
+    {
+        return _allPartsById.TryGetValue((typeof(T), id), out var obj) ? obj as T : null;
     }
 
     // Engine parts
@@ -1365,210 +1378,309 @@ public class Fh6DatabaseService
         return _carPartNames.TryGetValue(key, out var val) ? val : null;
     }
 
-    public DbUpgradePartInfo? GetUpgradePartInfo(string tableName) =>
-        _upgradePartInfoByTableName.TryGetValue(tableName, out var info) ? info : null;
+    public DbUpgradePartInfo? GetUpgradePartInfo(string tableName)
+    {
+        return _upgradePartInfoByTableName.TryGetValue(tableName, out var info) ? info : null;
+    }
+
+    public int? GetStockWheelTier(string? mediaName)
+    {
+        return !string.IsNullOrEmpty(mediaName) && _stockWheelTierByMedia.TryGetValue(mediaName, out var t) ? t : null;
+    }
+
+    public int? GetWheelTierById(int id)
+    {
+        return _allWheelOptionsById.TryGetValue(id, out var w) ? w.MassLevel : null;
+    }
+
+    public IReadOnlyList<DbWheel> GetAllAftermarketWheels()
+    {
+        return _allWheelOptions;
+    }
 
     // Public query methods
-    public List<DbCar> GetAllCars() => _cars.Values.OrderBy(c => c.CarDisplayName).ToList();
-    public DbCar? GetCar(int carId) => _cars.TryGetValue(carId, out var c) ? c : null;
-    public DbCarMake? GetCarMake(int makeId) => _carMakes.TryGetValue(makeId, out var m) ? m : null;
-    public string GetReadableMakeName(int makeId) => GetCarMake(makeId)?.IconPathBase ?? "";
-    public string GetManufacturerCode(int makeId) => GetCarMake(makeId)?.ManufacturerCode ?? "";
-    public DbCarBody? GetCarBody(int carBodyId) => _carBodies.TryGetValue(carBodyId, out var cb) ? cb : null;
-    public DbEngine? GetEngine(int engineId) => _engines.TryGetValue(engineId, out var e) ? e : null;
-    public DbMotor? GetMotor(int motorId) => _motors.TryGetValue(motorId, out var m) ? m : null;
-    public DbTorqueCurve? GetTorqueCurve(int id) => _torqueCurves.TryGetValue(id, out var tc) ? tc : null;
-    public DbSpringDamperPhysics? GetSpringDamperPhysics(int id) => _springDamperPhysics.TryGetValue(id, out var p) ? p : null;
-    public DbAeroPhysics? GetAeroPhysics(int id) => _aeroPhysics.TryGetValue(id, out var a) ? a : null;
-    public DbAntiSwayPhysics? GetAntiSwayPhysics(int id) => _antiSwayPhysics.TryGetValue(id, out var a) ? a : null;
-    public DbTireCompound? GetTireCompound(int id) => _tireCompounds.TryGetValue(id, out var c) ? c : null;
-
-    public List<DbUpgradeEngine> GetEngineSwaps(int ordinal) =>
-        _engineSwapsByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
-    public List<DbUpgradeCamshaft> GetCamshafts(int engineId) =>
-        _camshaftsByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeValves> GetValves(int engineId) =>
-        _valvesByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeDisplacement> GetDisplacement(int engineId) =>
-        _displacementByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradePistons> GetPistons(int engineId) =>
-        _pistonsByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeFuelSystem> GetFuelSystems(int engineId) =>
-        _fuelSystemsByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeIgnition> GetIgnition(int engineId) =>
-        _ignitionsByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeExhaust> GetExhaust(int engineId) =>
-        _exhaustsByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeIntake> GetIntake(int engineId) =>
-        _intakesByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeFlywheel> GetFlywheels(int engineId) =>
-        _flywheelsByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeManifold> GetManifolds(int engineId) =>
-        _manifoldsByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeOilCooling> GetOilCooling(int engineId) =>
-        _oilCoolingsByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeRestrictor> GetRestrictors(int engineId) =>
-        _restrictorsByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeTurboSingle> GetTurbosSingle(int engineId) =>
-        _turbosSingleByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeTurboTwin> GetTurbosTwin(int engineId) =>
-        _turbosTwinByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeCSC> GetCSC(int engineId) =>
-        _cscByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeDSC> GetDSC(int engineId) =>
-        _dscByEngineId.TryGetValue(engineId, out var l) ? l : [];
-    public List<DbUpgradeIntercooler> GetIntercoolers(int engineId) =>
-        _intercoolersByEngineId.TryGetValue(engineId, out var l) ? l : [];
-
-    public List<DbUpgradeTireCompound> GetTireCompounds(int ordinal) =>
-        _tireCompoundsByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
-    public List<DbUpgradeSpringDamper> GetSpringDampers(int ordinal) =>
-        _springDampersByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
-    public List<DbUpgradeBrakes> GetBrakes(int ordinal) =>
-        _brakesByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
-    public List<DbUpgradeTransmission> GetTransmissions(int drivetrainId) =>
-        _transmissionsByDrivetrainId.TryGetValue(drivetrainId, out var l) ? l : [];
-    public List<DbUpgradeClutch> GetClutches(int drivetrainId) =>
-        _clutchesByDrivetrainId.TryGetValue(drivetrainId, out var l) ? l : [];
-    public List<DbUpgradeDriveline> GetDrivelines(int drivetrainId) =>
-        _drivelinesByDrivetrainId.TryGetValue(drivetrainId, out var l) ? l : [];
-    public List<DbUpgradeDifferential> GetDifferentials(int drivetrainId) =>
-        _differentialsByDrivetrainId.TryGetValue(drivetrainId, out var l) ? l : [];
-    public List<DbUpgradeAntiSwayFront> GetAntiSwayFront(int ordinal) =>
-        _antiSwayFrontByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
-    public List<DbUpgradeAntiSwayRear> GetAntiSwayRear(int ordinal) =>
-        _antiSwayRearByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
-    public List<DbUpgradeRearWing> GetRearWings(int ordinal) =>
-        _rearWingsByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
-    public List<DbUpgradeFrontBumper> GetFrontBumpers(int carBodyId) =>
-        _frontBumpersByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
-    public List<DbUpgradeRearBumper> GetRearBumpers(int carBodyId) =>
-        _rearBumpersByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
-    public List<DbUpgradeSideSkirt> GetSideSkirts(int carBodyId) =>
-        _sideSkirtsByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
-    public List<DbUpgradeWeightReduction> GetWeightReductions(int carBodyId) =>
-        _weightReductionsByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
-    public List<DbUpgradeChassisStiffness> GetChassisStiffness(int carBodyId) =>
-        _chassisStiffnessByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
-    public List<DbUpgradeTireWidthFront> GetTireWidthsFront(int carBodyId) =>
-        _tireWidthsFrontByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
-    public List<DbUpgradeTireWidthRear> GetTireWidthsRear(int carBodyId) =>
-        _tireWidthsRearByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
-    public List<DbUpgradeRimFront> GetRimsFront(int ordinal) =>
-        _rimsFrontByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
-    public List<DbUpgradeRimRear> GetRimsRear(int ordinal) =>
-        _rimsRearByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
-    public List<DbUpgradeTireAspectRatioFront> GetTireAspectRatiosFront(int carBodyId) =>
-        _tireAspectRatiosFrontByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
-    public List<DbUpgradeTireAspectRatioRear> GetTireAspectRatiosRear(int carBodyId) =>
-        _tireAspectRatiosRearByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
-    public List<DbUpgradeTrackSpacingFront> GetTrackSpacingsFront(int carBodyId) =>
-        _trackSpacingsFrontByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
-    public List<DbUpgradeTrackSpacingRear> GetTrackSpacingsRear(int carBodyId) =>
-        _trackSpacingsRearByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
-    public List<DbUpgradeMotorSwap> GetMotorSwaps(int ordinal) =>
-        _motorSwapsByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
-    public List<DbUpgradeMotorPart> GetMotorParts(int motorId) =>
-        _motorPartsByMotorId.TryGetValue(motorId, out var l) ? l : [];
-    public List<DbUpgradeDrivetrain> GetDrivetrainSwaps(int ordinal) =>
-        _drivetrainsByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
-    public DbUpgradeDrivetrain? GetStockDrivetrain(int ordinal) =>
-        GetDrivetrainSwaps(ordinal).FirstOrDefault(p => p.IsStock) ?? GetDrivetrainSwaps(ordinal).FirstOrDefault();
-    public DbUpgradeDrivetrain? GetDrivetrainSwapById(int id) =>
-        _drivetrainsByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-
-    // Single-item lookups by ID (used by CarCard.SumSelectedMassDiffs)
-    public DbUpgradeEngine? GetEngineSwapById(int id) =>
-        _engineSwapsByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeCamshaft? GetCamshaftById(int id) =>
-        _camshaftsByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeDisplacement? GetDisplacementById(int id) =>
-        _displacementByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeValves? GetValvesById(int id) =>
-        _valvesByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradePistons? GetPistonsById(int id) =>
-        _pistonsByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeFuelSystem? GetFuelSystemById(int id) =>
-        _fuelSystemsByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeIgnition? GetIgnitionById(int id) =>
-        _ignitionsByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeExhaust? GetExhaustById(int id) =>
-        _exhaustsByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeIntake? GetIntakeById(int id) =>
-        _intakesByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeFlywheel? GetFlywheelById(int id) =>
-        _flywheelsByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeManifold? GetManifoldById(int id) =>
-        _manifoldsByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeOilCooling? GetOilCoolingById(int id) =>
-        _oilCoolingsByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeRestrictor? GetRestrictorById(int id) =>
-        _restrictorsByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradePart? GetForcedInductionById(int id) =>
-        _turbosSingleByEngineId.Values.SelectMany(l => l).Cast<DbUpgradePart>().Concat(
-        _turbosTwinByEngineId.Values.SelectMany(l => l)).Concat(
-        _cscByEngineId.Values.SelectMany(l => l)).Concat(
-        _dscByEngineId.Values.SelectMany(l => l)).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeIntercooler? GetIntercoolerById(int id) =>
-        _intercoolersByEngineId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeTireCompound? GetTireCompoundById(int id) =>
-        _tireCompoundsByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeSpringDamper? GetSpringDamperById(int id) =>
-        _springDampersByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeBrakes? GetBrakesById(int id) =>
-        _brakesByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeDifferential? GetDifferentialById(int id)
+    public List<DbCar> GetAllCars()
     {
-        foreach (var list in _differentialsByDrivetrainId.Values)
-        {
-            if (list == null) continue;
-            foreach (var item in list)
-            {
-                if (item != null && item.Id == id) return item;
-            }
-        }
-        return null;
+        return _cars.Values.OrderBy(c => c.CarDisplayName).ToList();
     }
-    public DbUpgradeTransmission? GetTransmissionById(int id) =>
-        _transmissionsByDrivetrainId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeClutch? GetClutchById(int id) =>
-        _clutchesByDrivetrainId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeDriveline? GetDrivelineById(int id) =>
-        _drivelinesByDrivetrainId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeRearWing? GetRearWingById(int id) =>
-        _rearWingsByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeFrontBumper? GetFrontBumperById(int id) =>
-        _frontBumpersByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeRearBumper? GetRearBumperById(int id) =>
-        _rearBumpersByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeSideSkirt? GetSideSkirtById(int id) =>
-        _sideSkirtsByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeAntiSwayFront? GetArbFrontById(int id) =>
-        _antiSwayFrontByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeAntiSwayRear? GetArbRearById(int id) =>
-        _antiSwayRearByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeTireWidthFront? GetTireWidthFrontById(int id) =>
-        _tireWidthsFrontByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeTireWidthRear? GetTireWidthRearById(int id) =>
-        _tireWidthsRearByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeRimFront? GetRimFrontById(int id) =>
-        _rimsFrontByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeRimRear? GetRimRearById(int id) =>
-        _rimsRearByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeTireAspectRatioFront? GetTireAspectRatioFrontById(int id) =>
-        _tireAspectRatiosFrontByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeTireAspectRatioRear? GetTireAspectRatioRearById(int id) =>
-        _tireAspectRatiosRearByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeTrackSpacingFront? GetTrackSpacingFrontById(int id) =>
-        _trackSpacingsFrontByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeTrackSpacingRear? GetTrackSpacingRearById(int id) =>
-        _trackSpacingsRearByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeMotorSwap? GetMotorSwapById(int id) =>
-        _motorSwapsByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeMotorPart? GetMotorPartById(int id) =>
-        _motorPartsByMotorId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeWeightReduction? GetWeightReductionById(int id) =>
-        _weightReductionsByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
-    public DbUpgradeChassisStiffness? GetChassisStiffnessById(int id) =>
-        _chassisStiffnessByCarBodyId.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
+    public DbCar? GetCar(int carId)
+    {
+        return _cars.TryGetValue(carId, out var c) ? c : null;
+    }
+    public DbCarMake? GetCarMake(int makeId)
+    {
+        return _carMakes.TryGetValue(makeId, out var m) ? m : null;
+    }
+    public string GetReadableMakeName(int makeId)
+    {
+        return GetCarMake(makeId)?.IconPathBase ?? "";
+    }
+    public string GetManufacturerCode(int makeId)
+    {
+        return GetCarMake(makeId)?.ManufacturerCode ?? "";
+    }
+    public DbCarBody? GetCarBody(int carBodyId)
+    {
+        return _carBodies.TryGetValue(carBodyId, out var cb) ? cb : null;
+    }
+    public DbEngine? GetEngine(int engineId)
+    {
+        return _engines.TryGetValue(engineId, out var e) ? e : null;
+    }
+    public DbMotor? GetMotor(int motorId)
+    {
+        return _motors.TryGetValue(motorId, out var m) ? m : null;
+    }
+    public DbTorqueCurve? GetTorqueCurve(int id)
+    {
+        return _torqueCurves.TryGetValue(id, out var tc) ? tc : null;
+    }
+    public DbSpringDamperPhysics? GetSpringDamperPhysics(int id)
+    {
+        return _springDamperPhysics.TryGetValue(id, out var p) ? p : null;
+    }
+    public DbAeroPhysics? GetAeroPhysics(int id)
+    {
+        return _aeroPhysics.TryGetValue(id, out var a) ? a : null;
+    }
+    public DbAntiSwayPhysics? GetAntiSwayPhysics(int id)
+    {
+        return _antiSwayPhysics.TryGetValue(id, out var a) ? a : null;
+    }
+    public DbTireCompound? GetTireCompound(int id)
+    {
+        return _tireCompounds.TryGetValue(id, out var c) ? c : null;
+    }
+
+    public List<DbUpgradeEngine> GetEngineSwaps(int ordinal)
+    {
+        return _engineSwapsByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    }
+    public List<DbUpgradeCamshaft> GetCamshafts(int engineId)
+    {
+        return _camshaftsByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeValves> GetValves(int engineId)
+    {
+        return _valvesByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeDisplacement> GetDisplacement(int engineId)
+    {
+        return _displacementByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradePistons> GetPistons(int engineId)
+    {
+        return _pistonsByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeFuelSystem> GetFuelSystems(int engineId)
+    {
+        return _fuelSystemsByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeIgnition> GetIgnition(int engineId)
+    {
+        return _ignitionsByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeExhaust> GetExhaust(int engineId)
+    {
+        return _exhaustsByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeIntake> GetIntake(int engineId)
+    {
+        return _intakesByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeFlywheel> GetFlywheels(int engineId)
+    {
+        return _flywheelsByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeManifold> GetManifolds(int engineId)
+    {
+        return _manifoldsByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeOilCooling> GetOilCooling(int engineId)
+    {
+        return _oilCoolingsByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeRestrictor> GetRestrictors(int engineId)
+    {
+        return _restrictorsByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeTurboSingle> GetTurbosSingle(int engineId)
+    {
+        return _turbosSingleByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeTurboTwin> GetTurbosTwin(int engineId)
+    {
+        return _turbosTwinByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeCSC> GetCSC(int engineId)
+    {
+        return _cscByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeDSC> GetDSC(int engineId)
+    {
+        return _dscByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+    public List<DbUpgradeIntercooler> GetIntercoolers(int engineId)
+    {
+        return _intercoolersByEngineId.TryGetValue(engineId, out var l) ? l : [];
+    }
+
+    public List<DbUpgradeTireCompound> GetTireCompounds(int ordinal)
+    {
+        return _tireCompoundsByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    }
+    public List<DbUpgradeSpringDamper> GetSpringDampers(int ordinal)
+    {
+        return _springDampersByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    }
+    public List<DbUpgradeBrakes> GetBrakes(int ordinal)
+    {
+        return _brakesByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    }
+    public List<DbUpgradeTransmission> GetTransmissions(int drivetrainId)
+    {
+        return _transmissionsByDrivetrainId.TryGetValue(drivetrainId, out var l) ? l : [];
+    }
+    public List<DbUpgradeClutch> GetClutches(int drivetrainId)
+    {
+        return _clutchesByDrivetrainId.TryGetValue(drivetrainId, out var l) ? l : [];
+    }
+    public List<DbUpgradeDriveline> GetDrivelines(int drivetrainId)
+    {
+        return _drivelinesByDrivetrainId.TryGetValue(drivetrainId, out var l) ? l : [];
+    }
+    public List<DbUpgradeDifferential> GetDifferentials(int drivetrainId)
+    {
+        return _differentialsByDrivetrainId.TryGetValue(drivetrainId, out var l) ? l : [];
+    }
+    public List<DbUpgradeAntiSwayFront> GetAntiSwayFront(int ordinal)
+    {
+        return _antiSwayFrontByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    }
+    public List<DbUpgradeAntiSwayRear> GetAntiSwayRear(int ordinal)
+    {
+        return _antiSwayRearByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    }
+    public List<DbUpgradeRearWing> GetRearWings(int ordinal)
+    {
+        return _rearWingsByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    }
+    public List<DbUpgradeFrontBumper> GetFrontBumpers(int carBodyId)
+    {
+        return _frontBumpersByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    }
+    public List<DbUpgradeRearBumper> GetRearBumpers(int carBodyId)
+    {
+        return _rearBumpersByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    }
+    public List<DbUpgradeSideSkirt> GetSideSkirts(int carBodyId)
+    {
+        return _sideSkirtsByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    }
+    public List<DbUpgradeWeightReduction> GetWeightReductions(int carBodyId)
+    {
+        return _weightReductionsByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    }
+    public List<DbUpgradeChassisStiffness> GetChassisStiffness(int carBodyId)
+    {
+        return _chassisStiffnessByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    }
+    public List<DbUpgradeTireWidthFront> GetTireWidthsFront(int carBodyId)
+    {
+        return _tireWidthsFrontByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    }
+    public List<DbUpgradeTireWidthRear> GetTireWidthsRear(int carBodyId)
+    {
+        return _tireWidthsRearByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    }
+    public List<DbUpgradeRimFront> GetRimsFront(int ordinal)
+    {
+        return _rimsFrontByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    }
+    public List<DbUpgradeRimRear> GetRimsRear(int ordinal)
+    {
+        return _rimsRearByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    }
+    public List<DbUpgradeTireAspectRatioFront> GetTireAspectRatiosFront(int carBodyId)
+    {
+        return _tireAspectRatiosFrontByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    }
+    public List<DbUpgradeTireAspectRatioRear> GetTireAspectRatiosRear(int carBodyId)
+    {
+        return _tireAspectRatiosRearByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    }
+    public List<DbUpgradeTrackSpacingFront> GetTrackSpacingsFront(int carBodyId)
+    {
+        return _trackSpacingsFrontByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    }
+    public List<DbUpgradeTrackSpacingRear> GetTrackSpacingsRear(int carBodyId)
+    {
+        return _trackSpacingsRearByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    }
+    public List<DbUpgradeMotorSwap> GetMotorSwaps(int ordinal)
+    {
+        return _motorSwapsByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    }
+    public List<DbUpgradeMotorPart> GetMotorParts(int motorId)
+    {
+        return _motorPartsByMotorId.TryGetValue(motorId, out var l) ? l : [];
+    }
+    public List<DbUpgradeDrivetrain> GetDrivetrainSwaps(int ordinal)
+    {
+        return _drivetrainsByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    }
+    public DbUpgradeDrivetrain? GetStockDrivetrain(int ordinal)
+    {
+        return GetDrivetrainSwaps(ordinal).FirstOrDefault(p => p.IsStock) ?? GetDrivetrainSwaps(ordinal).FirstOrDefault();
+    }
+    public DbUpgradeDrivetrain? GetDrivetrainSwapById(int id)
+    {
+        return _drivetrainsByOrdinal.Values.SelectMany(l => l).FirstOrDefault(p => p.Id == id);
+    }
+
+    // Single-item lookups by ID — O(1) via _allPartsById index (populated at load time)
+    public DbUpgradeEngine? GetEngineSwapById(int id) => GetById<DbUpgradeEngine>(id);
+    public DbUpgradeCamshaft? GetCamshaftById(int id) => GetById<DbUpgradeCamshaft>(id);
+    public DbUpgradeDisplacement? GetDisplacementById(int id) => GetById<DbUpgradeDisplacement>(id);
+    public DbUpgradeValves? GetValvesById(int id) => GetById<DbUpgradeValves>(id);
+    public DbUpgradePistons? GetPistonsById(int id) => GetById<DbUpgradePistons>(id);
+    public DbUpgradeFuelSystem? GetFuelSystemById(int id) => GetById<DbUpgradeFuelSystem>(id);
+    public DbUpgradeIgnition? GetIgnitionById(int id) => GetById<DbUpgradeIgnition>(id);
+    public DbUpgradeExhaust? GetExhaustById(int id) => GetById<DbUpgradeExhaust>(id);
+    public DbUpgradeIntake? GetIntakeById(int id) => GetById<DbUpgradeIntake>(id);
+    public DbUpgradeFlywheel? GetFlywheelById(int id) => GetById<DbUpgradeFlywheel>(id);
+    public DbUpgradeManifold? GetManifoldById(int id) => GetById<DbUpgradeManifold>(id);
+    public DbUpgradeOilCooling? GetOilCoolingById(int id) => GetById<DbUpgradeOilCooling>(id);
+    public DbUpgradeRestrictor? GetRestrictorById(int id) => GetById<DbUpgradeRestrictor>(id);
+    public DbUpgradePart? GetForcedInductionById(int id) =>
+        (DbUpgradePart?)GetById<DbUpgradeTurboSingle>(id)
+        ?? (DbUpgradePart?)GetById<DbUpgradeTurboTwin>(id)
+        ?? (DbUpgradePart?)GetById<DbUpgradeCSC>(id)
+        ?? (DbUpgradePart?)GetById<DbUpgradeDSC>(id);
+    public DbUpgradeIntercooler? GetIntercoolerById(int id) => GetById<DbUpgradeIntercooler>(id);
+    public DbUpgradeTireCompound? GetTireCompoundById(int id) => GetById<DbUpgradeTireCompound>(id);
+    public DbUpgradeSpringDamper? GetSpringDamperById(int id) => GetById<DbUpgradeSpringDamper>(id);
+    public DbUpgradeBrakes? GetBrakesById(int id) => GetById<DbUpgradeBrakes>(id);
+    public DbUpgradeDifferential? GetDifferentialById(int id) => GetById<DbUpgradeDifferential>(id);
+    public DbUpgradeTransmission? GetTransmissionById(int id) => GetById<DbUpgradeTransmission>(id);
+    public DbUpgradeClutch? GetClutchById(int id) => GetById<DbUpgradeClutch>(id);
+    public DbUpgradeDriveline? GetDrivelineById(int id) => GetById<DbUpgradeDriveline>(id);
+    public DbUpgradeRearWing? GetRearWingById(int id) => GetById<DbUpgradeRearWing>(id);
+    public DbUpgradeFrontBumper? GetFrontBumperById(int id) => GetById<DbUpgradeFrontBumper>(id);
+    public DbUpgradeRearBumper? GetRearBumperById(int id) => GetById<DbUpgradeRearBumper>(id);
+    public DbUpgradeSideSkirt? GetSideSkirtById(int id) => GetById<DbUpgradeSideSkirt>(id);
+    public DbUpgradeAntiSwayFront? GetArbFrontById(int id) => GetById<DbUpgradeAntiSwayFront>(id);
+    public DbUpgradeAntiSwayRear? GetArbRearById(int id) => GetById<DbUpgradeAntiSwayRear>(id);
+    public DbUpgradeTireWidthFront? GetTireWidthFrontById(int id) => GetById<DbUpgradeTireWidthFront>(id);
+    public DbUpgradeTireWidthRear? GetTireWidthRearById(int id) => GetById<DbUpgradeTireWidthRear>(id);
+    public DbUpgradeRimFront? GetRimFrontById(int id) => GetById<DbUpgradeRimFront>(id);
+    public DbUpgradeRimRear? GetRimRearById(int id) => GetById<DbUpgradeRimRear>(id);
+    public DbUpgradeTireAspectRatioFront? GetTireAspectRatioFrontById(int id) => GetById<DbUpgradeTireAspectRatioFront>(id);
+    public DbUpgradeTireAspectRatioRear? GetTireAspectRatioRearById(int id) => GetById<DbUpgradeTireAspectRatioRear>(id);
+    public DbUpgradeTrackSpacingFront? GetTrackSpacingFrontById(int id) => GetById<DbUpgradeTrackSpacingFront>(id);
+    public DbUpgradeTrackSpacingRear? GetTrackSpacingRearById(int id) => GetById<DbUpgradeTrackSpacingRear>(id);
+    public DbUpgradeMotorSwap? GetMotorSwapById(int id) => GetById<DbUpgradeMotorSwap>(id);
+    public DbUpgradeMotorPart? GetMotorPartById(int id) => GetById<DbUpgradeMotorPart>(id);
+    public DbUpgradeWeightReduction? GetWeightReductionById(int id) => GetById<DbUpgradeWeightReduction>(id);
+    public DbUpgradeChassisStiffness? GetChassisStiffnessById(int id) => GetById<DbUpgradeChassisStiffness>(id);
 }

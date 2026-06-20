@@ -13,6 +13,10 @@ public class PartDisplayNameResolver
     public int StockFrontTireProfile { get; set; }
     public int StockRearTireProfile { get; set; }
 
+    // Imperial vs metric for unit-bearing option labels (e.g. track spacing). Static because
+    // resolvers are created per sub-VM; the host VM keeps this in sync with the unit toggle.
+    public static bool UseImperial { get; set; }
+
     // TireModelName root -> Upgrades IDS_Name_* key.
     private static readonly Dictionary<string, string> TireCompoundNameIds = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -70,6 +74,9 @@ public class PartDisplayNameResolver
         { typeof(DbUpgradeAntiSwayFront),       "List_UpgradeAntiSwayFront" },
         { typeof(DbUpgradeAntiSwayRear),        "List_UpgradeAntiSwayRear" },
         { typeof(DbUpgradeRearWing),            "List_UpgradeRearWing" },
+        { typeof(DbUpgradeFrontBumper),         "List_UpgradeCarBodyFrontBumper" },
+        { typeof(DbUpgradeRearBumper),          "List_UpgradeCarBodyRearBumper" },
+        { typeof(DbUpgradeSideSkirt),           "List_UpgradeCarBodySideSkirt" },
         { typeof(DbUpgradeWeightReduction),     "List_UpgradeCarBodyWeight" },
         { typeof(DbUpgradeChassisStiffness),    "List_UpgradeCarBodyChassisStiffness" },
         { typeof(DbUpgradeTireWidthFront),      "List_UpgradeCarBodyTireWidthFront" },
@@ -211,33 +218,20 @@ public class PartDisplayNameResolver
                 key = OffsetLevelKey(ar, 244);
                 break;
             case DbUpgradeRearWing w:
-                {
-                    string? k = OffsetLevelKey(w, 90);
-                    if (k == null) return false;
-                    name = WithManufacturer(T(k), w);
-                    return name != "";
-                }
+                return ResolveBodyKit(w, 90, "Upgrades_IDS_Name_265", out name);
 
             // ── Body kits ──────────────────────────────────────────────────
-            // Multiple options share the same tier and differ only by brand, so the
-            // manufacturer name is what disambiguates them in the dropdown.
+            // Tiers 0-3 are Stock/Street/Sport/Race; tier 4 is the "Remove <part>" option
+            // (always a negative mass delta in the DB). Multiple same-tier options differ
+            // only by brand, so the manufacturer name disambiguates them in the dropdown.
             case DbUpgradeFrontBumper fb:
-                {
-                    string? k = OffsetLevelKey(fb, 86);
-                    if (k == null) return false;
-                    name = WithManufacturer(T(k), fb);
-                    return name != "";
-                }
+                return ResolveBodyKit(fb, 86, "Upgrades_IDS_Name_264", out name);
             case DbUpgradeRearBumper rb:
-                {
-                    string? k = OffsetLevelKey(rb, 94);
-                    if (k == null) return false;
-                    name = WithManufacturer(T(k), rb);
-                    return name != "";
-                }
+                return ResolveBodyKit(rb, 94, "Upgrades_IDS_Name_266", out name);
             case DbUpgradeSideSkirt ss:
                 {
-                    // Side skirts only have Stock (98) and Street (99) game strings.
+                    // Side skirts only have Stock (98), Street (99) and Remove (267) strings.
+                    if (ss.Level >= 4) { name = T("Upgrades_IDS_Name_267"); return true; }
                     string baseName = T(ss.IsStock ? "Upgrades_IDS_Name_98" : "Upgrades_IDS_Name_99");
                     name = WithManufacturer(baseName, ss);
                     return name != "";
@@ -325,12 +319,14 @@ public class PartDisplayNameResolver
                 name = tarr.IsStock ? $"{s} ({T("Part_Stock")})" : s;
                 return true;
             }
+            // Every non-stock option shares the same generic "Modified track width" string,
+            // so append the actual spacing (DB stores metres) to tell the tiers apart.
             case DbUpgradeTrackSpacingFront tsf:
-                key = tsf.IsStock ? "Upgrades_IDS_Name_282" : "Upgrades_IDS_Name_283";
-                break;
+                name = FormatTrackSpacing(tsf.IsStock, tsf.Spacing, "Upgrades_IDS_Name_282", "Upgrades_IDS_Name_283");
+                return name != "";
             case DbUpgradeTrackSpacingRear tsr:
-                key = tsr.IsStock ? "Upgrades_IDS_Name_284" : "Upgrades_IDS_Name_285";
-                break;
+                name = FormatTrackSpacing(tsr.IsStock, tsr.Spacing, "Upgrades_IDS_Name_284", "Upgrades_IDS_Name_285");
+                return name != "";
 
             // ── Motor parts ─────────────────────────────────────────────────
             case DbUpgradeMotorPart mp:
@@ -393,6 +389,29 @@ public class PartDisplayNameResolver
         return TireCompoundNameIds.TryGetValue(root, out var key) ? key : null;
     }
 
+    // Body-kit parts (front/rear bumper, rear wing) share the same tier scheme: levels 0-3
+    // map to baseId..baseId+3, level 4 is the brandless "Remove" option (removeKey).
+    private bool ResolveBodyKit(DbUpgradePart part, int baseId, string removeKey, out string name)
+    {
+        if (part.Level >= 4) { name = T(removeKey); return true; }
+        string? k = OffsetLevelKey(part, baseId);
+        if (k == null) { name = ""; return false; }
+        name = WithManufacturer(T(k), part);
+        return name != "";
+    }
+
+    // Stock track width keeps its plain name; modified options append the spacing in mm
+    // (DB stores metres) so the otherwise-identical tiers are distinguishable.
+    private static string FormatTrackSpacing(bool isStock, double spacingMetres, string stockKey, string modKey)
+    {
+        if (isStock) return T(stockKey);
+        double mm = spacingMetres * 1000;
+        string amount = UseImperial
+            ? $"{mm / 25.4:F2} {T("UnitInch")}"
+            : $"{mm:F0} {T("UnitMm")}";
+        return $"{T(modKey)} (+{amount})";
+    }
+
     // Appends the manufacturer brand to a part name, so options that share a tier
     // (e.g. several street front bumpers) are distinguishable. Stock parts and the
     // generic "Stock" manufacturer (id 0/1) keep their plain tier name.
@@ -425,7 +444,10 @@ public class PartDisplayNameResolver
     private string GetLocalizedCategoryName(DbUpgradePart part)
     {
         string tableName = GetTableName(part);
-        var info = _db.GetUpgradePartInfo(tableName);
+        // Never look up an empty table name: Data_UpgradePart has a junk row with a blank
+        // TableName whose PartName is "Aspiration", so GetUpgradePartInfo("") would mislabel
+        // any unmapped part as "Aspiration".
+        var info = string.IsNullOrEmpty(tableName) ? null : _db.GetUpgradePartInfo(tableName);
         string partName = info?.PartName ?? "";
         if (string.IsNullOrEmpty(partName))
             partName = part.GetType().Name.Replace("DbUpgrade", "");

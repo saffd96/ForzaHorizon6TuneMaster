@@ -47,11 +47,25 @@ public partial class FeedbackWindow : Window
 
     private async void DirectEmail_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        Clipboard.SetText(TargetEmail);
+        try
+        {
+            Clipboard.SetText(TargetEmail);
+        }
+        catch
+        {
+            return;
+        }
         var previous = DirectEmailText.Text;
         DirectEmailText.Text = LocalizationService.Instance.T("FeedbackCopied");
-        await Task.Delay(2000);
-        DirectEmailText.Text = previous;
+        try
+        {
+            await Task.Delay(2000);
+            DirectEmailText.Text = previous;
+        }
+        catch
+        {
+            // Window was closed during delay; ignore
+        }
     }
 
     private void CancelButton_Click(object sender, RoutedEventArgs e)

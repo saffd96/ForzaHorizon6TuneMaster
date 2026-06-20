@@ -102,6 +102,7 @@ public class CarCardTests
         var car = new CarCard { AspirationType = AspirationType.Natural };
         car.AntiLag = true;
         car.AspirationType = AspirationType.Natural;
+        Assert.False(car.AntiLag);
     }
 
     [Fact]

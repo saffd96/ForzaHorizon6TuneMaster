@@ -286,7 +286,7 @@ internal static class GearingCalculator
             bool anyDrop = false;
             for (int i = r.GearRatios.Count - 2; i >= 0; i--)
             {
-                if (r.GearRatios[i] == 0) continue;
+                if (r.GearRatios[i] == 0 || r.GearRatios[i + 1] == 0) continue;
                 double rpmAfter = shiftRpm * r.GearRatios[i + 1] / r.GearRatios[i];
                 if (rpmAfter < minSafeRpm)
                 {

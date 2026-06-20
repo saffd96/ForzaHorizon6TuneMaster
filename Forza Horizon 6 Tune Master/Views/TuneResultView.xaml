@@ -205,11 +205,11 @@
                         <StackPanel>
                             <TextBlock Text="{l:Loc ResultTirePressure}" Style="{StaticResource RCardHeader}"/>
                             <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultTirePressureFront}" Hint="{Binding TuneResult.Explanations[TirePressure]}" Margin="0,0,6,0">
+                                <v:ResultParam Label="{l:Loc ResultTirePressureFront}" Hint="{Binding TuneResult.Explanations[TirePressure]}" Margin="6,0,6,0">
                                     <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="pressure"><Binding Path="TuneResult.TirePressureFront"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.TirePressureFront"/><Binding Path="Constraints.TirePressureFrontMin"/><Binding Path="Constraints.TirePressureFrontMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultTirePressureRear}" Hint="{Binding TuneResult.Explanations[TirePressure]}">
+                                <v:ResultParam Label="{l:Loc ResultTirePressureRear}" Hint="{Binding TuneResult.Explanations[TirePressure]}" Margin="6,0,6,0">
                                     <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="pressure"><Binding Path="TuneResult.TirePressureRear"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.TirePressureRear"/><Binding Path="Constraints.TirePressureRearMin"/><Binding Path="Constraints.TirePressureRearMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
@@ -222,23 +222,23 @@
                         <StackPanel>
                             <TextBlock Text="{l:Loc ResultGeometry}" Style="{StaticResource RCardHeader}"/>
                             <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultCamberFront}" Hint="{Binding TuneResult.Explanations[Camber]}" Margin="0,0,6,0"
+                                <v:ResultParam Label="{l:Loc ResultCamberFront}" Hint="{Binding TuneResult.Explanations[Camber]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.CamberFront, StringFormat='{}{0:F1}°'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.CamberFront"/><Binding Path="Constraints.CamberFrontMin"/><Binding Path="Constraints.CamberFrontMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultCamberRear}" Hint="{Binding TuneResult.Explanations[Camber]}"
+                                <v:ResultParam Label="{l:Loc ResultCamberRear}" Hint="{Binding TuneResult.Explanations[Camber]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.CamberRear, StringFormat='{}{0:F1}°'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.CamberRear"/><Binding Path="Constraints.CamberRearMin"/><Binding Path="Constraints.CamberRearMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultToeFront}" Hint="{Binding TuneResult.Explanations[Toe]}" Margin="0,0,6,0"
+                                <v:ResultParam Label="{l:Loc ResultToeFront}" Hint="{Binding TuneResult.Explanations[Toe]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.ToeFront, StringFormat='{}{0:F1}°'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ToeFront"/><Binding Path="Constraints.ToeFrontMin"/><Binding Path="Constraints.ToeFrontMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultToeRear}" Hint="{Binding TuneResult.Explanations[Toe]}"
+                                <v:ResultParam Label="{l:Loc ResultToeRear}" Hint="{Binding TuneResult.Explanations[Toe]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.ToeRear, StringFormat='{}{0:F1}°'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ToeRear"/><Binding Path="Constraints.ToeRearMin"/><Binding Path="Constraints.ToeRearMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultCaster}" Hint="{Binding TuneResult.Explanations[Caster]}" Margin="0,0,6,0"
+                                <v:ResultParam Label="{l:Loc ResultCaster}" Hint="{Binding TuneResult.Explanations[Caster]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.Caster, StringFormat='{}{0:F1}°'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.Caster"/><Binding Path="Constraints.CasterMin"/><Binding Path="Constraints.CasterMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
@@ -251,11 +251,11 @@
                         <StackPanel>
                             <TextBlock Text="{l:Loc ResultARB}" Style="{StaticResource RCardHeader}"/>
                             <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultARBFront}" Hint="{Binding TuneResult.Explanations[ARB]}" Margin="0,0,6,0"
+                                <v:ResultParam Label="{l:Loc ResultARBFront}" Hint="{Binding TuneResult.Explanations[ARB]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.ARBFront, StringFormat='{}{0:F0}'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ARBFront"/><Binding Path="Constraints.ARBFrontMin"/><Binding Path="Constraints.ARBFrontMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultARBRear}" Hint="{Binding TuneResult.Explanations[ARB]}"
+                                <v:ResultParam Label="{l:Loc ResultARBRear}" Hint="{Binding TuneResult.Explanations[ARB]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.ARBRear, StringFormat='{}{0:F0}'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ARBRear"/><Binding Path="Constraints.ARBRearMin"/><Binding Path="Constraints.ARBRearMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
@@ -268,19 +268,19 @@
                         <StackPanel>
                             <TextBlock Text="{l:Loc ResultSprings}" Style="{StaticResource RCardHeader}"/>
                             <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultSpringFront}" Hint="{Binding TuneResult.Explanations[Springs]}" Margin="0,0,6,0">
+                                <v:ResultParam Label="{l:Loc ResultSpringFront}" Hint="{Binding TuneResult.Explanations[Springs]}" Margin="6,0,6,0">
                                     <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring"><Binding Path="TuneResult.SpringFront"/><Binding Path="SpringUnit"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.SpringFront"/><Binding Path="Constraints.SpringFrontMin"/><Binding Path="Constraints.SpringFrontMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultSpringRear}" Hint="{Binding TuneResult.Explanations[Springs]}">
+                                <v:ResultParam Label="{l:Loc ResultSpringRear}" Hint="{Binding TuneResult.Explanations[Springs]}" Margin="6,0,6,0">
                                     <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring"><Binding Path="TuneResult.SpringRear"/><Binding Path="SpringUnit"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.SpringRear"/><Binding Path="Constraints.SpringRearMin"/><Binding Path="Constraints.SpringRearMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultRideHeightFront}" Hint="{Binding TuneResult.Explanations[RideHeight]}" Margin="0,0,6,0">
+                                <v:ResultParam Label="{l:Loc ResultRideHeightFront}" Hint="{Binding TuneResult.Explanations[RideHeight]}" Margin="6,0,6,0">
                                     <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="height"><Binding Path="TuneResult.RideHeightFront"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.RideHeightFront"/><Binding Path="Constraints.RideHeightFrontMin"/><Binding Path="Constraints.RideHeightFrontMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultRideHeightRear}" Hint="{Binding TuneResult.Explanations[RideHeight]}">
+                                <v:ResultParam Label="{l:Loc ResultRideHeightRear}" Hint="{Binding TuneResult.Explanations[RideHeight]}" Margin="6,0,6,0">
                                     <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="height"><Binding Path="TuneResult.RideHeightRear"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.RideHeightRear"/><Binding Path="Constraints.RideHeightRearMin"/><Binding Path="Constraints.RideHeightRearMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
@@ -293,19 +293,19 @@
                         <StackPanel>
                             <TextBlock Text="{l:Loc ResultDampers}" Style="{StaticResource RCardHeader}"/>
                             <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultReboundFront}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="0,0,6,0"
+                                <v:ResultParam Label="{l:Loc ResultReboundFront}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.ReboundFront, StringFormat='{}{0:F0}'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ReboundFront"/><Binding Path="Constraints.ReboundFrontMin"/><Binding Path="Constraints.ReboundFrontMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultReboundRear}" Hint="{Binding TuneResult.Explanations[Dampers]}"
+                                <v:ResultParam Label="{l:Loc ResultReboundRear}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.ReboundRear, StringFormat='{}{0:F0}'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ReboundRear"/><Binding Path="Constraints.ReboundRearMin"/><Binding Path="Constraints.ReboundRearMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultBumpFront}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="0,0,6,0"
+                                <v:ResultParam Label="{l:Loc ResultBumpFront}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.BumpFront, StringFormat='{}{0:F0}'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.BumpFront"/><Binding Path="Constraints.BumpFrontMin"/><Binding Path="Constraints.BumpFrontMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultBumpRear}" Hint="{Binding TuneResult.Explanations[Dampers]}"
+                                <v:ResultParam Label="{l:Loc ResultBumpRear}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.BumpRear, StringFormat='{}{0:F0}'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.BumpRear"/><Binding Path="Constraints.BumpRearMin"/><Binding Path="Constraints.BumpRearMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
@@ -318,11 +318,11 @@
                         <StackPanel>
                             <TextBlock Text="{l:Loc ResultAero}" Style="{StaticResource RCardHeader}"/>
                             <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultAeroFront}" Hint="{Binding TuneResult.Explanations[Aero]}" Margin="0,0,6,0">
+                                <v:ResultParam Label="{l:Loc ResultAeroFront}" Hint="{Binding TuneResult.Explanations[Aero]}" Margin="6,0,6,0">
                                     <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="aero"><Binding Path="TuneResult.AeroFront"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.AeroFront"/><Binding Path="Constraints.AeroFrontMin"/><Binding Path="Constraints.AeroFrontMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultAeroRear}" Hint="{Binding TuneResult.Explanations[Aero]}">
+                                <v:ResultParam Label="{l:Loc ResultAeroRear}" Hint="{Binding TuneResult.Explanations[Aero]}" Margin="6,0,6,0">
                                     <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="aero"><Binding Path="TuneResult.AeroRear"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.AeroRear"/><Binding Path="Constraints.AeroRearMin"/><Binding Path="Constraints.AeroRearMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
@@ -335,11 +335,11 @@
                         <StackPanel>
                             <TextBlock Text="{l:Loc ResultBrakes}" Style="{StaticResource RCardHeader}"/>
                             <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultBrakeBalance}" Hint="{Binding TuneResult.Explanations[Brakes]}" Margin="0,0,6,0"
+                                <v:ResultParam Label="{l:Loc ResultBrakeBalance}" Hint="{Binding TuneResult.Explanations[Brakes]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.BrakeBalance, StringFormat='{}{0:F0}%'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.BrakeBalance"/><Binding Path="Constraints.BrakeBalanceMin"/><Binding Path="Constraints.BrakeBalanceMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultBrakePressure}" Hint="{Binding TuneResult.Explanations[Brakes]}"
+                                <v:ResultParam Label="{l:Loc ResultBrakePressure}" Hint="{Binding TuneResult.Explanations[Brakes]}" Margin="6,0,6,0"
                                                ValueText="{Binding TuneResult.BrakePressure, StringFormat='{}{0:F0}%'}">
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.BrakePressure"/><Binding Path="Constraints.BrakePressureMin"/><Binding Path="Constraints.BrakePressureMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
@@ -352,26 +352,26 @@
                         <StackPanel>
                             <TextBlock Text="{l:Loc ResultDiff}" Style="{StaticResource RCardHeader}"/>
                             <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultDiffAccel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="0,0,6,0"
+                                <v:ResultParam Label="{l:Loc ResultDiffAccel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0"
                                                Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
                                     <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffFrontAccel"/><Binding Path="DataContext.DiffFrontSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffFrontAccel"/><Binding Path="Constraints.DiffAccelMin"/><Binding Path="Constraints.DiffAccelMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultDiffDecel}" Hint="{Binding TuneResult.Explanations[Differential]}"
+                                <v:ResultParam Label="{l:Loc ResultDiffDecel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0"
                                                Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
                                     <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffFrontDecel"/><Binding Path="DataContext.DiffFrontSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffFrontDecel"/><Binding Path="Constraints.DiffDecelMin"/><Binding Path="Constraints.DiffDecelMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultDiffAccel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="0,0,6,0">
+                                <v:ResultParam Label="{l:Loc ResultDiffAccel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0">
                                     <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffAccel"/><Binding Path="DataContext.DiffMainAxleSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffAccel"/><Binding Path="Constraints.DiffAccelMin"/><Binding Path="Constraints.DiffAccelMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultDiffDecel}" Hint="{Binding TuneResult.Explanations[Differential]}"
+                                <v:ResultParam Label="{l:Loc ResultDiffDecel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0"
                                                Visibility="{Binding HasRearDiffDecel, Converter={StaticResource B2V}}">
                                     <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffDecel"/><Binding Path="DataContext.DiffMainAxleSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffDecel"/><Binding Path="Constraints.DiffDecelMin"/><Binding Path="Constraints.DiffDecelMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultDiffCenterBias}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="0,0,6,0"
+                                <v:ResultParam Label="{l:Loc ResultDiffCenterBias}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0"
                                                Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}"
                                                Progress="{Binding TuneResult.CenterDiffBias, Converter={StaticResource P2R}}"
                                                ValueText="{Binding TuneResult.CenterDiffBias, StringFormat='{}{0:F0}%'}"/>
@@ -392,7 +392,7 @@
                         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
                             <TextBlock Text="{l:Loc ResultGearing}" Style="{StaticResource RCardHeader}" Margin="0,0,12,0"/>
                             <TextBlock Text="{l:Loc ResultFinalDrive}" Foreground="{StaticResource TextDimBrush}"
-                                       FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                       FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="6,0,6,0"/>
                             <TextBlock Text="{Binding TuneResult.FinalDrive, StringFormat='{}{0:F2}'}"
                                        Foreground="{StaticResource CyanBrush}" FontFamily="{StaticResource MonoFontFamily}"
                                        FontWeight="Bold" FontSize="{DynamicResource FontNormal}" VerticalAlignment="Center"

@@ -8,9 +8,7 @@ public class TuneResult
     public Guid Id { get; set; } = Guid.NewGuid();
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-    [System.Text.Json.Serialization.JsonIgnore]
     public CarCard Car { get; set; } = new();
-    [System.Text.Json.Serialization.JsonIgnore]
     public TrackInfo Track { get; set; } = new();
 
     // Tire Pressure (bar)

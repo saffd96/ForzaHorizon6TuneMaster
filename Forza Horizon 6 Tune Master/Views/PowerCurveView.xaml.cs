@@ -84,12 +84,29 @@ public partial class PowerCurveView : UserControl
     public PowerCurveView()
     {
         InitializeComponent();
-        SizeChanged += (_, _) => DrawChart();
-        Services.LocalizationService.Instance.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == "Item") DrawChart();
-        };
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        // Idempotent: WPF can raise Loaded again without a matching Unloaded (visual-tree
+        // re-parenting, tab switches), so unsubscribe first to avoid a stale handler pinning
+        // this view alive on the long-lived LocalizationService singleton.
+        SizeChanged -= OnSizeChanged;
+        SizeChanged += OnSizeChanged;
+        Services.LocalizationService.Instance.PropertyChanged -= OnLocaleChanged;
+        Services.LocalizationService.Instance.PropertyChanged += OnLocaleChanged;
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        SizeChanged -= OnSizeChanged;
+        Services.LocalizationService.Instance.PropertyChanged -= OnLocaleChanged;
+    }
+
+    private void OnSizeChanged(object? sender, SizeChangedEventArgs e) => DrawChart();
+    private void OnLocaleChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) { if (e.PropertyName == "Item") DrawChart(); }
 
     private static void OnPropChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {

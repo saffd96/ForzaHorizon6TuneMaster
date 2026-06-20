@@ -28,7 +28,6 @@ public class ProfileService
     public string Save(CarCard car, TrackInfo track, SelectedParts parts, TuneResult? result, TuningConstraints? constraints = null)
     {
         string name = AutoProfileName(car, track);
-        car.Name = name;
         _storage.Save(name, new SavedProfile
         {
             Car = car, Track = track, Parts = parts, LastResult = result,

@@ -48,7 +48,13 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"DB init failed: {ex.Message}");
+            MessageBox.Show(
+                $"Failed to initialize database: {ex.Message}\n\nThe application cannot continue.",
+                "Database Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            Shutdown();
+            return;
         }
 
         var mainWindow = new MainWindow();

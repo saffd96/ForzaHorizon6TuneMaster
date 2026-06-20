@@ -305,6 +305,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             OnPropertyChanged(nameof(FrontTrackFieldLabel));
             OnPropertyChanged(nameof(RearTrackFieldLabel));
             OnPropertyChanged(nameof(UnitToggleLabel));
+            ApplyUnitSystemToPartLabels();
             if (!_syncingUnitSystem)
             {
                 _syncingUnitSystem = true;
@@ -528,6 +529,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
                 OnPropertyChanged(nameof(FrontTrackFieldLabel));
                 OnPropertyChanged(nameof(RearTrackFieldLabel));
                 OnPropertyChanged(nameof(UnitToggleLabel));
+                ApplyUnitSystemToPartLabels();
                 SaveUnitSettings();
             }
             finally { _syncingUnitSystem = false; }
@@ -1017,13 +1019,13 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         if (isElectric)
             ClearEnginePartIds(parts);
         SwapsVM.LoadForCar(car, parts);
-    EngineVM.LoadForCar(car, parts);
+        EngineVM.LoadForCar(car, parts);
         MotorVM.LoadForCar(car, parts);
         car.MotorDbId = parts.MotorId ?? 0;
-    SuspensionVM.LoadForCar(car, parts);
-    TransmissionVM.LoadForCar(car, parts);
-    TiresWheelsVM.LoadForCar(car, parts);
-    AeroVisualVM.LoadForCar(car, parts);
+        SuspensionVM.LoadForCar(car, parts);
+        TransmissionVM.LoadForCar(car, parts);
+        TiresWheelsVM.LoadForCar(car, parts);
+        AeroVisualVM.LoadForCar(car, parts);
         SelectedParts = parts;
         // SetCarData/ResetAllToStock above fire CarMassUpdated before this VM subscribes
         // (subscription happens in the SelectedParts setter), so push the car's actual
@@ -1179,6 +1181,28 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         var tar = _selectedParts.TireAspectRatioRearPartId != null
             ? db.GetTireAspectRatioRearById(_selectedParts.TireAspectRatioRearPartId.Value) : null;
         if (tar != null) Car.RearTireProfile = (int)(Car.StockRearTireProfile + tar.RearTireAspectRatioOffset);
+
+        UpdateTrackSpacing(db);
+    }
+
+    // Track-spacing parts widen the track. Recompute the track from the body's stock track
+    // (Data_CarBody, in metres) plus the selected spacer (also metres) so the change is
+    // stateless — no accumulation across selections and old profiles self-correct. This also
+    // feeds the ARB calc, which keys off average track, so the spacer affects the tune too.
+    private void UpdateTrackSpacing(Fh6DatabaseService db)
+    {
+        var body = db.GetCarBody(Car.CarBodyId);
+        if (body == null) return;
+
+        double frontSpacerMm = (_selectedParts.TrackSpacingFrontPartId != null
+            ? db.GetTrackSpacingFrontById(_selectedParts.TrackSpacingFrontPartId.Value)?.Spacing ?? 0 : 0) * 1000;
+        double rearSpacerMm = (_selectedParts.TrackSpacingRearPartId != null
+            ? db.GetTrackSpacingRearById(_selectedParts.TrackSpacingRearPartId.Value)?.Spacing ?? 0 : 0) * 1000;
+
+        Car.FrontTrack = body.ModelFrontTrackOuter * 1000 + frontSpacerMm;
+        Car.RearTrack = body.ModelRearTrackOuter * 1000 + rearSpacerMm;
+        OnPropertyChanged(nameof(FrontTrackDisplay));
+        OnPropertyChanged(nameof(RearTrackDisplay));
     }
 
     private static EngineType MapEngineType(int cylinderId, int configId)
@@ -1237,6 +1261,16 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         LocalizationService.Instance.SaveUnitSettings(_measurementSystem, _powerUnit, _springUnit);
     }
 
+    // Some part labels carry a unit (track spacing shows the spacer amount), so switching the
+    // measurement system has to rebuild those dropdowns — unlike fields, the option text is
+    // baked in at build time. Only the tyres/wheels module has unit-bearing labels.
+    private void ApplyUnitSystemToPartLabels()
+    {
+        PartDisplayNameResolver.UseImperial = _measurementSystem == UnitSystem.Imperial;
+        if (_car.CarDbId != 0)
+            TiresWheelsVM.LoadForCar(_car, _selectedParts);
+    }
+
     // ── Unit toggles ─────────────────────────────────────────────────────────
     private void DoToggleUnits()
     {
@@ -1266,6 +1300,12 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     // ── Tune generation ──────────────────────────────────────────────────────
     private void GenerateTune()
     {
+        if (Car.CarDbId > 0 && Fh6DatabaseService.Instance.GetCar(Car.CarDbId) == null)
+        {
+            StatusMessage = "Car data not loaded from database";
+            return;
+        }
+
         BusyMessage = T("BusyGenerating");
         IsGenerating = true;
         try
@@ -1308,6 +1348,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
                     _profileService.Delete(Car.Name);
             }
             string name = _profileService.Save(Car, Track, _selectedParts, TuneResult, Constraints);
+            Car.Name = name;
             RefreshProfiles();
             SelectProfileSilently(name);
             StatusMessage = string.Format(T("StatusProfileSaved"), name);
@@ -1327,14 +1368,14 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     private void LoadProfile()
     {
         if (SelectedProfile == null) return;
+        var p = _profileService.Load(SelectedProfile);
+        if (p == null) { StatusMessage = T("StatusProfileNotFound"); return; }
+        _isLoadingProfile = true;
         try
         {
-            var p = _profileService.Load(SelectedProfile);
-            if (p == null) { StatusMessage = T("StatusProfileNotFound"); return; }
-            _isLoadingProfile = true;
             Car         = p.Car;
             Track       = p.Track;
-            _selectedParts = p.Parts ?? new SelectedParts();
+            SelectedParts = p.Parts ?? new SelectedParts();
             _selectedParts.ResolveEngineAndMotorIds();
             Car.EngineDbId = _selectedParts.EngineId ?? Car.EngineDbId;
             Car.MotorDbId  = _selectedParts.MotorId ?? Car.MotorDbId;
@@ -1360,10 +1401,10 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
                 Constraints.CenterDiffBias = p.Constraints.CenterDiffBias;
             }
             MapPartIdsToEnums(Car);
-            _isLoadingProfile = false;
             StatusMessage = string.Format(T("StatusProfileLoaded"), SelectedProfile);
         }
         catch (Exception ex) { StatusMessage = string.Format(T("StatusLoadError"), ex.Message); }
+        finally { _isLoadingProfile = false; }
     }
 
     private void DeleteProfile()

@@ -12,9 +12,17 @@ namespace Forza_Horizon_6_Tune_Master.Views
     /// </summary>
     public partial class PartRow : UserControl
     {
+        private INotifyCollectionChanged? _subscribedCollection;
+
         public PartRow()
         {
             InitializeComponent();
+            Unloaded += (_, _) =>
+            {
+                if (_subscribedCollection != null)
+                    _subscribedCollection.CollectionChanged -= OnOptionsCollectionChanged;
+                _subscribedCollection = null;
+            };
         }
 
         public static readonly DependencyProperty LabelProperty =
@@ -52,10 +60,17 @@ namespace Forza_Horizon_6_Tune_Master.Views
         {
             if (d is not PartRow row) return;
 
-            if (e.OldValue is INotifyCollectionChanged oldInpc)
-                oldInpc.CollectionChanged -= row.OnOptionsCollectionChanged;
+            if (row._subscribedCollection != null)
+                row._subscribedCollection.CollectionChanged -= row.OnOptionsCollectionChanged;
             if (e.NewValue is INotifyCollectionChanged newInpc)
+            {
                 newInpc.CollectionChanged += row.OnOptionsCollectionChanged;
+                row._subscribedCollection = newInpc;
+            }
+            else
+            {
+                row._subscribedCollection = null;
+            }
 
             row.UpdateVisibility();
         }

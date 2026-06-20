@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
@@ -15,8 +15,8 @@ public sealed class LocalizationService : INotifyPropertyChanged
     private static readonly Lazy<LocalizationService> _instance = new(() => new());
     public static LocalizationService Instance => _instance.Value;
 
-    private Dictionary<string, string> _current = new();
-    private Dictionary<string, string> _fallback = new();
+    private ConcurrentDictionary<string, string> _current = new(StringComparer.OrdinalIgnoreCase);
+    private ConcurrentDictionary<string, string> _fallback = new(StringComparer.OrdinalIgnoreCase);
     private string _currentCode = "en";
 
     private const string FallbackCode = "en";
@@ -44,7 +44,9 @@ public sealed class LocalizationService : INotifyPropertyChanged
     public string T(string key, params object[] args)
     {
         var template = T(key);
-        return args.Length > 0 ? string.Format(template, args) : template;
+        if (args.Length == 0) return template;
+        try { return string.Format(template, args); }
+        catch (FormatException) { return template; }
     }
 
     public bool TryGet(string key, out string value)
@@ -173,9 +175,9 @@ public sealed class LocalizationService : INotifyPropertyChanged
         catch { /* best effort */ }
     }
 
-    private bool LoadLanguage(string code, out Dictionary<string, string> dict)
+    private bool LoadLanguage(string code, out ConcurrentDictionary<string, string> dict)
     {
-        dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        dict = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         try
         {
@@ -191,7 +193,7 @@ public sealed class LocalizationService : INotifyPropertyChanged
             var entries = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
             if (entries == null) return false;
 
-            dict = new Dictionary<string, string>(entries, StringComparer.OrdinalIgnoreCase);
+            dict = new ConcurrentDictionary<string, string>(entries, StringComparer.OrdinalIgnoreCase);
 
             // Optional game-extracted strings (e.g. Upgrades, List_DriveType, List_Aspiration).
             // Isolated in its own try-catch so a malformed or oversized GameStrings file

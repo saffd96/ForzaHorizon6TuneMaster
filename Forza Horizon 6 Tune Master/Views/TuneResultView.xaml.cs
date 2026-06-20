@@ -34,6 +34,9 @@ public partial class TuneResultView : UserControl
 
         if (DataContext is MainViewModel vm)
         {
+            // Idempotent: a repeated Loaded without an intervening Unloaded would otherwise
+            // leave a stale handler on the long-lived MainViewModel, pinning this view alive.
+            if (_vm != null) _vm.PropertyChanged -= OnVmPropertyChanged;
             _vm = vm;
             vm.PropertyChanged += OnVmPropertyChanged;
         }
@@ -106,9 +109,10 @@ public partial class TuneResultView : UserControl
                 _overlayWindow.Top  = main.Top + 60;
             }
 
-            _overlayWindow.Closed += (_, _) =>
+            var window = _overlayWindow;
+            window.Closed += (_, _) =>
             {
-                SaveOverlayState(_overlayWindow!);
+                SaveOverlayState(window);
                 _overlayWindow = null;
             };
             _overlayWindow.Show();

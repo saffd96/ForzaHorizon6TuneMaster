@@ -63,7 +63,7 @@ internal static class LaunchControlCalculator
         double disciplineFactor = track.Discipline == Discipline.Drag ? 1.15 : 1.00;
 
         double launch = baseLaunch * driveAdj * torqueFactor * tireFactor * disciplineFactor;
-        launch = Math.Clamp(launch, 1200, maxRpm * 0.80);
+        launch = CalculationHelpers.Clamp(launch, 1200, maxRpm * 0.80);
 
         r.LaunchControlRpm = (int)(Math.Round(launch / 100.0) * 100);
     }

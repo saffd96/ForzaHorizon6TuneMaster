@@ -137,14 +137,13 @@ public class CalculatorUnitTests
     }
 
     [Fact]
-    public void Aero_ClampedToConstraints()
+    public void Aero_DefaultCar_HasRearAeroOnly()
     {
         var car = CarFactory.DefaultCar();
-        var c = new TuningConstraints { AeroFrontMin = 5, AeroFrontMax = 15, AeroRearMin = 10, AeroRearMax = 20 };
         var r = new TuneResult();
         var ex = new Dictionary<string, string>();
 
-        AeroCalculator.CalculateAero(car, CarFactory.DefaultTrack(), c, r, ex);
+        AeroCalculator.CalculateAero(car, CarFactory.DefaultTrack(), new TuningConstraints(), r, ex);
 
         Assert.Equal(0, r.AeroFront);
         Assert.InRange(r.AeroRear, 100, 200);
@@ -1565,14 +1564,14 @@ public class CalculatorUnitTests
     }
 
     [Fact]
-    public void EffectiveWtDist_Explicit50_Returns50()
+    public void EffectiveWtDist_ExplicitSet_ReturnsExplicit()
     {
         var car = CarFactory.DefaultCar();
-        car.WeightDistributionFront = 50;
+        car.WeightDistributionFront = 48;
 
         double wd = CalculationHelpers.EffectiveWtDist(car);
 
-        Assert.Equal(50, wd);
+        Assert.Equal(48, wd);
     }
 
     [Fact]

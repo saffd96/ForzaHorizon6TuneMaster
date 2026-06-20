@@ -52,7 +52,9 @@ public class StorageService
         string safeName = SanitizeProfileName(profileName);
         string path = Path.Combine(ProfilesDir, $"{safeName}.json");
         string json = JsonSerializer.Serialize(profile, JsonOptions);
-        File.WriteAllText(path, json);
+        string tmp = path + ".tmp";
+        File.WriteAllText(tmp, json);
+        File.Move(tmp, path, overwrite: true);
     }
 
     public SavedProfile? Load(string profileName)
@@ -60,8 +62,15 @@ public class StorageService
         string safeName = SanitizeProfileName(profileName);
         string path = Path.Combine(ProfilesDir, $"{safeName}.json");
         if (!File.Exists(path)) return null;
-        string json = File.ReadAllText(path);
-        return JsonSerializer.Deserialize<SavedProfile>(json, JsonOptions);
+        try
+        {
+            string json = File.ReadAllText(path);
+            return JsonSerializer.Deserialize<SavedProfile>(json, JsonOptions);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public List<string> GetProfileNames()
