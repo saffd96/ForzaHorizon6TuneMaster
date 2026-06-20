@@ -13,11 +13,6 @@ public class PartDisplayNameResolver
     public int StockFrontTireProfile { get; set; }
     public int StockRearTireProfile { get; set; }
 
-    // Cache of sorted distinct levels for each (part type, parent id) group.
-    // Used to map a part's Level to Stock/Street/Sport/Rank regardless of gaps
-    // or whether the stock entry starts at Level 0 or Level 1.
-    private readonly Dictionary<(Type Type, int ParentId), List<int>> _levelCache = new();
-
     // TireModelName root -> Upgrades IDS_Name_* key.
     private static readonly Dictionary<string, string> TireCompoundNameIds = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -363,14 +358,6 @@ public class PartDisplayNameResolver
         return LevelKey(baseId, tier);
     }
 
-    private int GetStockLevel(DbUpgradePart part)
-    {
-        int parentId = GetParentId(part);
-        if (parentId < 0) return -1;
-        var list = GetPartList(part, parentId);
-        return list.FirstOrDefault(p => p.IsStock)?.Level ?? list.Min(p => (int?)p.Level) ?? -1;
-    }
-
     private string? ResolveFuelSystemKey(DbUpgradeFuelSystem fs)
     {
         var engine = _db.GetEngine(fs.EngineID);
@@ -433,140 +420,6 @@ public class PartDisplayNameResolver
     {
         if (offset < 0 || offset > 3) return null;
         return $"Upgrades_IDS_Name_{baseId + offset}";
-    }
-
-    private string? RankKey(int baseId, DbUpgradePart part)
-    {
-        int rank = GetRank(part);
-        return rank >= 0 ? LevelKey(baseId, rank) : null;
-    }
-
-    private int GetRank(DbUpgradePart part)
-    {
-        int parentId = GetParentId(part);
-        if (parentId < 0) return -1;
-
-        var key = (part.GetType(), parentId);
-        if (!_levelCache.TryGetValue(key, out var levels))
-        {
-            levels = GetSortedLevels(part, parentId);
-            _levelCache[key] = levels;
-        }
-        return levels.IndexOf(part.Level);
-    }
-
-    private static List<int> GetSortedLevels(DbUpgradePart part, int parentId)
-    {
-        return GetPartList(part, parentId).Select(p => p.Level).Distinct().OrderBy(l => l).ToList();
-    }
-
-    private static List<DbUpgradePart> GetPartList(DbUpgradePart part, int parentId)
-    {
-        IEnumerable<DbUpgradePart> all = part switch
-        {
-            // Engine parts
-            DbUpgradeCamshaft => Fh6DatabaseService.Instance.GetCamshafts(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeValves => Fh6DatabaseService.Instance.GetValves(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeDisplacement => Fh6DatabaseService.Instance.GetDisplacement(parentId).Cast<DbUpgradePart>(),
-            DbUpgradePistons => Fh6DatabaseService.Instance.GetPistons(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeFuelSystem => Fh6DatabaseService.Instance.GetFuelSystems(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeIgnition => Fh6DatabaseService.Instance.GetIgnition(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeExhaust => Fh6DatabaseService.Instance.GetExhaust(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeIntake => Fh6DatabaseService.Instance.GetIntake(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeManifold => Fh6DatabaseService.Instance.GetManifolds(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeFlywheel => Fh6DatabaseService.Instance.GetFlywheels(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeOilCooling => Fh6DatabaseService.Instance.GetOilCooling(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeRestrictor => Fh6DatabaseService.Instance.GetRestrictors(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeTurboSingle => Fh6DatabaseService.Instance.GetTurbosSingle(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeTurboTwin => Fh6DatabaseService.Instance.GetTurbosTwin(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeCSC => Fh6DatabaseService.Instance.GetCSC(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeDSC => Fh6DatabaseService.Instance.GetDSC(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeIntercooler => Fh6DatabaseService.Instance.GetIntercoolers(parentId).Cast<DbUpgradePart>(),
-
-            // Drivetrain parts
-            DbUpgradeTransmission => Fh6DatabaseService.Instance.GetTransmissions(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeClutch => Fh6DatabaseService.Instance.GetClutches(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeDriveline => Fh6DatabaseService.Instance.GetDrivelines(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeDifferential => Fh6DatabaseService.Instance.GetDifferentials(parentId).Cast<DbUpgradePart>(),
-
-            // Ordinal parts
-            DbUpgradeTireCompound => Fh6DatabaseService.Instance.GetTireCompounds(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeSpringDamper => Fh6DatabaseService.Instance.GetSpringDampers(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeBrakes => Fh6DatabaseService.Instance.GetBrakes(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeAntiSwayFront => Fh6DatabaseService.Instance.GetAntiSwayFront(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeAntiSwayRear => Fh6DatabaseService.Instance.GetAntiSwayRear(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeRearWing => Fh6DatabaseService.Instance.GetRearWings(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeRimFront => Fh6DatabaseService.Instance.GetRimsFront(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeRimRear => Fh6DatabaseService.Instance.GetRimsRear(parentId).Cast<DbUpgradePart>(),
-
-            // CarBody parts
-            DbUpgradeWeightReduction => Fh6DatabaseService.Instance.GetWeightReductions(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeChassisStiffness => Fh6DatabaseService.Instance.GetChassisStiffness(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeTireWidthFront => Fh6DatabaseService.Instance.GetTireWidthsFront(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeTireWidthRear => Fh6DatabaseService.Instance.GetTireWidthsRear(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeTireAspectRatioFront => Fh6DatabaseService.Instance.GetTireAspectRatiosFront(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeTireAspectRatioRear => Fh6DatabaseService.Instance.GetTireAspectRatiosRear(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeTrackSpacingFront => Fh6DatabaseService.Instance.GetTrackSpacingsFront(parentId).Cast<DbUpgradePart>(),
-            DbUpgradeTrackSpacingRear => Fh6DatabaseService.Instance.GetTrackSpacingsRear(parentId).Cast<DbUpgradePart>(),
-
-            // Motor parts
-            DbUpgradeMotorPart => Fh6DatabaseService.Instance.GetMotorParts(parentId).Cast<DbUpgradePart>(),
-
-            _ => Enumerable.Empty<DbUpgradePart>()
-        };
-
-        return all.ToList();
-    }
-
-    private static int GetParentId(DbUpgradePart part)
-    {
-        return part switch
-        {
-            DbUpgradeCamshaft p => p.EngineID,
-            DbUpgradeValves p => p.EngineID,
-            DbUpgradeDisplacement p => p.EngineID,
-            DbUpgradePistons p => p.EngineID,
-            DbUpgradeFuelSystem p => p.EngineID,
-            DbUpgradeIgnition p => p.EngineID,
-            DbUpgradeExhaust p => p.EngineID,
-            DbUpgradeIntake p => p.EngineID,
-            DbUpgradeManifold p => p.EngineID,
-            DbUpgradeFlywheel p => p.EngineID,
-            DbUpgradeOilCooling p => p.EngineID,
-            DbUpgradeRestrictor p => p.EngineID,
-            DbUpgradeTurboSingle p => p.EngineID,
-            DbUpgradeTurboTwin p => p.EngineID,
-            DbUpgradeCSC p => p.EngineID,
-            DbUpgradeDSC p => p.EngineID,
-            DbUpgradeIntercooler p => p.EngineID,
-
-            DbUpgradeTransmission p => p.DrivetrainID,
-            DbUpgradeClutch p => p.DrivetrainID,
-            DbUpgradeDriveline p => p.DrivetrainId,
-            DbUpgradeDifferential p => p.DrivetrainID,
-
-            DbUpgradeTireCompound p => p.Ordinal,
-            DbUpgradeSpringDamper p => p.Ordinal,
-            DbUpgradeBrakes p => p.Ordinal,
-            DbUpgradeAntiSwayFront p => p.Ordinal,
-            DbUpgradeAntiSwayRear p => p.Ordinal,
-            DbUpgradeRearWing p => p.Ordinal,
-            DbUpgradeRimFront p => p.Ordinal,
-            DbUpgradeRimRear p => p.Ordinal,
-
-            DbUpgradeWeightReduction p => p.CarBodyId,
-            DbUpgradeChassisStiffness p => p.CarbodyId,
-            DbUpgradeTireWidthFront p => p.CarBodyId,
-            DbUpgradeTireWidthRear p => p.CarBodyId,
-            DbUpgradeTireAspectRatioFront p => p.CarBodyId,
-            DbUpgradeTireAspectRatioRear p => p.CarBodyId,
-            DbUpgradeTrackSpacingFront p => p.CarBodyId,
-            DbUpgradeTrackSpacingRear p => p.CarBodyId,
-
-            DbUpgradeMotorPart p => p.MotorID,
-
-            _ => -1
-        };
     }
 
     private string GetLocalizedCategoryName(DbUpgradePart part)

@@ -39,11 +39,6 @@ public class TransmissionViewModel : INotifyPropertyChanged
         LoadForSelectedDrivetrain();
     }
 
-    public void ReloadForDrivetrain(int drivetrainId)
-    {
-        LoadForDrivetrain(drivetrainId);
-    }
-
     public void ResetToStockForDrivetrain(int drivetrainId)
     {
         int transLevel   = LevelOf(_parts.TransmissionPartId,  id => _db.GetTransmissionById(id));

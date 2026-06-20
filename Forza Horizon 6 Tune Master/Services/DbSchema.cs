@@ -501,7 +501,6 @@ public sealed record DbUpgradeWeightReduction : DbUpgradePart
     public double InitialMass { get; init; }
     public double CMHeight { get; init; }
     public double CMBackFront { get; init; }
-    [JsonIgnore] public double MassDiffComputed => Mass - InitialMass;
     [JsonIgnore] public string DisplayName => $"Weight Lv{Level}";
 }
 

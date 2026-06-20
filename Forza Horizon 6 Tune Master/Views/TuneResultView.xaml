@@ -486,7 +486,9 @@
                                     PowerCurve="{Binding TuneResult.Car.CachedPowerCurveHP}"
                                     MaxRPM="{Binding TuneResult.Car.MaxRPM}"
                                     TorquePeakRPM="{Binding TuneResult.Car.TorquePeakRPM}"
-                                    PowerPeakRPM="{Binding TuneResult.Car.PowerPeakRPM}"/>
+                                    PowerPeakRPM="{Binding TuneResult.Car.PowerPeakRPM}"
+                                    PowerUnit="{Binding PowerUnit}"
+                                    UseImperial="{Binding UseImperial}"/>
                             </Grid>
                         </Grid>
                     </Grid>

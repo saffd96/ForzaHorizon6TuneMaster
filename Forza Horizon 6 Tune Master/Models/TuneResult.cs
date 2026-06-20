@@ -6,7 +6,6 @@ namespace Forza_Horizon_6_Tune_Master.Models;
 public class TuneResult
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public string ProfileName { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     [System.Text.Json.Serialization.JsonIgnore]

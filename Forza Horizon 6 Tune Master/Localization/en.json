@@ -447,6 +447,8 @@
   "UnitKw": "kW",
   "UnitHp": "hp",
   "UnitPs": "PS",
+  "UnitNm": "Nm",
+  "UnitLbFt": "lb·ft",
   "UnitRPM": "rpm",
   "HelpStep6Line1": "• TIRE PRESSURE — front/rear. Base from tire compound, adjusted by mass and weight distribution.",
   "HelpStep6Line2": "• WHEEL ALIGNMENT — camber (discipline + load + aero), caster (mass + speed), toe (drive + discipline + speed).",

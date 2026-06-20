@@ -230,13 +230,6 @@ public sealed class LocalizationService : INotifyPropertyChanged
         }
     }
 
-    public const string InvalidateRequestedEvent = "LanguageChanged";
-
-    public static void RaiseLanguageChanged()
-    {
-        Instance.PropertyChanged?.Invoke(Instance, new PropertyChangedEventArgs("Item"));
-    }
-
     private void InvalidateAll()
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item"));

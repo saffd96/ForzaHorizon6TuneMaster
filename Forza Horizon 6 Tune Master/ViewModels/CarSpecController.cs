@@ -21,9 +21,7 @@ internal class CarSpecController
     // Callbacks set by MainViewModel for UI updates
     public Action? NotifyCarDisplayProperties { get; set; }
     public Action? NotifyCarSelectionProperties { get; set; }
-    public Action<string>? SetBusyMessage { get; set; }
     public Action<string>? SetStatusMessage { get; set; }
-    public Func<bool>? IsLoadingProfile { get; set; }
     public Action? BusyFlagsChanged { get; set; }
 
     // ── Car selection ──────────────────────────────────────────────────────

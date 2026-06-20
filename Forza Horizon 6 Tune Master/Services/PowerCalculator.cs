@@ -45,7 +45,7 @@ public static class PowerCalculator
 
     private static void CalcElectric(CarCard car, DbCar dbCar, Fh6DatabaseService db, SelectedParts? parts = null)
     {
-        int motorId = ResolveEffectiveEngineId(car, dbCar, db, parts);
+        int motorId = ResolveEffectiveMotorId(car, dbCar, db, parts);
         var motor = db.GetMotor(motorId);
         if (motor == null) return;
 
@@ -53,11 +53,21 @@ public static class PowerCalculator
         double peakTorqueNm = motor.MotorGraphingMaxTorque;
         double peakPowerW = motor.MotorGraphingMaxPower;
 
+        double torqueScale = 1.0;
+        if (parts?.MotorPartId != null)
+        {
+            var part = db.GetMotorPartById(parts.MotorPartId.Value);
+            if (part is { IsStock: false, TorqueScale: not null } && Math.Abs(part.TorqueScale.Value - 1.0) > 0.005)
+                torqueScale = part.TorqueScale.Value;
+        }
+        peakTorqueNm *= torqueScale;
+        peakPowerW *= torqueScale;
+
         car.MaxRPM = (int)Math.Round(maxRpm);
         car.TorqueNm = Math.Round(peakTorqueNm);
         car.PowerHP = Math.Round(peakPowerW / 745.7, 1);
 
-        car.CachedTorqueCurveNm = LoadTorqueCurve(motor.TorqueCurveFullThrottleID, db, 1.0, maxRpm, maxRpm)
+        car.CachedTorqueCurveNm = LoadTorqueCurve(motor.TorqueCurveFullThrottleID, db, torqueScale, maxRpm, maxRpm)
             ?? GenerateElectricTorqueCurve(peakTorqueNm, (int)Math.Round(maxRpm));
     }
 
@@ -139,6 +149,19 @@ public static class PowerCalculator
 
         var swaps = db.GetEngineSwaps(dbCar.Id);
         return swaps?.FirstOrDefault(e => e.IsStock)?.EngineID ?? 0;
+    }
+
+    private static int ResolveEffectiveMotorId(CarCard car, DbCar dbCar, Fh6DatabaseService db, SelectedParts? parts = null)
+    {
+        if (parts?.MotorSwapPartId != null)
+        {
+            var swap = db.GetMotorSwapById(parts.MotorSwapPartId.Value);
+            if (swap != null) return swap.MotorID;
+        }
+        if (car.MotorDbId > 0) return car.MotorDbId;
+
+        var swaps = db.GetMotorSwaps(dbCar.Id);
+        return swaps?.FirstOrDefault(s => s.IsStock)?.MotorID ?? 0;
     }
 
     private static double AccumulatePartTorqueScales(SelectedParts parts, Fh6DatabaseService db)

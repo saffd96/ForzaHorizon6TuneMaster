@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Forza_Horizon_6_Tune_Master.Models;
+using Forza_Horizon_6_Tune_Master.Services;
 
 namespace Forza_Horizon_6_Tune_Master.Views;
 
@@ -28,6 +30,14 @@ public partial class PowerCurveView : UserControl
     public static readonly DependencyProperty PowerPeakRPMProperty =
         DependencyProperty.Register(nameof(PowerPeakRPM), typeof(int), typeof(PowerCurveView),
             new PropertyMetadata(5800, OnPropChanged));
+
+    public static readonly DependencyProperty PowerUnitProperty =
+        DependencyProperty.Register(nameof(PowerUnit), typeof(PowerUnit), typeof(PowerCurveView),
+            new PropertyMetadata(PowerUnit.HP, OnPropChanged));
+
+    public static readonly DependencyProperty UseImperialProperty =
+        DependencyProperty.Register(nameof(UseImperial), typeof(bool), typeof(PowerCurveView),
+            new PropertyMetadata(false, OnPropChanged));
 
     public double[]? TorqueCurve
     {
@@ -59,6 +69,18 @@ public partial class PowerCurveView : UserControl
         set => SetValue(PowerPeakRPMProperty, value);
     }
 
+    public PowerUnit PowerUnit
+    {
+        get => (PowerUnit)GetValue(PowerUnitProperty);
+        set => SetValue(PowerUnitProperty, value);
+    }
+
+    public bool UseImperial
+    {
+        get => (bool)GetValue(UseImperialProperty);
+        set => SetValue(UseImperialProperty, value);
+    }
+
     public PowerCurveView()
     {
         InitializeComponent();
@@ -78,9 +100,9 @@ public partial class PowerCurveView : UserControl
     {
         ChartCanvas.Children.Clear();
 
-        var torque = TorqueCurve;
-        var power = PowerCurve;
-        if (torque == null || torque.Length < 2 || power == null || power.Length < 2 || MaxRPM <= 0) return;
+        var torqueSrc = TorqueCurve;
+        var powerSrc = PowerCurve;
+        if (torqueSrc == null || torqueSrc.Length < 2 || powerSrc == null || powerSrc.Length < 2 || MaxRPM <= 0) return;
 
         double w = ChartCanvas.ActualWidth;
         double h = ChartCanvas.ActualHeight;
@@ -92,9 +114,20 @@ public partial class PowerCurveView : UserControl
         if (cw <= 0 || ch <= 0) return;
 
         // If the two curves don't match yet (mid-update), skip — the next change will redraw.
-        if (torque.Length != power.Length) return;
-        int n = torque.Length;
+        if (torqueSrc.Length != powerSrc.Length) return;
+        int n = torqueSrc.Length;
         if (n < 2) return;
+
+        // Convert both curves to the user-selected display units. Axis numbers, gridlines,
+        // peak labels and unit captions all follow PowerUnit / UseImperial; the curve shape
+        // is unaffected because each axis rescales to its own max.
+        var torque = new double[n];
+        var power = new double[n];
+        for (int i = 0; i < n; i++)
+        {
+            torque[i] = UnitConverter.TorqueToDisplay(torqueSrc[i], UseImperial);
+            power[i] = UnitConverter.PowerToDisplay(powerSrc[i], PowerUnit);
+        }
         double rpmCap = MaxRPM * 1.06;
         double maxTorque = torque.Max() * 1.10;
         double maxPower = power.Max() * 1.10;
@@ -179,10 +212,17 @@ public partial class PowerCurveView : UserControl
 
         // ── axis labels ──
         var loc = Services.LocalizationService.Instance;
+        string torqueUnit = loc.T(UseImperial ? "UnitLbFt" : "UnitNm");
+        string powerUnit = PowerUnit switch
+        {
+            PowerUnit.KW => loc.T("UnitKw"),
+            PowerUnit.PS => loc.T("UnitPs"),
+            _            => loc.T("UnitHp")
+        };
 
         var tAxisLbl = new TextBlock
         {
-            Text = loc.T("CurveAxisTorque"),
+            Text = $"{loc.T("CurveLegendTorque")}, {torqueUnit}",
             Foreground = dimLblBrush,
             FontSize = 9,
             FontFamily = lblFamily,
@@ -194,7 +234,7 @@ public partial class PowerCurveView : UserControl
 
         var pAxisLbl = new TextBlock
         {
-            Text = loc.T("CurveAxisPower"),
+            Text = $"{loc.T("CurveLegendPower")}, {powerUnit}",
             Foreground = dimLblBrush,
             FontSize = 9,
             FontFamily = lblFamily,
@@ -284,7 +324,7 @@ public partial class PowerCurveView : UserControl
 
         var tpLbl = new TextBlock
         {
-            Text = $"{peakTorqueVal:F0} Nm @ {TorquePeakRPM / 1000}k",
+            Text = $"{peakTorqueVal:F0} {torqueUnit} @ {TorquePeakRPM / 1000}k",
             Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 0x1A, 0xBC, 0xFE)),
             FontSize = 9,
             FontFamily = lblFamily
@@ -317,7 +357,7 @@ public partial class PowerCurveView : UserControl
 
         var ppLbl = new TextBlock
         {
-            Text = $"{peakPowerVal:F0} HP @ {PowerPeakRPM / 1000}k",
+            Text = $"{peakPowerVal:F0} {powerUnit} @ {PowerPeakRPM / 1000}k",
             Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0x5E, 0x0E)),
             FontSize = 9,
             FontFamily = lblFamily

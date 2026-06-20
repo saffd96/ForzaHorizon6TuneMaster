@@ -838,13 +838,6 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     private DateTime _lastInputChange = DateTime.MinValue;
     private CancellationTokenSource? _debounceCts;
 
-    private void SubscribeModelChanges()
-    {
-        _car.PropertyChanged += OnModelChanged;
-        _car.PropertyChanged += OnCarPropertyChanged;
-        _track.PropertyChanged += OnModelChanged;
-    }
-
     private void OnCarPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(CarCard.PowertrainType))
@@ -1042,6 +1035,8 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         _lastDrivetrainSwapPartId = parts.DrivetrainSwapPartId;
         MapDbToOldEnums(car);
         Constraints.ApplyPhysicsBounds(car, parts, Fh6DatabaseService.Instance);
+        if (isElectric)
+            PowerCalculator.Calculate(car, parts);
     }
 
     private static void ClearEnginePartIds(SelectedParts parts)
@@ -1222,17 +1217,6 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         var values = Enum.GetValues(typeof(T));
         int idx = Math.Clamp(level, 0, values.Length - 1);
         return (T)values.GetValue(idx)!;
-    }
-
-    private void NotifyPartSelectionProperties()
-    {
-    OnPropertyChanged(nameof(SwapsVM));
-    OnPropertyChanged(nameof(EngineVM));
-    OnPropertyChanged(nameof(MotorVM));
-    OnPropertyChanged(nameof(SuspensionVM));
-    OnPropertyChanged(nameof(TransmissionVM));
-    OnPropertyChanged(nameof(TiresWheelsVM));
-    OnPropertyChanged(nameof(AeroVisualVM));
     }
 
     private void NotifyCarDisplayProperties()

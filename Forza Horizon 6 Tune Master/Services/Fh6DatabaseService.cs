@@ -65,15 +65,11 @@ public class Fh6DatabaseService
     private readonly ConcurrentDictionary<int, List<DbUpgradeFrontBumper>> _frontBumpersByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeRearBumper>> _rearBumpersByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeSideSkirt>> _sideSkirtsByCarBodyId = new();
-    // Rim "appearance" reduces to rim mass: stock mass per car (by MediaName) and the
-    // distinct aftermarket wheel masses available in the catalog. ConcurrentDictionary
-    // because InitializeAsync can run from several threads (parallel tests) before the
-    // _initialized guard is set — a plain Dictionary corrupts under concurrent writes.
-    private readonly ConcurrentDictionary<string, double> _stockWheelMassByMedia = new();
     // Stock wheel lightness tier (MassLevel) per car, by MediaName — the baseline the
-    // wheel-style weight delta is measured against.
+    // wheel-style weight delta is measured against. ConcurrentDictionary because
+    // InitializeAsync can run from several threads (parallel tests) before the
+    // _initialized guard is set — a plain Dictionary corrupts under concurrent writes.
     private readonly ConcurrentDictionary<string, int> _stockWheelTierByMedia = new();
-    private volatile List<double> _wheelMassOptions = new();
     private volatile List<DbWheel> _allWheelOptions = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeWeightReduction>> _weightReductionsByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeChassisStiffness>> _chassisStiffnessByCarBodyId = new();
@@ -215,7 +211,6 @@ public class Fh6DatabaseService
         using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT MediaName,Mass,IsStock,ID,DisplayName,PartManufacturerID,MassLevel FROM List_Wheels";
         using var r = cmd.ExecuteReader();
-        var masses = new SortedSet<double>();
         var all = new List<DbWheel>();
         while (r.Read())
         {
@@ -226,22 +221,16 @@ public class Fh6DatabaseService
             {
                 if (!string.IsNullOrEmpty(media))
                 {
-                    _stockWheelMassByMedia[media] = mass;
                     _stockWheelTierByMedia[media] = massLevel;
                 }
             }
-            if (!stock && mass > 0) masses.Add(mass);
             if (!stock && displayName != "" && !displayName.StartsWith("_&"))
             {
                 all.Add(new DbWheel { Id = id, DisplayName = displayName, Mass = mass, MassLevel = massLevel, ManufacturerId = manId, IsStock = stock });
             }
         }
-        _wheelMassOptions = masses.ToList();
         _allWheelOptions = all;
     }
-
-    public double? GetStockWheelMass(string? mediaName) =>
-        !string.IsNullOrEmpty(mediaName) && _stockWheelMassByMedia.TryGetValue(mediaName, out var m) ? m : null;
 
     public int? GetStockWheelTier(string? mediaName) =>
         !string.IsNullOrEmpty(mediaName) && _stockWheelTierByMedia.TryGetValue(mediaName, out var t) ? t : null;
@@ -249,16 +238,8 @@ public class Fh6DatabaseService
     public int? GetWheelTierById(int id) =>
         _allWheelOptions.FirstOrDefault(x => x.Id == id)?.MassLevel;
 
-    public IReadOnlyList<double> GetWheelMassOptions() => _wheelMassOptions;
-
     public IReadOnlyList<DbWheel> GetAllAftermarketWheels() =>
         _allWheelOptions;
-
-    public double? GetWheelMassById(int id)
-    {
-        var w = _allWheelOptions.FirstOrDefault(x => x.Id == id);
-        return w?.Mass;
-    }
 
     private static T Read<T>(SqliteDataReader r, int i) =>
         r.IsDBNull(i) ? default! : (T)r.GetValue(i);

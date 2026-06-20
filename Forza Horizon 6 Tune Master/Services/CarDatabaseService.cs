@@ -44,6 +44,4 @@ public class CarDatabaseService
             : mediaName.Replace("_", " ");
         return _camelSplit.Replace(name, " ");
     }
-
-    public Task<CarLoadResult> RefreshAsync() => LoadCarDatabaseAsync();
 }

@@ -10,7 +10,6 @@ public class SelectedParts : NotifyBase
     private readonly Fh6DatabaseService _db = Fh6DatabaseService.Instance;
 
     private double _curbWeight;
-    private int _makeId;
 
     // ── Events ──────────────────────────────────────────────────────────────
 
@@ -57,8 +56,6 @@ public class SelectedParts : NotifyBase
     private int? _wheelRearId;
     [ResetToStock]
     public int? WheelRearId { get => _wheelRearId; set { if (Set(ref _wheelRearId, value)) OnPartChanged(); } }
-    private double _stockRimMass;
-    public double StockRimMass => _stockRimMass;
     // Stock wheel lightness tier + stock wheel/tyre geometry — baseline for the
     // wheel-style weight delta (see ComputeTotalMassDiff / WheelTierMassDiff).
     private int _stockRimTier;
@@ -242,20 +239,16 @@ public class SelectedParts : NotifyBase
     private int? _motorId;
     public int? MotorId { get => _motorId; set => Set(ref _motorId, value); }
 
-    public int MakeId => _makeId;
-
     // ── Init from car ──────────────────────────────────────────────────────
 
     public void SetCarData(CarCard car, bool resetParts = true)
     {
         _curbWeight = car.CurbWeightKg;
         var dbCar = _db.GetCar(car.CarDbId);
-        _makeId = dbCar?.MakeID ?? 0;
         EngineId = car.EngineDbId;
         var stockDt = _db.GetStockDrivetrain(car.CarDbId);
         DrivetrainId = stockDt?.DrivetrainID;
         CarBodyOrdinal = car.CarBodyId;
-        _stockRimMass = _db.GetStockWheelMass(dbCar?.MediaName) ?? 0.0;
         _stockRimTier = _db.GetStockWheelTier(dbCar?.MediaName) ?? 0;
         _stockFrontDiameterIn = dbCar?.FrontWheelDiameterIN ?? 0;
         _stockRearDiameterIn = dbCar?.RearWheelDiameterIN ?? 0;

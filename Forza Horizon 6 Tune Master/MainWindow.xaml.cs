@@ -94,24 +94,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ScrollToCarSelection()
-    {
-        var sv = FindScrollViewer(this);
-        sv?.ScrollToHome();
-    }
-
-    private static System.Windows.Controls.ScrollViewer? FindScrollViewer(DependencyObject parent)
-    {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-        {
-            var child = VisualTreeHelper.GetChild(parent, i);
-            if (child is System.Windows.Controls.ScrollViewer sv) return sv;
-            var found = FindScrollViewer(child);
-            if (found != null) return found;
-        }
-        return null;
-    }
-
     private void DonateButton_Click(object sender, RoutedEventArgs e)
     {
         new DonateWindow { Owner = this }.ShowDialog();

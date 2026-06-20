@@ -83,11 +83,6 @@ public class EnginePartsViewModel : INotifyPropertyChanged
         LoadForEngine(engineId);
     }
 
-    public void ReloadForEngine(int engineId)
-    {
-        LoadForEngine(engineId);
-    }
-
     public void ResetToStockForEngine(int engineId)
     {
         int camLevel     = LevelOf(_parts.CamshaftPartId,     id => _db.GetCamshaftById(id));
