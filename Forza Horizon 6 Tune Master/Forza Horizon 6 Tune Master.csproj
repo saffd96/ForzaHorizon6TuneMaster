@@ -41,7 +41,7 @@
         <EmbeddedResource Include="Localization\ru.json" LogicalName="Forza_Horizon_6_Tune_Master.Localization.ru.json" />
         <EmbeddedResource Include="Localization\GameStrings.en.json" LogicalName="Forza_Horizon_6_Tune_Master.Localization.GameStrings.en.json" WithCulture="false" />
         <EmbeddedResource Include="Localization\GameStrings.ru.json" LogicalName="Forza_Horizon_6_Tune_Master.Localization.GameStrings.ru.json" WithCulture="false" />
-        <EmbeddedResource Include="..\DUMPER\fh6_db.sqlite" LogicalName="DUMPER.fh6_db.sqlite" />
+        <EmbeddedResource Include="..\DUMPER\fh6_db.slim.sqlite" LogicalName="DUMPER.fh6_db.sqlite" />
     </ItemGroup>
 
 </Project>

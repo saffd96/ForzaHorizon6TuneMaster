@@ -874,7 +874,10 @@
     <!-- Implicit templates so both the dropdown items and the selected box render the
          localized DisplayName (DisplayMemberPath isn't honoured by the selection box). -->
     <DataTemplate DataType="{x:Type models:FiTypeOption}">
+        <!-- 6px left margin matches the empty manufacturer column in the PartOption
+             template so this dropdown's text aligns with all the other part dropdowns. -->
         <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
+                   Margin="6,0,0,0"
                    VerticalAlignment="Center"/>
     </DataTemplate>
 
