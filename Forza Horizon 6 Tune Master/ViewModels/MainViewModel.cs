@@ -129,6 +129,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             // dropdown (and intercooler) from the DB for the new forced induction.
             EngineVM.ReloadForcedInductionLevels();
             EngineVM.ReloadIntercooler(_selectedParts.EngineId ?? Car.EngineDbId);
+            EngineVM.ReloadManifold(_selectedParts.EngineId ?? Car.EngineDbId);
             UpdateAspirationTypeFromForcedInduction();
         }
 

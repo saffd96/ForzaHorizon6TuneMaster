@@ -55,10 +55,11 @@ internal static class CalculationHelpers
 
     internal static double ComputeEffectiveMaxSpeedKmh(CarCard car, TuneResult r)
     {
-        var dbCar = Fh6DatabaseService.Instance?.GetCar(car.CarDbId);
-        double cdABody = dbCar?.BodyAeroLongitudinalDrag > 0
-            ? dbCar.BodyAeroLongitudinalDrag
-            : car.CdABodyEstimate;
+        // Body drag must be a Cd×A (~0.3–2.0 m²). Data_Car.BodyAeroLongitudinalDrag is in
+        // game-internal units (52–1700, avg ~210) — NOT Cd×A — so feeding it here produced
+        // absurd top speeds (~78 km/h), which the gearing pass then amplified. Use the same
+        // CdABodyEstimate that CarCard.MaxSpeedKmh uses so both speed figures agree.
+        double cdABody = car.CdABodyEstimate;
         const double AeroDragFactor = 0.001787;
         double cdATotal = cdABody + (r.AeroFront + r.AeroRear) * AeroDragFactor;
 

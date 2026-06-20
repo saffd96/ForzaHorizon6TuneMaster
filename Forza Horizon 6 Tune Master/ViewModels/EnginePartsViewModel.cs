@@ -124,6 +124,18 @@ public class EnginePartsViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedIntercooler));
     }
 
+    // The exhaust manifold/headers upgrade and forced induction are mutually exclusive
+    // (the turbo/SC manifold replaces the headers), so the manifold row is hidden when
+    // forced induction is installed.
+    public bool ShowManifold => _parts == null || !_parts.ForcedInductionPartId.HasValue;
+
+    public void ReloadManifold(int engineId)
+    {
+        LoadManifolds(engineId);
+        OnPropertyChanged(nameof(ShowManifold));
+        OnPropertyChanged(nameof(SelectedManifold));
+    }
+
     private void LoadForEngine(int engineId)
     {
         Populate(Camshafts,     _db.GetCamshafts(engineId));
@@ -135,12 +147,27 @@ public class EnginePartsViewModel : INotifyPropertyChanged
         Populate(Exhausts,      _db.GetExhaust(engineId));
         Populate(Intakes,       _db.GetIntake(engineId));
         Populate(Flywheels,     _db.GetFlywheels(engineId));
-        Populate(Manifolds,     _db.GetManifolds(engineId));
         Populate(OilCoolings,   _db.GetOilCooling(engineId));
         Populate(Restrictors,   _db.GetRestrictors(engineId));
+        LoadManifolds(engineId);
         LoadIntercoolers(engineId);
         RebuildFiLevels();
         RefreshSelections();
+    }
+
+    private void LoadManifolds(int engineId)
+    {
+        if (_parts.ForcedInductionPartId.HasValue)
+        {
+            // Forced induction installed → no separate headers upgrade; keep a stock
+            // baseline so the value is valid if the turbo/SC is later removed.
+            Manifolds.Clear();
+            _parts.ManifoldPartId = PickStock(_db.GetManifolds(engineId))?.Id;
+        }
+        else
+        {
+            Populate(Manifolds, _db.GetManifolds(engineId));
+        }
     }
 
     private void LoadIntercoolers(int engineId)
@@ -174,6 +201,7 @@ public class EnginePartsViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedIntake));
         OnPropertyChanged(nameof(SelectedFlywheel));
         OnPropertyChanged(nameof(SelectedManifold));
+        OnPropertyChanged(nameof(ShowManifold));
         OnPropertyChanged(nameof(SelectedOilCooling));
         OnPropertyChanged(nameof(SelectedRestrictor));
         OnPropertyChanged(nameof(SelectedIntercooler));

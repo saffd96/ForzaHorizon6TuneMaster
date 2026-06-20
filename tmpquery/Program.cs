@@ -4,34 +4,85 @@ var db = "U:\\Forza Horizon 6 Tune Master\\DUMPER\\fh6_db.sqlite";
 using var conn = new SqliteConnection($"Data Source={db};Mode=ReadOnly");
 conn.Open();
 
-// Which DrivetrainIDs have Level 11?
-Console.WriteLine("=== Level 11 DrivetrainID distribution ===");
-var cmd = conn.CreateCommand();
-cmd.CommandText = "SELECT DrivetrainID, COUNT(*) FROM List_UpgradeDrivetrainTransmission WHERE Level=11 GROUP BY DrivetrainID ORDER BY DrivetrainID LIMIT 30;";
-using (var r = cmd.ExecuteReader()) {
-    while (r.Read()) {
-        Console.WriteLine($"  DrivetrainID={r[0],5}  Count={r[1]}");
+void Q(string title, string sql)
+{
+    Console.WriteLine($"\n=== {title} ===");
+    try
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = sql;
+        using var r = cmd.ExecuteReader();
+        int cc = r.FieldCount;
+        for (int i = 0; i < cc; i++) Console.Write($"{(i > 0 ? " | " : "")}{r.GetName(i),-28}");
+        Console.WriteLine("\n" + new string('-', cc * 30));
+        int rows = 0;
+        while (r.Read())
+        {
+            for (int i = 0; i < cc; i++)
+            {
+                var v = r.IsDBNull(i) ? "NULL" : r.GetValue(i)?.ToString()?.TrimEnd();
+                Console.Write($"{(i > 0 ? " | " : "")}{v,-28}");
+            }
+            Console.WriteLine();
+            rows++;
+            if (rows >= 50) { Console.WriteLine("... (truncated)"); break; }
+        }
+        Console.WriteLine($"({rows} rows)");
     }
+    catch (Exception ex) { Console.WriteLine($"ERROR: {ex.Message}"); }
 }
 
-// Total distinct DrivetrainIDs for Level 11
-Console.WriteLine("\n=== Level 11 distinct DrivetrainIDs count ===");
-var cmd2 = conn.CreateCommand();
-cmd2.CommandText = "SELECT COUNT(DISTINCT DrivetrainID) FROM List_UpgradeDrivetrainTransmission WHERE Level=11;";
-Console.WriteLine($"  {cmd2.ExecuteScalar()} distinct DrivetrainIDs");
+// Raw data for a few known cars
+Q("Raw car data (first 10)", @"
+SELECT Id, MediaName, Year, CurbWeight, PerformanceIndex,
+       DriveTypeID, EnginePlacementID,
+       [QuarterMileTime-sec], [QuarterMileSpeed-mph],
+       [TopSpeed-mph], SimPeakPower, SimPeakTorque,
+       MaxUpgradeWizardPerfRating, PI
+FROM Data_Car WHERE IsDrivable=1 AND Id <= 10
+");
 
-// Also show distinct Level 6 DrivetrainIDs
-Console.WriteLine("\n=== Level 6 distinct DrivetrainIDs count ===");
-var cmd3 = conn.CreateCommand();
-cmd3.CommandText = "SELECT COUNT(DISTINCT DrivetrainID) FROM List_UpgradeDrivetrainTransmission WHERE Level=6;";
-Console.WriteLine($"  {cmd3.ExecuteScalar()} distinct DrivetrainIDs");
+// Known muscle/drag cars
+Q("Known drag cars", @"
+SELECT Id, MediaName, Year, CurbWeight, PerformanceIndex,
+       DriveTypeID, EnginePlacementID,
+       [QuarterMileTime-sec], [QuarterMileSpeed-mph],
+       [TopSpeed-mph], SimPeakPower,
+       MaxUpgradeWizardPerfRating
+FROM Data_Car WHERE IsDrivable=1 AND MediaName LIKE '%Shelby%' OR MediaName LIKE '%GT500%' OR MediaName LIKE '%Hellcat%' OR MediaName LIKE '%Demon%' OR MediaName LIKE '%Challenger%' OR MediaName LIKE '%Viper%' OR MediaName LIKE '%GTR%' OR MediaName LIKE '%Supra%' OR MediaName LIKE '%Corvette%' OR MediaName LIKE '%Camaro%' OR MediaName LIKE '%Mustang%' OR MediaName LIKE '%Chiron%' OR MediaName LIKE '%Veyron%' OR MediaName LIKE '%Drag%'
+LIMIT 30");
 
-// Which levels have which IsStock?
-Console.WriteLine("\n=== Every Level's majority IsStock ===");
-var cmd4 = conn.CreateCommand();
-cmd4.CommandText = "SELECT Level, IsStock, COUNT(*) as cnt FROM List_UpgradeDrivetrainTransmission GROUP BY Level, IsStock ORDER BY Level, cnt DESC;";
-using (var r4 = cmd4.ExecuteReader()) {
-    while (r4.Read()) {
-        Console.WriteLine($"  Level={r4[0],2}  IsStock={r4[1],5}  Count={r4[2],5}");
-    }
-}
+// Look at List_UpgradeTireCompound levels
+Q("Tire compound upgrade levels",
+  @"SELECT * FROM List_UpgradeTireCompound LIMIT 30");
+
+// List_TireCompound - look for drag tires
+Q("Tire compounds",
+  @"SELECT TireCompoundID, DisplayName, IsOffroad, CompoundStiffness, TireRollResistance, TorqueFreeLongFrictionScaleAccel0, TorqueFreeLatFrictionScale FROM List_TireCompound ORDER BY TireCompoundID");
+
+// Check what transmission levels map to what (drag transmissions)
+Q("Transmission high levels",
+  @"SELECT DrivetrainID, Level, IsStock, NumGears, FinalDriveRatio, GearRatio0, GearRatio1, GearRatio2
+    FROM List_UpgradeDrivetrainTransmission WHERE Level >= 8 ORDER BY DrivetrainID, Level LIMIT 50");
+
+// Look for specific drag parts in List_UpgradeSpringDamper
+Q("Spring/Damper upgrades",
+  @"SELECT * FROM List_UpgradeSpringDamper LIMIT 20");
+
+// Look at weight reduction tables
+Q("CarBodyWeight",
+  @"SELECT * FROM List_UpgradeCarBodyWeight LIMIT 20");
+
+// Top cars with quarter mile times (base game stats)
+Q("Best production drag cars (with QM data)",
+  @"SELECT Id, MediaName, Year, CurbWeight,
+           ROUND([QuarterMileTime-sec],3) as QM_s,
+           ROUND([QuarterMileSpeed-mph],0) as QM_mph,
+           ROUND([Time:0-60-sec],3) as T060,
+           ROUND([TopSpeed-mph],0) as TSpd,
+           ROUND(SimPeakPower,0) as HP,
+           DriveTypeID, EnginePlacementID,
+           ROUND(PerformanceIndex,0) as PI
+    FROM Data_Car 
+    WHERE IsDrivable=1 AND [QuarterMileTime-sec] > 0 AND [QuarterMileTime-sec] < 20
+    ORDER BY [QuarterMileTime-sec] ASC LIMIT 30");

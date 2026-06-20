@@ -13,7 +13,8 @@
 
         <TextBlock Text="{l:Loc SectionEngineAirFuel}" Style="{StaticResource PartGroupHeader}"/>
         <v:PartRow Label="{l:Loc Part_Intake}"            Options="{Binding Intakes}"       Selected="{Binding SelectedIntake}"/>
-        <v:PartRow Label="{l:Loc Part_Manifold}"          Options="{Binding Manifolds}"     Selected="{Binding SelectedManifold}"/>
+        <v:PartRow Label="{l:Loc Part_Manifold}"          Options="{Binding Manifolds}"     Selected="{Binding SelectedManifold}"
+                   Visibility="{Binding ShowManifold, Converter={StaticResource BoolVis}}"/>
         <v:PartRow Label="{l:Loc Part_Exhaust}"           Options="{Binding Exhausts}"      Selected="{Binding SelectedExhaust}"/>
         <v:PartRow Label="{l:Loc Part_FuelSystem}"        Options="{Binding FuelSystems}"   Selected="{Binding SelectedFuelSystem}"/>
         <v:PartRow Label="{l:Loc Part_ForcedInductionLevel}" Options="{Binding ForcedInductionLevels}" Selected="{Binding SelectedForcedInductionLevel}"/>

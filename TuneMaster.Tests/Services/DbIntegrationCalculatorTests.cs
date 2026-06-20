@@ -1295,4 +1295,235 @@ public class DbIntegrationCalculatorTests
         Assert.Equal(result.FinalDrive, deserialized.FinalDrive);
         Assert.Equal(result.BrakeBalance, deserialized.BrakeBalance);
     }
+
+    [Fact]
+    public async Task NSX_V8Swap_RaceParts_PowerMatchesGame()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+
+        var db = Fh6DatabaseService.Instance;
+        var car = BuildCarCard(3767);
+        var parts = new SelectedParts();
+
+        // Engine swap: 2022 NSX → 7.2L V8 (engine 2794)
+        // Swap part ID for Ordinal=3767, EngineID=2794
+        parts.EngineSwapPartId = 3767005;
+
+        // Stock cam for engine 2794 (auto-resolves via cam curve)
+        parts.CamshaftPartId = 2794000;
+
+        // Race twin turbo level 4 (MaxScale=1.4, anti-lag)
+        // FI parts have offset applied in-memory: Id = DB_Id + FiOffset
+        // FiOffsetTwin = 2 * 100_000_000 = 200_000_000
+        parts.ForcedInductionPartId = 2794004 + 200_000_000;
+
+        // Race intercooler level 3 (MaxScaleScale=1.09)
+        parts.IntercoolerPartId = 2794002;
+
+        // Race engine parts (all level 3 for engine 2794)
+        parts.DisplacementPartId = 2794003;   // TS=1.0785
+        parts.ManifoldPartId = 2794003;       // TS=1.049
+        parts.FuelSystemPartId = 2794003;     // TS=1.054
+        parts.IgnitionPartId = 2794003;       // TS=1.0442
+
+        // Everything else stays null/stock
+
+        PowerCalculator.Calculate(car, parts);
+
+        // Log for diagnostics
+        var output = $"PowerHP={car.PowerHP} TorqueNm={car.TorqueNm} MaxRPM={car.MaxRPM} Inertia={car.RotationalInertiaFactor}";
+        System.Diagnostics.Debug.WriteLine(output);
+        Console.WriteLine(output);
+        if (car.CachedTorqueCurveNm != null)
+            Console.WriteLine($"TorqueCurve: [{string.Join(",", car.CachedTorqueCurveNm)}]");
+        if (car.CachedPowerCurveHP != null)
+            Console.WriteLine($"PowerCurve: [{string.Join(",", car.CachedPowerCurveHP)}]");
+
+        Console.WriteLine($"\n=== FULL BUILD (with IC) === PowerHP={car.PowerHP}");
+
+        // STOCK NSX (no swaps, no upgrades)
+        var stockParts = new SelectedParts();
+        var stockCar = BuildCarCard(3767);
+        PowerCalculator.Calculate(stockCar, stockParts);
+        Console.WriteLine($"\n=== STOCK NSX === PowerHP={stockCar.PowerHP} TorqueNm={stockCar.TorqueNm}");
+        if (stockCar.CachedPowerCurveHP != null)
+            Console.WriteLine($"Stock PowerCurve: [{string.Join(";", stockCar.CachedPowerCurveHP)}]");
+
+        // NSX + V8 SWAP ONLY (no other upgrades)
+        var partsSwapOnly = new SelectedParts
+        {
+            EngineSwapPartId = 3767005,
+            CamshaftPartId = 2794000
+        };
+        var carSwapOnly = BuildCarCard(3767);
+        PowerCalculator.Calculate(carSwapOnly, partsSwapOnly);
+        Console.WriteLine($"\n=== NSX + V8 SWAP ONLY === PowerHP={carSwapOnly.PowerHP}");
+
+        // NSX + V8 + PARTS (no FI)
+        var partsNoFI = new SelectedParts
+        {
+            EngineSwapPartId = 3767005,
+            CamshaftPartId = 2794000,
+            DisplacementPartId = 2794003,
+            ManifoldPartId = 2794003,
+            FuelSystemPartId = 2794003,
+            IgnitionPartId = 2794003
+        };
+        var carNoFI = BuildCarCard(3767);
+        PowerCalculator.Calculate(carNoFI, partsNoFI);
+        Console.WriteLine($"\n=== V8 + PARTS (no FI) === PowerHP={carNoFI.PowerHP}");
+
+        // Full build must hit the engine's dyno ceiling (EngineGraphingMaxPower of
+        // engine 2794 = 1011.11 kW -> 1355.9 HP), matching the in-game value (~1356).
+        double engineCeiling = db.GetEngine(2794)!.EngineGraphingMaxPower * 1.341;
+        Assert.InRange(car.PowerHP, engineCeiling - 1.0, engineCeiling + 1.0);
+
+        // Power must REACT to parts (the regression made every build show the ceiling).
+        Assert.True(carSwapOnly.PowerHP < car.PowerHP - 1,
+            $"Swap-only ({carSwapOnly.PowerHP}) must be below full build ({car.PowerHP})");
+        Assert.True(carNoFI.PowerHP < car.PowerHP - 1,
+            $"No-FI build ({carNoFI.PowerHP}) must be below full build with turbo ({car.PowerHP})");
+        Assert.True(stockCar.PowerHP < carSwapOnly.PowerHP,
+            $"Stock NSX ({stockCar.PowerHP}) must be below V8 swap ({carSwapOnly.PowerHP})");
+
+        // Stock V8 swap should match the in-game ~750 HP. This holds because the manifold
+        // (which the game doesn't offer alongside forced induction) is excluded from the
+        // max-build multiplier — without that exclusion it lands ~713.
+        Assert.InRange(carSwapOnly.PowerHP, 745.0, 753.0);
+
+        // Manifold and forced induction are mutually exclusive: with the turbo installed,
+        // adding/removing the manifold must not change power.
+        var fullNoManifold = new SelectedParts
+        {
+            EngineSwapPartId = 3767005, CamshaftPartId = 2794000,
+            ForcedInductionPartId = 2794004 + 200_000_000, IntercoolerPartId = 2794002,
+            DisplacementPartId = 2794003, FuelSystemPartId = 2794003, IgnitionPartId = 2794003
+        };
+        var carNoMan = BuildCarCard(3767);
+        PowerCalculator.Calculate(carNoMan, fullNoManifold);
+        Assert.Equal(car.PowerHP, carNoMan.PowerHP, 1); // manifold present vs absent: same with FI
+
+        // Top speed must be sane: the geared max (at redline in top gear) should track the
+        // power/aero-limited max, not balloon (a units bug once produced 937 km/h here).
+        var result = new TuneGeneratorService().Generate(car, CarFactory.DefaultTrack(), parts, db);
+        Assert.InRange(result.ActualMaxSpeedKmh, 250.0, 450.0);
+        Assert.InRange(result.FinalDrive, 2.2, 6.0);
+    }
+
+    // Fleet-wide guard: every ICE car, its native engine and every engine swap, at both
+    // stock and a fully-maxed build, must produce finite positive sane power. Also logs
+    // how often a maxed build lands on the engine's dyno ceiling (currently 1998/2000;
+    // the 2 misses are engines whose only power upgrade is a camshaft, which changes the
+    // rev range rather than applying a torque multiplier).
+    [Fact]
+    public async Task AllCarsAllSwaps_PowerIsFiniteAndPositive()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        int cars = 0, combos = 0, bad = 0, ceilingOk = 0, ceilingChecked = 0;
+        double worstCeilErr = 0; int worstEng = 0;
+        foreach (var dbCar in db.GetAllCars())
+        {
+            if (dbCar.AspirationTypeId == 8 || dbCar.PowertrainID == 1) continue; // electric
+            CarCard probe;
+            try { probe = BuildCarCard(dbCar.Id); } catch { continue; }
+            cars++;
+
+            // native engine (null swap) + every swap for this car
+            var swapIds = new System.Collections.Generic.List<int?> { null };
+            foreach (var s in db.GetEngineSwaps(dbCar.Id)) swapIds.Add(s.Id);
+
+            foreach (var swapId in swapIds)
+            {
+                combos++;
+                var p = new SelectedParts { EngineSwapPartId = swapId };
+                var c = BuildCarCard(dbCar.Id);
+                PowerCalculator.Calculate(c, p);
+
+                double cap = c.PowerHP; // will compare below
+                bool finite = !double.IsNaN(c.PowerHP) && !double.IsInfinity(c.PowerHP);
+                if (!finite || c.PowerHP <= 0 || c.PowerHP > 5000) { bad++; continue; }
+
+                // Resolve engine ceiling and verify a maxed build lands on it.
+                int eng = p.EngineSwapPartId != null
+                    ? db.GetEngineSwapById(p.EngineSwapPartId.Value)?.EngineID ?? c.EngineDbId
+                    : c.EngineDbId;
+                var e = eng > 0 ? db.GetEngine(eng) : null;
+                if (e == null || e.EngineGraphingMaxPower <= 0) continue;
+                double ceil = e.EngineGraphingMaxPower * 1.341;
+
+                // Maxed build: best of every category. Camshaft contributes via curve
+                // shape (no TorqueScale), and the model's "best cam" is by peak power, so
+                // brute-force over cams and take the highest-power result.
+                var maxed = BuildMaxedParts(swapId, eng, db);
+                var cams = db.GetCamshafts(eng);
+                double maxedPower = 0;
+                if (cams.Count == 0)
+                {
+                    var cm0 = BuildCarCard(dbCar.Id);
+                    PowerCalculator.Calculate(cm0, maxed);
+                    maxedPower = cm0.PowerHP;
+                }
+                else foreach (var cam in cams)
+                {
+                    maxed.CamshaftPartId = cam.Id;
+                    var cm = BuildCarCard(dbCar.Id);
+                    PowerCalculator.Calculate(cm, maxed);
+                    if (cm.PowerHP > maxedPower) maxedPower = cm.PowerHP;
+                }
+                ceilingChecked++;
+                double err = Math.Abs(maxedPower - ceil);
+                if (err <= Math.Max(1.0, ceil * 0.001)) ceilingOk++;
+                else if (err > worstCeilErr) { worstCeilErr = err; worstEng = eng; }
+
+                if (double.IsNaN(maxedPower) || maxedPower <= 0 || maxedPower > 5000) bad++;
+            }
+        }
+        Console.WriteLine($"cars={cars} engine-combos={combos} bad(NaN/<=0/>5000)={bad} " +
+                          $"maxedHitsCeiling={ceilingOk}/{ceilingChecked} worstCeilErr={worstCeilErr:F1}hp (eng {worstEng})");
+        Assert.Equal(0, bad);
+    }
+
+    private static SelectedParts BuildMaxedParts(int? swapId, int engineId, Fh6DatabaseService db)
+    {
+        // Only parts that actually raise torque (>1) — a maxed build never adds a
+        // restrictor (TorqueScale < 1), matching ComputeMaxPartScale's MaxTorqueScale.
+        int? BestTs<T>(System.Collections.Generic.List<T> list) where T : DbUpgradePart =>
+            list.Where(x => !x.IsStock && (x.TorqueScale ?? 1.0) > 1.0)
+                .OrderByDescending(x => x.TorqueScale ?? 1.0).FirstOrDefault()?.Id;
+
+        var p = new SelectedParts
+        {
+            EngineSwapPartId = swapId,
+            DisplacementPartId = BestTs(db.GetDisplacement(engineId)),
+            ValvesPartId = BestTs(db.GetValves(engineId)),
+            PistonsPartId = BestTs(db.GetPistons(engineId)),
+            FuelSystemPartId = BestTs(db.GetFuelSystems(engineId)),
+            IgnitionPartId = BestTs(db.GetIgnition(engineId)),
+            ExhaustPartId = BestTs(db.GetExhaust(engineId)),
+            IntakePartId = BestTs(db.GetIntake(engineId)),
+            ManifoldPartId = BestTs(db.GetManifolds(engineId)),
+            OilCoolingPartId = BestTs(db.GetOilCooling(engineId)),
+            RestrictorPartId = BestTs(db.GetRestrictors(engineId)),
+            // CamshaftPartId is set by the caller (brute-forced over cams).
+        };
+
+        // Best forced induction (raw DB id) + best intercooler, mirroring BestForcedInduction.
+        DbUpgradePart? bestFi = null; double bestScale = 1.0;
+        foreach (var t in db.GetTurbosSingle(engineId)) if (!t.IsStock && t.MaxScale > bestScale) { bestScale = t.MaxScale; bestFi = t; }
+        foreach (var t in db.GetTurbosTwin(engineId)) if (!t.IsStock && t.MaxScale > bestScale) { bestScale = t.MaxScale; bestFi = t; }
+        foreach (var c in db.GetCSC(engineId)) if (!c.IsStock && c.RedlineRPMScale > bestScale) { bestScale = c.RedlineRPMScale; bestFi = c; }
+        foreach (var d in db.GetDSC(engineId)) if (!d.IsStock && d.RedlineRPMScale > bestScale) { bestScale = d.RedlineRPMScale; bestFi = d; }
+        if (bestFi != null)
+        {
+            p.ForcedInductionPartId = bestFi.Id;
+            p.IntercoolerPartId = db.GetIntercoolers(engineId).Where(x => !x.IsStock)
+                .OrderByDescending(x => x.MaxScaleScale).FirstOrDefault()?.Id;
+        }
+        return p;
+    }
+
 }

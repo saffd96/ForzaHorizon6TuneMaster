@@ -230,7 +230,9 @@ internal static class GearingCalculator
 
                 if (actual > 0 && target > 0 && (actual < target * 0.97 || actual > target * 1.05))
                 {
-                    double ratio = target / actual;
+                    // Top speed ∝ 1/FinalDrive, so to move `actual` toward `target` the
+                    // final drive scales by actual/target (too fast → raise FD to shorten).
+                    double ratio = actual / target;
                     double newFd = CalculationHelpers.Clamp(r.FinalDrive * ratio, FdMin, FdMax);
                     if (Math.Abs(newFd - r.FinalDrive) > 0.01)
                     {
