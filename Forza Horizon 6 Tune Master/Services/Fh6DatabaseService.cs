@@ -63,6 +63,7 @@ public class Fh6DatabaseService
     private readonly ConcurrentDictionary<int, List<DbUpgradeAntiSwayRear>> _antiSwayRearByOrdinal = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeRearWing>> _rearWingsByOrdinal = new();
     private readonly ConcurrentDictionary<(Type Type, int Id), object> _allPartsById = new();
+    private readonly ConcurrentDictionary<int, List<DbUpgradeCarBody>> _carBodiesByOrdinal = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeFrontBumper>> _frontBumpersByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeRearBumper>> _rearBumpersByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeSideSkirt>> _sideSkirtsByCarBodyId = new();
@@ -194,6 +195,7 @@ public class Fh6DatabaseService
         LoadDifferentials(conn);
         LoadAntiSwayFront(conn);
         LoadAntiSwayRear(conn);
+        LoadCarBodyKits(conn);
         LoadRearWings(conn);
         LoadFrontBumpers(conn);
         LoadRearBumpers(conn);
@@ -1081,6 +1083,22 @@ public class Fh6DatabaseService
         }
     }
 
+    private void LoadCarBodyKits(SqliteConnection conn)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Id,Ordinal,Level,CarBodyID,IsStock,ManufacturerID,MassDiff,Price " +
+            "FROM List_UpgradeCarBody";
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            AddToGroupedDict(_carBodiesByOrdinal, I(r, 1), new DbUpgradeCarBody
+            {
+                Id = I(r, 0), Ordinal = I(r, 1), Level = I(r, 2), CarBodyId = I(r, 3),
+                IsStock = B(r, 4), ManufacturerID = I(r, 5), MassDiff = D(r, 6), Price = I(r, 7)
+            });
+        }
+    }
+
     private void LoadRearWings(SqliteConnection conn)
     {
         using var cmd = conn.CreateCommand();
@@ -1565,6 +1583,11 @@ public class Fh6DatabaseService
     {
         return _rearWingsByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
     }
+    public List<DbUpgradeCarBody> GetCarBodies(int ordinal)
+    {
+        return _carBodiesByOrdinal.TryGetValue(ordinal, out var l) ? l : [];
+    }
+    public DbUpgradeCarBody? GetCarBodyKitById(int id) => GetById<DbUpgradeCarBody>(id);
     public List<DbUpgradeFrontBumper> GetFrontBumpers(int carBodyId)
     {
         return _frontBumpersByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];

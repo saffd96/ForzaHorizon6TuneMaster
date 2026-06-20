@@ -22,13 +22,14 @@ public class SelectedPartsTests
     }
 
     [Fact]
-    public void ResetToStock_MarksExactly43Properties()
+    public void ResetToStock_MarksExactly45Properties()
     {
         var count = typeof(SelectedParts)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Count(p => p.IsDefined(typeof(ResetToStockAttribute), false));
 
-        // 39 original + FrontBumper/RearBumper/SideSkirt (body kits) + RimMassFront/RimMassRear.
-        Assert.Equal(44, count);
+        // 39 original + FrontBumper/RearBumper/SideSkirt (body kits) + RimMassFront/RimMassRear
+        // + BodyKit (body-kit conversion).
+        Assert.Equal(45, count);
     }
 }

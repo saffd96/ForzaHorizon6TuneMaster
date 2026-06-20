@@ -105,6 +105,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     private int? _lastForcedInductionPartId;
     private int? _lastMotorSwapPartId;
     private int? _lastDrivetrainSwapPartId;
+    private int? _lastBodyKitPartId;
 
     private void OnPartsChanged()
     {
@@ -157,6 +158,12 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
                 OnPropertyChanged(nameof(HasRearDiffDecel));
                 OnPropertyChanged(nameof(DiffMainAxleSuffix));
             }
+        }
+
+        if (_selectedParts.BodyKitPartId != _lastBodyKitPartId)
+        {
+            _lastBodyKitPartId = _selectedParts.BodyKitPartId;
+            ApplyBodyKitChange();
         }
 
         // Recalculate power/torque/RPM when any engine part changes.
@@ -1013,7 +1020,19 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         if (parts == null) parts = new SelectedParts();
         parts.SetCarData(car, !_isLoadingProfile);
         if (_isLoadingProfile)
+        {
             parts.ResolveEngineAndMotorIds();
+            // A saved profile may carry a swapped body kit; point the car at its CarBodyID +
+            // geometry before the sub-VMs load so their CarBody-keyed dropdowns resolve right.
+            var savedKit = parts.BodyKitPartId != null
+                ? Fh6DatabaseService.Instance.GetCarBodyKitById(parts.BodyKitPartId.Value) : null;
+            if (savedKit != null)
+            {
+                car.CarBodyId = savedKit.CarBodyId;
+                var savedBody = Fh6DatabaseService.Instance.GetCarBody(car.CarBodyId);
+                if (savedBody != null) car.Wheelbase = savedBody.Wheelbase * 1000;
+            }
+        }
         bool isElectric = Fh6DatabaseService.Instance.GetCar(car.CarDbId)?.AspirationTypeId == 8;
         IsElectricCar = isElectric;
         if (isElectric)
@@ -1035,6 +1054,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         _lastForcedInductionPartId = parts.ForcedInductionPartId;
         _lastMotorSwapPartId = parts.MotorSwapPartId;
         _lastDrivetrainSwapPartId = parts.DrivetrainSwapPartId;
+        _lastBodyKitPartId = parts.BodyKitPartId;
         MapDbToOldEnums(car);
         Constraints.ApplyPhysicsBounds(car, parts, Fh6DatabaseService.Instance);
         if (isElectric)
@@ -1183,6 +1203,49 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         if (tar != null) Car.RearTireProfile = (int)(Car.StockRearTireProfile + tar.RearTireAspectRatioOffset);
 
         UpdateTrackSpacing(db);
+    }
+
+    // A body-kit swap changes the active CarBodyID: it re-keys every CarBody-scoped upgrade
+    // (bumpers, skirts, tire fitment, track spacing, weight, chassis stiffness) and swaps the
+    // body geometry (a widebody kit has a wider track). Reset those selections to the new
+    // body's stock parts, point the car at the new CarBodyID + geometry, then reload the
+    // dependent modules so their dropdowns show the parts valid for this kit.
+    private void ApplyBodyKitChange()
+    {
+        var db = Fh6DatabaseService.Instance;
+        var kit = _selectedParts.BodyKitPartId != null
+            ? db.GetCarBodyKitById(_selectedParts.BodyKitPartId.Value) : null;
+        if (kit == null) return;
+
+        Car.CarBodyId = kit.CarBodyId;
+
+        // Drop the previous body's CarBody-keyed selections; LoadForCar re-picks each stock.
+        _selectedParts.FrontBumperPartId = null;
+        _selectedParts.RearBumperPartId = null;
+        _selectedParts.SideSkirtPartId = null;
+        _selectedParts.WeightReductionPartId = null;
+        _selectedParts.ChassisStiffnessPartId = null;
+        _selectedParts.TireWidthFrontPartId = null;
+        _selectedParts.TireWidthRearPartId = null;
+        _selectedParts.TireAspectRatioFrontPartId = null;
+        _selectedParts.TireAspectRatioRearPartId = null;
+        _selectedParts.TrackSpacingFrontPartId = null;
+        _selectedParts.TrackSpacingRearPartId = null;
+
+        var body = db.GetCarBody(Car.CarBodyId);
+        if (body != null)
+        {
+            Car.Wheelbase = body.Wheelbase * 1000;
+            OnPropertyChanged(nameof(WheelbaseDisplay));
+        }
+
+        SuspensionVM.LoadForCar(Car, _selectedParts);
+        TiresWheelsVM.LoadForCar(Car, _selectedParts);
+        AeroVisualVM.LoadForCar(Car, _selectedParts);
+        SwapsVM.RefreshBodyKitSelection();
+
+        UpdateTrackSpacing(db);
+        Car.TotalMass = _selectedParts.ComputeTotalMass();
     }
 
     // Track-spacing parts widen the track. Recompute the track from the body's stock track

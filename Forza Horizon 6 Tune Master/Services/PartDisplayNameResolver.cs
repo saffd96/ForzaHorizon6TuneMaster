@@ -73,6 +73,7 @@ public class PartDisplayNameResolver
         { typeof(DbUpgradeDifferential),        "List_UpgradeDrivetrainDifferential" },
         { typeof(DbUpgradeAntiSwayFront),       "List_UpgradeAntiSwayFront" },
         { typeof(DbUpgradeAntiSwayRear),        "List_UpgradeAntiSwayRear" },
+        { typeof(DbUpgradeCarBody),             "List_UpgradeCarBody" },
         { typeof(DbUpgradeRearWing),            "List_UpgradeRearWing" },
         { typeof(DbUpgradeFrontBumper),         "List_UpgradeCarBodyFrontBumper" },
         { typeof(DbUpgradeRearBumper),          "List_UpgradeCarBodyRearBumper" },
@@ -219,6 +220,15 @@ public class PartDisplayNameResolver
                 break;
             case DbUpgradeRearWing w:
                 return ResolveBodyKit(w, 90, "Upgrades_IDS_Name_265", out name);
+
+            // Body-kit conversion: stock keeps the plain "Stock Body Kit" label; swapped kits
+            // are aftermarket widebody conversions disambiguated by their brand (manufacturer).
+            case DbUpgradeCarBody bk:
+            {
+                string baseName = T("Part_BodyKit");
+                name = bk.IsStock ? $"{T("Part_Stock")} {baseName}" : WithManufacturer(baseName, bk);
+                return name != "";
+            }
 
             // ── Body kits ──────────────────────────────────────────────────
             // Tiers 0-3 are Stock/Street/Sport/Race; tier 4 is the "Remove <part>" option

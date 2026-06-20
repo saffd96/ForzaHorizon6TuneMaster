@@ -457,6 +457,17 @@ public sealed record DbUpgradeSideSkirt : DbUpgradePart
     [JsonIgnore] public string DisplayName => $"SideSkirt Lv{Level}";
 }
 
+// A body-kit conversion (List_UpgradeCarBody): maps a car (Ordinal) to a specific
+// CarBodyID. The stock kit's CarBodyID is Ordinal×1000; swapped kits use other ids and
+// re-key every CarBody-scoped upgrade (bumpers, skirts, tire fitment, track) plus the
+// body geometry itself (Data_CarBody — a widebody kit has a wider track).
+public sealed record DbUpgradeCarBody : DbUpgradePart
+{
+    public int Ordinal { get; init; }
+    public int CarBodyId { get; init; }
+    [JsonIgnore] public string DisplayName => $"BodyKit Lv{Level}";
+}
+
 public sealed record DbAeroPhysics
 {
     public int AeroPhysicsID { get; init; }

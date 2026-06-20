@@ -22,9 +22,16 @@ public class SwapsViewModel : INotifyPropertyChanged
     private SelectedParts _parts = null!;
     private int _makeId;
 
+    public ObservableCollection<PartOption> BodyKits { get; } = new();
     public ObservableCollection<PartOption> EngineSwaps { get; } = new();
     public ObservableCollection<PartOption> DrivetrainSwaps { get; } = new();
     public ObservableCollection<FiTypeOption> ForcedInductionTypes { get; } = new();
+
+    public PartOption? SelectedBodyKit
+    {
+        get => BodyKits.FirstOrDefault(o => o.Id == _parts.BodyKitPartId);
+        set { if (value != null) _parts.BodyKitPartId = value.Id; }
+    }
 
     public PartOption? SelectedEngineSwap
     {
@@ -62,6 +69,11 @@ public class SwapsViewModel : INotifyPropertyChanged
 
         int ordinal = car.CarDbId;
 
+        // Body kit drives which CarBodyID the bumper/skirt/tire-fitment/track lookups key off.
+        var bodyKits = _db.GetCarBodies(ordinal);
+        parts.BodyKitPartId ??= PickStock(bodyKits)?.Id;
+        ReplaceAll(BodyKits, _resolver.ToOptions(bodyKits, _makeId));
+
         var engineSwaps = _db.GetEngineSwaps(ordinal);
         parts.EngineSwapPartId ??= PickStock(engineSwaps)?.Id;
         ReplaceAll(EngineSwaps, _resolver.ToOptions(engineSwaps, _makeId));
@@ -89,8 +101,12 @@ public class SwapsViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedForcedInductionType));
     }
 
+    // Re-fires the dropdown bindings after a body-kit change repopulates lists elsewhere.
+    public void RefreshBodyKitSelection() => OnPropertyChanged(nameof(SelectedBodyKit));
+
     private void RefreshSelections()
     {
+        OnPropertyChanged(nameof(SelectedBodyKit));
         OnPropertyChanged(nameof(SelectedEngineSwap));
         OnPropertyChanged(nameof(SelectedDrivetrainSwap));
         OnPropertyChanged(nameof(SelectedForcedInductionType));

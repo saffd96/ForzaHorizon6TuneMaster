@@ -27,6 +27,18 @@ public class SelectedParts : NotifyBase
         set { if (Set(ref _engineSwapPartId, value)) { OnEngineSwapChanged(); } }
     }
 
+    // Body-kit conversion (List_UpgradeCarBody.Id). Changing it re-keys every CarBody-scoped
+    // upgrade and the body geometry; the host VM (MainViewModel.OnPartsChanged) resolves the
+    // new CarBodyID, updates the car body and reloads the dependent modules.
+    private int? _bodyKitPartId;
+
+    [ResetToStock]
+    public int? BodyKitPartId
+    {
+        get => _bodyKitPartId;
+        set { if (Set(ref _bodyKitPartId, value)) OnBodyKitChanged(); }
+    }
+
     private int? _forcedInductionPartId;
 
     [ResetToStock]
@@ -330,6 +342,7 @@ public class SelectedParts : NotifyBase
         total += PartMassDiff(_motorPartId, id => _db.GetMotorPartById(id));
         total += PartMassDiff(_weightReductionPartId, id => _db.GetWeightReductionById(id));
         total += PartMassDiff(_chassisStiffnessPartId, id => _db.GetChassisStiffnessById(id));
+        total += PartMassDiff(_bodyKitPartId, id => _db.GetCarBodyKitById(id));
         // Wheel style: the game's weight change is driven by the wheel's lightness
         // tier (List_Wheels.MassLevel), NOT its raw Mass. Δ per axle scales with the
         // fitted rim diameter² and tyre width. (Reverse-engineered from in-game
@@ -414,6 +427,14 @@ public class SelectedParts : NotifyBase
         var swap = _drivetrainSwapPartId != null ? _db.GetDrivetrainSwapById(_drivetrainSwapPartId.Value) : null;
         if (swap != null)
             DrivetrainId = swap.DrivetrainID;
+        OnPartChanged();
+    }
+
+    private void OnBodyKitChanged()
+    {
+        var kit = _bodyKitPartId != null ? _db.GetCarBodyKitById(_bodyKitPartId.Value) : null;
+        if (kit != null)
+            CarBodyOrdinal = kit.CarBodyId;
         OnPartChanged();
     }
 
