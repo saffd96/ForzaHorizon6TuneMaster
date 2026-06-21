@@ -15,16 +15,19 @@
                        VerticalAlignment="Center"
                        TextTrimming="CharacterEllipsis"
                        Margin="0,0,6,0"/>
-            <TextBlock Grid.Column="1"
-                       Text="{Binding ValueText, ElementName=Root}"
+            <TextBlock x:Name="ValueBlock" Grid.Column="1"
                        Foreground="{StaticResource CyanBrush}"
                        FontFamily="{StaticResource MonoFontFamily}"
                        FontSize="14"
                        FontWeight="Bold"
-                       VerticalAlignment="Center"/>
+                       VerticalAlignment="Center"
+                       RenderTransformOrigin="0.5,0.5">
+                <TextBlock.RenderTransform>
+                    <TranslateTransform x:Name="ValueShift"/>
+                </TextBlock.RenderTransform>
+            </TextBlock>
         </Grid>
-        <ProgressBar Height="3" Margin="0,3,0,0" Minimum="0" Maximum="1"
-                     Value="{Binding Progress, ElementName=Root}"
+        <ProgressBar x:Name="Bar" Height="3" Margin="0,3,0,0" Minimum="0" Maximum="1"
                      Foreground="{StaticResource AccentBrush}"
                      Background="{StaticResource CardBrush}"
                      BorderThickness="0"/>
