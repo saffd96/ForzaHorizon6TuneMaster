@@ -13,9 +13,7 @@
     <PropertyGroup Condition="'$(Configuration)'=='Release'">
         <DebugType>none</DebugType>
         <DebugSymbols>false</DebugSymbols>
-        <Deterministic>false</Deterministic>
-        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-        <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+        <Deterministic>true</Deterministic>
     </PropertyGroup>
 
     <ItemGroup>

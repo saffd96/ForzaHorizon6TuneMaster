@@ -8,6 +8,7 @@
         <v:PartRow Label="{l:Loc Part_BodyKit}"          Options="{Binding BodyKits}"             Selected="{Binding SelectedBodyKit}"/>
         <v:PartRow Label="{l:Loc Part_Engine}"           Options="{Binding EngineSwaps}"          Selected="{Binding SelectedEngineSwap}"/>
         <v:PartRow Label="{l:Loc SectionDrivetrainSwap}" Options="{Binding DrivetrainSwaps}"       Selected="{Binding SelectedDrivetrainSwap}"/>
-        <v:PartRow Label="{l:Loc AspirationLabel}"       Options="{Binding ForcedInductionTypes}"  Selected="{Binding SelectedForcedInductionType}"/>
+        <v:PartRow Label="{l:Loc AspirationLabel}"       Options="{Binding ForcedInductionTypes}"  Selected="{Binding SelectedForcedInductionType}"
+                   Visibility="{Binding ShowForcedInductionType, Converter={StaticResource BoolVis}}"/>
     </StackPanel>
 </UserControl>

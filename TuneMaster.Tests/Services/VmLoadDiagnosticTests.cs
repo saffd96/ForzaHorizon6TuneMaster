@@ -59,7 +59,6 @@ public class VmLoadDiagnosticTests
 
         // Simulate engine swap change
         var oldCamshaftId = parts.CamshaftPartId;
-        var oldCamshaftLevel = Fh6DatabaseService.Instance.GetCamshaftById(oldCamshaftId ?? 0)?.Level ?? 0;
         var swaps = Fh6DatabaseService.Instance.GetEngineSwaps(car.CarDbId);
         var nonStockSwap = swaps.Find(s => !s.IsStock);
         if (nonStockSwap != null)
@@ -67,14 +66,13 @@ public class VmLoadDiagnosticTests
             parts.EngineSwapPartId = nonStockSwap.Id;
             engineVm.ResetToStockForEngine(nonStockSwap.EngineID);
 
+            // Swapping the engine resets every engine-internal part to the new engine's
+            // STOCK part (old upgrades don't carry over to a different block).
             Assert.NotNull(parts.CamshaftPartId);
             Assert.NotEqual(oldCamshaftId, parts.CamshaftPartId);
-            if (oldCamshaftLevel > 0)
-            {
-                var newCamshaft = Fh6DatabaseService.Instance.GetCamshaftById(parts.CamshaftPartId.Value);
-                Assert.NotNull(newCamshaft);
-                Assert.Equal(oldCamshaftLevel, newCamshaft.Level);
-            }
+            var newCamshaft = Fh6DatabaseService.Instance.GetCamshaftById(parts.CamshaftPartId.Value);
+            Assert.NotNull(newCamshaft);
+            Assert.True(newCamshaft.IsStock, "Camshaft must be stock after an engine swap");
         }
     }
 

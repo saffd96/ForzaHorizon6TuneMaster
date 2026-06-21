@@ -19,66 +19,84 @@ public static class PowerCalculator
         // Compute everything into locals first, write to car at the end.
         if (dbCar.AspirationTypeId == 8)
         {
-            var (maxRPM, peakTorqueNm, targetPower, torqueCurve) = CalcElectric(car, dbCar, db, parts);
-            ApplyResults(car, parts, db, maxRPM, peakTorqueNm, targetPower, torqueCurve);
+            var (maxRPM, peakTorqueNm, targetPower, targetTorque, torqueCurve, estimated) = CalcElectric(car, dbCar, db, parts);
+            ApplyResults(car, parts, db, maxRPM, peakTorqueNm, targetPower, targetTorque, torqueCurve, estimated);
         }
         else
         {
-            var (maxRPM, peakTorqueNm, targetPower, torqueCurve) = CalcIce(car, dbCar, db, parts);
-            ApplyResults(car, parts, db, maxRPM, peakTorqueNm, targetPower, torqueCurve);
+            var (maxRPM, peakTorqueNm, targetPower, targetTorque, torqueCurve, estimated) = CalcIce(car, dbCar, db, parts);
+            ApplyResults(car, parts, db, maxRPM, peakTorqueNm, targetPower, targetTorque, torqueCurve, estimated);
         }
     }
 
     private static void ApplyResults(CarCard car, SelectedParts parts, Fh6DatabaseService db,
-        int maxRPM, double peakTorqueNm, double targetPowerHP, double[]? torqueCurve)
+        int maxRPM, double peakTorqueNm, double targetPowerHP, double targetTorqueNm, double[]? torqueCurve,
+        bool estimated)
     {
         double inertiaFactor = TuningPhysicsContext.ComputeRotationalInertiaFactor(car, parts, db);
         if (torqueCurve is { Length: > 0 } && Math.Abs(inertiaFactor - 1.0) > 0.001)
         {
             torqueCurve = torqueCurve.Select(t => Math.Round(t * inertiaFactor, 1)).ToArray();
+            peakTorqueNm *= inertiaFactor;
         }
 
         var powerCurve = ComputePowerCurveFromTorque(torqueCurve, maxRPM);
-        double curvePeak = powerCurve is { Length: > 0 } ? powerCurve.Max() : 0;
+        double curvePowerPeak = powerCurve is { Length: > 0 } ? powerCurve.Max() : 0;
+        double curveTorquePeak = torqueCurve is { Length: > 0 } ? torqueCurve.Max() : peakTorqueNm;
 
+        // Anchor the absolute PEAK power to the engine's dyno data instead of the raw curve
+        // (whose stacked multipliers over/undershoot). targetPowerHP is the dyno-calibrated
+        // value for this exact build: stock power at no upgrades, the engine ceiling
+        // (EngineGraphingMaxPower) at a maxed build, interpolated in between. The power
+        // curve is rescaled so its peak lands there while keeping its shape.
         double finalPower;
-        if (targetPowerHP > 0.1 && curvePeak > 0.1)
+        if (targetPowerHP > 0.1 && curvePowerPeak > 0.1)
         {
-            // Anchor the absolute power to the engine's dyno data instead of the raw
-            // curve (whose stacked multipliers over/undershoot). targetPowerHP is the
-            // dyno-calibrated value for this exact build: stock power at no upgrades,
-            // the engine ceiling (EngineGraphingMaxPower) at a maxed build, interpolated
-            // in between — so every part adds power monotonically and a full build
-            // matches the game, with no dead zone once a hard cap is hit. The curve is
-            // rescaled by the same factor so the graph and TorqueNm stay consistent.
-            double k = targetPowerHP / curvePeak;
-            if (torqueCurve is { Length: > 0 })
-                torqueCurve = torqueCurve.Select(t => Math.Round(t * k, 1)).ToArray();
-            powerCurve = powerCurve!.Select(p => Math.Round(p * k, 1)).ToArray();
-            peakTorqueNm *= k;
+            double kp = targetPowerHP / curvePowerPeak;
+            powerCurve = powerCurve!.Select(p => Math.Round(p * kp, 1)).ToArray();
             finalPower = Math.Round(targetPowerHP, 1);
         }
         else
         {
             // No dyno anchor (electric, or no engine row) → trust the curve as-is.
-            finalPower = curvePeak > 0.1 ? Math.Round(curvePeak, 1) : 0;
+            finalPower = curvePowerPeak > 0.1 ? Math.Round(curvePowerPeak, 1) : 0;
+        }
+
+        // Peak torque is anchored the SAME way but to its OWN dyno pair (stock SimPeakTorque
+        // -> EngineGraphingMaxTorque ceiling) — peak torque and peak power occur at different
+        // RPM, so one can't be derived from the other; deriving torque from the power-scaled
+        // curve left it ~10% off the game. The torque and power curves are plotted on
+        // independent axes (each rescales to its own max), so scaling them by different
+        // factors is visually consistent.
+        double finalTorque;
+        if (targetTorqueNm > 0.1 && curveTorquePeak > 0.1)
+        {
+            double kt = targetTorqueNm / curveTorquePeak;
+            if (torqueCurve is { Length: > 0 })
+                torqueCurve = torqueCurve.Select(t => Math.Round(t * kt, 1)).ToArray();
+            finalTorque = Math.Round(targetTorqueNm);
+        }
+        else
+        {
+            finalTorque = curveTorquePeak > 0.1 ? Math.Round(curveTorquePeak) : 0;
         }
 
         // All writes together — no partial mutation
         car.MaxRPM = maxRPM;
-        car.TorqueNm = Math.Round(peakTorqueNm);
+        car.TorqueNm = finalTorque;
         car.PowerHP = finalPower;
+        car.PowerIsEstimated = estimated;
         car.RotationalInertiaFactor = inertiaFactor;
         car.CachedTorqueCurveNm = torqueCurve;
         car.CachedPowerCurveHP = powerCurve;
     }
 
-    private static (int MaxRPM, double PeakTorqueNm, double TargetPowerHP, double[]? TorqueCurve) CalcElectric(
+    private static (int MaxRPM, double PeakTorqueNm, double TargetPowerHP, double TargetTorqueNm, double[]? TorqueCurve, bool Estimated) CalcElectric(
         CarCard car, DbCar dbCar, Fh6DatabaseService db, SelectedParts? parts = null)
     {
         int motorId = ResolveEffectiveMotorId(car, dbCar, db, parts);
         var motor = db.GetMotor(motorId);
-        if (motor == null) return (0, 0, 0, null);
+        if (motor == null) return (0, 0, 0, 0, null, false);
 
         double maxRpm = motor.RedlineRPM;
         double peakTorqueNm = motor.MotorGraphingMaxTorque;
@@ -96,19 +114,29 @@ public static class PowerCalculator
             ?? GenerateElectricTorqueCurve(peakTorqueNm, (int)Math.Round(maxRpm));
 
         // No reliable HP anchor for motors (MotorGraphingMaxPower units are unverified),
-        // so return 0 and let ApplyResults derive power from the curve.
-        return ((int)Math.Round(maxRpm), peakTorqueNm, 0, torqueCurve);
+        // so return 0 for both anchors and let ApplyResults derive power/torque from the
+        // curve (whose peak is MotorGraphingMaxTorque, already a usable torque figure).
+        // Not flagged as "estimated" — the motor torque curve is genuine game data.
+        return ((int)Math.Round(maxRpm), peakTorqueNm, 0, 0, torqueCurve, false);
     }
 
-    private static (int MaxRPM, double PeakTorqueNm, double TargetPowerHP, double[]? TorqueCurve) CalcIce(
+    private static (int MaxRPM, double PeakTorqueNm, double TargetPowerHP, double TargetTorqueNm, double[]? TorqueCurve, bool Estimated) CalcIce(
         CarCard car, DbCar dbCar, Fh6DatabaseService db, SelectedParts parts)
     {
         int effectiveEngineId = ResolveEffectiveEngineId(car, dbCar, db, parts);
         var effectiveEngine = db.GetEngine(effectiveEngineId);
 
+        // A *stock* engine swap is not a real swap — the engine is still the car's native
+        // engine, so the native dyno figures (GameTorqueScale, SimPeakPower) still apply.
+        // The UI always sets EngineSwapPartId (it defaults to the stock swap), so keying
+        // off "EngineSwapPartId != null" alone would wrongly treat every stock car as
+        // swapped and derive stock power from the ceiling instead of SimPeakPower.
+        var swapPart = parts.EngineSwapPartId != null ? db.GetEngineSwapById(parts.EngineSwapPartId.Value) : null;
+        bool isEngineSwapped = swapPart is { IsStock: false };
+
         double redlineRPM = dbCar.SimRedlineAngVel * RadSToRPM;
         double peakTorqueNm = effectiveEngine?.EngineGraphingMaxTorque ?? dbCar.SimPeakTorque;
-        double torqueScale = parts.EngineSwapPartId != null ? 1.0 : dbCar.GameTorqueScale;
+        double torqueScale = isEngineSwapped ? 1.0 : dbCar.GameTorqueScale;
 
         double partScale = AccumulatePartTorqueScales(parts, db);
         double baseScale = Math.Min(torqueScale * Math.Max(0.1, partScale), 20.0);
@@ -136,7 +164,7 @@ public static class PowerCalculator
             ? effectiveEngine.EngineGraphingMaxPower * 1.341
             : 0;
         if (powerCapHP <= 0.1)
-            return (maxRPM, fiCurve.Max(), 0, fiCurve); // no anchor -> ApplyResults uses curve
+            return (maxRPM, fiCurve.Max(), 0, 0, fiCurve, true); // no engine row -> curve, flagged estimate
 
         // Each part scales torque by its TorqueScale; the build's combined multiplier is
         // their product. Forced induction is measured EMPIRICALLY from the curve (peak
@@ -162,6 +190,22 @@ public static class PowerCalculator
             ? PowerPeak(ApplyFiCore(torqueCurve, maxRPM, bestFi, bestIc), maxRPM) / basePeak
             : 1.0;
 
+        // Some engines ship with FACTORY forced induction (a stock turbo/SC that can't be
+        // removed, only upgraded). That boost is already part of the stock dyno figure the
+        // power is anchored to, so FI build-progress must be measured RELATIVE to the stock
+        // FI (current/stock, best/stock) — otherwise the factory boost is double-counted as
+        // an upgrade and inflates stock power (e.g. Civic Type R '23 392 HP instead of 315).
+        // NA engines have no stock FI -> stockFiPeak = 1.0 -> behaviour unchanged.
+        var stockFi = StockForcedInduction(effectiveEngineId, db);
+        double stockFiPeak = (stockFi != null && basePeak > 0.0)
+            ? PowerPeak(ApplyFiCore(torqueCurve, maxRPM, stockFi, 1.0), maxRPM) / basePeak
+            : 1.0;
+        if (stockFiPeak > 1.0001)
+        {
+            if (parts.ForcedInductionPartId != null) currentFiPeak /= stockFiPeak;
+            maxFiPeak = Math.Max(maxFiPeak / stockFiPeak, 1.0);
+        }
+
         // Camshaft has no TorqueScale — its power gain comes from rev range / curve shape,
         // so it's measured empirically too: peak power with this cam vs the stock cam, and
         // with the best available cam vs stock.
@@ -177,19 +221,62 @@ public static class PowerCalculator
             : 0.0;
 
         // Low anchor = stock power. For the car's native engine that's the verified
-        // SimPeakPower (0.1 kW units -> *0.1341, e.g. NSX 4473.8 -> 600 HP). Engine swaps
-        // have no per-engine stock figure, so derive it from the ceiling and the max
-        // multiplier (stock = ceiling / maxMult), which makes the swap case pure
-        // multiplicative (ceiling / maxMult * currentMult).
-        double stockHP = (parts.EngineSwapPartId == null && dbCar.SimPeakPower > 0)
-            ? dbCar.SimPeakPower * 0.1341
-            : powerCapHP / Math.Max(maxBuildScale, 1.0);
+        // SimPeakPower (0.1 kW units -> *0.1341, e.g. NSX 4473.8 -> 600 HP). A swapped
+        // engine has its own stock figure on the car it is native to: the engine's
+        // MediaName identifies that donor car, so we anchor to its SimPeakPower (e.g.
+        // 2.0L I4-VVT swap -> donor HON_CivicR_04 -> 212 HP).
+        bool nativeEngine = !isEngineSwapped;
+        var donor = nativeEngine ? null
+            : (effectiveEngine != null ? db.GetCarByMediaName(effectiveEngine.MediaName) : null);
+
+        // ~30 race/rally swap engines have no donor car in the game DB at all. For those we
+        // estimate stock from the engine's REAL stock-configuration dyno curve (stock cam's
+        // torque curve + factory FI), whose magnitude is genuine game data — far better than
+        // ceiling/maxMult, which the game's power saturation makes much too low (Turbo Rally:
+        // ~300 HP real vs ~200 from ceiling/maxMult). Only used when no anchor figure exists.
+        double curveStockHp = 0, curveStockTq = 0;
+        bool noAnchorFigure = !(nativeEngine && dbCar.SimPeakPower > 0) && donor is not { SimPeakPower: > 0 };
+        if (noAnchorFigure)
+            (curveStockHp, curveStockTq) = EstimateStockFromCurve(
+                dbCar, db, effectiveEngineId, torqueScale, redlineRPM, peakTorqueNm, stockFi);
+
+        double torqueCapNm = effectiveEngine?.EngineGraphingMaxTorque ?? 0;
+
+        double stockHP;
+        if (nativeEngine && dbCar.SimPeakPower > 0)
+            stockHP = dbCar.SimPeakPower * 0.1341;
+        else if (donor is { SimPeakPower: > 0 })
+            stockHP = donor.SimPeakPower * 0.1341;
+        else
+            stockHP = curveStockHp > 0.1 ? curveStockHp : powerCapHP / Math.Max(maxBuildScale, 1.0);
         stockHP = Math.Min(stockHP, powerCapHP);
 
         double targetPowerHP = stockHP > 0.1
             ? stockHP * Math.Pow(powerCapHP / stockHP, progress)
             : powerCapHP * progress;
-        return (maxRPM, fiCurve.Max(), Math.Round(targetPowerHP, 1), fiCurve);
+
+        // Peak TORQUE is anchored exactly like power but to its own dyno pair: stock torque
+        // (native SimPeakTorque, or the donor car's for a swap; *100 -> Nm, verified e.g.
+        // Civic'97 1.59922 -> 160, Civic'04 2.02 -> 202) interpolated to the engine's
+        // EngineGraphingMaxTorque ceiling by the same build progress. 0 when no figure is
+        // available -> ApplyResults falls back to the curve peak.
+        double stockTorqueNm;
+        if (nativeEngine && dbCar.SimPeakTorque > 0)
+            stockTorqueNm = dbCar.SimPeakTorque * 100.0;
+        else if (donor is { SimPeakTorque: > 0 })
+            stockTorqueNm = donor.SimPeakTorque * 100.0;
+        else
+            stockTorqueNm = curveStockTq > 0.1 ? curveStockTq
+                : (torqueCapNm > 0.1 ? torqueCapNm / Math.Max(maxBuildScale, 1.0) : 0);
+        if (torqueCapNm > 0.1) stockTorqueNm = Math.Min(stockTorqueNm, torqueCapNm);
+
+        double targetTorqueNm = (stockTorqueNm > 0.1 && torqueCapNm > 0.1)
+            ? stockTorqueNm * Math.Pow(torqueCapNm / stockTorqueNm, progress)
+            : 0;
+
+        // "Estimated" = no exact stock figure existed (donorless swap engine) — power/torque
+        // are derived from the stock curve, not anchored to verified dyno data.
+        return (maxRPM, fiCurve.Max(), Math.Round(targetPowerHP, 1), Math.Round(targetTorqueNm, 1), fiCurve, noAnchorFigure);
     }
 
     private static int ResolveEffectiveEngineId(CarCard car, DbCar dbCar, Fh6DatabaseService db, SelectedParts? parts = null)
@@ -356,6 +443,38 @@ public static class PowerCalculator
         if (best != null)
             foreach (var x in db.GetIntercoolers(engineId)) if (!x.IsStock && x.MaxScaleScale > ic) ic = x.MaxScaleScale;
         return (best, ic);
+    }
+
+    // The engine's factory (stock) forced-induction part, if it ships with one. Such a
+    // turbo/SC is marked IsStock in its upgrade table and can't be removed in-game.
+    private static DbUpgradeForcedInduction? StockForcedInduction(int engineId, Fh6DatabaseService db)
+    {
+        if (engineId <= 0) return null;
+        return db.GetTurbosSingle(engineId).FirstOrDefault(p => p.IsStock) as DbUpgradeForcedInduction
+            ?? db.GetTurbosTwin(engineId).FirstOrDefault(p => p.IsStock)
+            ?? db.GetCSC(engineId).FirstOrDefault(p => p.IsStock)
+            ?? (DbUpgradeForcedInduction?)db.GetDSC(engineId).FirstOrDefault(p => p.IsStock);
+    }
+
+    // Stock power/torque estimate from the engine's real stock-configuration dyno curve:
+    // the stock camshaft's torque curve (genuine game magnitude) at stock part scales, plus
+    // the factory forced induction if any. Used only when there's no donor car to anchor to.
+    // Returns (0,0) when the stock cam has no real curve (would otherwise synthesise one at
+    // ceiling magnitude) so the caller keeps the ceiling/maxMult fallback.
+    private static (double Hp, double TorqueNm) EstimateStockFromCurve(
+        DbCar dbCar, Fh6DatabaseService db, int engineId, double torqueScale,
+        double redlineRPM, double peakTorqueNm, DbUpgradeForcedInduction? stockFi)
+    {
+        var cams = db.GetCamshafts(engineId);
+        var stockCam = cams.FirstOrDefault(c => c.IsStock) ?? cams.FirstOrDefault();
+        if (stockCam == null || stockCam.TorqueCurveFullThrottleID <= 0) return (0, 0);
+
+        // Stock build: no part upgrades (partScale = 1), so baseScale is just torqueScale.
+        double[] curve = BuildCamTorqueCurve(dbCar, db, torqueScale, redlineRPM, peakTorqueNm, stockCam, out int rpm);
+        if (stockFi != null) curve = ApplyFiCore(curve, rpm, stockFi, 1.0);
+        if (curve.Length == 0) return (0, 0);
+        // PowerPeak returns Nm*rpm (a relative proxy); /7121 converts it to HP.
+        return (PowerPeak(curve, rpm) / 7121.0, curve.Max());
     }
 
     // Peak engine power implied by a torque curve (max of torque*rpm over the sweep).

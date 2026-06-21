@@ -83,35 +83,26 @@ public class EnginePartsViewModel : INotifyPropertyChanged
         LoadForEngine(engineId);
     }
 
+    // Swapping the engine clears all engine-internal upgrades back to stock for the new
+    // engine — its old upgrades don't carry over to a different block. (Earlier this tried
+    // to PRESERVE the part LEVEL, but stock parts have inconsistent levels across
+    // categories/engines — stock displacement is L2, valves L0, cam L1 — so "same level"
+    // landed on non-stock parts and left the engine looking upgraded after a swap.)
     public void ResetToStockForEngine(int engineId)
     {
-        int camLevel     = LevelOf(_parts.CamshaftPartId,     id => _db.GetCamshaftById(id));
-        int dispLevel    = LevelOf(_parts.DisplacementPartId, id => _db.GetDisplacementById(id));
-        int valvesLevel  = LevelOf(_parts.ValvesPartId,       id => _db.GetValvesById(id));
-        int pistonsLevel = LevelOf(_parts.PistonsPartId,      id => _db.GetPistonsById(id));
-        int fuelLevel    = LevelOf(_parts.FuelSystemPartId,   id => _db.GetFuelSystemById(id));
-        int ignLevel     = LevelOf(_parts.IgnitionPartId,     id => _db.GetIgnitionById(id));
-        int exhLevel     = LevelOf(_parts.ExhaustPartId,      id => _db.GetExhaustById(id));
-        int intakeLevel  = LevelOf(_parts.IntakePartId,       id => _db.GetIntakeById(id));
-        int flyLevel     = LevelOf(_parts.FlywheelPartId,     id => _db.GetFlywheelById(id));
-        int manLevel     = LevelOf(_parts.ManifoldPartId,     id => _db.GetManifoldById(id));
-        int oilLevel     = LevelOf(_parts.OilCoolingPartId,   id => _db.GetOilCoolingById(id));
-        int restLevel    = LevelOf(_parts.RestrictorPartId,   id => _db.GetRestrictorById(id));
-        int interLevel   = LevelOf(_parts.IntercoolerPartId,  id => _db.GetIntercoolerById(id));
-
-        _parts.CamshaftPartId     = MatchOrStock(_db.GetCamshafts(engineId), camLevel)?.Id;
-        _parts.DisplacementPartId = MatchOrStock(_db.GetDisplacement(engineId), dispLevel)?.Id;
-        _parts.ValvesPartId       = MatchOrStock(_db.GetValves(engineId), valvesLevel)?.Id;
-        _parts.PistonsPartId      = MatchOrStock(_db.GetPistons(engineId), pistonsLevel)?.Id;
-        _parts.FuelSystemPartId   = MatchOrStock(_db.GetFuelSystems(engineId), fuelLevel)?.Id;
-        _parts.IgnitionPartId     = MatchOrStock(_db.GetIgnition(engineId), ignLevel)?.Id;
-        _parts.ExhaustPartId      = MatchOrStock(_db.GetExhaust(engineId), exhLevel)?.Id;
-        _parts.IntakePartId       = MatchOrStock(_db.GetIntake(engineId), intakeLevel)?.Id;
-        _parts.FlywheelPartId     = MatchOrStock(_db.GetFlywheels(engineId), flyLevel)?.Id;
-        _parts.ManifoldPartId     = MatchOrStock(_db.GetManifolds(engineId), manLevel)?.Id;
-        _parts.OilCoolingPartId   = MatchOrStock(_db.GetOilCooling(engineId), oilLevel)?.Id;
-        _parts.RestrictorPartId   = MatchOrStock(_db.GetRestrictors(engineId), restLevel)?.Id;
-        _parts.IntercoolerPartId  = MatchOrStock(_db.GetIntercoolers(engineId), interLevel)?.Id;
+        _parts.CamshaftPartId     = PickStock(_db.GetCamshafts(engineId))?.Id;
+        _parts.DisplacementPartId = PickStock(_db.GetDisplacement(engineId))?.Id;
+        _parts.ValvesPartId       = PickStock(_db.GetValves(engineId))?.Id;
+        _parts.PistonsPartId      = PickStock(_db.GetPistons(engineId))?.Id;
+        _parts.FuelSystemPartId   = PickStock(_db.GetFuelSystems(engineId))?.Id;
+        _parts.IgnitionPartId     = PickStock(_db.GetIgnition(engineId))?.Id;
+        _parts.ExhaustPartId      = PickStock(_db.GetExhaust(engineId))?.Id;
+        _parts.IntakePartId       = PickStock(_db.GetIntake(engineId))?.Id;
+        _parts.FlywheelPartId     = PickStock(_db.GetFlywheels(engineId))?.Id;
+        _parts.ManifoldPartId     = PickStock(_db.GetManifolds(engineId))?.Id;
+        _parts.OilCoolingPartId   = PickStock(_db.GetOilCooling(engineId))?.Id;
+        _parts.RestrictorPartId   = PickStock(_db.GetRestrictors(engineId))?.Id;
+        _parts.IntercoolerPartId  = PickStock(_db.GetIntercoolers(engineId))?.Id;
 
         LoadForEngine(engineId);
     }
@@ -245,22 +236,6 @@ public class EnginePartsViewModel : INotifyPropertyChanged
 
     private static PartOption? Pick(int? partId, ObservableCollection<PartOption> options) =>
         options.FirstOrDefault(o => o.Id == partId);
-
-    private static int LevelOf<T>(int? partId, Func<int, T?> getter) where T : DbUpgradePart
-    {
-        if (partId == null) return 0;
-        return getter(partId.Value)?.Level ?? 0;
-    }
-
-    private static T? MatchOrStock<T>(System.Collections.Generic.List<T> parts, int level) where T : DbUpgradePart
-    {
-        if (level > 0)
-        {
-            var match = parts.FirstOrDefault(p => p.Level == level);
-            if (match != null) return match;
-        }
-        return parts.FirstOrDefault(p => p.IsStock) ?? parts.FirstOrDefault();
-    }
 
     private static T? PickStock<T>(System.Collections.Generic.List<T> parts) where T : DbUpgradePart =>
         parts.FirstOrDefault(p => p.IsStock) ?? parts.FirstOrDefault();

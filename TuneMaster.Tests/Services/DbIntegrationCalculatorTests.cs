@@ -1387,10 +1387,12 @@ public class DbIntegrationCalculatorTests
         Assert.True(stockCar.PowerHP < carSwapOnly.PowerHP,
             $"Stock NSX ({stockCar.PowerHP}) must be below V8 swap ({carSwapOnly.PowerHP})");
 
-        // Stock V8 swap should match the in-game ~750 HP. This holds because the manifold
-        // (which the game doesn't offer alongside forced induction) is excluded from the
-        // max-build multiplier — without that exclusion it lands ~713.
-        Assert.InRange(carSwapOnly.PowerHP, 745.0, 753.0);
+        // Stock V8 swap power is anchored to the engine's donor car — engine 2794
+        // ("Racing 7.2L V8") is native to the Pro2Truck (car 2663, SimPeakPower -> ~850
+        // HP), so a stock swap with no other upgrades reproduces that donor dyno figure.
+        // (Previously this was a ceiling/maxMult heuristic tuned to ~750; the donor anchor
+        // is the directly-verified figure — see the Civic 2.0L-VVT swap = 212 HP.)
+        Assert.InRange(carSwapOnly.PowerHP, 846.0, 854.0);
 
         // Manifold and forced induction are mutually exclusive: with the turbo installed,
         // adding/removing the manifold must not change power.

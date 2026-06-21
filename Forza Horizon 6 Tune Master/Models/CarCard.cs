@@ -308,6 +308,17 @@ public class CarCard : NotifyBase
         set { Set(ref _maxRPM, value); OnPropertyChanged(nameof(PowerPeakRPM)); OnPropertyChanged(nameof(TorquePeakRPM)); }
     }
 
+    // True when power/torque are an ESTIMATE rather than dyno-anchored game data — set by
+    // PowerCalculator for the ~30 race/rally swap engines whose donor car isn't in the game
+    // DB, so there's no exact stock figure to anchor to. The UI shows a "≈" marker.
+    private bool _powerIsEstimated;
+    [JsonIgnore]
+    public bool PowerIsEstimated
+    {
+        get => _powerIsEstimated;
+        set { Set(ref _powerIsEstimated, value); }
+    }
+
     // ── Computed tire dimensions (for calculators) ─────────────────────────
 
     [JsonIgnore]

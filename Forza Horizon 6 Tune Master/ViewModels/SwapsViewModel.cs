@@ -62,6 +62,12 @@ public class SwapsViewModel : INotifyPropertyChanged
 
     private int EngineId => _parts.EngineId ?? 0;
 
+    // Engines that ship with factory forced induction (a stock turbo/SC marked IsStock in
+    // its upgrade table) can't have it removed or swapped for another type — only upgraded
+    // by level (handled in the engine module). So the aspiration-TYPE dropdown is hidden
+    // for them; NA engines keep it so the user can add a turbo/supercharger.
+    public bool ShowForcedInductionType => _parts == null || StockFiPart(EngineId) == null;
+
     public void LoadForCar(CarCard car, SelectedParts parts)
     {
         _parts = parts;
@@ -99,6 +105,7 @@ public class SwapsViewModel : INotifyPropertyChanged
         _parts.ForcedInductionPartId = StockFiPart(engineId)?.Id;
         BuildFiTypes(engineId);
         OnPropertyChanged(nameof(SelectedForcedInductionType));
+        OnPropertyChanged(nameof(ShowForcedInductionType));
     }
 
     // Re-fires the dropdown bindings after a body-kit change repopulates lists elsewhere.
@@ -110,6 +117,7 @@ public class SwapsViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedEngineSwap));
         OnPropertyChanged(nameof(SelectedDrivetrainSwap));
         OnPropertyChanged(nameof(SelectedForcedInductionType));
+        OnPropertyChanged(nameof(ShowForcedInductionType));
     }
 
     // ── Forced induction helpers ─────────────────────────────────────────────

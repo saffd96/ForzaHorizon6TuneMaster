@@ -272,6 +272,8 @@
   "ResultGearing": "GEARING",
   "ResultGearChart": "Gear chart",
   "ResultPowerCurve": "Power/torque curve",
+  "PowerEstimatedMark": "≈",
+  "PowerEstimatedHint": "Estimate: the game files have no exact factory data for this swapped engine, so power and torque are approximated from the stock curve.",
   "ResultFinalDrive": "FINAL DRIVE",
   "ResultMaxSpeed": "MAX SPEED",
   "ResultMaxSpeedTooltip": "~ Estimated top speed at current gear ratios and RPM",

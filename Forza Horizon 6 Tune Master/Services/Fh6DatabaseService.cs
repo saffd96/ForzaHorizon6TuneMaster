@@ -1425,6 +1425,17 @@ public class Fh6DatabaseService
     {
         return _cars.TryGetValue(carId, out var c) ? c : null;
     }
+    // An engine's MediaName matches the MediaName of the car it is native to, so an
+    // engine swap can be anchored to its donor car's stock dyno figures. Returns null
+    // when the donor isn't a drivable car in the DB (e.g. race-only source vehicles).
+    public DbCar? GetCarByMediaName(string? mediaName)
+    {
+        if (string.IsNullOrEmpty(mediaName)) return null;
+        foreach (var c in _cars.Values)
+            if (string.Equals(c.MediaName, mediaName, StringComparison.OrdinalIgnoreCase))
+                return c;
+        return null;
+    }
     public DbCarMake? GetCarMake(int makeId)
     {
         return _carMakes.TryGetValue(makeId, out var m) ? m : null;
