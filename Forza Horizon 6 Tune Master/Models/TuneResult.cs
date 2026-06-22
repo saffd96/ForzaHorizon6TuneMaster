@@ -62,7 +62,6 @@ public class TuneResult
     // Gearing
     public double FinalDrive { get; set; }
     public List<double> GearRatios { get; set; } = new();
-    public int RecommendedGearCount { get; set; }
 
     // Actual max speed achievable with this tune: v = MaxRPM × 0.95 × tireCirc / (60 × FD × topGear)
     [System.Text.Json.Serialization.JsonIgnore]

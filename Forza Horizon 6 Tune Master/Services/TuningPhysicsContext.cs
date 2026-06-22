@@ -66,6 +66,18 @@ internal static class TuningPhysicsContext
         return FallbackAeroPhysics();
     }
 
+    public static DbAeroPhysics? FrontBumperAero(CarCard car, SelectedParts parts, Fh6DatabaseService db)
+    {
+        if (!car.HasFrontAero) return null;
+        var upgrade = ResolveFrontBumperUpgrade(car, parts, db);
+        if (upgrade != null && upgrade.AeroPhysicsID > 0)
+        {
+            var phys = db.GetAeroPhysics(upgrade.AeroPhysicsID);
+            if (phys != null) return phys;
+        }
+        return FallbackAeroPhysics();
+    }
+
     public static DbUpgradeTireCompound? TireCompound(CarCard car, SelectedParts parts, Fh6DatabaseService db)
     {
         if (parts.TireCompoundPartId.HasValue)
@@ -210,6 +222,19 @@ internal static class TuningPhysicsContext
             return db.GetRearWingById(parts.RearWingPartId.Value);
         return db.GetRearWings(car.CarDbId).FirstOrDefault(p => p.IsStock)
             ?? db.GetRearWings(car.CarDbId).FirstOrDefault();
+    }
+
+    // Front bumpers/splitters are keyed by CarBodyId (not Ordinal). When no specific bumper
+    // is selected, fall back to a non-stock bumper that actually carries an aero profile —
+    // a stock bumper usually has none (AeroPhysicsID == 0), which is why HasFrontAero only
+    // turns true for a fitted aero front bumper.
+    private static DbUpgradeFrontBumper? ResolveFrontBumperUpgrade(CarCard car, SelectedParts parts, Fh6DatabaseService db)
+    {
+        if (parts.FrontBumperPartId.HasValue)
+            return db.GetFrontBumperById(parts.FrontBumperPartId.Value);
+        var bumpers = db.GetFrontBumpers(car.CarBodyId);
+        return bumpers.FirstOrDefault(p => !p.IsStock && p.AeroPhysicsID > 0)
+            ?? bumpers.FirstOrDefault(p => p.AeroPhysicsID > 0);
     }
 
     // ── Synthetic fallbacks for cars/tests without DB part records ──────

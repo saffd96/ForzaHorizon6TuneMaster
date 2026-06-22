@@ -561,12 +561,11 @@
   "Expl_BrakesReason_Drag": "Rear bias — minimal intervention at launch.",
   "Expl_BrakesReason_Default": "Matches weight distribution.",
 
-  "Expl_FinalDrive_NoCalc": "Gear calculation disabled. Rec. gears: {0}.",
-  "Expl_FinalDrive_OnlyFD": "FD {0} (final drive only). Rec. gears: {1}.",
-  "Expl_FinalDrive_SingleGear": "FD {0}. Gear 1: {1} (single speed). Total ratio: {2} × {3} = {4:F2}. Target {5} km/h, actual {6} km/h @ {7} rpm. Rec. gears: {8}.",
-  "Expl_FinalDrive_MultiGear": "FD {0}. Rec. gears: {1}. Ratios: {2}. Target {3} km/h, actual {4} km/h @ {5} rpm. {6}",
+  "Expl_FinalDrive_NoCalc": "Gear calculation disabled.",
+  "Expl_FinalDrive_OnlyFD": "FD {0} (final drive only).",
+  "Expl_FinalDrive_MultiGear": "FD {0}. Ratios: {1}. Target {2} km/h, actual {3} km/h @ {4} rpm. {5}",
   "Expl_FinalDrive_Warning": " ⚠ RPM below torque band (< {0:F0}) on shifts: {1}.",
-  "Expl_FinalDrive_Verified": "Verified: FD {0:F2} | {1} gears | {2} | Phys.max {3} km/h | Actual {4} km/h | {5} rpm",
+  "Expl_FinalDrive_Verified": "Verified: FD {0:F2} | {1} | Phys.max {2} km/h | Actual {3} km/h | {4} rpm",
 
   "Expl_GearNote_Drift": "Longer gears for slide control.",
   "Expl_GearNote_Rally": "Short ratios for quick acceleration on gravel.",
@@ -576,7 +575,7 @@
   "Expl_GearNote_Drag": "Straight-line ratios; final drive set by strip length.",
   "Expl_GearNote_Street": "All-round street ratios.",
 
-  "Expl_Inertia": "Rotational inertia: {0:F2} (torque factor).",
+  "Expl_Inertia": "Rotational inertia reduced (factor {0:F2}): faster rev pickup and response; peak power unchanged.",
 
   "Expl_DragDistStr_0": "1/4 mile",
   "Expl_DragDistStr_1": "1/2 mile",

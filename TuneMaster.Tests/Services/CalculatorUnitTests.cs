@@ -149,6 +149,24 @@ public class CalculatorUnitTests
         Assert.InRange(r.AeroRear, 100, 200);
     }
 
+    [Fact]
+    public void Aero_FrontOnly_ProducesFrontDownforce_NotShortCircuited()
+    {
+        // A front splitter with no rear wing must still produce front downforce.
+        // Regression: the calc used to bail whenever there was no rear wing, zeroing the front.
+        var car = CarFactory.DefaultCar();
+        car.HasRearAero = false;
+        car.HasFrontAero = true;
+        var r = new TuneResult();
+        var ex = new Dictionary<string, string>();
+
+        AeroCalculator.CalculateAero(car, CarFactory.DefaultTrack(), new TuningConstraints(), r, ex);
+
+        Assert.Equal(0, r.AeroRear);
+        Assert.True(r.AeroFront > 0, $"Front-only aero should be > 0, was {r.AeroFront}");
+        Assert.DoesNotContain("Expl_Aero_None", ex["Aero"]);
+    }
+
     // ─── TireCalculator ────────────────────────────────────────────────────
 
     [Fact]
@@ -1371,61 +1389,6 @@ public class CalculatorUnitTests
     }
 
     // ─── GearingCalculator ──────────────────────────────────────────────────
-
-    [Fact]
-    public void Gearing_ElectricDrag_1Gear()
-    {
-        var car = CarFactory.ElectricCar();
-        var track = new TrackInfo { Discipline = Discipline.Drag };
-
-        int count = GearingCalculator.CalcRecommendedGearCount(car, track, 200);
-
-        Assert.Equal(1, count);
-    }
-
-    [Fact]
-    public void Gearing_ElectricNonDrag_2Gears()
-    {
-        var car = CarFactory.ElectricCar();
-        var track = CarFactory.DefaultTrack();
-
-        int count = GearingCalculator.CalcRecommendedGearCount(car, track, 200);
-
-        Assert.Equal(2, count);
-    }
-
-    [Fact]
-    public void Gearing_Drag_LowTorque_MoreGearsThanHighTorque()
-    {
-        var carLowTorque = CarFactory.DefaultCar();
-        carLowTorque.TorqueNm = 200;
-        carLowTorque.TotalMass = 1800;
-        int cntLow = GearingCalculator.CalcRecommendedGearCount(carLowTorque,
-            new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Quarter }, 250);
-
-        var carHighTorque = CarFactory.DefaultCar();
-        carHighTorque.TorqueNm = 1200;
-        carHighTorque.TotalMass = 1200;
-        carHighTorque.PowerHP = 800;
-        int cntHigh = GearingCalculator.CalcRecommendedGearCount(carHighTorque,
-            new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Quarter }, 300);
-
-        Assert.InRange(cntLow, 1, 10);
-        Assert.InRange(cntHigh, 1, 10);
-    }
-
-    [Fact]
-    public void Gearing_Drag_GearCount_ByDistance()
-    {
-        var car = CarFactory.DefaultCar();
-        int qtr = GearingCalculator.CalcRecommendedGearCount(car,
-            new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Quarter }, 250);
-        int mile = GearingCalculator.CalcRecommendedGearCount(car,
-            new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Mile }, 320);
-
-        Assert.InRange(qtr, 1, 10);
-        Assert.InRange(mile, 1, 10);
-    }
 
     [Fact]
     public void Gearing_AspirationStep_CentrifugalReducesStepMax()

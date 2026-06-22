@@ -9,24 +9,6 @@ internal static class GearingCalculator
 {
     private const double FdMin = 2.2, FdMax = 6.0;
 
-    public static int CalcRecommendedGearCount(CarCard car, TrackInfo track, double effectiveMaxKmh) =>
-        CalcRecommendedGearCount(car, track, new SelectedParts(), Fh6DatabaseService.Instance, effectiveMaxKmh);
-
-    public static int CalcRecommendedGearCount(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, double effectiveMaxKmh)
-    {
-        if (car.PowertrainType == PowertrainType.Electric)
-            return track.Discipline == Discipline.Drag ? 1 : 2;
-
-        var trans = TuningPhysicsContext.Transmission(car, parts, db);
-        if (trans == null) return 1;
-
-        int maxGears = parts.TransmissionPartId != null ? trans.NumGears : car.GearCount;
-        if (track.Discipline == Discipline.Drag && maxGears > 4)
-            maxGears = 4;
-
-        return Math.Clamp(maxGears, 1, car.MaxAvailableGearCount > 0 ? car.MaxAvailableGearCount : 10);
-    }
-
     public static (double first, double stepMin, double stepMax, string note) GetDisciplineGearParams(
         Discipline discipline, double pwRatio, FuelType fuelType)
     {
@@ -132,18 +114,16 @@ internal static class GearingCalculator
     public static void CalculateGearing(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r,
         Dictionary<string, string> ex, double effectiveMaxKmh)
     {
-        r.RecommendedGearCount = CalcRecommendedGearCount(car, track, parts, db, effectiveMaxKmh);
-
         if (!car.AllowGearCalculation)
         {
-            ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_NoCalc"), r.RecommendedGearCount);
+            ex["FinalDrive"] = CalculationHelpers.L("Expl_FinalDrive_NoCalc");
             return;
         }
 
         var trans = TuningPhysicsContext.Transmission(car, parts, db);
         if (trans == null)
         {
-            ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_NoCalc"), r.RecommendedGearCount);
+            ex["FinalDrive"] = CalculationHelpers.L("Expl_FinalDrive_NoCalc");
             return;
         }
 
@@ -179,7 +159,7 @@ internal static class GearingCalculator
         if (ratios.Count == 0)
         {
             r.FinalDrive = Math.Round(CalculationHelpers.Clamp(trans.FinalDriveRatio, FdMin, FdMax), 2);
-            ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_OnlyFD"), r.FinalDrive, r.RecommendedGearCount);
+            ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_OnlyFD"), r.FinalDrive);
             return;
         }
 
@@ -199,7 +179,7 @@ internal static class GearingCalculator
         // For a single-gear transmission (or final-drive-only mode) keep the list empty.
         if (car.OnlyFinalDriveCalculation || ratios.Count == 1)
         {
-            ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_OnlyFD"), r.FinalDrive, r.RecommendedGearCount)
+            ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_OnlyFD"), r.FinalDrive)
                 + " " + gearNote;
             if (!car.OnlyFinalDriveCalculation)
                 r.GearRatios = ratios;
@@ -209,7 +189,7 @@ internal static class GearingCalculator
         r.GearRatios = ratios;
         string gearStr = string.Join("  ", ratios.Select((g, i) => $"{i + 1}: {g:F2}"));
         ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_MultiGear"),
-            r.FinalDrive, r.RecommendedGearCount, gearStr, effectiveMaxKmh, r.ActualMaxSpeedKmh, car.MaxRPM, gearNote);
+            r.FinalDrive, gearStr, effectiveMaxKmh, r.ActualMaxSpeedKmh, car.MaxRPM, gearNote);
     }
 
     public static void PostValidateAndRecalculate(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db,
@@ -270,7 +250,7 @@ internal static class GearingCalculator
                 : "N/A";
             double actualSpd = r.ActualMaxSpeedKmh;
             ex["FinalDrive"] = string.Format(CalculationHelpers.L("Expl_FinalDrive_Verified"),
-                r.FinalDrive, r.RecommendedGearCount, gearStr, effectiveMaxKmh, actualSpd, car.MaxRPM);
+                r.FinalDrive, gearStr, effectiveMaxKmh, actualSpd, car.MaxRPM);
         }
     }
 

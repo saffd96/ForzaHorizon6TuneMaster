@@ -14,9 +14,12 @@ internal static class BrakeCalculator
         var brakes = TuningPhysicsContext.Brakes(car, parts, db);
         if (brakes == null)
         {
-            // Fallback when no brake part is available (synthetic / test cars).
+            // Fallback when no brake part is available (synthetic / test cars). Mirror the
+            // main path's balance baseline: a neutral 50% slider shifted toward the heavier
+            // axle by (wtDist-50)*0.45 — NOT the raw weight-distribution percentage, which
+            // would bias the fallback far more front-heavy than a real brake part ever does.
             double fbWtDistFront = CalculationHelpers.EffectiveWtDist(car);
-            double fbBias = fbWtDistFront;
+            double fbBias = 50.0 + (fbWtDistFront - 50.0) * 0.45;
             fbBias += car.EnginePosition switch
             {
                 EnginePosition.Front => +2.5,

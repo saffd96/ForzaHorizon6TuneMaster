@@ -391,22 +391,6 @@ public class TuneGeneratorServiceTests
     }
 
     [Fact]
-    public void Generate_Discipline_Drag_GearCountByDistance()
-    {
-        var trackQtr = new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Quarter };
-        var trackHalf = new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Half };
-        var trackMile = new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Mile };
-
-        var rQ = _sut.Generate(CarFactory.DefaultCar(), trackQtr, CarFactory.RelaxedConstraints());
-        var rH = _sut.Generate(CarFactory.DefaultCar(), trackHalf, CarFactory.RelaxedConstraints());
-        var rM = _sut.Generate(CarFactory.DefaultCar(), trackMile, CarFactory.RelaxedConstraints());
-
-        Assert.InRange(rQ.RecommendedGearCount, 3, 4);
-        Assert.InRange(rH.RecommendedGearCount, 3, 5);
-        Assert.InRange(rM.RecommendedGearCount, 3, 5);
-    }
-
-    [Fact]
     public void Generate_SportUpgrade_AccelOnlyNoDecel()
     {
         var car = CarFactory.DefaultCar();
@@ -437,14 +421,13 @@ public class TuneGeneratorServiceTests
     }
 
     [Fact]
-    public void Generate_NoGearCalc_ReturnsRecommendedCount()
+    public void Generate_NoGearCalc_ReturnsNoGearRatios()
     {
         var car = CarFactory.DefaultCar();
         car.AllowGearCalculation = false;
 
         var result = _sut.Generate(car, CarFactory.DefaultTrack(), CarFactory.RelaxedConstraints());
 
-        Assert.True(result.RecommendedGearCount >= 1);
         Assert.Empty(result.GearRatios);
     }
 
@@ -887,7 +870,7 @@ public class TuneGeneratorServiceTests
 
         var result = _sut.Generate(CarFactory.DefaultCar(), track, CarFactory.RelaxedConstraints());
 
-        Assert.InRange(result.RecommendedGearCount, 3, 6);
+        Assert.InRange(result.GearRatios.Count, 3, 6);
     }
 
     [Fact]
@@ -987,7 +970,6 @@ public class TuneGeneratorServiceTests
 
         Assert.Empty(result.GearRatios);
         Assert.True(result.FinalDrive > 0);
-        Assert.True(result.RecommendedGearCount >= 1);
     }
 
     // ── Post-validation tests ──────────────────────────────────────────────
@@ -1108,10 +1090,10 @@ public class TuneGeneratorServiceTests
         var rH = _sut.Generate(car, new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Half }, c);
         var rM = _sut.Generate(car, new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Mile }, c);
 
-        // AWD + high torque should produce different gear counts than the default car
-        Assert.InRange(rQ.RecommendedGearCount, 3, 6);
-        Assert.InRange(rH.RecommendedGearCount, 3, 7);
-        Assert.InRange(rM.RecommendedGearCount, 3, 7);
+        // AWD + high torque should still produce a usable ratio set at every distance
+        Assert.InRange(rQ.GearRatios.Count, 3, 7);
+        Assert.InRange(rH.GearRatios.Count, 3, 7);
+        Assert.InRange(rM.GearRatios.Count, 3, 7);
         Assert.True(rQ.FinalDrive > 0);
         Assert.True(rH.FinalDrive > 0);
         Assert.True(rM.FinalDrive > 0);

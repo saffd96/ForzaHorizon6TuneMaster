@@ -33,12 +33,13 @@ public static class PowerCalculator
         int maxRPM, double peakTorqueNm, double targetPowerHP, double targetTorqueNm, double[]? torqueCurve,
         bool estimated)
     {
+        // Rotational inertia (lightweight flywheel / driveline) is a RESPONSE characteristic:
+        // it speeds up rev-pickup but does NOT raise the engine's steady-state PEAK power or
+        // torque (those are what a dyno reads). So the factor is recorded on the car for the
+        // UI/explanation but is deliberately NOT applied to the curve. Scaling the curve here
+        // was a no-op for dyno-anchored ICE (cancelled by the re-anchor below) yet wrongly
+        // inflated electric peaks by up to 30% (electric has no power anchor to cancel it).
         double inertiaFactor = TuningPhysicsContext.ComputeRotationalInertiaFactor(car, parts, db);
-        if (torqueCurve is { Length: > 0 } && Math.Abs(inertiaFactor - 1.0) > 0.001)
-        {
-            torqueCurve = torqueCurve.Select(t => Math.Round(t * inertiaFactor, 1)).ToArray();
-            peakTorqueNm *= inertiaFactor;
-        }
 
         var powerCurve = ComputePowerCurveFromTorque(torqueCurve, maxRPM);
         double curvePowerPeak = powerCurve is { Length: > 0 } ? powerCurve.Max() : 0;

@@ -11,10 +11,18 @@ internal static class AeroCalculator
 
     public static void CalculateAero(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, double? overrideSpeedKmh = null)
     {
-        var rearWing = TuningPhysicsContext.RearWingAero(car, parts, db);
+        var rearWing  = TuningPhysicsContext.RearWingAero(car, parts, db);
+        var frontWing = TuningPhysicsContext.FrontBumperAero(car, parts, db);
         var dbCar = db.GetCar(car.CarDbId);
 
-        if ((!car.HasFrontAero && !car.HasRearAero) || rearWing == null)
+        // Front and rear are independent aero devices: a car can carry a front splitter with
+        // no rear wing (or vice-versa). Only bail when NEITHER axle has a usable aero profile;
+        // otherwise compute each axle on its own. (Previously the whole calc short-circuited
+        // whenever there was no rear wing, silently zeroing a fitted front splitter.)
+        bool hasRear  = car.HasRearAero  && rearWing  != null;
+        bool hasFront = car.HasFrontAero && frontWing != null;
+
+        if (!hasRear && !hasFront)
         {
             r.AeroFront = 0;
             r.AeroRear = 0;
@@ -23,12 +31,8 @@ internal static class AeroCalculator
         }
 
         double aeroScale = dbCar?.GameDownforceScale > 0 ? dbCar.GameDownforceScale : 1.0;
-        double rearMin = rearWing.Downforce0 * aeroScale;
-        double rearMax = rearWing.Downforce1 * aeroScale;
-        double rearClampKg = dbCar?.RearDownforceClampKG ?? 0.0;
-        if (rearClampKg > 0 && rearMax > rearClampKg)
-            rearMax = rearClampKg;
-        double frontDownforceClamp = dbCar?.FrontDownforceClampKG ?? 0.0;
+        double rearClampKg  = dbCar?.RearDownforceClampKG ?? 0.0;
+        double frontClampKg = dbCar?.FrontDownforceClampKG ?? 0.0;
 
         (double rearFraction, double frontFraction, string noteKey) = AeroFractions(track.Discipline, car.DriveType);
 
@@ -38,16 +42,30 @@ internal static class AeroCalculator
         rearFraction *= powerFactor;
         frontFraction *= powerFactor;
 
-        double rearAero = rearMin + (rearMax - rearMin) * CalculationHelpers.Clamp(rearFraction, 0.0, 1.0);
+        // Rear axle — from the rear wing's own downforce range, capped by the body's rear clamp.
+        if (hasRear)
+        {
+            double rearMin = rearWing!.Downforce0 * aeroScale;
+            double rearMax = rearWing.Downforce1 * aeroScale;
+            if (rearClampKg > 0 && rearMax > rearClampKg) rearMax = rearClampKg;
+            if (rearMax < rearMin) rearMax = rearMin;
+            double rearAero = rearMin + (rearMax - rearMin) * CalculationHelpers.Clamp(rearFraction, 0.0, 1.0);
+            r.AeroRear = Math.Round(CalculationHelpers.Clamp(rearAero, rearMin, rearMax));
+        }
+        else r.AeroRear = 0;
 
-        double frontMin = 0.0;
-        double frontMax = car.HasFrontAero && frontDownforceClamp > 0
-            ? Math.Min(frontDownforceClamp, rearAero)
-            : 0.0;
-        double frontAero = frontMin + (frontMax - frontMin) * CalculationHelpers.Clamp(frontFraction, 0.0, 1.0);
-
-        r.AeroRear = car.HasRearAero ? Math.Round(CalculationHelpers.Clamp(rearAero, rearMin, rearMax)) : 0;
-        r.AeroFront = car.HasFrontAero ? Math.Round(CalculationHelpers.Clamp(frontAero, frontMin, frontMax)) : 0;
+        // Front axle — from the front bumper's OWN aero profile (not tied to the rear value),
+        // capped by the body's front clamp.
+        if (hasFront)
+        {
+            double frontMin = frontWing!.Downforce0 * aeroScale;
+            double frontMax = frontWing.Downforce1 * aeroScale;
+            if (frontClampKg > 0 && frontMax > frontClampKg) frontMax = frontClampKg;
+            if (frontMax < frontMin) frontMax = frontMin;
+            double frontAero = frontMin + (frontMax - frontMin) * CalculationHelpers.Clamp(frontFraction, 0.0, 1.0);
+            r.AeroFront = Math.Round(CalculationHelpers.Clamp(frontAero, frontMin, frontMax));
+        }
+        else r.AeroFront = 0;
 
         double speed = overrideSpeedKmh ?? car.MaxSpeedKmh;
         ex["Aero"] = string.Format(CalculationHelpers.L("Expl_Aero_Fmt"), r.AeroFront, r.AeroRear, speed, car.PowerHP);
