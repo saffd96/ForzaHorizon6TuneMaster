@@ -22,6 +22,11 @@ public class MainViewModel : NotifyBase
     private readonly StorageService _storage = new();
     private readonly ProfileService _profileService;
     private int _tuneGenerationCount;
+    private bool _donateShownThisSession;
+
+    // The background profile-migration task kicked off in the constructor. Exposed so tests
+    // (and any future shutdown logic) can await the otherwise fire-and-forget migration.
+    internal Task? ProfilesMigrationTask { get; private set; }
 
     // ── Selected Parts (upgrade choices) ─────────────────────────────────────
     private SelectedParts _selectedParts = new();
@@ -43,9 +48,14 @@ public class MainViewModel : NotifyBase
         }
     }
 
-    private void OnCarMassUpdated(double totalMass, double? weightDistSum)
+    private void OnCarMassUpdated(double totalMass, double? frontWeightDistPercent)
     {
         Car.TotalMass = totalMass;
+        // Apply the weight-distribution shift contributed by fitted parts (engine/drivetrain
+        // swaps, fuel, exhaust, forced induction, chassis stiffness, oil cooling). Null means no
+        // part carries a WeightDistDiff, so the car keeps its stock DB distribution.
+        if (frontWeightDistPercent.HasValue)
+            Car.WeightDistributionFront = Math.Clamp(frontWeightDistPercent.Value, 10.0, 90.0);
     }
 
 // ── Sub-ViewModels for part selection ────────────────────────────────────
@@ -74,7 +84,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             NotifyCarDisplayProperties();
             OnPropertyChanged(nameof(HasCenterDiffBias));
             OnPropertyChanged(nameof(HasAWDFrontDiff));
-            OnPropertyChanged(nameof(HasRearDiffDecel));
+            InvalidateDiffDecel();
             OnPropertyChanged(nameof(DiffMainAxleSuffix));
             OnPropertyChanged(nameof(SelectedCarDisplayText));
             OnModelChanged(null, null!);
@@ -174,6 +184,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         // Always update enums when ANY part changes (spring, tire, brakes, diff, aero, ARB, etc.)
         MapPartIdsToEnums(Car);
         Constraints.ApplyPhysicsBounds(Car, _selectedParts, Fh6DatabaseService.Instance);
+        InvalidateDiffDecel(); // the fitted differential may have changed
 
         if (!IsAutoGenerate || _isGenerating) return;
         _lastInputChange = DateTime.Now;
@@ -204,13 +215,28 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     }
     public bool HasResult        => _tuneResult != null;
     public bool HasAWDFrontDiff  => Car.DriveType == Models.DriveType.AWD && _tuneResult?.CenterDiffBias.HasValue == true;
+    // Cached: resolving the differential from the DB on every getter call was wasteful — the UI
+    // re-reads HasDiffDecel/HasRearDiffDecel repeatedly through OnPropertyChanged chains. Computed
+    // once and reused until the fitted differential or drivetrain can change (InvalidateDiffDecel).
+    private bool? _hasDiffDecel;
     public bool HasDiffDecel
     {
         get
         {
-            var diff = TuningPhysicsContext.Differential(Car, _selectedParts, Fh6DatabaseService.Instance);
-            return Math.Max(diff.RearLimitedSlipTorqueDecel, diff.FrontLimitedSlipTorqueDecel) > 0.01;
+            if (_hasDiffDecel == null)
+            {
+                var diff = TuningPhysicsContext.Differential(Car, _selectedParts, Fh6DatabaseService.Instance);
+                _hasDiffDecel = Math.Max(diff.RearLimitedSlipTorqueDecel, diff.FrontLimitedSlipTorqueDecel) > 0.01;
+            }
+            return _hasDiffDecel.Value;
         }
+    }
+
+    private void InvalidateDiffDecel()
+    {
+        _hasDiffDecel = null;
+        OnPropertyChanged(nameof(HasDiffDecel));
+        OnPropertyChanged(nameof(HasRearDiffDecel));
     }
     // On AWD the rear decel should always be shown alongside the front decel
     // (which is gated only by HasAWDFrontDiff), so the two axles stay symmetric
@@ -858,14 +884,11 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         {
             OnPropertyChanged(nameof(HasCenterDiffBias));
             OnPropertyChanged(nameof(HasAWDFrontDiff));
-            OnPropertyChanged(nameof(HasRearDiffDecel));
+            InvalidateDiffDecel();
             OnPropertyChanged(nameof(DiffMainAxleSuffix));
         }
         if (e.PropertyName == nameof(CarCard.DifferentialUpgrade))
-        {
-            OnPropertyChanged(nameof(HasDiffDecel));
-            OnPropertyChanged(nameof(HasRearDiffDecel));
-        }
+            InvalidateDiffDecel();
         if (e.PropertyName is nameof(CarCard.Make) or nameof(CarCard.Model) or nameof(CarCard.Year))
             OnPropertyChanged(nameof(SelectedCarDisplayText));
         if (e.PropertyName == nameof(CarCard.TotalMass))
@@ -1010,7 +1033,9 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         _ = savedSu;
 
         RefreshProfiles();
-        RecalculateOutdatedProfiles();
+        // Migrate/recalculate outdated profiles off the UI thread so a large profile folder
+        // doesn't stall startup (each outdated profile is a file read + full tune generation).
+        ProfilesMigrationTask = Task.Run(RecalculateOutdatedProfiles);
         InvalidateAllLanguageDependent();
         _ = LoadCarDatabaseAsync();
     }
@@ -1375,13 +1400,17 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         try
         {
             Car.Name = _profileService.AutoProfileName(Car, Track);
-            TuneResult = _generator.Generate(Car, Track, _selectedParts, Fh6DatabaseService.Instance);
+            TuneResult = _generator.Generate(Car, Track, _selectedParts, Fh6DatabaseService.Instance, Constraints);
             var discLocalized = T($"Discipline{Track.Discipline}");
             StatusMessage = string.Format(T("StatusTuneGenerated"), Car.Make, Car.Model, $"{discLocalized}  •  {DateTime.Now:HH:mm}");
 
+            // Auto-generation fires on every edit (debounced), so the counter climbs fast. Show
+            // the donate prompt at most ONCE per session after meaningful usage, instead of a
+            // modal dialog interrupting the user every 100 regenerations.
             _tuneGenerationCount++;
-            if (_tuneGenerationCount % 100 == 0)
+            if (!_donateShownThisSession && _tuneGenerationCount >= 100)
             {
+                _donateShownThisSession = true;
                 var owner = Application.Current?.MainWindow;
                 if (owner != null)
                     new DonateWindow { Owner = owner }.ShowDialog();
@@ -1492,8 +1521,10 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
 
     private void NewProfile()
     {
-        Car = new CarCard(); Track = new TrackInfo(); _selectedParts = new SelectedParts();
-        OnPropertyChanged(nameof(SelectedParts));
+        // Assign through the SelectedParts property (not the field) so the old instance is
+        // unsubscribed and the new one is wired to PartsChanged / CarMassUpdated.
+        Car = new CarCard(); Track = new TrackInfo();
+        SelectedParts = new SelectedParts();
         TuneResult  = null;
         _carSpec.ClearCarSelection(_car);
         SelectedProfile = null;
@@ -1516,15 +1547,23 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             {
                 // v1.x profiles had enums as [JsonIgnore] — restore from PartIds
                 MapPartIdsToEnums(p.Car);
-                p.LastResult = _generator.Generate(p.Car, p.Track, p.Parts ?? new SelectedParts(), Fh6DatabaseService.Instance);
+                p.LastResult = _generator.Generate(p.Car, p.Track, p.Parts ?? new SelectedParts(), Fh6DatabaseService.Instance, p.Constraints);
                 p.Version = SavedProfile.ProfileVersion;
                 _storage.Save(name, p);
                 ok++;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[RecalculateOutdatedProfiles] '{name}' failed: {ex.Message}");
+            }
         }
         if (ok > 0)
-            StatusMessage = string.Format(T("StatusProfilesRecalculated"), ok);
+        {
+            int done = ok;
+            // Runs on a background thread (see ctor); marshal the UI-bound status back.
+            Application.Current?.Dispatcher.BeginInvoke(() =>
+                StatusMessage = string.Format(T("StatusProfilesRecalculated"), done));
+        }
     }
 
     private void RefreshProfiles()

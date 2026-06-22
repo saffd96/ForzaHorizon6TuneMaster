@@ -1179,6 +1179,40 @@ public class DbIntegrationCalculatorTests
     }
 
     [Fact]
+    public async Task TiresWheels_TireCompoundDropdown_HasNoDuplicateNames()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        // Aston Martin Valkyrie AMR Pro '22: factory Michelin slick + generic Slick upgrade both
+        // read "Slick Race Tire Compound", which used to show as a duplicate dropdown entry.
+        var car = BuildCarCard(3631);
+        var vm = new Forza_Horizon_6_Tune_Master.ViewModels.TiresWheelsViewModel();
+        vm.LoadForCar(car, new SelectedParts());
+
+        var names = vm.TireCompounds.Select(o => o.DisplayName).ToList();
+        Assert.NotEmpty(names);
+        Assert.Equal(names.Count, names.Distinct(System.StringComparer.OrdinalIgnoreCase).Count());
+    }
+
+    [Fact]
+    public async Task Generate_HighRevCar_GearedTopSpeed_DoesNotOvershootReachableMax()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+        // Aston Martin Valkyrie AMR Pro '22 — 11,000-rpm V12. Its tall top gear used to gear the
+        // car to ~480 km/h when it can only reach ~324 (FD capped at 6.0 couldn't pull it down).
+        var car = BuildCarCard(3631);
+        car.PowertrainType = PowertrainType.ICE;
+
+        var r = new TuneGeneratorService().Generate(car, new TrackInfo { Discipline = Discipline.Road }, new SelectedParts(), db);
+        double effMax = CalculationHelpers.ComputeEffectiveMaxSpeedKmh(car, r);
+
+        Assert.True(r.ActualMaxSpeedKmh <= effMax * 1.08,
+            $"geared top speed {r.ActualMaxSpeedKmh} should track the reachable max {effMax:F0}, not overshoot it");
+    }
+
+    [Fact]
     public async Task Generate_PostValidation_FixesGearRatios()
     {
         using var env = new TestingEnvironment();

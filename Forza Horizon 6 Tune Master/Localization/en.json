@@ -39,9 +39,8 @@
   "CriticalErrorCaption": "Critical Error",
   "AppErrorMessage": "Unhandled error: {0}",
   "AppCriticalError": "Critical error: {0}",
-
-  "AiSpecEstimate": " (estimated: {0})",
-  "AiEstimatedTooltip": "Value estimated by AI, may be inaccurate",
+  "DbInitErrorMessage": "Failed to initialize the database:\n{0}\n\nThe application cannot continue.",
+  "DbInitErrorCaption": "Database error",
 
   "CarSearchLabel": "Search car:",
   "CarSelection": "CAR SELECTION",
@@ -123,7 +122,6 @@
   "RearAeroLabel": "Rear aero kit installed",
   "FrontARBLabel": "Front anti-roll bar installed",
   "RearARBLabel": "Rear anti-roll bar installed",
-  "AiFetchButton": "AI: fetch specs (Cx, wheelbase, track, frontal area)",
 
   "CdLabel": "Cd (drag coefficient)",
   "CdTooltip": "Drag coefficient. When both fields are filled, overrides mass/profile estimate. Typical: sportscar 0.28–0.36, SUV 0.38–0.50.",
@@ -278,6 +276,7 @@
   "ResultMaxSpeed": "MAX SPEED",
   "ResultMaxSpeedTooltip": "~ Estimated top speed at current gear ratios and RPM",
   "ResultRecGears": "REC. GEARS",
+  "ResultRecGearsHint": "Recommended number of gears for this build — computed from the engine's powerband and the speed range it can actually reach. It's advice, not a copy of your installed gearbox, so it may differ. For the most out of the engine, fit a gearbox with this many speeds.",
   "ResultGearFormat": "Gear ",
 
   "LaunchControlHeader": "🚦 LAUNCH CONTROL",
@@ -466,7 +465,7 @@
   "CurveAxisPower": "Power, HP",
   "CurveLegendTorque": "Torque",
   "CurveLegendPower": "Power",
-  "ChartAxisSpeed": "Speed, km/h",
+  "ChartAxisSpeed": "Speed",
   "ChartAxisRPM": "RPM",
   "ChartRevLimitLabel": "rev limit",
   "ChartPowerPeakLabel": "Pmax",
@@ -583,9 +582,6 @@
   "Expl_DragNote": "{0}: first {1:F2} (TQ/mass {2:F2} Nm/kg, {3}).",
 
   "Expl_RpmAbbr": "RPM",
-
-  "AiApiKeyMissing": "Cerebras API key not configured. Create Services/ApiKeys.cs from ApiKeys.cs.example and insert the key.",
-  "AiAllModelsFailed": "All AI models unavailable.",
 
   "CarDbTooFewRecords": "Too few records received — the page structure may have changed",
 

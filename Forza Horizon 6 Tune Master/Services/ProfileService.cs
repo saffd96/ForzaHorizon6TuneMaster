@@ -12,14 +12,13 @@ public class ProfileService
         _storage = storage;
     }
 
+    // Profile names must be STABLE across UI language changes. Building the name from localized
+    // strings meant switching language renamed every file, so saved profiles duplicated or
+    // appeared lost. Use invariant enum tokens instead (Make/Model/Year are already
+    // language-neutral); the localized labels stay in the UI only.
     public string AutoProfileName(CarCard car, TrackInfo track)
     {
-        var t = LocalizationService.Instance;
-        var dt = t.T($"Enum_DriveType_{car.DriveType}");
-        var et = t.T($"Enum_EngineType_{car.EngineType}");
-        var disc = t.T($"Discipline{track.Discipline}");
-        var season = t.T($"Enum_Season_{track.Season}");
-        return $"{car.Year} {car.Make} {car.Model} {dt} {et} {disc} {season}".Trim();
+        return $"{car.Year} {car.Make} {car.Model} {car.DriveType} {car.EngineType} {track.Discipline} {track.Season}".Trim();
     }
 
     public string Save(CarCard car, TrackInfo track, TuningConstraints _, TuneResult? result) =>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
@@ -17,6 +18,7 @@ public partial class App : Application
 
         DispatcherUnhandledException += (_, e) =>
         {
+            LogException("DispatcherUnhandledException", e.Exception);
             var svc = LocalizationService.Instance;
             MessageBox.Show(
                 svc.T("AppErrorMessage", e.Exception.Message),
@@ -28,6 +30,7 @@ public partial class App : Application
 
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
+            LogException("UnhandledException", e.ExceptionObject as Exception);
             var svc = LocalizationService.Instance;
             MessageBox.Show(
                 svc.T("AppCriticalError", ((Exception)e.ExceptionObject).Message),
@@ -35,6 +38,20 @@ public partial class App : Application
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         };
+    }
+
+    // Best-effort crash log so swallowed UI exceptions and fatal startup failures leave a
+    // trace (%APPDATA%\ForzaTuneMaster\error.log) instead of vanishing silently.
+    private static void LogException(string source, Exception? ex)
+    {
+        try
+        {
+            Directory.CreateDirectory(ForzaPaths.BaseDir);
+            File.AppendAllText(
+                Path.Combine(ForzaPaths.BaseDir, "error.log"),
+                $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {source}: {ex}{Environment.NewLine}");
+        }
+        catch { /* logging must never throw */ }
     }
 
     protected override async void OnStartup(StartupEventArgs e)
@@ -48,9 +65,11 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
+            LogException("Database init", ex);
+            var svc = LocalizationService.Instance;
             MessageBox.Show(
-                $"Failed to initialize database: {ex.Message}\n\nThe application cannot continue.",
-                "Database Error",
+                svc.T("DbInitErrorMessage", ex.Message),
+                svc.T("DbInitErrorCaption"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             Shutdown();

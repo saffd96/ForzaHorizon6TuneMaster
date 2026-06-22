@@ -5,10 +5,12 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 public class TuneGeneratorService
 {
-    public TuneResult Generate(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db)
+    public TuneResult Generate(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db,
+        TuningConstraints? constraints = null)
     {
         var r  = new TuneResult { Car = car, Track = track };
         var ex = r.Explanations;
+        var c  = constraints ?? new TuningConstraints();
 
         // Refresh power/torque/RPM to reflect currently selected engine parts.
         PowerCalculator.Calculate(car, parts);
@@ -37,17 +39,18 @@ public class TuneGeneratorService
         SuspensionCalculator.CalculateDampers(car, track, parts, r, ex);
         BrakeCalculator.CalculateBrakes(car, track, parts, db, r, ex, effectiveMaxKmh);
         DifferentialCalculator.CalculateDifferential(car, track, parts, db, r, ex);
-        GearingCalculator.CalculateGearing(car, track, parts, db, r, ex, effectiveMaxKmh);
+        GearingCalculator.CalculateGearing(car, track, parts, db, r, ex, effectiveMaxKmh, c);
         if (track.Discipline == Discipline.Drag)
             LaunchControlCalculator.CalculateLaunchControl(car, track, parts, db, r);
 
-        GearingCalculator.PostValidateAndRecalculate(car, track, parts, db, r, ex, ref effectiveMaxKmh);
+        GearingCalculator.PostValidateAndRecalculate(car, track, parts, db, r, ex, ref effectiveMaxKmh, c);
 
         return r;
     }
 
-    // Backward-compat overload for tests that pass TuningConstraints
-    [Obsolete("Use Generate(CarCard, TrackInfo, SelectedParts, Fh6DatabaseService)")]
-    public TuneResult Generate(CarCard car, TrackInfo track, TuningConstraints _) =>
-        Generate(car, track, new SelectedParts(), Fh6DatabaseService.Instance);
+    // Backward-compat overload for tests that pass TuningConstraints — now forwards them so the
+    // final-drive bounds are actually honoured.
+    [Obsolete("Use Generate(CarCard, TrackInfo, SelectedParts, Fh6DatabaseService, TuningConstraints)")]
+    public TuneResult Generate(CarCard car, TrackInfo track, TuningConstraints constraints) =>
+        Generate(car, track, new SelectedParts(), Fh6DatabaseService.Instance, constraints);
 }

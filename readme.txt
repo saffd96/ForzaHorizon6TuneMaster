@@ -4,7 +4,7 @@
 
 Forza Horizon 6 Tune Master is a Windows desktop application (WPF / .NET 8) that automatically generates car tunes for Forza Horizon 6 based on vehicle specs, chosen discipline, and user constraints.
 
-The app calculates all key tuning parameters: tire pressure, spring rates, damping (bump/rebound), ride height, alignment angles (camber, caster, toe), gear ratios, final drive, differential settings, and aerodynamics. Built-in support for automatic car spec retrieval via AI (Cerebras/OpenRouter) or Forza Fandom Wiki parsing.
+The app calculates all key tuning parameters: tire pressure, spring rates, damping (bump/rebound), ride height, alignment angles (camber, caster, toe), gear ratios, final drive, differential settings, and aerodynamics. Car specs and every upgrade part are read from a built-in database extracted from the game files, so picking a car fills in its specs automatically.
 
 [b]Installation[/b]
 [list]
@@ -32,9 +32,7 @@ The app calculates all key tuning parameters: tire pressure, spring rates, dampi
 [*]Aerodynamics: downforce and drag calculation including wings and spoilers[/*]
 [*]Tire pressure: adjusted for mass, weight distribution, power, tire profile and rim diameter[/*]
 [*]Launch control [b]RPM[/b]: drag-specific start rpm calculation[/*]
-[*]Auto-fill car specs:
-AI-powered (Cerebras or OpenRouter API)
-Forza Fandom Wiki parser with result caching[/*]
+[*]Built-in car database: pick a car and its specs plus available upgrade parts load automatically from data extracted from the game files[/*]
 [*]Manual or automatic data entry: CarCard with engine, drivetrain, transmission, mass, power, top speed, weight distribution, wheelbase, tire type and more[/*]
 [*]Profile management: save and load profiles as JSON (%APPDATA%\ForzaTuneMaster\profiles\)[/*]
 [*]Dual unit system: metric and imperial (conversion on display)[/*]
@@ -45,13 +43,12 @@ Forza Fandom Wiki parser with result caching[/*]
 [list]
 [*]OS: Windows (7/10/11)[/*]
 [*].NET 8 SDK or .NET 8 Runtime[/*]
-[*]For AI auto-fill and For Forza Wiki parsing (optional): internet access[/*]
+[*]No internet connection required — all car and part data is bundled with the app[/*]
 [/list]
 [b]Shout Outs[/b]
 [list]
 [*]Everyone who tested, suggested ideas, and helped with tuning formulas[/*]
-[*]Forza Fandom Wiki for open car data[/*]
-[*]Cerebras and OpenRouter for providing free AI APIs[/*]
+[*]The Forza community for car data and tuning knowledge[/*]
 [/list]
 [b]Feedback[/b]
 

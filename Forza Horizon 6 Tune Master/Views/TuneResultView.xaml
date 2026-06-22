@@ -397,6 +397,16 @@
                                        Foreground="{StaticResource CyanBrush}" FontFamily="{StaticResource MonoFontFamily}"
                                        FontWeight="Bold" FontSize="{DynamicResource FontNormal}" VerticalAlignment="Center"
                                        ToolTip="{Binding TuneResult.Explanations[FinalDrive]}"/>
+                            <TextBlock Text="{l:Loc ResultRecGears}" Foreground="{StaticResource TextDimBrush}"
+                                       FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="14,0,6,0"/>
+                            <TextBlock Text="{Binding TuneResult.RecommendedGearCount}"
+                                       Foreground="{StaticResource CyanBrush}" FontFamily="{StaticResource MonoFontFamily}"
+                                       FontWeight="Bold" FontSize="{DynamicResource FontNormal}" VerticalAlignment="Center"
+                                       ToolTip="{Binding TuneResult.Explanations[FinalDrive]}"/>
+                            <TextBlock Text="!" Foreground="{StaticResource AccentBrush}" FontWeight="Bold"
+                                       FontSize="{DynamicResource FontNormal}" VerticalAlignment="Center"
+                                       Margin="3,0,0,0" Cursor="Help" ToolTipService.ShowDuration="30000"
+                                       ToolTip="{l:Loc ResultRecGearsHint}"/>
                             <CheckBox x:Name="ShowGearChart" Content="{l:Loc ResultGearChart}" IsChecked="True"
                                       Foreground="{StaticResource TextDimBrush}" FontSize="11"
                                       VerticalAlignment="Center" Margin="20,0,0,0"/>

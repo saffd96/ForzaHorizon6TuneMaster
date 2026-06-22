@@ -18,21 +18,11 @@ internal static class CalculationHelpers
     internal const double GearRatioMin = 0.48;
     internal const double GearRatioMax = 6.00;
 
-    internal const double PowerBaselineHP   = 300;
-    internal const double PowerStepHP        = 200;
+    // Launch-control torque baseline (used by LaunchControlCalculator). The other ~13
+    // reference constants here were unused dead weight and were removed — notably the
+    // kgf/mm→N/mm factor (9.807), whose accidental use once inflated every spring ~9.8×.
     internal const double TorqueBaselineNm   = 400;
-    internal const double MassBaselineKg     = 1400;
-    internal const double RefMassKg          = 1500;
-    internal const double RefWheelbaseMm     = 2700;
-    internal const double RefRimDiameterInch = 19;
-    internal const double ProfileBaseline    = 45;
-    internal const double RefFrontTrackMm    = 1550;
-    internal const double RefSpeedKmh        = 200;
-    internal const double RefTireWidth       = 275;
-    internal const double MassLogFactor      = 1.0;
 
-    internal const double SpringHzToNmm      = 0.019739;
-    internal const double GameSpringUnitToNmm = 9.807; // FH6 spring display unit ("kgf/mm") → canonical N/mm
     internal const double RevLimitFraction   = 0.95;
     internal const double TargetSpeedCapKmh  = 700;
 

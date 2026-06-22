@@ -73,8 +73,12 @@ public sealed class LocalizationService : INotifyPropertyChanged
         _current = dict;
         _currentCode = cultureCode;
 
-        CultureInfo.CurrentCulture = new CultureInfo(cultureCode);
-        CultureInfo.CurrentUICulture = new CultureInfo(cultureCode);
+        // Intentionally NOT mutating CultureInfo.CurrentCulture/CurrentUICulture here. The UI
+        // language comes entirely from our own string dictionaries (T(...)); coupling it to the
+        // thread culture made number parsing/formatting depend on the language toggle (e.g. ru →
+        // comma decimals) while WPF bindings are forced to en-US — an easy source of "." vs ","
+        // mismatches, and it left the background profile-migration thread formatting differently.
+        // Number/date formatting now stays on the OS culture (stable); parsing is invariant.
 
         SaveLanguageSetting(cultureCode);
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item"));

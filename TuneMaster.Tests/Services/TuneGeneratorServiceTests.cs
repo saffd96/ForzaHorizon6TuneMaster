@@ -1100,6 +1100,75 @@ public class TuneGeneratorServiceTests
     }
 
     [Fact]
+    public void Generate_RecommendedGearCount_IsComputed_DecoupledFromBox()
+    {
+        // A 10-speed gearbox, but a 300 HP / 7000 rpm engine doesn't need 10 gears: the ratio set
+        // still follows the box (10), while the recommendation is computed and fewer.
+        var car = CarFactory.DefaultCar();
+        car.GearCount = 10;
+
+        var result = _sut.Generate(car, CarFactory.DefaultTrack(), CarFactory.RelaxedConstraints());
+
+        Assert.Equal(10, result.GearRatios.Count);                       // ratios follow the box
+        Assert.InRange(result.RecommendedGearCount, 2, 9);               // computed, fewer
+        Assert.True(result.RecommendedGearCount < result.GearRatios.Count);
+    }
+
+    [Fact]
+    public void Generate_RecommendedGearCount_Electric_IsOne()
+    {
+        var result = _sut.Generate(CarFactory.ElectricCar(), CarFactory.DefaultTrack(), CarFactory.RelaxedConstraints());
+        Assert.Equal(1, result.RecommendedGearCount);
+    }
+
+    [Fact]
+    public void Generate_RecommendedGearCount_PeakyEngine_NeedsAtLeastAsManyAsFlat()
+    {
+        // Same car, only the engine's character differs: a peaky engine (torque peaks high, near
+        // the limiter) wants more, closer gears than a flat/torquey one. This is the "power /
+        // engine is accounted for" guard.
+        var c = CarFactory.RelaxedConstraints();
+        var track = CarFactory.DefaultTrack();
+
+        var peaky = CarFactory.DefaultCar(); peaky.EngineType = EngineType.Rotary; // torque peaks high
+        var flat  = CarFactory.DefaultCar(); flat.EngineType  = EngineType.V8;     // torque peaks low
+
+        var rPeaky = _sut.Generate(peaky, track, c);
+        var rFlat  = _sut.Generate(flat, track, c);
+
+        Assert.True(rPeaky.RecommendedGearCount >= rFlat.RecommendedGearCount,
+            $"peaky engine ({rPeaky.RecommendedGearCount}) should want >= flat engine ({rFlat.RecommendedGearCount})");
+    }
+
+    [Fact]
+    public void Generate_RecommendedGearCount_ShorterDragStrip_NeedsNoMoreGears()
+    {
+        var car = CarFactory.AWDPerformanceCar();
+        var c = CarFactory.RelaxedConstraints();
+
+        var quarter = _sut.Generate(car, new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Quarter }, c);
+        var mile    = _sut.Generate(car, new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Mile }, c);
+
+        // A shorter strip reaches a lower terminal speed → never needs MORE gears than a full mile.
+        Assert.True(quarter.RecommendedGearCount <= mile.RecommendedGearCount);
+        Assert.InRange(quarter.RecommendedGearCount, 2, 10);
+    }
+
+    [Fact]
+    public void Generate_FinalDrive_RespectsTightenedConstraint()
+    {
+        // Request: the final-drive clamp IS the constraints. Raising FinalDriveMin must lift the FD.
+        var car = CarFactory.DefaultCar();
+        var c = CarFactory.RelaxedConstraints();
+        c.FinalDriveMin = 4.8;
+
+        var result = _sut.Generate(car, CarFactory.DefaultTrack(), c);
+
+        Assert.True(result.FinalDrive >= 4.8, $"FinalDrive {result.FinalDrive} should honour Min 4.8");
+        Assert.True(result.FinalDrive <= c.FinalDriveMax);
+    }
+
+    [Fact]
     public async Task Generate_RealDbCar_AllDisciplines_ValuesInRange()
     {
         using var env = new TestingEnvironment();

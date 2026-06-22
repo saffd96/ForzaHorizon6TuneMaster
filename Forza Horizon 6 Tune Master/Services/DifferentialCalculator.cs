@@ -11,12 +11,9 @@ internal static class DifferentialCalculator
 
     public static void CalculateDifferential(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex)
     {
+        // Differential() always resolves a part (falls back to a synthetic stock diff), so no
+        // null check is needed here.
         var diff = TuningPhysicsContext.Differential(car, parts, db);
-        if (diff == null)
-        {
-            ex["Differential"] = CalculationHelpers.L("Expl_Differential_Stock");
-            return;
-        }
 
         // Decel lock is tunable whenever the fitted differential actually supports it.
         // Deriving this from the resolved part (rather than the DifferentialUpgrade enum)

@@ -10,11 +10,15 @@ public class SelectedParts : NotifyBase
     private readonly Fh6DatabaseService _db = Fh6DatabaseService.Instance;
 
     private double _curbWeight;
+    // Stock front weight distribution in PERCENT (e.g. 52), captured from the car. Part
+    // WeightDistDiff values (engine/drivetrain swap, fuel, exhaust, FI, chassis, oil cooling)
+    // are stored as FRACTIONS in the DB, so the running total is added back as *100.
+    private double _baseWeightDistFront = 50.0;
 
     // ── Events ──────────────────────────────────────────────────────────────
 
     public event Action? PartsChanged;
-    public event Action<double, double?>? CarMassUpdated; // totalMass, weightDistSum
+    public event Action<double, double?>? CarMassUpdated; // totalMass, frontWeightDistPercent (null = keep current)
 
     // ── Swaps ───────────────────────────────────────────────────────────────
 
@@ -257,6 +261,9 @@ public class SelectedParts : NotifyBase
     {
         _curbWeight = car.CurbWeightKg;
         var dbCar = _db.GetCar(car.CarDbId);
+        _baseWeightDistFront = dbCar != null && dbCar.WeightDistribution > 0
+            ? dbCar.WeightDistribution * 100.0
+            : (car.WeightDistributionFront > 0 ? car.WeightDistributionFront : 50.0);
         EngineId = car.EngineDbId;
         var stockDt = _db.GetStockDrivetrain(car.CarDbId);
         DrivetrainId = stockDt?.DrivetrainID;
@@ -438,9 +445,19 @@ public class SelectedParts : NotifyBase
         OnPartChanged();
     }
 
+    // Final front weight distribution in PERCENT = stock baseline + Σ(part WeightDistDiff)×100.
+    // Returns null when no fitted part carries a WeightDistDiff, so the caller leaves the car's
+    // current distribution untouched (stock cars keep their DB value).
+    public double? ComputeWeightDistFront()
+    {
+        var diff = ComputeTotalWeightDistDiff();
+        if (diff == null) return null;
+        return _baseWeightDistFront + diff.Value * 100.0;
+    }
+
     private void OnPartChanged()
     {
         PartsChanged?.Invoke();
-        CarMassUpdated?.Invoke(ComputeTotalMass(), ComputeTotalWeightDistDiff());
+        CarMassUpdated?.Invoke(ComputeTotalMass(), ComputeWeightDistFront());
     }
 }

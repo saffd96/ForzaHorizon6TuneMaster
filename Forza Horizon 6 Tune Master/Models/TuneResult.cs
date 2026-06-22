@@ -63,6 +63,11 @@ public class TuneResult
     public double FinalDrive { get; set; }
     public List<double> GearRatios { get; set; } = new();
 
+    // Recommended number of gears for this build/discipline. Equals GearRatios.Count when the
+    // ratio set is produced; shown next to the final drive so the user knows how many speeds to
+    // run (e.g. install an N-speed gearbox).
+    public int RecommendedGearCount { get; set; }
+
     // Actual max speed achievable with this tune: v = MaxRPM × 0.95 × tireCirc / (60 × FD × topGear)
     [System.Text.Json.Serialization.JsonIgnore]
     public double ActualMaxSpeedKmh

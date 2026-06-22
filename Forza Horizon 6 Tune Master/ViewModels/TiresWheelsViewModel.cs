@@ -109,7 +109,7 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
         _parts.TrackSpacingFrontPartId    ??= PickStock(_db.GetTrackSpacingsFront(carBodyId))?.Id;
         _parts.TrackSpacingRearPartId     ??= PickStock(_db.GetTrackSpacingsRear(carBodyId))?.Id;
 
-        Populate(TireCompounds,         _db.GetTireCompounds(ordinal));
+        PopulateTireCompounds(_db.GetTireCompounds(ordinal));
         Populate(TireWidthsFront,       _db.GetTireWidthsFront(carBodyId));
         Populate(TireWidthsRear,        _db.GetTireWidthsRear(carBodyId));
         Populate(TireAspectRatiosFront, _db.GetTireAspectRatiosFront(carBodyId));
@@ -174,6 +174,32 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
         target.Clear();
         foreach (var o in _resolver.ToOptions(source, _makeId))
             target.Add(o);
+    }
+
+    // Tyre-compound rows can resolve to the same display name — e.g. a car whose factory tyre is
+    // already a slick has both the stock Michelin-slick row and the generic "Slick" upgrade, and
+    // both read "Slick Race Tire Compound" — which showed up as duplicate dropdown entries.
+    // Collapse by display name, preferring the stock row so the factory tyre stays selectable as
+    // the default (PickStock points at it).
+    private void PopulateTireCompounds(System.Collections.Generic.List<DbUpgradeTireCompound> source)
+    {
+        TireCompounds.Clear();
+        var byName = new System.Collections.Generic.Dictionary<string, PartOption>(System.StringComparer.OrdinalIgnoreCase);
+        var order = new System.Collections.Generic.List<string>();
+        foreach (var p in source)
+        {
+            var opt = new PartOption { Id = p.Id, DisplayName = _resolver.Resolve(p, _makeId), IsStock = p.IsStock };
+            if (byName.TryGetValue(opt.DisplayName, out var existing))
+            {
+                if (opt.IsStock && !existing.IsStock)
+                    byName[opt.DisplayName] = opt; // keep the stock row when names collide
+                continue;
+            }
+            byName[opt.DisplayName] = opt;
+            order.Add(opt.DisplayName);
+        }
+        foreach (var name in order)
+            TireCompounds.Add(byName[name]);
     }
 
     private static PartOption? Pick(int? partId, ObservableCollection<PartOption> options) =>

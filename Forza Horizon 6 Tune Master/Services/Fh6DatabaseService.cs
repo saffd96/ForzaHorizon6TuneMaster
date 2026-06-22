@@ -107,15 +107,18 @@ public class Fh6DatabaseService
     {
         if (_initialized) return;
 
-        // Double-checked lock: several callers (app startup, parallel tests) may invoke this
-        // at once. The bare _initialized check is not atomic, so without this guard multiple
-        // threads ran LoadAllTables concurrently and corrupted the lookup collections.
-        lock (_initLock)
+        // Run the (synchronous, ~55-table) load off the UI thread so startup doesn't block.
+        // Exceptions propagate to the caller (App.OnStartup) which owns the user-facing error
+        // and the decision to shut down — the data layer no longer shows MessageBoxes itself.
+        await Task.Run(() =>
         {
-            if (_initialized) return;
-
-            try
+            // Double-checked lock: several callers (app startup, parallel tests) may invoke this
+            // at once. The bare _initialized check is not atomic, so without this guard multiple
+            // threads ran LoadAllTables concurrently and corrupted the lookup collections.
+            lock (_initLock)
             {
+                if (_initialized) return;
+
                 Batteries_V2.Init();
                 byte[] dbBytes = LoadEmbeddedDb();
                 using var conn = OpenEmbeddedDb(dbBytes);
@@ -123,14 +126,7 @@ public class Fh6DatabaseService
 
                 _initialized = true;
             }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"Ошибка загрузки БД: {ex.Message}\n\n{ex.StackTrace}",
-                    "Ошибка инициализации", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-            }
-        }
-
-        await Task.CompletedTask;
+        }).ConfigureAwait(false);
     }
 
     private static byte[] LoadEmbeddedDb()
@@ -146,8 +142,15 @@ public class Fh6DatabaseService
 
     private static SqliteConnection OpenEmbeddedDb(byte[] dbBytes)
     {
-        string path = Path.Combine(Path.GetTempPath(), "ForzaTuneMaster.sqlite");
-        if (!File.Exists(path))
+        // The temp file name embeds a hash of the embedded DB content. When the app ships a new
+        // slim DB its hash changes → a fresh temp file is written instead of silently reusing a
+        // stale one from an earlier version (which left users on outdated cars/parts/values).
+        // The size check also re-writes a previously truncated/partial extract. Old hash-named
+        // files from prior versions are simply left behind — harmless and overwritten by the OS.
+        string hash = System.Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(dbBytes)).Substring(0, 16);
+        string path = Path.Combine(Path.GetTempPath(), $"ForzaTuneMaster.{hash}.sqlite");
+        if (!File.Exists(path) || new FileInfo(path).Length != dbBytes.Length)
             File.WriteAllBytes(path, dbBytes);
         var conn = new SqliteConnection($"Data Source={path};Mode=ReadOnly");
         conn.Open();
@@ -243,9 +246,6 @@ public class Fh6DatabaseService
         }
         _allWheelOptions = all;
     }
-
-    private static T Read<T>(SqliteDataReader r, int i) =>
-        r.IsDBNull(i) ? default! : (T)r.GetValue(i);
 
     private static int I(SqliteDataReader r, int i) => r.IsDBNull(i) ? 0 : r.GetInt32(i);
     private static double D(SqliteDataReader r, int i) => r.IsDBNull(i) ? 0.0 : r.GetDouble(i);
@@ -362,38 +362,38 @@ public class Fh6DatabaseService
 
     private void LoadTorqueCurves(SqliteConnection conn)
     {
+        // Find the widest curve once so every v-column can be pulled in a single sweep, instead
+        // of issuing one follow-up query per curve (the old N+1 pattern — hundreds of queries on
+        // startup). Two queries total now.
+        int maxVals;
+        using (var maxCmd = conn.CreateCommand())
+        {
+            maxCmd.CommandText = "SELECT MAX(NumTorqueValues) FROM List_TorqueCurve";
+            var o = maxCmd.ExecuteScalar();
+            maxVals = o is null or DBNull ? 0 : System.Convert.ToInt32(o);
+        }
+
         using var cmd = conn.CreateCommand();
+        string vCols = maxVals > 0
+            ? "," + string.Join(",", Enumerable.Range(0, maxVals).Select(i => $"v{i}"))
+            : "";
         cmd.CommandText = "SELECT TorqueCurveID,TorqueScale,NumTorqueValues," +
-            "ZeroThrottleTorqueScale FROM List_TorqueCurve";
-        // v0..vNumTorqueValues-1 loaded separately
+            "ZeroThrottleTorqueScale" + vCols + " FROM List_TorqueCurve";
         using var r = cmd.ExecuteReader();
+        const int firstVCol = 4; // v0 starts right after the 4 metadata columns
         while (r.Read())
         {
             int id = I(r, 0);
             int numVals = I(r, 2);
             double[] v = new double[numVals];
-            // Load v0..v(numVals-1) via a secondary query
+            for (int i = 0; i < numVals; i++)
+                v[i] = D(r, firstVCol + i);
             _torqueCurves[id] = new DbTorqueCurve
             {
                 TorqueCurveID = id, TorqueScale = D(r, 1),
                 NumTorqueValues = numVals, V = v,
                 ZeroThrottleTorqueScale = D(r, 3)
             };
-        }
-
-        // Fill V arrays for each curve
-        foreach (int id in _torqueCurves.Keys)
-        {
-            var curve = _torqueCurves[id];
-            var vCmd = conn.CreateCommand();
-            var cols = string.Join(",", Enumerable.Range(0, curve.NumTorqueValues).Select(i => $"v{i}"));
-            vCmd.CommandText = $"SELECT {cols} FROM List_TorqueCurve WHERE TorqueCurveID={id}";
-            using var vr = vCmd.ExecuteReader();
-            if (vr.Read())
-            {
-                for (int i = 0; i < curve.NumTorqueValues; i++)
-                    curve.V[i] = D(vr, i);
-            }
         }
     }
 

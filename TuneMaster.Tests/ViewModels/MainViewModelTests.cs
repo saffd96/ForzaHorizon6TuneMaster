@@ -666,6 +666,8 @@ public class MainViewModelTests : IDisposable
         });
 
         var vm = new MainViewModel();
+        // Profile migration now runs in the background (off the UI thread); wait for it.
+        vm.ProfilesMigrationTask?.Wait(10000);
 
         var loaded = storage.Load("OldProfileNoVersion");
         Assert.NotNull(loaded);
@@ -687,6 +689,8 @@ public class MainViewModelTests : IDisposable
         });
 
         var vm = new MainViewModel();
+        // Profile migration now runs in the background (off the UI thread); wait for it.
+        vm.ProfilesMigrationTask?.Wait(10000);
 
         var loaded = storage.Load("CurrentVersionProfile");
         Assert.NotNull(loaded);
@@ -708,6 +712,8 @@ public class MainViewModelTests : IDisposable
         storage.Save("Current", new SavedProfile { Car = car, Track = track, Constraints = constraints, Version = SavedProfile.ProfileVersion });
 
         var vm = new MainViewModel();
+        // Profile migration now runs in the background (off the UI thread); wait for it.
+        vm.ProfilesMigrationTask?.Wait(10000);
 
         var old1 = storage.Load("Old1");
         var old2 = storage.Load("Old2");
