@@ -278,9 +278,9 @@ public class CarCard : NotifyBase
     {
         get
         {
-            double powerWatts = PowerHP * 745.7;
-            double vMaxMs = Math.Pow(powerWatts / (0.5 * 1.225 * CdABodyEstimate), 1.0 / 3.0);
-            return Math.Round(Math.Clamp(vMaxMs * 3.6, 60.0, MaxSpeedClampKmh));
+            double powerWatts = PowerHP * PhysicsConstants.HpToWatt;
+            double vMaxMs = Math.Pow(powerWatts / (0.5 * PhysicsConstants.AirDensity * CdABodyEstimate), 1.0 / 3.0);
+            return Math.Round(Math.Clamp(vMaxMs * PhysicsConstants.MsToKmh, 60.0, MaxSpeedClampKmh));
         }
         set { /* computed */ }
     }
@@ -322,9 +322,9 @@ public class CarCard : NotifyBase
     // ── Computed tire dimensions (for calculators) ─────────────────────────
 
     [JsonIgnore]
-    public double FrontWheelDiameterInch => FrontRimDiameter + 2.0 * FrontTireWidth * FrontTireProfile / 100.0 / 25.4;
+    public double FrontWheelDiameterInch => FrontRimDiameter + 2.0 * FrontTireWidth * FrontTireProfile / 100.0 / PhysicsConstants.MmPerInch;
     [JsonIgnore]
-    public double RearWheelDiameterInch => RearRimDiameter + 2.0 * RearTireWidth * RearTireProfile / 100.0 / 25.4;
+    public double RearWheelDiameterInch => RearRimDiameter + 2.0 * RearTireWidth * RearTireProfile / 100.0 / PhysicsConstants.MmPerInch;
     [JsonIgnore]
     public double DrivenWheelDiameterInch => DriveType switch
     {

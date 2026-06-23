@@ -23,6 +23,8 @@ internal static class DifferentialCalculator
 
         // Adjust for power delivery: more torque needs more lock, but very high torque
         // on a light car is easier to break loose, so we cap the increase.
+        // NOTE: the diff intentionally starts adding lock a touch earlier than the shared
+        // PtwReferenceHpPerKg (0.25): a 0.20 HP/kg threshold, kept local on purpose.
         double ptw = car.PowerHP / Math.Max(car.TotalMass, 1.0);
         double powerMul = 1.0 + Math.Min(0.25, (ptw - 0.20) * 0.25);
 
@@ -30,8 +32,7 @@ internal static class DifferentialCalculator
         double wheelbaseFactor = 1.0 - CalculationHelpers.Clamp((car.Wheelbase - 2600.0) / 1000.0, -0.2, 0.3) * 0.10;
 
         // Less grip in winter -> less diff lock to avoid understeer/power-on instability.
-        double seasonFactor = CalculationHelpers.GetSeasonGripFactor(track.Season);
-        double seasonMul = 0.85 + seasonFactor * 0.15;
+        double seasonMul = CalculationHelpers.SeasonGripMultiplier(track.Season, 0.85, 0.15);
 
         string aspLabel = car.AspirationType switch
         {

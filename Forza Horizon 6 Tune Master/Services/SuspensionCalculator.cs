@@ -58,16 +58,15 @@ internal static class SuspensionCalculator
         double wdShiftF = (wdF - 0.5) * 0.20;
         double wdShiftR = (wdR - 0.5) * 0.20;
 
-        double seasonFactor = CalculationHelpers.GetSeasonGripFactor(track.Season);
         // Lower grip -> slightly softer ARB to let the tire work.
-        double seasonMul = 0.85 + seasonFactor * 0.15;
+        double seasonMul = CalculationHelpers.SeasonGripMultiplier(track.Season, 0.85, 0.15);
 
         // Wider track reduces the need for stiff anti-roll bars.
         double avgTrack = (car.FrontTrack + car.RearTrack) / 2.0;
         double trackMul = 1.0 - CalculationHelpers.Clamp((avgTrack - 1500.0) / 1000.0, -0.2, 0.3) * 0.15;
 
         // Heavier cars need a little more roll resistance.
-        double massMul = 1.0 + (car.TotalMass - 1500.0) / 1000.0 * 0.10;
+        double massMul = 1.0 + (car.TotalMass - PhysicsConstants.RefMassKg) / 1000.0 * 0.10;
 
         double ComputeArb(DbAntiSwayPhysics phys, double baseFrac, double wdShift)
         {
@@ -117,9 +116,9 @@ internal static class SuspensionCalculator
         (double hzF, double hzR) = TargetNaturalFrequency(track.Discipline, car.DriveType);
 
         // Heavier or more powerful cars can tolerate slightly higher frequencies.
-        double massRef = 1500.0;
+        double massRef = PhysicsConstants.RefMassKg;
         double ptw = car.PowerHP / Math.Max(car.TotalMass, 1.0);
-        double ptwRef = 0.25;
+        double ptwRef = PhysicsConstants.PtwReferenceHpPerKg;
         double massFactor = Math.Pow(Math.Max(car.TotalMass / massRef, 0.5), 0.15);
         double powerFactor = 1.0 + Math.Max(0, (ptw - ptwRef) / ptwRef) * 0.10;
 
@@ -127,8 +126,7 @@ internal static class SuspensionCalculator
         hzR *= massFactor * powerFactor;
 
         // Softer springs in low-grip seasons and with off-road suspension.
-        double seasonFactor = CalculationHelpers.GetSeasonGripFactor(track.Season);
-        double seasonMul = 0.70 + seasonFactor * 0.30;
+        double seasonMul = CalculationHelpers.SeasonGripMultiplier(track.Season, 0.70, 0.30);
         if (car.SuspensionUpgrade == SuspensionUpgrade.Offroad)
             seasonMul *= 0.90;
         hzF *= seasonMul;
@@ -239,9 +237,9 @@ internal static class SuspensionCalculator
         double massF = car.TotalMass * wdF / 2.0;
         double massR = car.TotalMass * (1.0 - wdF) / 2.0;
 
-        // Spring rates are N/mm; *1000 -> N/m for the critical-damping math.
-        double springF_Nm = r.SpringFront > 0 ? r.SpringFront * 1000.0 : frontPhys.DefSpringRate * 1000.0;
-        double springR_Nm = r.SpringRear  > 0 ? r.SpringRear  * 1000.0 : rearPhys.DefSpringRate  * 1000.0;
+        // Spring rates are N/mm; *NmmToNm -> N/m for the critical-damping math.
+        double springF_Nm = r.SpringFront > 0 ? r.SpringFront * PhysicsConstants.NmmToNm : frontPhys.DefSpringRate * PhysicsConstants.NmmToNm;
+        double springR_Nm = r.SpringRear  > 0 ? r.SpringRear  * PhysicsConstants.NmmToNm : rearPhys.DefSpringRate  * PhysicsConstants.NmmToNm;
 
         double dampingRatio = track.Discipline switch
         {
@@ -267,11 +265,10 @@ internal static class SuspensionCalculator
 
         // High-power cars need a touch more damping to control weight transfer.
         double ptwD = car.PowerHP / Math.Max(car.TotalMass, 1.0);
-        double powerFactorD = 1.0 + Math.Max(0, ptwD - 0.25) * 0.20;
+        double powerFactorD = 1.0 + Math.Max(0, ptwD - PhysicsConstants.PtwReferenceHpPerKg) * 0.20;
         dampingRatio *= powerFactorD;
 
-        double seasonFactor = CalculationHelpers.GetSeasonGripFactor(track.Season);
-        double seasonMul = 0.70 + seasonFactor * 0.35;
+        double seasonMul = CalculationHelpers.SeasonGripMultiplier(track.Season, 0.70, 0.35);
 
         double rebF = DampingFromSpringAndMass(springF_Nm, massF, frontPhys, dampingRatio, true) * seasonMul;
         double rebR = DampingFromSpringAndMass(springR_Nm, massR, rearPhys,  dampingRatio, true) * seasonMul;
@@ -351,7 +348,7 @@ internal static class SuspensionCalculator
     {
         // k [N/m] = (2*pi*f)^2 * m, converted to N/mm (the DB / tune unit) by /1000.
         double kNpm = Math.Pow(2.0 * Math.PI * hz, 2.0) * cornerMassKg;
-        double kNmm = kNpm / 1000.0;
+        double kNmm = kNpm / PhysicsConstants.NmmToNm;
         return CalculationHelpers.Clamp(kNmm, phys.MinSpringRate, phys.MaxSpringRate);
     }
 
@@ -363,7 +360,7 @@ internal static class SuspensionCalculator
 
         // Derive a game-unit scale: at the default spring and the same corner mass the
         // default damper represents a reference damping ratio (0.65 rebound, 0.40 bump).
-        double defaultSpringNm = phys.DefSpringRate * 1000.0;
+        double defaultSpringNm = phys.DefSpringRate * PhysicsConstants.NmmToNm;
         double defaultCc = defaultSpringNm > 0 ? 2.0 * Math.Sqrt(defaultSpringNm * cornerMassKg) : 1.0;
         double referenceRatio = rebound ? 0.65 : 0.40;
         double referenceValue = rebound ? phys.DefDampenReboundRate : phys.DefDampenBumpRate;

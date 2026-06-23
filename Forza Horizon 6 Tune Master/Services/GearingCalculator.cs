@@ -7,6 +7,9 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 internal static class GearingCalculator
 {
+    // Hardware ceiling on gear count (the in-game gearbox tops out at 10 speeds).
+    private const int HardMaxGears = 10;
+
     // Final-drive min/max is no longer a hard-coded constant here — it comes from
     // TuningConstraints.FinalDriveMin/Max (single source of truth, defaults 2.2..6.0), threaded
     // in through CalculateGearing / PostValidateAndRecalculate.
@@ -27,7 +30,7 @@ internal static class GearingCalculator
     public static int CalcRecommendedGearCount(CarCard car, TrackInfo track, SelectedParts parts,
         Fh6DatabaseService db, double effectiveMaxKmh, TuningConstraints constraints)
     {
-        int hardMax = car.MaxAvailableGearCount > 0 ? Math.Min(car.MaxAvailableGearCount, 10) : 10;
+        int hardMax = car.MaxAvailableGearCount > 0 ? Math.Min(car.MaxAvailableGearCount, HardMaxGears) : HardMaxGears;
 
         // Electric motors hold near-flat torque to the limiter, so one ratio already keeps them
         // in their efficient band across the whole speed range — a single gear is optimal.
@@ -53,7 +56,7 @@ internal static class GearingCalculator
         double engineFactor = CalculationHelpers.Clamp(1.0 + (0.55 - tqRatio) * 0.45, 0.90, 1.12);
         double band = CalculationHelpers.Clamp(bandDisc * engineFactor, 1.28, 1.62);
 
-        double tireCirc = Math.PI * car.DrivenWheelDiameterInch * 0.0254;
+        double tireCirc = Math.PI * car.DrivenWheelDiameterInch * PhysicsConstants.InchToMeter;
 
         // Speed the car actually reaches here — the drag terminal speed on a strip, else v-max.
         double vTop = track.Discipline == Discipline.Drag
@@ -73,7 +76,7 @@ internal static class GearingCalculator
         // under-counting gears. Reference the 1st-gear speed at a typical redline so only genuinely
         // high-revving engines are affected; normal cars (≤ ~7,900 rpm) are unchanged.
         double rpmForFirst = Math.Min(rpmShift, 7500.0);
-        double kFirst = rpmForFirst * tireCirc * 3.6 / 60.0;
+        double kFirst = rpmForFirst * tireCirc * PhysicsConstants.MsToKmh / 60.0;
         double vFirstKmh = Math.Max(kFirst / (fdNom * Math.Max(firstGear, 0.1)), 1.0);
 
         vTop = Math.Max(vTop, vFirstKmh * 1.05);
@@ -219,9 +222,9 @@ internal static class GearingCalculator
         double targetKmh = track.Discipline == Discipline.Drag
             ? effectiveMaxKmh * DragSpeedFactor(track.DragDistance)
             : Math.Min(effectiveMaxKmh, CalculationHelpers.TargetSpeedCapKmh);
-        double targetMs = targetKmh / 3.6;
+        double targetMs = targetKmh / PhysicsConstants.MsToKmh;
 
-        double tireCirc = Math.PI * car.DrivenWheelDiameterInch * 0.0254;
+        double tireCirc = Math.PI * car.DrivenWheelDiameterInch * PhysicsConstants.InchToMeter;
 
         // The ratio SET follows the FITTED gearbox's gear count (these ratios apply directly to
         // the box the user actually has), tailored to the DISCIPLINE (first-gear height + spacing)
@@ -243,7 +246,7 @@ internal static class GearingCalculator
         // speed, so the geared top speed lands ON the car's real max — no overshoot for very
         // high-revving engines (FD would need to exceed its max), no undershoot for few-gear boxes
         // (FD would need to drop below its min). top gear = kFd / (FD × targetKmh).
-        double kFd = car.MaxRPM * targetRpmFraction * tireCirc * 3.6 / 60.0;
+        double kFd = car.MaxRPM * targetRpmFraction * tireCirc * PhysicsConstants.MsToKmh / 60.0;
         double topGearFloor = targetKmh > 1.0 ? kFd / (c.FinalDriveMax * targetKmh) : 0.0;
         double topGearCeiling = targetKmh > 1.0 && c.FinalDriveMin > 0.01 ? kFd / (c.FinalDriveMin * targetKmh) : 0.0;
 
@@ -261,7 +264,7 @@ internal static class GearingCalculator
 
         // Actual top speed with the stock/default final drive.
         double actualTopKmh = car.MaxRPM > 0 && topGear > 0
-            ? car.MaxRPM * targetRpmFraction * tireCirc / (60.0 * currentFd * topGear) * 3.6
+            ? car.MaxRPM * targetRpmFraction * tireCirc / (60.0 * currentFd * topGear) * PhysicsConstants.MsToKmh
             : targetKmh;
 
         // Adjust final drive so the car reaches the target top speed in top gear.

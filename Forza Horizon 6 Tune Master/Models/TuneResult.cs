@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Forza_Horizon_6_Tune_Master.Services;
 
 namespace Forza_Horizon_6_Tune_Master.Models;
 
@@ -68,7 +69,7 @@ public class TuneResult
     // run (e.g. install an N-speed gearbox).
     public int RecommendedGearCount { get; set; }
 
-    // Actual max speed achievable with this tune: v = MaxRPM × 0.95 × tireCirc / (60 × FD × topGear)
+    // Actual max speed achievable with this tune: v = MaxRPM × RevLimitFraction × tireCirc / (60 × FD × topGear)
     [System.Text.Json.Serialization.JsonIgnore]
     public double ActualMaxSpeedKmh
     {
@@ -77,8 +78,8 @@ public class TuneResult
             if (Car == null || GearRatios.Count == 0 || FinalDrive <= 0) return 0;
             double topGear = GearRatios[^1];
             if (topGear <= 0) return 0;
-            double tireCirc = Math.PI * Car.DrivenWheelDiameterInch * 0.0254;
-            return Math.Round(Car.MaxRPM * 0.95 * tireCirc / (60.0 * FinalDrive * topGear) * 3.6);
+            double tireCirc = Math.PI * Car.DrivenWheelDiameterInch * PhysicsConstants.InchToMeter;
+            return Math.Round(Car.MaxRPM * CalculationHelpers.RevLimitFraction * tireCirc / (60.0 * FinalDrive * topGear) * PhysicsConstants.MsToKmh);
         }
     }
 

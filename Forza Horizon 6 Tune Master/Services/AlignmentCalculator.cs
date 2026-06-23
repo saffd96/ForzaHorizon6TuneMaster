@@ -44,7 +44,7 @@ internal static class AlignmentCalculator
 
         // Power: add negative camber to the driven axle.
         double ptw = car.PowerHP / Math.Max(car.TotalMass, 1.0);
-        double powerAdj = -Math.Min(0.6, Math.Max(0, ptw - 0.25) * 0.4);
+        double powerAdj = -Math.Min(0.6, Math.Max(0, ptw - PhysicsConstants.PtwReferenceHpPerKg) * 0.4);
 
         double camF = staticF + baseF + aeroAdj + (car.DriveType == DriveType.FWD ? powerAdj : car.DriveType == DriveType.AWD ? powerAdj * 0.5 : 0.0);
         double camR = staticR + baseR + aeroAdj + (car.DriveType == DriveType.RWD ? powerAdj : car.DriveType == DriveType.AWD ? powerAdj * 0.5 : 0.0);
@@ -123,7 +123,7 @@ internal static class AlignmentCalculator
         double caster = frontPhys?.Caster ?? 6.0;
 
         // Heavier cars benefit from a little more caster for self-centering.
-        caster += (car.TotalMass - 1500.0) / 1000.0 * 0.3;
+        caster += (car.TotalMass - PhysicsConstants.RefMassKg) / 1000.0 * 0.3;
 
         // Discipline tuning.
         caster += track.Discipline switch

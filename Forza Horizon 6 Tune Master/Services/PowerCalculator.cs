@@ -8,6 +8,13 @@ public static class PowerCalculator
 {
     private const double RadSToRPM = 60.0 / (2.0 * Math.PI);
 
+    // Epsilon below which a power/torque figure is treated as "not a real value".
+    private const double MinValidValue = 0.1;
+    // Synthesised torque/power curve resolution (sample count).
+    private const int TorqueCurvePoints = 20;
+    // Resample resolution when re-gridding a DB torque curve onto the engine's rev range.
+    private const int ResampledCurvePoints = 24;
+
     public static void Calculate(CarCard car, SelectedParts? parts = null)
     {
         var db = Fh6DatabaseService.Instance;
@@ -51,7 +58,7 @@ public static class PowerCalculator
         // (EngineGraphingMaxPower) at a maxed build, interpolated in between. The power
         // curve is rescaled so its peak lands there while keeping its shape.
         double finalPower;
-        if (targetPowerHP > 0.1 && curvePowerPeak > 0.1)
+        if (targetPowerHP > MinValidValue && curvePowerPeak > MinValidValue)
         {
             double kp = targetPowerHP / curvePowerPeak;
             powerCurve = powerCurve!.Select(p => Math.Round(p * kp, 1)).ToArray();
@@ -60,7 +67,7 @@ public static class PowerCalculator
         else
         {
             // No dyno anchor (electric, or no engine row) → trust the curve as-is.
-            finalPower = curvePowerPeak > 0.1 ? Math.Round(curvePowerPeak, 1) : 0;
+            finalPower = curvePowerPeak > MinValidValue ? Math.Round(curvePowerPeak, 1) : 0;
         }
 
         // Peak torque is anchored the SAME way but to its OWN dyno pair (stock SimPeakTorque
@@ -70,7 +77,7 @@ public static class PowerCalculator
         // independent axes (each rescales to its own max), so scaling them by different
         // factors is visually consistent.
         double finalTorque;
-        if (targetTorqueNm > 0.1 && curveTorquePeak > 0.1)
+        if (targetTorqueNm > MinValidValue && curveTorquePeak > MinValidValue)
         {
             double kt = targetTorqueNm / curveTorquePeak;
             if (torqueCurve is { Length: > 0 })
@@ -79,7 +86,7 @@ public static class PowerCalculator
         }
         else
         {
-            finalTorque = curveTorquePeak > 0.1 ? Math.Round(curveTorquePeak) : 0;
+            finalTorque = curveTorquePeak > MinValidValue ? Math.Round(curveTorquePeak) : 0;
         }
 
         // All writes together — no partial mutation
@@ -162,9 +169,9 @@ public static class PowerCalculator
         // valid when an engine row resolves; SimPeakPower is *stock* power, not a
         // ceiling, so we don't cap with it -- fall back to the curve instead.
         double powerCapHP = effectiveEngine != null
-            ? effectiveEngine.EngineGraphingMaxPower * 1.341
+            ? effectiveEngine.EngineGraphingMaxPower * PhysicsConstants.KwToHp
             : 0;
-        if (powerCapHP <= 0.1)
+        if (powerCapHP <= MinValidValue)
             return (maxRPM, fiCurve.Max(), 0, 0, fiCurve, true); // no engine row -> curve, flagged estimate
 
         // Each part scales torque by its TorqueScale; the build's combined multiplier is
@@ -245,14 +252,14 @@ public static class PowerCalculator
 
         double stockHP;
         if (nativeEngine && dbCar.SimPeakPower > 0)
-            stockHP = dbCar.SimPeakPower * 0.1341;
+            stockHP = dbCar.SimPeakPower * PhysicsConstants.DeciKwToHp;
         else if (donor is { SimPeakPower: > 0 })
-            stockHP = donor.SimPeakPower * 0.1341;
+            stockHP = donor.SimPeakPower * PhysicsConstants.DeciKwToHp;
         else
-            stockHP = curveStockHp > 0.1 ? curveStockHp : powerCapHP / Math.Max(maxBuildScale, 1.0);
+            stockHP = curveStockHp > MinValidValue ? curveStockHp : powerCapHP / Math.Max(maxBuildScale, 1.0);
         stockHP = Math.Min(stockHP, powerCapHP);
 
-        double targetPowerHP = stockHP > 0.1
+        double targetPowerHP = stockHP > MinValidValue
             ? stockHP * Math.Pow(powerCapHP / stockHP, progress)
             : powerCapHP * progress;
 
@@ -267,11 +274,11 @@ public static class PowerCalculator
         else if (donor is { SimPeakTorque: > 0 })
             stockTorqueNm = donor.SimPeakTorque * 100.0;
         else
-            stockTorqueNm = curveStockTq > 0.1 ? curveStockTq
-                : (torqueCapNm > 0.1 ? torqueCapNm / Math.Max(maxBuildScale, 1.0) : 0);
-        if (torqueCapNm > 0.1) stockTorqueNm = Math.Min(stockTorqueNm, torqueCapNm);
+            stockTorqueNm = curveStockTq > MinValidValue ? curveStockTq
+                : (torqueCapNm > MinValidValue ? torqueCapNm / Math.Max(maxBuildScale, 1.0) : 0);
+        if (torqueCapNm > MinValidValue) stockTorqueNm = Math.Min(stockTorqueNm, torqueCapNm);
 
-        double targetTorqueNm = (stockTorqueNm > 0.1 && torqueCapNm > 0.1)
+        double targetTorqueNm = (stockTorqueNm > MinValidValue && torqueCapNm > MinValidValue)
             ? stockTorqueNm * Math.Pow(torqueCapNm / stockTorqueNm, progress)
             : 0;
 
@@ -474,8 +481,8 @@ public static class PowerCalculator
         double[] curve = BuildCamTorqueCurve(dbCar, db, torqueScale, redlineRPM, peakTorqueNm, stockCam, out int rpm);
         if (stockFi != null) curve = ApplyFiCore(curve, rpm, stockFi, 1.0);
         if (curve.Length == 0) return (0, 0);
-        // PowerPeak returns Nm*rpm (a relative proxy); /7121 converts it to HP.
-        return (PowerPeak(curve, rpm) / 7121.0, curve.Max());
+        // PowerPeak returns Nm*rpm (a relative proxy); /NmRpmToHp converts it to HP.
+        return (PowerPeak(curve, rpm) / PhysicsConstants.NmRpmToHp, curve.Max());
     }
 
     // Peak engine power implied by a torque curve (max of torque*rpm over the sweep).
@@ -575,7 +582,7 @@ public static class PowerCalculator
         if (curveMaxRPM <= 0) curveMaxRPM = targetMaxRPM;
         if (targetMaxRPM <= 0 || rawN < 2) return raw.Select(v => Math.Round(v, 1)).ToArray();
 
-        const int outN = 24;
+        const int outN = ResampledCurvePoints;
         double[] outc = new double[outN];
         for (int i = 0; i < outN; i++)
         {
@@ -591,7 +598,7 @@ public static class PowerCalculator
 
     private static double[] GenerateIceTorqueCurve(DbCar dbCar, double peakTorque, double redlineRPM)
     {
-        int points = 20;
+        int points = TorqueCurvePoints;
         double[] curve = new double[points];
         double torquePeakRPM = dbCar.SimPeakTorqueAngVel * RadSToRPM;
         double powerPeakRPM = dbCar.SimPeakAngVel * RadSToRPM;
@@ -612,7 +619,7 @@ public static class PowerCalculator
 
     private static double[] GenerateElectricTorqueCurve(double peakTorque, int maxRPM)
     {
-        int points = 20;
+        int points = TorqueCurvePoints;
         double[] curve = new double[points];
         for (int i = 0; i < points; i++)
         {
@@ -633,7 +640,7 @@ public static class PowerCalculator
         for (int i = 0; i < points; i++)
         {
             double rpm = maxRPM * i / (double)(points - 1);
-            power[i] = Math.Round(torqueCurve[i] * rpm / 7121.0, 1);
+            power[i] = Math.Round(torqueCurve[i] * rpm / PhysicsConstants.NmRpmToHp, 1);
         }
         return power;
     }

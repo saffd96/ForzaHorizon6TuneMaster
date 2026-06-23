@@ -25,10 +25,7 @@ internal static class CalculationHelpers
 
     internal const double RevLimitFraction   = 0.95;
     internal const double TargetSpeedCapKmh  = 700;
-
-    internal const double SpringPhysicalFloorFactor = 0.55;
-    internal const double DragFirstGearBaseline = 4.5;
-    internal const double GearDegradeRallyFactor = 1.05;
+    internal const int    MaxNewtonIterations = 15;
 
     internal static double EffectiveWtDist(CarCard car)
     {
@@ -71,12 +68,12 @@ internal static class CalculationHelpers
             _                  => 0.006
         };
 
-        double powerW = car.PowerHP * 745.7;
-        const double rho = 1.225;
-        double fRR = crr * car.TotalMass * 9.81;
+        double powerW = car.PowerHP * PhysicsConstants.HpToWatt;
+        const double rho = PhysicsConstants.AirDensity;
+        double fRR = crr * car.TotalMass * PhysicsConstants.GravityMs2;
 
         double v = Math.Pow(powerW / (0.5 * rho * cdATotal), 1.0 / 3.0);
-        for (int i = 0; i < 15; i++)
+        for (int i = 0; i < MaxNewtonIterations; i++)
         {
             double fv = 0.5 * rho * cdATotal * v * v * v + fRR * v - powerW;
             double dv = 1.5 * rho * cdATotal * v * v + fRR;
@@ -85,7 +82,7 @@ internal static class CalculationHelpers
             v = Math.Max(v - step, 1.0);
             if (Math.Abs(step) < 1e-4) break;
         }
-        return Math.Round(Math.Clamp(v * 3.6, 60.0, TargetSpeedCapKmh));
+        return Math.Round(Math.Clamp(v * PhysicsConstants.MsToKmh, 60.0, TargetSpeedCapKmh));
     }
 
     internal static double GetSeasonGripFactor(Season s) => s switch
@@ -95,6 +92,11 @@ internal static class CalculationHelpers
         Season.Spring => 1.00,
         _             => 1.05
     };
+
+    // Season grip mapped to a multiplier: `floor` at the low-grip end, `floor + span` at the
+    // high. Centralises the repeated "floor + GetSeasonGripFactor(season) * span" pattern.
+    internal static double SeasonGripMultiplier(Season s, double floor, double span)
+        => floor + GetSeasonGripFactor(s) * span;
 
     internal static (double Diff, double Spring, double Damper) GetPowerDeliveryFactors(
         PowertrainType pt, AspirationType? asp, bool antiLag = false)

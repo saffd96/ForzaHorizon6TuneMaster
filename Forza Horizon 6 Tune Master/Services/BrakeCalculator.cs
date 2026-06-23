@@ -6,8 +6,9 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 internal static class BrakeCalculator
 {
-    public static void CalculateBrakes(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh = 250) =>
-        CalculateBrakes(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh);
+    // In-game brake pressure defaults to 100%; a firm race tune sits a bit above. This base
+    // keeps the typical car around 110-130% before friction/mass/speed/slider scaling.
+    private const double BaseBrakePressurePct = 125.0;
 
     public static void CalculateBrakes(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
     {
@@ -36,7 +37,7 @@ internal static class BrakeCalculator
             if (track.Discipline == Discipline.Drag)
                 fbBias = 50.0;
 
-            double fbMassFactor = Math.Pow(car.TotalMass / 1500.0, 0.55);
+            double fbMassFactor = Math.Pow(car.TotalMass / PhysicsConstants.RefMassKg, 0.55);
             double fbSpeedFactor = 1.0 + Math.Max(0, effectiveMaxKmh - 200.0) / 400.0 * 0.10;
             double fbPressure = 110.0 * fbMassFactor * fbSpeedFactor;
 
@@ -101,7 +102,7 @@ internal static class BrakeCalculator
         // mildly reduces the needed pedal effort (sqrt, not full division — full division
         // pushed race brakes well under 100% which is too soft), and heavier cars need more.
         double frictionScale = brakes.GameFrictionScaleBraking > 0.1 ? brakes.GameFrictionScaleBraking : 1.0;
-        double massRef = 1500.0;
+        double massRef = PhysicsConstants.RefMassKg;
         double massFactor = Math.Pow(car.TotalMass / massRef, 0.55);
 
         // Faster cars / longer straights can use a touch more pressure for repeatability.
@@ -113,7 +114,7 @@ internal static class BrakeCalculator
         // toward the 200 cap. Normalised, the common 0.5 value yields a neutral factor of 1.
         double torqueSliderFactor = brakes.BrakeTorqueSlider > 0.01 ? 0.5 / brakes.BrakeTorqueSlider : 1.0;
 
-        double pressure = 125.0 / Math.Sqrt(frictionScale) * massFactor * speedFactor * torqueSliderFactor;
+        double pressure = BaseBrakePressurePct / Math.Sqrt(frictionScale) * massFactor * speedFactor * torqueSliderFactor;
 
         // Dynamic balance limits from the brake's physical torque capacity. The torque clamps
         // are symmetric (250/250) for almost every car, so a tight +/-2 window around the

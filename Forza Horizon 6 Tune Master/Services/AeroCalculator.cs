@@ -37,7 +37,7 @@ internal static class AeroCalculator
         (double rearFraction, double frontFraction, string noteKey) = AeroFractions(track.Discipline, car.DriveType);
 
         double ptw = car.PowerHP / Math.Max(car.TotalMass, 1.0);
-        double ptwRef = 0.25;
+        double ptwRef = PhysicsConstants.PtwReferenceHpPerKg;
         double powerFactor = 1.0 - CalculationHelpers.Clamp((ptw - ptwRef) / ptwRef, -0.5, 0.5) * 0.20;
         rearFraction *= powerFactor;
         frontFraction *= powerFactor;

@@ -181,11 +181,11 @@ internal class CarSpecController
         IsLoadingCars = true;
         try
         {
-            var result = await _carDbService.LoadCarDatabaseAsync();
-            _carDatabase = result.Cars;
+            var cars = await _carDbService.LoadCarDatabaseAsync();
+            _carDatabase = cars;
             ApplyCarFilter();
             SelectCarFromProfile(car);
-            SetStatusMessage?.Invoke(string.Format(T("StatusCarsLoaded"), result.Cars.Count));
+            SetStatusMessage?.Invoke(string.Format(T("StatusCarsLoaded"), cars.Count));
         }
         catch (Exception ex)
         {

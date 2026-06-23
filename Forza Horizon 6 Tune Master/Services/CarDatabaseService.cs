@@ -6,11 +6,12 @@ using Forza_Horizon_6_Tune_Master.Models;
 
 namespace Forza_Horizon_6_Tune_Master.Services;
 
-public record CarLoadResult(List<CarData> Cars, bool FromCache, string? WebErrorMessage);
-
+// Projects the embedded SQLite car table (Fh6DatabaseService) into the UI's CarData list.
+// The car list comes from the bundled DB, not from the network — the old web/cache load path
+// (and its CarLoadResult.FromCache / WebErrorMessage flags) is gone.
 public class CarDatabaseService
 {
-    public Task<CarLoadResult> LoadCarDatabaseAsync()
+    public Task<List<CarData>> LoadCarDatabaseAsync()
     {
         var db = Fh6DatabaseService.Instance;
         var cars = db.GetAllCars()
@@ -30,7 +31,7 @@ public class CarDatabaseService
             })
             .ToList();
 
-        return Task.FromResult(new CarLoadResult(cars, false, null));
+        return Task.FromResult(cars);
     }
 
     private static readonly Regex _camelSplit = new("(?<=[a-z])(?=[A-Z])", RegexOptions.Compiled);
