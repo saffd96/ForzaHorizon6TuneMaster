@@ -60,7 +60,7 @@ The embedded DB keys upgrade tables by several different schemes. Mixing them up
 | Key | Value | Source | Used by |
 |---|---|---|---|
 | **Ordinal** | `Data_Car.Id` (raw) | `car.CarDbId` | engine/spring-damper/brakes/anti-sway/tire-compound/rim/rear-wing upgrades |
-| **CarBodyId** | `Data_Car.Id × 1000` | `car.CarBodyId` | car-body weight, chassis stiffness, tire width/aspect, track spacing, bumpers/skirts |
+| **CarBodyId** | `Data_Car.Id × 1000` | `car.CarBodyId` | car-body weight, chassis stiffness, tire width/aspect, track spacing, bumpers/skirts/hood |
 | **EngineID** | from the selected engine swap | — | all `*ByEngineId` engine-internal upgrades (camshaft, valves, pistons, turbo, …) |
 | **DrivetrainID** | from `List_UpgradeDrivetrain` | — | transmission, clutch, driveline, differential |
 

@@ -78,6 +78,7 @@ public class PartDisplayNameResolver
         { typeof(DbUpgradeFrontBumper),         "List_UpgradeCarBodyFrontBumper" },
         { typeof(DbUpgradeRearBumper),          "List_UpgradeCarBodyRearBumper" },
         { typeof(DbUpgradeSideSkirt),           "List_UpgradeCarBodySideSkirt" },
+        { typeof(DbUpgradeHood),                "List_UpgradeCarBodyHood" },
         { typeof(DbUpgradeWeightReduction),     "List_UpgradeCarBodyWeight" },
         { typeof(DbUpgradeChassisStiffness),    "List_UpgradeCarBodyChassisStiffness" },
         { typeof(DbUpgradeTireWidthFront),      "List_UpgradeCarBodyTireWidthFront" },
@@ -244,6 +245,14 @@ public class PartDisplayNameResolver
                     if (ss.Level >= 4) { name = T("Upgrades_IDS_Name_267"); return true; }
                     string baseName = T(ss.IsStock ? "Upgrades_IDS_Name_98" : "Upgrades_IDS_Name_99");
                     name = WithManufacturer(baseName, ss);
+                    return name != "";
+                }
+            case DbUpgradeHood hd:
+                {
+                    // Hoods only have Stock (100) and Street (101) strings; higher tiers reuse
+                    // the "Street Hood" label disambiguated by the manufacturer brand.
+                    string baseName = T(hd.IsStock ? "Upgrades_IDS_Name_100" : "Upgrades_IDS_Name_101");
+                    name = WithManufacturer(baseName, hd);
                     return name != "";
                 }
 

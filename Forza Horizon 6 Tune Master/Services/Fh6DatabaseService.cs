@@ -67,6 +67,7 @@ public class Fh6DatabaseService
     private readonly ConcurrentDictionary<int, List<DbUpgradeFrontBumper>> _frontBumpersByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeRearBumper>> _rearBumpersByCarBodyId = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeSideSkirt>> _sideSkirtsByCarBodyId = new();
+    private readonly ConcurrentDictionary<int, List<DbUpgradeHood>> _hoodsByCarBodyId = new();
     // Stock wheel lightness tier (MassLevel) per car, by MediaName — the baseline the
     // wheel-style weight delta is measured against. ConcurrentDictionary because
     // InitializeAsync can run from several threads (parallel tests) before the
@@ -203,6 +204,7 @@ public class Fh6DatabaseService
         LoadFrontBumpers(conn);
         LoadRearBumpers(conn);
         LoadSideSkirts(conn);
+        LoadHoods(conn);
         LoadWeightReductions(conn);
         LoadChassisStiffness(conn);
         LoadTireWidthsFront(conn);
@@ -1170,6 +1172,23 @@ public class Fh6DatabaseService
         }
     }
 
+    private void LoadHoods(SqliteConnection conn)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Id,CarBodyID,Level,IsStock,ManufacturerId,MassDiff," +
+            "WeightDistDiff,DragScale,WindInstabilityScale,Price FROM List_UpgradeCarBodyHood";
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            AddToGroupedDict(_hoodsByCarBodyId, I(r, 1), new DbUpgradeHood
+            {
+                Id = I(r, 0), CarBodyId = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
+                ManufacturerID = I(r, 4), MassDiff = D(r, 5), WeightDistDiff = D(r, 6),
+                DragScale = D(r, 7), WindInstabilityScale = D(r, 8), Price = I(r, 9)
+            });
+        }
+    }
+
     private void LoadWeightReductions(SqliteConnection conn)
     {
         using var cmd = conn.CreateCommand();
@@ -1611,6 +1630,10 @@ public class Fh6DatabaseService
     {
         return _sideSkirtsByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
     }
+    public List<DbUpgradeHood> GetHoods(int carBodyId)
+    {
+        return _hoodsByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
+    }
     public List<DbUpgradeWeightReduction> GetWeightReductions(int carBodyId)
     {
         return _weightReductionsByCarBodyId.TryGetValue(carBodyId, out var l) ? l : [];
@@ -1703,6 +1726,7 @@ public class Fh6DatabaseService
     public DbUpgradeFrontBumper? GetFrontBumperById(int id) => GetById<DbUpgradeFrontBumper>(id);
     public DbUpgradeRearBumper? GetRearBumperById(int id) => GetById<DbUpgradeRearBumper>(id);
     public DbUpgradeSideSkirt? GetSideSkirtById(int id) => GetById<DbUpgradeSideSkirt>(id);
+    public DbUpgradeHood? GetHoodById(int id) => GetById<DbUpgradeHood>(id);
     public DbUpgradeAntiSwayFront? GetArbFrontById(int id) => GetById<DbUpgradeAntiSwayFront>(id);
     public DbUpgradeAntiSwayRear? GetArbRearById(int id) => GetById<DbUpgradeAntiSwayRear>(id);
     public DbUpgradeTireWidthFront? GetTireWidthFrontById(int id) => GetById<DbUpgradeTireWidthFront>(id);

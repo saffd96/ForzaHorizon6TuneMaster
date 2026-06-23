@@ -8,22 +8,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6f5aca4a-8e95-4953-8a4a-45b281d20313" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/PhysicsConstants.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/CarCard.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/CarCard.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/TuneResult.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/TuneResult.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/AeroCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/AeroCalculator.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/AlignmentCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/AlignmentCalculator.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/SelectedParts.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/SelectedParts.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/BrakeCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/BrakeCalculator.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/CalculationHelpers.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/CalculationHelpers.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/CarDatabaseService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/CarDatabaseService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/DifferentialCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/DifferentialCalculator.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/GearingCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/GearingCalculator.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/PowerCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/PowerCalculator.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/SuspensionCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/SuspensionCalculator.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/CarSpecController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/CarSpecController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/ResultParam.xaml.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/ResultParam.xaml.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/Services/CarDatabaseServiceTests.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/DbSchema.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/DbSchema.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/Fh6DatabaseService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/Fh6DatabaseService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/PartDisplayNameResolver.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/PartDisplayNameResolver.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/AeroVisualViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/AeroVisualViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/MainViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/MainViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/AeroVisualView.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/AeroVisualView.xaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/Models/SelectedPartsTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/Models/SelectedPartsTests.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/Services/BodyKitTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/Services/BodyKitTests.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

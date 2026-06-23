@@ -9,5 +9,6 @@
         <v:PartRow Label="{l:Loc Part_RearWing}"    Options="{Binding RearWings}"    Selected="{Binding SelectedRearWing}"/>
         <v:PartRow Label="{l:Loc Part_RearBumper}"  Options="{Binding RearBumpers}"  Selected="{Binding SelectedRearBumper}"/>
         <v:PartRow Label="{l:Loc Part_SideSkirts}"  Options="{Binding SideSkirts}"   Selected="{Binding SelectedSideSkirt}"/>
+        <v:PartRow Label="{l:Loc Part_Hood}"        Options="{Binding Hoods}"        Selected="{Binding SelectedHood}"/>
     </StackPanel>
 </UserControl>

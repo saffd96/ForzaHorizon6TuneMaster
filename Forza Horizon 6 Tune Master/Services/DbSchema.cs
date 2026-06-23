@@ -457,6 +457,15 @@ public sealed record DbUpgradeSideSkirt : DbUpgradePart
     [JsonIgnore] public string DisplayName => $"SideSkirt Lv{Level}";
 }
 
+// A hood upgrade (List_UpgradeCarBodyHood), keyed by CarBodyID like the bumpers/skirts.
+// Carbon/lightweight hoods carry a negative MassDiff; a body-kit conversion also re-keys
+// here — a swapped body's stock hood can differ in mass from the original (e.g. −5 kg).
+public sealed record DbUpgradeHood : DbUpgradePart
+{
+    public int CarBodyId { get; init; }
+    [JsonIgnore] public string DisplayName => $"Hood Lv{Level}";
+}
+
 // A body-kit conversion (List_UpgradeCarBody): maps a car (Ordinal) to a specific
 // CarBodyID. The stock kit's CarBodyID is Ordinal×1000; swapped kits use other ids and
 // re-key every CarBody-scoped upgrade (bumpers, skirts, tire fitment, track) plus the

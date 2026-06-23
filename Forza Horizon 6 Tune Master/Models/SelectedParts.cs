@@ -65,6 +65,10 @@ public class SelectedParts : NotifyBase
     [ResetToStock]
     public int? SideSkirtPartId { get => _sideSkirtPartId; set { if (Set(ref _sideSkirtPartId, value)) OnPartChanged(); } }
 
+    private int? _hoodPartId;
+    [ResetToStock]
+    public int? HoodPartId { get => _hoodPartId; set { if (Set(ref _hoodPartId, value)) OnPartChanged(); } }
+
     // Wheel model selection: Id from List_Wheels (null = stock).
     private int? _wheelFrontId;
     [ResetToStock]
@@ -334,6 +338,7 @@ public class SelectedParts : NotifyBase
         total += PartMassDiff(_frontBumperPartId, id => _db.GetFrontBumperById(id));
         total += PartMassDiff(_rearBumperPartId, id => _db.GetRearBumperById(id));
         total += PartMassDiff(_sideSkirtPartId, id => _db.GetSideSkirtById(id));
+        total += PartMassDiff(_hoodPartId, id => _db.GetHoodById(id));
         total += PartMassDiff(_antiSwayFrontPartId, id => _db.GetArbFrontById(id));
         total += PartMassDiff(_antiSwayRearPartId, id => _db.GetArbRearById(id));
         total += PartMassDiff(_tireWidthFrontPartId, id => _db.GetTireWidthFrontById(id));
@@ -393,6 +398,7 @@ public class SelectedParts : NotifyBase
         total = AddWeightDist(total, _forcedInductionPartId, id => _db.GetForcedInductionById(id));
         total = AddWeightDist(total, _chassisStiffnessPartId, id => _db.GetChassisStiffnessById(id));
         total = AddWeightDist(total, _oilCoolingPartId, id => _db.GetOilCoolingById(id));
+        total = AddWeightDist(total, _hoodPartId, id => _db.GetHoodById(id));
         return total;
     }
 

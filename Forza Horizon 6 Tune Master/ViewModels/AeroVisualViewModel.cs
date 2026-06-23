@@ -7,7 +7,7 @@ using Forza_Horizon_6_Tune_Master.Services;
 
 namespace Forza_Horizon_6_Tune_Master.ViewModels;
 
-// "Аэродинамика и внешний вид" module: front/rear bumper, side skirts, rear wing.
+// "Аэродинамика и внешний вид" module: front/rear bumper, side skirts, hood, rear wing.
 // Weight reduction and chassis stiffness moved to the chassis module (SuspensionViewModel).
 public class AeroVisualViewModel : INotifyPropertyChanged
 {
@@ -22,6 +22,7 @@ public class AeroVisualViewModel : INotifyPropertyChanged
     public ObservableCollection<PartOption> RearWings { get; } = new();
     public ObservableCollection<PartOption> RearBumpers { get; } = new();
     public ObservableCollection<PartOption> SideSkirts { get; } = new();
+    public ObservableCollection<PartOption> Hoods { get; } = new();
 
     public PartOption? SelectedFrontBumper
     {
@@ -47,6 +48,12 @@ public class AeroVisualViewModel : INotifyPropertyChanged
         set { if (value != null) _parts.SideSkirtPartId = value.Id; }
     }
 
+    public PartOption? SelectedHood
+    {
+        get => Hoods.FirstOrDefault(o => o.Id == _parts.HoodPartId);
+        set { if (value != null) _parts.HoodPartId = value.Id; }
+    }
+
     public void LoadForCar(CarCard car, SelectedParts parts)
     {
         _parts = parts;
@@ -63,6 +70,8 @@ public class AeroVisualViewModel : INotifyPropertyChanged
             id => parts.RearBumperPartId = id);
         LoadBodyKit(SideSkirts, _db.GetSideSkirts(carBodyId), () => parts.SideSkirtPartId,
             id => parts.SideSkirtPartId = id);
+        LoadBodyKit(Hoods, _db.GetHoods(carBodyId), () => parts.HoodPartId,
+            id => parts.HoodPartId = id);
 
         RefreshSelections();
     }
@@ -73,6 +82,7 @@ public class AeroVisualViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedRearWing));
         OnPropertyChanged(nameof(SelectedRearBumper));
         OnPropertyChanged(nameof(SelectedSideSkirt));
+        OnPropertyChanged(nameof(SelectedHood));
     }
 
     private void LoadBodyKit<T>(ObservableCollection<PartOption> target,

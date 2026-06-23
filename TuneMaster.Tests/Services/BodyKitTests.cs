@@ -57,6 +57,25 @@ public class BodyKitTests
         Assert.True(db.GetRearWings(NsxOrdinal).Count > 1);
     }
 
+    // 1998 Toyota Supra RZ (ordinal 461): the widebody conversion itself has MassDiff 0, but it
+    // re-keys to a body whose STOCK hood is 5 kg lighter than the original — so switching kits
+    // changes the car's mass through the auto-fitted hood, not through the conversion row.
+    [Fact]
+    public async Task SupraRz_WidebodyStockHood_Is5KgLighterThanStockBodyHood()
+    {
+        const int supraOrdinal = 461;
+        var db = await DbAsync();
+        var kits = db.GetCarBodies(supraOrdinal);
+        int stockBody = kits.Single(k => k.IsStock).CarBodyId;
+        int swapBody = kits.Single(k => !k.IsStock).CarBodyId;
+
+        var stockHood = db.GetHoods(stockBody).Single(h => h.IsStock);
+        var swapHood = db.GetHoods(swapBody).Single(h => h.IsStock);
+
+        Assert.Equal(0.0, stockHood.MassDiff);
+        Assert.Equal(-5.0, swapHood.MassDiff);
+    }
+
     [Fact]
     public async Task Nsx_SwappedKit_HasWiderTrackGeometry()
     {

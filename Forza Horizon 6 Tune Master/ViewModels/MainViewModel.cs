@@ -1249,6 +1249,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         _selectedParts.FrontBumperPartId = null;
         _selectedParts.RearBumperPartId = null;
         _selectedParts.SideSkirtPartId = null;
+        _selectedParts.HoodPartId = null;
         _selectedParts.WeightReductionPartId = null;
         _selectedParts.ChassisStiffnessPartId = null;
         _selectedParts.TireWidthFrontPartId = null;

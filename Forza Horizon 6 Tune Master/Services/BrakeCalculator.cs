@@ -9,6 +9,9 @@ internal static class BrakeCalculator
     // In-game brake pressure defaults to 100%; a firm race tune sits a bit above. This base
     // keeps the typical car around 110-130% before friction/mass/speed/slider scaling.
     private const double BaseBrakePressurePct = 125.0;
+    
+    public static void CalculateBrakes(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh = 250) =>
+        CalculateBrakes(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh);
 
     public static void CalculateBrakes(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
     {
