@@ -198,7 +198,7 @@ public static class PowerCalculator
         double naBaseProxy = naCurveNoParts.Length > 0 ? TorqueRpmPeak(naCurveNoParts, maxRPM) : naCurPeakProxy;
         double naBaseHP = naBaseProxy / PhysicsConstants.NmRpmToHp;
 
-        // ── Part gains (additive — turbo does NOT multiply bolt-on parts) ──────
+        // ── Part HP/torque gains (game applies partScale multiplicatively at curve level) ──
         double partHP = Math.Max(naCurPeakHP - naBaseHP, 0);
         double partTq = Math.Max((torqueCurve.Length > 0 ? torqueCurve.Max() : 0)
                                  - (naCurveNoParts.Length > 0 ? naCurveNoParts.Max() : 0), 0);
@@ -206,22 +206,11 @@ public static class PowerCalculator
         // ── Stock turbo effective multiplier (asymptotic, no breathing clamp) ──
         double stockTurboMultEff = StockTurboMultiplier(stockFi);
 
-        // ── Pure NA breathing: deboost cam curve by stock FI ──────────────────
-        // Cam torque curves include the stock FI.  To avoid double-counting when
-        // computing the new turbo multiplier, divide out the stock FI first.
-        double naPureBaseHP = stockTurboMultEff > 1.001
-            ? naBaseHP / stockTurboMultEff
-            : naBaseHP;
-
-        // ── Current turbo multiplier (with breathing) ─────────────────────────
-        double curTurboMult = TurboMult(currentFi, naPureBaseHP);
-
-        // ── Primary power: (pure NA breathing × current turbo) + additive parts
-        double addPower = naPureBaseHP * curTurboMult + partHP;
-        double naPureBaseTq = stockTurboMultEff > 1.001
-            ? (naCurveNoParts.Length > 0 ? naCurveNoParts.Max() : 0) / stockTurboMultEff
-            : (naCurveNoParts.Length > 0 ? naCurveNoParts.Max() : 0);
-        double addTorque = naPureBaseTq * curTurboMult + partTq;
+        // ── Scalar power/torque estimates — each branch below overwrites these ──
+        // The authoritative result is mulPower (line below) which implements the
+        // exact game formula: stockHP × peak(baseCurve×parts×FiScale) / peak(baseCurve×stockFi).
+        double addPower = 0;
+        double addTorque = 0;
 
         // ── Output FI curve: use fiCurveFull (already includes partScale) for correct curve shape
         double[] fiCurve = fiCurveFull;
@@ -268,10 +257,8 @@ public static class PowerCalculator
         bool fiChanged = currentFi != stockFi || (currentFi != null && stockFi != null && currentFi.Id != stockFi.Id);
         if (!fiChanged)
         {
-            // Cam-only (or pure stock): FI didn't change, so the breathing model
-            // should produce naPureBaseHP*stockTurboMult+partHP ≈ naCurPeakHP+partHP.
-            // Keep the additive anchor fallback for cases where the curve-to-anchor
-            // ratio drifts with cam-only changes.
+            // Cam-only (or pure stock): FI didn't change — anchor to SimPeakPower plus
+            // the cam-upgrade delta read directly off the curve. Keeps exact stock figure.
             double naDeltaPowerHp = (naCurPeakProxy - naStkPeakProxy) / PhysicsConstants.NmRpmToHp;
             double naDeltaTorqueNm = (torqueCurve.Length > 0 ? torqueCurve.Max() : 0)
                                      - (stockCurve.Length > 0 ? stockCurve.Max() : 0);
@@ -281,6 +268,9 @@ public static class PowerCalculator
         else if (stockFi == null || Ms(stockFi) <= 0)
         {
             // NA engine receiving its FIRST forced induction.
+            // addPower is a pressure-based floor; mulPower (computed above) is the
+            // curve-based game formula (stockHP × fiCurveFull_peak / stockCurve_peak)
+            // and already includes partScale — so we keep it as the authoritative value.
             double pressureScale = Ms(currentFi);
             double baseEff = TurboBaseEff;
             if (pressureScale <= 0)
@@ -293,8 +283,6 @@ public static class PowerCalculator
                 addPower = stockHP * (1.0 + torqueScale * baseEff * (pressureScale - 1.0));
                 addTorque = stockTorqueNm * (1.0 + torqueScale * baseEff * (pressureScale - 1.0));
             }
-            mulPower = addPower;
-            mulTorque = addTorque;
         }
         else
         {
@@ -348,8 +336,9 @@ public static class PowerCalculator
             double fiPms = fiPart switch { DbUpgradeTurboSingle ts => ts.PowerMaxScale, DbUpgradeTurboTwin tt => tt.PowerMaxScale, _ => -1 };
             double fiMs = fiPart switch { DbUpgradeTurboSingle ts => ts.MaxScale, DbUpgradeTurboTwin tt => tt.MaxScale, _ => -1 };
             Console.WriteLine($"  selectedFi PowerMaxScale={fiPms}  MaxScale={fiMs}  HasAntiLag={fiPart?.HasAntiLag ?? false}");
-            Console.WriteLine($"  stockTurboMultEff={stockTurboMultEff:F3}  curTurboMult={curTurboMult:F3}");
-            Console.WriteLine($"  naPureBaseHP={naPureBaseHP:F1}  naBaseHP={naBaseHP:F1}  partHP={partHP:F1}");
+            double dbgNaPureBase = stockTurboMultEff > 1.001 ? naBaseHP / stockTurboMultEff : naBaseHP;
+            Console.WriteLine($"  stockTurboMultEff={stockTurboMultEff:F3}  curTurboMult(dbg)={TurboMult(currentFi, dbgNaPureBase):F3}");
+            Console.WriteLine($"  naPureBaseHP={dbgNaPureBase:F1}  naBaseHP={naBaseHP:F1}  partHP={partHP:F1}");
             Console.WriteLine($"  intercoolerMaxScale={intercoolerMaxScale:F3}");
             Console.WriteLine($"  addPower={addPower:F1}  mulPower={mulPower:F1}  winner={Math.Max(addPower, mulPower):F1}");
             Console.WriteLine($"  powerCapHP={powerCapHP:F1}  torqueCapNm={torqueCapNm:F1}");
