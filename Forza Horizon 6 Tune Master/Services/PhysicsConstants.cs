@@ -21,7 +21,7 @@ internal static class PhysicsConstants
     public const double HpToWatt    = 745.7;         // power: mechanical HP → W
     public const double KwToHp      = 1.341;         // power: kW → HP
     public const double DeciKwToHp  = KwToHp * 0.1;  // power: game 0.1-kW units → HP (0.1341)
-    public const double NmRpmToHp   = 7121.0;        // power: torque[Nm] × rpm → HP
+    public const double NmRpmToHp   = 7121.07;       // power: torque[Nm] × rpm → HP (HpToWatt × 60 / 2π)
     public const double MsToKmh     = 3.6;           // speed: m/s → km/h
     public const double NmmToNm     = 1000.0;        // spring rate: N/mm → N/m
 
