@@ -203,8 +203,8 @@ public static class PowerCalculator
             : (naCurveNoParts.Length > 0 ? naCurveNoParts.Max() : 0);
         double addTorque = naPureBaseTq * curTurboMult + partTq;
 
-        // ── Output FI curve (used for shape only — magnitude re-scaled in ApplyResults)
-        double[] fiCurve = ApplyForcedInductionCurve(naCurveNoParts, maxRPM, parts, db, intercoolerMaxScale);
+        // ── Output FI curve: use fiCurveFull (already includes partScale) for correct curve shape
+        double[] fiCurve = fiCurveFull;
 
         // ── Stock anchor ─────────────────────────────────────────────────────
         bool nativeEngine = !isEngineSwapped;
@@ -288,8 +288,8 @@ public static class PowerCalculator
             double naAnchorTq = stockTurboMultEff > 1.001 ? stockTorqueNm / stockTurboMultEff : stockTorqueNm;
             double anchorMult = TurboMult(currentFi, naAnchorHP);     // breath from anchored NA base
             double anchorRatio = naBaseHP > MinValidValue ? stockHP / naBaseHP : 1.0;
-            addPower = naAnchorHP * anchorMult + partHP * anchorRatio;
-            addTorque = naAnchorTq * anchorMult + partTq * anchorRatio;
+            addPower = (naAnchorHP + partHP * anchorRatio) * anchorMult;
+            addTorque = (naAnchorTq + partTq * anchorRatio) * anchorMult;
             // Keep the multiplicative estimate (mulPower/mulTorque from above) alive so
             // Math.Max can pick it: the breathing model (addPower) under-reports big
             // SINGLE turbos by ~25 % vs the engine's dyno ceiling, while the full-MaxScale
@@ -379,9 +379,7 @@ public static class PowerCalculator
         AddPart(db, parts.IgnitionPartId, id => db.GetIgnitionById(id), scales);
         AddPart(db, parts.ExhaustPartId, id => db.GetExhaustById(id), scales);
         AddPart(db, parts.IntakePartId, id => db.GetIntakeById(id), scales);
-        if (parts.ForcedInductionPartId == null)
-            AddPart(db, parts.ManifoldPartId, id => db.GetManifoldById(id), scales);
-        AddPart(db, parts.OilCoolingPartId, id => db.GetOilCoolingById(id), scales);
+        AddPart(db, parts.ManifoldPartId, id => db.GetManifoldById(id), scales);
         AddPart(db, parts.RestrictorPartId, id => db.GetRestrictorById(id), scales);
 
         if (scales.Count == 0) return 1.0;
