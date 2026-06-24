@@ -145,7 +145,7 @@ public static class PowerCalculator
         // cams in the DB have one) it is never used — the real curve carries its
         // own magnitude.  The fallback (GenerateIceTorqueCurve) would be fed this
         // ceiling value and produce a curve 2–7× too high, but is never reached.
-        // SimPeakTorque is in deci-Nm (×100 → Nm), used only when engine==null.
+        // SimPeakTorque is in centi-Nm (×100 → Nm), used only when engine==null.
         double peakTorqueNm = effectiveEngine?.EngineGraphingMaxTorque
                               ?? (dbCar.SimPeakTorque > 0 ? dbCar.SimPeakTorque * 100.0 : 0);
         double torqueScale = isEngineSwapped ? 1.0 : dbCar.GameTorqueScale;
