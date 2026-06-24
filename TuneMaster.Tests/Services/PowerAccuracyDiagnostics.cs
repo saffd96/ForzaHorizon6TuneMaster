@@ -149,6 +149,137 @@ public class PowerAccuracyDiagnostics
         }
     }
 
+    [Fact]
+    public async Task Diagnostic_BoltOnPartTorqueScales()
+    {
+        using var env = new TestingEnvironment();
+        await Fh6DatabaseService.Instance.InitializeAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        int oilWithScale = 0, exhaustTurboWithScale = 0, manifoldTurboWithScale = 0, icWithScale = 0;
+
+        foreach (var dbCar in db.GetAllCars())
+        {
+            if (dbCar.AspirationTypeId == 8 || dbCar.PowertrainID == 1 || dbCar.SimPeakPower <= 0) continue;
+            var swaps = db.GetEngineSwaps(dbCar.Id);
+            var stockSwap = swaps.FirstOrDefault(s => s.IsStock);
+            if (stockSwap == null) continue;
+            int eid = stockSwap.EngineID;
+
+            bool hasTurbo = db.GetTurbosSingle(eid).Any(t => t.IsStock)
+                         || db.GetTurbosTwin(eid).Any(t => t.IsStock);
+
+            var oilParts = db.GetOilCooling(eid);
+            if (oilParts.Any(p => !p.IsStock && (p.TorqueScale ?? 1.0) > 1.0)) oilWithScale++;
+
+            if (hasTurbo)
+            {
+                var exhaustList = db.GetExhaust(eid);
+                if (exhaustList.Any(e => !e.IsStock && (e.TorqueScale ?? 1.0) > 1.0)) exhaustTurboWithScale++;
+
+                var manifolds = db.GetManifolds(eid);
+                if (manifolds.Any(m => !m.IsStock && (m.TorqueScale ?? 1.0) > 1.0)) manifoldTurboWithScale++;
+
+                var ics = db.GetIntercoolers(eid);
+                if (ics.Any(i => !i.IsStock && i.MaxScaleScale > 1.0)) icWithScale++;
+            }
+        }
+
+        _out.WriteLine($"Cars with OilCooling TorqueScale>1: {oilWithScale}");
+        _out.WriteLine($"Turbo cars with Exhaust TorqueScale>1: {exhaustTurboWithScale}");
+        _out.WriteLine($"Turbo cars with Manifold TorqueScale>1: {manifoldTurboWithScale}");
+        _out.WriteLine($"Turbo cars with Intercooler MaxScaleScale>1: {icWithScale}");
+
+        // not a hard assertion — just diagnostic output
+        Assert.True(true);
+    }
+
+    [Fact]
+    public async Task Report_BigTurbo_ConstantCalibration()
+    {
+        using var env = new TestingEnvironment();
+        await Fh6DatabaseService.Instance.InitializeAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        _out.WriteLine("=== Big Single-Turbo builds (MaxScale > 3.0) vs EngineGraphingMaxPower ===");
+        _out.WriteLine($"{"Car",5} {"Eng",5} {"MaxScale",9} {"calcHP",7} {"ceilHP",7} {"ratio%",8}");
+
+        foreach (var dbCar in db.GetAllCars().OrderBy(c => c.Id))
+        {
+            if (dbCar.AspirationTypeId == 8 || dbCar.PowertrainID == 1) continue;
+            var swaps = db.GetEngineSwaps(dbCar.Id);
+            var stockSwap = swaps.FirstOrDefault(s => s.IsStock);
+            if (stockSwap == null) continue;
+            int eid = stockSwap.EngineID;
+
+            var bigTurbos = db.GetTurbosSingle(eid).Where(t => !t.IsStock && t.MaxScale > 3.0).ToList();
+            if (bigTurbos.Count == 0) continue;
+
+            var engine = db.GetEngine(eid);
+            if (engine == null || engine.EngineGraphingMaxPower <= 0) continue;
+
+            double ceilHP = engine.EngineGraphingMaxPower * 1.341; // kW → HP
+            var bestTurbo = bigTurbos.OrderByDescending(t => t.MaxScale).First();
+
+            var c = new CarCard
+            {
+                CarDbId = dbCar.Id, CarBodyId = dbCar.Id * 1000,
+                EngineDbId = eid, PowertrainType = PowertrainType.ICE,
+            };
+            var p = new SelectedParts { ForcedInductionPartId = bestTurbo.Id };
+            try { PowerCalculator.Calculate(c, p); } catch { continue; }
+
+            double ratio = (c.PowerHP - ceilHP) / ceilHP * 100;
+            _out.WriteLine($"{dbCar.Id,5} {eid,5} {bestTurbo.MaxScale,9:F2} {c.PowerHP,7:F0} {ceilHP,7:F0} {ratio,7:F1}%");
+        }
+
+        _out.WriteLine("\nДля перекалибровки: сравнить с реальным HP из игры для машин выше.");
+        _out.WriteLine("Цель: ratio% близко к 0 (в пределах ±5%).");
+    }
+
+    [Fact]
+    public async Task Report_RedlineScale_ByEngineType()
+    {
+        using var env = new TestingEnvironment();
+        await Fh6DatabaseService.Instance.InitializeAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        const double RadSToRPM = 60.0 / (2.0 * Math.PI);
+
+        _out.WriteLine("=== Cam RedlineRPM vs SimRedlineAngVel×60/2π — расхождения > 2% ===");
+        _out.WriteLine($"{"Car",5} {"Eng",5} {"CamRPM",8} {"SimRPM",8} {"ratio",7} {"Notes"}");
+
+        int checked_ = 0, flagged = 0;
+        foreach (var dbCar in db.GetAllCars())
+        {
+            if (dbCar.AspirationTypeId == 8 || dbCar.SimRedlineAngVel <= 0) continue;
+            var swaps = db.GetEngineSwaps(dbCar.Id);
+            var stockSwap = swaps.FirstOrDefault(s => s.IsStock);
+            if (stockSwap == null) continue;
+            int eid = stockSwap.EngineID;
+
+            var engine = db.GetEngine(eid);
+            if (engine == null) continue;
+
+            var cams = db.GetCamshafts(eid);
+            var stockCam = cams.FirstOrDefault(c => c.IsStock) ?? cams.FirstOrDefault();
+            if (stockCam == null || stockCam.RedlineRPM <= 0) continue;
+
+            double simRPM = dbCar.SimRedlineAngVel * RadSToRPM;
+            double ratio = stockCam.RedlineRPM / simRPM;
+            checked_++;
+
+            if (Math.Abs(ratio - 1.0) > 0.02)
+            {
+                flagged++;
+                _out.WriteLine($"{dbCar.Id,5} {eid,5} {stockCam.RedlineRPM,8:F0} {simRPM,8:F0} {ratio,7:F3}");
+            }
+        }
+
+        _out.WriteLine($"\nПроверено: {checked_}  Флагов (ratio отклонение >2%): {flagged}");
+        _out.WriteLine("Ожидаемое ratio ≈ 1.000. Отклонения указывают на нестандартный GameRedlineScale.");
+    }
+
     private static SelectedParts BuildMaxedParts(int? swapId, int engineId, Fh6DatabaseService db)
     {
         int? BestTs<T>(List<T> list) where T : DbUpgradePart =>
