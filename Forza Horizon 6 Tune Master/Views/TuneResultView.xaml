@@ -75,28 +75,6 @@
         </Style>
         <Style x:Key="SeasonChip" TargetType="RadioButton" BasedOn="{StaticResource DiscChip}">
             <Setter Property="GroupName" Value="HeaderSeason"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="bd" Background="{StaticResource ElevatedBrush}"
-                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
-                                CornerRadius="5" Padding="12,5">
-                            <TextBlock x:Name="lbl" Text="{TemplateBinding Content}" FontSize="13" FontWeight="Bold"
-                                       Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="bd"  Property="Background"  Value="#1E1A00"/>
-                                <Setter TargetName="bd"  Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
-                                <Setter TargetName="lbl" Property="Foreground"  Value="{StaticResource AccentBrush}"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource CyanBrush}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
         <Style x:Key="DragChip" TargetType="RadioButton" BasedOn="{StaticResource SeasonChip}">
             <Setter Property="GroupName" Value="HeaderDrag"/>
@@ -549,13 +527,13 @@
                                 </StackPanel>
                             </WrapPanel>
                             <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
-                                <RadioButton Style="{StaticResource SeasonChip}" Content="{l:Loc Enum_Season_Spring}"
+                                <RadioButton Style="{StaticResource SeasonChip}" Tag="&#x1F338;" Content="{l:Loc Enum_Season_Spring}"
                                              IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Spring}}"/>
-                                <RadioButton Style="{StaticResource SeasonChip}" Content="{l:Loc Enum_Season_Summer}"
+                                <RadioButton Style="{StaticResource SeasonChip}" Tag="&#x2600;" Content="{l:Loc Enum_Season_Summer}"
                                              IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Summer}}"/>
-                                <RadioButton Style="{StaticResource SeasonChip}" Content="{l:Loc Enum_Season_Autumn}"
+                                <RadioButton Style="{StaticResource SeasonChip}" Tag="&#x1F342;" Content="{l:Loc Enum_Season_Autumn}"
                                              IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Autumn}}"/>
-                                <RadioButton Style="{StaticResource SeasonChip}" Content="{l:Loc Enum_Season_Winter}"
+                                <RadioButton Style="{StaticResource SeasonChip}" Tag="&#x2744;" Content="{l:Loc Enum_Season_Winter}"
                                              IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Winter}}"/>
                             </WrapPanel>
                         </Grid>

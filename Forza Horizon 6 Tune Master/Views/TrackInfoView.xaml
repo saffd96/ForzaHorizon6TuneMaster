@@ -50,38 +50,6 @@
 
         <Style x:Key="SeasonButton" TargetType="RadioButton" BasedOn="{StaticResource DisciplineButton}">
             <Setter Property="GroupName" Value="Season"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="bd"
-                                Background="{StaticResource ElevatedBrush}"
-                                BorderBrush="{StaticResource BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="6"
-                                Padding="0">
-                            <StackPanel Margin="6,5" HorizontalAlignment="Center">
-                                <TextBlock x:Name="Icon"  FontSize="14" HorizontalAlignment="Center"
-                                           Text="{TemplateBinding Tag}"/>
-                                <TextBlock x:Name="Label" FontSize="10" FontFamily="{StaticResource AppFontFamily}"
-                                           FontWeight="SemiBold" HorizontalAlignment="Center"
-                                           Margin="0,1,0,0"
-                                           Text="{TemplateBinding Content}"/>
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="bd"    Property="Background"   Value="#1E1A00"/>
-                                <Setter TargetName="bd"    Property="BorderBrush"  Value="{StaticResource AccentBrush}"/>
-                                <Setter TargetName="bd"    Property="BorderThickness" Value="2"/>
-                                <Setter TargetName="Label" Property="Foreground"   Value="{StaticResource AccentBrush}"/>
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource CyanBrush}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <Style x:Key="DragDistButton" TargetType="RadioButton">
