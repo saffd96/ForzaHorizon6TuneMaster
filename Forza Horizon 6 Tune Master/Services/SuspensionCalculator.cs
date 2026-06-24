@@ -395,8 +395,8 @@ internal static class SuspensionCalculator
         Discipline.Drift                         => (2.4, 2.0),
         Discipline.Rally                         => (2.3, 2.1),
         Discipline.CrossCountry                  => (2.1, 1.9),
-        Discipline.Touge                         => (2.9, 3.1),
-        Discipline.Street                        => (2.7, 2.9),
-        _                                        => (2.8, 3.0)
+        Discipline.Touge                         => (2.6, 2.7),
+        Discipline.Street                        => (2.5, 2.6),
+        _                                        => (2.5, 2.6)
     };
 }

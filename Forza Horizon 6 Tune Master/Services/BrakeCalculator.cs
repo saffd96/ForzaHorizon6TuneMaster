@@ -27,7 +27,7 @@ internal static class BrakeCalculator
             fbBias += car.EnginePosition switch
             {
                 EnginePosition.Front => +2.5,
-                EnginePosition.Mid   =>  0.0,
+                EnginePosition.Mid   => -1.0,
                 EnginePosition.Rear  => -2.5,
                 _                    =>  0.0
             };
@@ -42,7 +42,7 @@ internal static class BrakeCalculator
 
             double fbMassFactor = Math.Pow(car.TotalMass / PhysicsConstants.RefMassKg, 0.55);
             double fbSpeedFactor = 1.0 + Math.Max(0, effectiveMaxKmh - 200.0) / 400.0 * 0.10;
-            double fbPressure = 110.0 * fbMassFactor * fbSpeedFactor;
+            double fbPressure = BaseBrakePressurePct * fbMassFactor * fbSpeedFactor;
 
             r.BrakeBalance = Math.Round(CalculationHelpers.Clamp(fbBias, 30.0, 70.0));
             r.BrakePressure = Math.Round(CalculationHelpers.Clamp(fbPressure, 50.0, 200.0));

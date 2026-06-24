@@ -333,6 +333,7 @@ internal static class GearingCalculator
                     effectiveMaxKmh = newEff;
                     AeroCalculator.CalculateAero(car, track, parts, db, r, ex, effectiveMaxKmh);
                     effectiveMaxKmh = CalculationHelpers.ComputeEffectiveMaxSpeedKmh(car, r);
+                    AlignmentCalculator.CalculateCamber(car, track, parts, db, r, ex, effectiveMaxKmh);
                 }
             }
 

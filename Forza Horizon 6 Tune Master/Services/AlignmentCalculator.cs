@@ -8,7 +8,7 @@ internal static class AlignmentCalculator
 {
     private const double CamberMin = -5.0, CamberMax = 0.0;
     private const double ToeMin = -1.0, ToeMax = 1.0;
-    private const double CasterMin = 3.0, CasterMax = 10.0;
+    private const double CasterMin = 3.0, CasterMax = 7.0;
 
     public static void CalculateCamber(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r,
         Dictionary<string, string> ex, double effectiveMaxKmh) =>
