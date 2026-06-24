@@ -42,6 +42,7 @@ public static class PowerCalculator
         {
             var (maxRPM, peakTorqueNm, targetPower, targetTorque, torqueCurve, estimated) = CalcIce(car, dbCar, db, parts);
             ApplyResults(car, parts, db, maxRPM, peakTorqueNm, targetPower, targetTorque, torqueCurve, estimated);
+            ApplyClosedThrottleCurve(car, dbCar, db, parts);
         }
     }
 
@@ -79,6 +80,25 @@ public static class PowerCalculator
         car.RotationalInertiaFactor = inertiaFactor;
         car.CachedTorqueCurveNm = torqueCurve;
         car.CachedPowerCurveHP = powerCurve;
+    }
+
+    private static void ApplyClosedThrottleCurve(CarCard car, DbCar dbCar, Fh6DatabaseService db, SelectedParts parts)
+    {
+        if (car.CachedTorqueCurveNm == null) return;
+        int effectiveEngineId = ResolveEffectiveEngineId(car, dbCar, db, parts);
+        if (effectiveEngineId <= 0) return;
+
+        var cam = parts.CamshaftPartId != null
+            ? db.GetCamshaftById(parts.CamshaftPartId.Value)
+            : db.GetCamshafts(effectiveEngineId).FirstOrDefault(c => c.IsStock)
+              ?? db.GetCamshafts(effectiveEngineId).FirstOrDefault();
+        if (cam == null) return;
+
+        var tc = db.GetTorqueCurve(cam.TorqueCurveFullThrottleID);
+        if (tc == null || tc.TorqueScale <= 0.001 || tc.ZeroThrottleTorqueScale <= 0) return;
+
+        double closeRatio = tc.ZeroThrottleTorqueScale / tc.TorqueScale;
+        car.CachedClosedThrottleCurveNm = car.CachedTorqueCurveNm.Select(t => Math.Round(t * closeRatio, 1)).ToArray();
     }
 
     // ── Electric ──────────────────────────────────────────────────────────────

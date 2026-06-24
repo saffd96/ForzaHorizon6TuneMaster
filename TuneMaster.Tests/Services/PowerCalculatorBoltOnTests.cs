@@ -225,6 +225,47 @@ public class PowerCalculatorBoltOnTests
             $"Race intercooler ({cardRace.PowerHP:F0} HP) should give more power than stock ({cardStock.PowerHP:F0} HP) with stock turbo.");
     }
 
+    // ── СРЕД #5: Closed-throttle curve ──────────────────────────────────────
+
+    [Fact]
+    public async Task ICE_ClosedThrottleCurve_IsPopulatedAndSmallerThanFullThrottle()
+    {
+        using var env = new TestingEnvironment();
+        var db = Fh6DatabaseService.Instance;
+        await db.InitializeAsync();
+
+        DbCar? testCar = null;
+        int testEngineId = 0;
+
+        foreach (var dbCar in db.GetAllCars())
+        {
+            if (dbCar.AspirationTypeId == 8 || dbCar.PowertrainID == 1 || dbCar.SimPeakPower <= 0) continue;
+            var swaps = db.GetEngineSwaps(dbCar.Id);
+            var stockSwap = swaps.FirstOrDefault(s => s.IsStock);
+            if (stockSwap == null) continue;
+            var cams = db.GetCamshafts(stockSwap.EngineID);
+            if (cams.Count == 0) continue;
+            var stockCam = cams.FirstOrDefault(c => c.IsStock) ?? cams.First();
+            var tc = db.GetTorqueCurve(stockCam.TorqueCurveFullThrottleID);
+            if (tc == null || tc.TorqueScale <= 0.001 || tc.ZeroThrottleTorqueScale <= 0) continue;
+
+            testCar = dbCar; testEngineId = stockSwap.EngineID;
+            break;
+        }
+
+        if (testCar == null) return;
+
+        var card = MakeCard(testCar, testEngineId);
+        PowerCalculator.Calculate(card, new SelectedParts());
+
+        Assert.NotNull(card.CachedClosedThrottleCurveNm);
+        Assert.True(card.CachedClosedThrottleCurveNm!.Length > 0);
+        double maxFull = card.CachedTorqueCurveNm?.Max() ?? 0;
+        double maxClosed = card.CachedClosedThrottleCurveNm.Max();
+        Assert.True(maxClosed < maxFull,
+            $"Closed-throttle peak ({maxClosed:F0} Nm) should be less than full-throttle ({maxFull:F0} Nm).");
+    }
+
     // ── КРИТ #2: Manifold на NA-двигателе при добавлении FI-апгрейда ─────────
     // Турбированные двигатели в БД не имеют Manifold с TorqueScale > 1.
     // Тест проверяет NA-двигатель у которого есть manifold + доступный turbo-апгрейд.

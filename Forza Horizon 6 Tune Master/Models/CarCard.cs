@@ -17,6 +17,7 @@ public class CarCard : NotifyBase
     [JsonIgnore] public int DriveTypeID { get; set; }
     [JsonIgnore] public double[]? CachedTorqueCurveNm { get; set; }
     [JsonIgnore] public double[]? CachedPowerCurveHP { get; set; }
+    [JsonIgnore] public double[]? CachedClosedThrottleCurveNm { get; set; }
 
     private string _name = "";
     public string Name
