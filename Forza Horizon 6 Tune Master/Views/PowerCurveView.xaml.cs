@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
@@ -441,5 +442,101 @@ public partial class PowerCurveView : UserControl
         ChartCanvas.Children.Add(pLegendLbl);
         Canvas.SetLeft(pLegendLbl, legendX + 18);
         Canvas.SetTop(pLegendLbl, pLegendY);
+
+        // ── peak value labels (right side) ──
+        int torquePeakIdx = 0, powerPeakIdx = 0;
+        double maxTVal = torque[0], maxPVal = power[0];
+        for (int i = 1; i < n; i++)
+        {
+            if (torque[i] > maxTVal) { maxTVal = torque[i]; torquePeakIdx = i; }
+            if (power[i] > maxPVal) { maxPVal = power[i]; powerPeakIdx = i; }
+        }
+        int torquePeakRpm = MaxRPM * torquePeakIdx / (n - 1);
+        int powerPeakRpm = MaxRPM * powerPeakIdx / (n - 1);
+
+        double peakY = pLegendY + 22;
+
+        // torque peak: two lines
+        var tPeakValLbl = new TextBlock
+        {
+            Text = $"{loc.T("ChartTorquePeakLabel")}: {maxTVal:F0} {torqueUnit}",
+            Foreground = torqueBrush,
+            FontSize = 10,
+            FontFamily = lblFamily,
+            FontWeight = FontWeights.Bold
+        };
+        ChartCanvas.Children.Add(tPeakValLbl);
+        Canvas.SetLeft(tPeakValLbl, legendX);
+        Canvas.SetTop(tPeakValLbl, peakY);
+
+        var tPeakRpmLbl = new TextBlock
+        {
+            Text = string.Format(loc.T("ChartPeakAtRpmFmt"), torquePeakRpm),
+            Foreground = torqueBrush,
+            FontSize = 10,
+            FontFamily = lblFamily,
+            FontWeight = FontWeights.Bold
+        };
+        ChartCanvas.Children.Add(tPeakRpmLbl);
+        Canvas.SetLeft(tPeakRpmLbl, legendX);
+        Canvas.SetTop(tPeakRpmLbl, peakY + 16);
+
+        // power peak: two lines
+        double pPeakY = peakY + 36;
+
+        var pPeakValLbl = new TextBlock
+        {
+            Text = $"{loc.T("ChartPowerPeakLabel")}: {maxPVal:F0} {powerUnit}",
+            Foreground = powerBrush,
+            FontSize = 10,
+            FontFamily = lblFamily,
+            FontWeight = FontWeights.Bold
+        };
+        ChartCanvas.Children.Add(pPeakValLbl);
+        Canvas.SetLeft(pPeakValLbl, legendX);
+        Canvas.SetTop(pPeakValLbl, pPeakY);
+
+        var pPeakRpmLbl = new TextBlock
+        {
+            Text = string.Format(loc.T("ChartPeakAtRpmFmt"), powerPeakRpm),
+            Foreground = powerBrush,
+            FontSize = 10,
+            FontFamily = lblFamily,
+            FontWeight = FontWeights.Bold
+        };
+        ChartCanvas.Children.Add(pPeakRpmLbl);
+        Canvas.SetLeft(pPeakRpmLbl, legendX);
+        Canvas.SetTop(pPeakRpmLbl, pPeakY + 16);
+
+        // single tolerance icon for both peak values (circle badge, same as wheels)
+        var toleranceIcon = CreateToleranceIcon(loc.T("ChartPeakToleranceHint"));
+        ChartCanvas.Children.Add(toleranceIcon);
+        Canvas.SetLeft(toleranceIcon, legendX + 64);
+        Canvas.SetTop(toleranceIcon, peakY - 72);
+    }
+
+    private Border CreateToleranceIcon(string tooltip)
+    {
+        var accentBrush = (Brush)FindResource("AccentBrush");
+        var border = new Border
+        {
+            Width = 20,
+            Height = 20,
+            CornerRadius = new CornerRadius(10),
+            Background = accentBrush,
+            Cursor = System.Windows.Input.Cursors.Help
+        };
+        border.Child = new TextBlock
+        {
+            Text = "!",
+            Foreground = Brushes.White,
+            FontWeight = FontWeights.Bold,
+            FontSize = 13,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        System.Windows.Controls.ToolTipService.SetToolTip(border, tooltip);
+        System.Windows.Controls.ToolTipService.SetShowDuration(border, 30000);
+        return border;
     }
 }

@@ -470,6 +470,8 @@
   "ChartRevLimitLabel": "отсечка",
   "ChartPowerPeakLabel": "Pmax",
   "ChartTorquePeakLabel": "Mmax",
+  "ChartPeakAtRpmFmt": "при {0} об/мин",
+  "ChartPeakToleranceHint": "Расчётные значения. Могут незначительно отличаться от внутриигровых из-за механик масштабирования кривой и аппроксимации.",
   "GearLegendTrajectory": "Траектория",
   "GearLegendMaxSpeed": "Макс. скорость",
   "ProfileDefaultName": "Новый профиль",

@@ -470,6 +470,8 @@
   "ChartRevLimitLabel": "rev limit",
   "ChartPowerPeakLabel": "Pmax",
   "ChartTorquePeakLabel": "Mmax",
+  "ChartPeakAtRpmFmt": "@ {0} RPM",
+  "ChartPeakToleranceHint": "Calculated values. May differ slightly from in-game due to curve scaling mechanics and approximation.",
   "GearLegendTrajectory": "Trajectory",
   "GearLegendMaxSpeed": "Max speed",
   "ProfileDefaultName": "New profile",

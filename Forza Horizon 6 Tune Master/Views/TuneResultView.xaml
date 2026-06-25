@@ -372,10 +372,14 @@
                                        Foreground="{StaticResource CyanBrush}" FontFamily="{StaticResource MonoFontFamily}"
                                        FontWeight="Bold" FontSize="{DynamicResource FontNormal}" VerticalAlignment="Center"
                                        ToolTip="{Binding TuneResult.Explanations[FinalDrive]}"/>
-                            <TextBlock Text="!" Foreground="{StaticResource AccentBrush}" FontWeight="Bold"
-                                       FontSize="{DynamicResource FontNormal}" VerticalAlignment="Center"
-                                       Margin="3,0,0,0" Cursor="Help" ToolTipService.ShowDuration="30000"
-                                       ToolTip="{l:Loc ResultRecGearsHint}"/>
+                            <Border Width="15" Height="15" CornerRadius="7.5" Margin="3,0,0,0"
+                                    VerticalAlignment="Center" Cursor="Help"
+                                    Background="{StaticResource AccentBrush}"
+                                    ToolTip="{l:Loc ResultRecGearsHint}"
+                                    ToolTipService.ShowDuration="30000">
+                                <TextBlock Text="!" Foreground="White" FontWeight="Bold"
+                                           FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
                             <CheckBox x:Name="ShowGearChart" Content="{l:Loc ResultGearChart}" IsChecked="True"
                                       Foreground="{StaticResource TextDimBrush}" FontSize="11"
                                       VerticalAlignment="Center" Margin="20,0,0,0"/>

@@ -234,9 +234,6 @@ public static class PowerCalculator
         double partTq = Math.Max((torqueCurve.Length > 0 ? torqueCurve.Max() : 0)
                                  - (naCurveNoParts.Length > 0 ? naCurveNoParts.Max() : 0), 0);
 
-        // ── Stock turbo effective multiplier (asymptotic, no breathing clamp) ──
-        double stockTurboMultEff = StockTurboMultiplier(stockFi);
-
         // ── Scalar power/torque estimates — each branch below overwrites these ──
         // The authoritative result is mulPower (line below) which implements the
         // exact game formula: stockHP × peak(baseCurve×parts×FiScale) / peak(baseCurve×stockFi).
@@ -276,6 +273,11 @@ public static class PowerCalculator
             stockTorqueNm = curveStockTq > MinValidValue ? curveStockTq
                 : (torqueCapNm > MinValidValue ? torqueCapNm * 0.5 : 0);
         if (torqueCapNm > MinValidValue) stockTorqueNm = Math.Min(stockTorqueNm, torqueCapNm);
+
+        // ── Curve-to-real-HP bridge: naBaseHP is the cam-only curve peak (curve-space);
+        //     stockHP is the real dyno figure.  anchorRatio rescales bolt-on HP/Tq gains
+        //     from curve-space into real-HP-space so they can mix with stockHP. ──
+        double anchorRatio = naBaseHP > MinValidValue ? stockHP / naBaseHP : 1.0;
 
         // ── Multiplicative fallback ──────────────────────────────────────────
         double[] stockFiCurve = stockFi != null ? ApplyFiCore(stockCurve, stockMaxRPM, stockFi, 1.0) : stockCurve;
@@ -317,47 +319,52 @@ public static class PowerCalculator
             }
             if (pressureScale > 1.0)
             {
-                addPower = stockHP * (1.0 + torqueScale * baseEff * (pressureScale - 1.0));
-                addTorque = stockTorqueNm * (1.0 + torqueScale * baseEff * trqRatio * (pressureScale - 1.0));
+                // Bolt-on parts (cam, exhaust, intake, etc.) increase NA breathing
+                // before the turbo multiplies it.  Scale part gains from curve-space
+                // to real-HP-space via the same anchorRatio used in the FI-upgrade path.
+                double naPowerWithParts = stockHP + partHP * anchorRatio;
+                double naTorqueWithParts = stockTorqueNm + partTq * anchorRatio;
+                addPower = naPowerWithParts * (1.0 + torqueScale * baseEff * (pressureScale - 1.0));
+                addTorque = naTorqueWithParts * (1.0 + torqueScale * baseEff * trqRatio * (pressureScale - 1.0));
             }
         }
         else
         {
-            // Boosted engine, FI upgrade: anchor to the stock dyno figure (SimPeakPower),
-            // NOT the raw DB torque-curve magnitude. On some engines the curve under-reports
-            // stock (e.g. a 2.0L I6-TT: curve ~136 hp vs SimPeakPower 206 hp), so deboosting
-            // the curve then reboosting it could land a BIGGER turbo BELOW stock. Re-deriving
-            // the pure-NA base from the stock anchor keeps the same MaxMult breathing model
-            // but guarantees output scales from the real stock figure for every car.
-            double naAnchorHP = stockTurboMultEff > 1.001 ? stockHP / stockTurboMultEff : stockHP;
-            double naAnchorTq = stockTurboMultEff > 1.001 ? stockTorqueNm / stockTurboMultEff : stockTorqueNm;
-            double anchorMult = TurboMult(currentFi, naAnchorHP);     // breath from anchored NA base
-            double anchorRatio = naBaseHP > MinValidValue ? stockHP / naBaseHP : 1.0;
-            addPower = (naAnchorHP + partHP * anchorRatio) * anchorMult;
-            addTorque = (naAnchorTq + partTq * anchorRatio) * anchorMult;
-            // Keep the multiplicative estimate (mulPower/mulTorque from above) alive so
-            // Math.Max can pick it: the breathing model (addPower) under-reports big
-            // SINGLE turbos by ~25 % vs the engine's dyno ceiling, while the full-MaxScale
-            // curve ratio reaches it. addPower still acts as a floor (never below stock).
+            // Boosted engine, FI upgrade: deboost the stock anchor to its pure-NA base
+            // using the same linear pressure-efficiency model as the NA→first-FI path,
+            // then reboost with the new FI.  The old asymptotic model (MaxMultA×Ms+MaxMultB,
+            // calibrated on one engine) overestimated power for most other engines — e.g.
+            // Syclone 4.3L V6 TT gave 410 hp vs in-game 362 hp (+13 %).  The linear
+            // efficiency model matches measured in-game power across all engine families.
+            double stockFiMult = FiEfficiencyMultiplier(stockFi, torqueScale);
+            double naAnchorHP = stockFiMult > 1.001 ? stockHP / stockFiMult : stockHP;
+            double naAnchorTq = stockFiMult > 1.001 ? stockTorqueNm / stockFiMult : stockTorqueNm;
+            double currentFiMult = FiEfficiencyMultiplier(currentFi, torqueScale);
+            double currentFiTqMult = FiTorqueMultiplier(currentFi, torqueScale);
+            addPower = (naAnchorHP + partHP * anchorRatio) * currentFiMult;
+            addTorque = (naAnchorTq + partTq * anchorRatio) * currentFiTqMult;
         }
 
-        // For NA→Lv-1 FI, the calibrated pressure-efficiency formula (addPower) is authoritative.
-        // mulPower = stockHP×MaxScale (full boost, no efficiency losses) overshoots measurements.
-        // Higher FI levels and factory-FI upgrades use max(addPower, mulPower) as before.
-        bool naFirstFi = stockFi == null && selectedFi != null && IsLowestFiLevel(selectedFi, effectiveEngineId, db);
+        // For NA→any-FI, the calibrated pressure-efficiency formula (addPower) is
+        // authoritative at EVERY level — not just Lv1.  mulPower uses the raw FI
+        // curve ratio without efficiency losses and overshoots at higher boost
+        // (e.g. Fairlady Z '03 DSC: Lv1=317✓, Lv2=350→337✗, Lv3=365→350✗).
+        // Boosted-engine FI upgrades keep max(addPower, mulPower) as before —
+        // the ratio of two FI curves partially cancels the efficiency error.
+        bool isNaToFi = stockFi == null && selectedFi != null;
 
-        // When FI is actually upgraded, the reported peak must not fall below the peak of
-        // the forced-induction torque curve. Stock / cam-only builds keep the exact
-        // SimPeak anchor (fiChanged == false). Skip for NA→first FI — the curve peak
-        // overshoots the calibrated formula (especially CSC with quadratic ramp).
-        if (fiChanged && !naFirstFi)
+        // FI curve floor guard: ensures addPower isn't below what the forced-induction
+        // torque curve suggests.  Only applies to boosted-engine FI upgrades — for
+        // NA→FI the curve peak includes the raw pressure multiplier without efficiency
+        // and would overshoot (especially CSC/DSC with quadratic/linear ramp).
+        if (fiChanged && !isNaToFi)
         {
             double fiPeakHp = TorqueRpmPeak(fiCurveFull, maxRPM) / PhysicsConstants.NmRpmToHp;
             addPower = Math.Max(addPower, fiPeakHp);
             if (fiCurveFull.Length > 0) addTorque = Math.Max(addTorque, fiCurveFull.Max());
         }
-        double targetPowerHP = Math.Clamp(naFirstFi ? addPower : Math.Max(addPower, mulPower), MinValidValue, powerCapHP);
-        double targetTorqueNm = Math.Max(naFirstFi ? addTorque : Math.Max(addTorque, mulTorque), MinValidValue);
+        double targetPowerHP = Math.Clamp(isNaToFi ? addPower : Math.Max(addPower, mulPower), MinValidValue, powerCapHP);
+        double targetTorqueNm = Math.Max(isNaToFi ? addTorque : Math.Max(addTorque, mulTorque), MinValidValue);
         if (torqueCapNm > MinValidValue) targetTorqueNm = Math.Min(targetTorqueNm, torqueCapNm);
 
         var finalPower = Math.Round(targetPowerHP, 1);
@@ -376,9 +383,8 @@ public static class PowerCalculator
             double fiPms = fiPart switch { DbUpgradeTurboSingle ts => ts.PowerMaxScale, DbUpgradeTurboTwin tt => tt.PowerMaxScale, _ => -1 };
             double fiMs = fiPart switch { DbUpgradeTurboSingle ts => ts.MaxScale, DbUpgradeTurboTwin tt => tt.MaxScale, _ => -1 };
             Console.WriteLine($"  selectedFi PowerMaxScale={fiPms}  MaxScale={fiMs}  HasAntiLag={fiPart?.HasAntiLag ?? false}");
-            double dbgNaPureBase = stockTurboMultEff > 1.001 ? naBaseHP / stockTurboMultEff : naBaseHP;
-            Console.WriteLine($"  stockTurboMultEff={stockTurboMultEff:F3}  curTurboMult(dbg)={TurboMult(currentFi, dbgNaPureBase):F3}");
-            Console.WriteLine($"  naPureBaseHP={dbgNaPureBase:F1}  naBaseHP={naBaseHP:F1}  partHP={partHP:F1}");
+            Console.WriteLine($"  stockFiMult={FiEfficiencyMultiplier(stockFi, torqueScale):F3}  currentFiMult={FiEfficiencyMultiplier(currentFi, torqueScale):F3}");
+            Console.WriteLine($"  naBaseHP={naBaseHP:F1}  partHP={partHP:F1}");
             Console.WriteLine($"  intercoolerMaxScale={intercoolerMaxScale:F3}");
             Console.WriteLine($"  addPower={addPower:F1}  mulPower={mulPower:F1}  winner={Math.Max(addPower, mulPower):F1}");
             Console.WriteLine($"  powerCapHP={powerCapHP:F1}  torqueCapNm={torqueCapNm:F1}");
@@ -390,15 +396,6 @@ public static class PowerCalculator
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private static bool IsLowestFiLevel(DbUpgradePart fi, int engineId, Fh6DatabaseService db) => fi switch
-    {
-        DbUpgradeTurboSingle ts => !db.GetTurbosSingle(engineId).Any(x => !x.IsStock && x.Level < ts.Level),
-        DbUpgradeTurboTwin   tt => !db.GetTurbosTwin(engineId).Any(x => !x.IsStock && x.Level < tt.Level),
-        DbUpgradeCSC        csc => !db.GetCSC(engineId).Any(x => !x.IsStock && x.Level < csc.Level),
-        DbUpgradeDSC        dsc => !db.GetDSC(engineId).Any(x => !x.IsStock && x.Level < dsc.Level),
-        _                       => false
-    };
 
     private static int ResolveEffectiveEngineId(CarCard car, DbCar dbCar, Fh6DatabaseService db, SelectedParts? parts = null)
     {
@@ -477,54 +474,60 @@ public static class PowerCalculator
         return GenerateIceTorqueCurve(dbCar, peakTorqueNm * baseScale, partRedlineRPM);
     }
 
-    // ── Turbo multiplier model ──────────────────────────────────────────────────
-    // Calibrated on Supra RZ (2JZ-GTE, twin-turbo stock, single-turbo upgrades).
-    // MaxScale → asymptotic multiplier:  maxMult = MaxMultA × MaxScale + MaxMultB.
-    // PowerMaxScale controls *breathing* — whether the turbo can reach its MaxScale
-    // ceiling at the current NA peak.  Anti-lag halves PMS resistance.
-    //
-    // NOTE: all four constants are empirical from one engine family.  31 single-turbo
-    // upgrades across the DB have MaxScale > 3.0 — the linear extrapolation into that
-    // range has not been validated against in-game measurements.
-    private const double MaxMultA = 2.15;
-    private const double MaxMultB = -1.085;
-    private const double BreathK = 0.2109;
-    private const double BreathAlFactor = 0.5;
+    // ── Unified FI efficiency model ────────────────────────────────────────────
+    // All three CalcIce paths now use the same linear pressure-efficiency formula:
+    //   multiplier = 1 + torqueScale × baseEff × (pressureScale − 1)
+    // where pressureScale = MaxScale (turbos) or RedlineRPMScale (superchargers).
+    // Efficiencies calibrated per-type on Nissan Fairlady Z '03 (CarId=344).
+    // The old asymptotic model (MaxMultA×Ms+MaxMultB, calibrated on Supra RZ only)
+    // overestimated power for most other engines — e.g. Syclone 4.3L V6 TT gave
+    // 410 hp vs in-game 362 hp (+13 %).
 
     // NA→first FI: addPower = stockHP × (1 + GTS × Eff × (Ms−1)).
-    // Calibrated on Nissan Fairlady Z '03 (CarId=344, GTS=0.850) — Lv1 each FI type.
     // ST(Ms=1.250→344hp) TT(Ms=1.250→344hp) CSC(Red=1.136→316hp) DSC(Red=1.136→317hp)
     private const double STBaseEff  = 0.935;
     private const double TTBaseEff  = 0.935;
     private const double CSCBaseEff = 0.874;
     private const double DSCBaseEff = 0.904;
 
-    /// <summary>Asymptotic turbo multiplier (no breathing clamp).</summary>
-    private static double StockTurboMultiplier(DbUpgradeForcedInduction? fi)
+    /// <summary>Unified FI power multiplier — linear pressure-efficiency model,
+    /// consistent across all three CalcIce paths.</summary>
+    private static double FiEfficiencyMultiplier(DbUpgradeForcedInduction? fi, double torqueScale)
     {
-        double ms = Ms(fi);
-        return ms > 0 ? Math.Max(MaxMultA * ms + MaxMultB, 1.0) : 1.0;
+        if (fi == null) return 1.0;
+        double pressureScale;
+        double baseEff;
+        switch (fi)
+        {
+            case DbUpgradeTurboSingle ts: pressureScale = ts.MaxScale;         baseEff = STBaseEff;  break;
+            case DbUpgradeTurboTwin   tt: pressureScale = tt.MaxScale;         baseEff = TTBaseEff;  break;
+            case DbUpgradeCSC        csc: pressureScale = csc.RedlineRPMScale; baseEff = CSCBaseEff; break;
+            case DbUpgradeDSC        dsc: pressureScale = dsc.RedlineRPMScale; baseEff = DSCBaseEff; break;
+            default: return 1.0;
+        }
+        if (pressureScale <= 1.0) return 1.0;
+        return 1.0 + torqueScale * baseEff * (pressureScale - 1.0);
     }
 
-    /// <summary>Effective turbo multiplier at the current breathing level.</summary>
-    private static double TurboMult(DbUpgradeForcedInduction? fi, double naPurePeakHP)
+    /// <summary>Torque-specific FI multiplier.  CSC (centrifugal supercharger)
+    /// produces less low-end torque than peak power (trqRatio = 0.426).</summary>
+    private static double FiTorqueMultiplier(DbUpgradeForcedInduction? fi, double torqueScale)
     {
-        double ms = Ms(fi);
-        if (ms <= 0) return 1.0;
-        double pms = Pm(fi);
-        if (pms <= 0) return Math.Max(MaxMultA * ms + MaxMultB, 1.0);
-        double tau = BreathK * pms * (fi?.HasAntiLag == true ? BreathAlFactor : 1.0);
-        double breath = Math.Clamp(naPurePeakHP / tau, 0.05, 1.0);
-        double effectiveMs = ms * breath;
-        return Math.Max(MaxMultA * effectiveMs + MaxMultB, 1.0);
+        if (fi == null) return 1.0;
+        double pressureScale;
+        double baseEff;
+        double trqRatio;
+        switch (fi)
+        {
+            case DbUpgradeTurboSingle ts: pressureScale = ts.MaxScale;         baseEff = STBaseEff;  trqRatio = 1.0;   break;
+            case DbUpgradeTurboTwin   tt: pressureScale = tt.MaxScale;         baseEff = TTBaseEff;  trqRatio = 1.0;   break;
+            case DbUpgradeCSC        csc: pressureScale = csc.RedlineRPMScale; baseEff = CSCBaseEff; trqRatio = 0.426; break;
+            case DbUpgradeDSC        dsc: pressureScale = dsc.RedlineRPMScale; baseEff = DSCBaseEff; trqRatio = 1.0;   break;
+            default: return 1.0;
+        }
+        if (pressureScale <= 1.0) return 1.0;
+        return 1.0 + torqueScale * baseEff * trqRatio * (pressureScale - 1.0);
     }
-
-    private static double Pm(DbUpgradeForcedInduction? fi) => fi switch
-    {
-        DbUpgradeTurboSingle ts => ts.PowerMaxScale,
-        DbUpgradeTurboTwin tt => tt.PowerMaxScale,
-        _ => 0
-    };
 
     private static double Ms(DbUpgradeForcedInduction? fi) => fi switch
     {
