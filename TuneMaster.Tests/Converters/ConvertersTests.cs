@@ -411,7 +411,7 @@ public class UnitValueConverterTests
     public void Convert_Spring_NMm()
     {
         var result = _conv.Convert(new object[] { 100.0, SpringUnit.NMm }, null, "spring", null);
-        Assert.Contains("100,0", (string)result);
+        Assert.Contains("1000,0", (string)result);
 
     }
 

@@ -232,7 +232,7 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Springs / Ride height -->
+                    <!-- Springs -->
                     <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource RCard}">
                         <StackPanel>
                             <TextBlock Text="{l:Loc ResultSprings}" Style="{StaticResource RCardHeader}"/>
@@ -245,6 +245,9 @@
                                     <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring"><Binding Path="TuneResult.SpringRear"/><Binding Path="SpringUnit"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.SpringRear"/><Binding Path="Constraints.SpringRearMin"/><Binding Path="Constraints.SpringRearMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
+                            </UniformGrid>
+                            <TextBlock Text="{l:Loc ResultRideHeight}" Style="{StaticResource RCardHeader}" Margin="0,8,0,0"/>
+                            <UniformGrid Columns="2">
                                 <v:ResultParam Label="{l:Loc ResultRideHeightFront}" Hint="{Binding TuneResult.Explanations[RideHeight]}" Margin="6,0,6,0">
                                     <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="height"><Binding Path="TuneResult.RideHeightFront"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
                                     <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.RideHeightFront"/><Binding Path="Constraints.RideHeightFrontMin"/><Binding Path="Constraints.RideHeightFrontMax"/></MultiBinding></v:ResultParam.Progress>

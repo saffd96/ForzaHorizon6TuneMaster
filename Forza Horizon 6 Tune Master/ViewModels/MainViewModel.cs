@@ -473,7 +473,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             {
                 SpringUnit.KgfMm => Math.Round(nmm / 9.807 * 10.0, 1),
                 SpringUnit.LbsIn => Math.Round(nmm / 0.175127, 1),
-                _ => nmm
+                _ => nmm * 10.0
             };
         }
         set
@@ -482,7 +482,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             {
                 SpringUnit.KgfMm => value / 10.0 * 9.807,
                 SpringUnit.LbsIn => value * 0.175127,
-                _ => value
+                _ => value / 10.0
             };
             OnPropertyChanged();
         }

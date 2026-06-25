@@ -427,8 +427,8 @@ public class MainViewModelTests : IDisposable
         var vm = new MainViewModel();
         vm.SpringUnit = SpringUnit.NMm;
 
-        vm.SpringFrontMinDisplay = 100.0;
-        Assert.True(Math.Abs(vm.Constraints.SpringFrontMin - 100.0) < 0.01);
+        vm.SpringFrontMinDisplay = 100.0; // internal unit ×10: stored = 100/10 = 10, display = 10*10 = 100
+        Assert.True(Math.Abs(vm.Constraints.SpringFrontMin - 10.0) < 0.01);
     }
 
     [Fact]
