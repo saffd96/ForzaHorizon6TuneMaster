@@ -613,6 +613,9 @@
   "FeedbackCopied": "✓ скопировано!",
 
   "DonateSymbol": "❤",
+  "FontIncreaseTooltip": "Увеличить шрифт на 0.5",
+  "FontDecreaseTooltip": "Уменьшить шрифт на 0.5",
+
   "DonateButtonTooltip": "Поддержать проект",
   "DonateWindowTitle": "Поддержка — Tune Master",
   "DonateTitle": "Поддержать проект",

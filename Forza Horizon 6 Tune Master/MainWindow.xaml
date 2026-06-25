@@ -168,6 +168,17 @@
                         <TextBlock Text="{Binding AppVersion}"
                                    Foreground="{StaticResource TextMutedBrush}"
                                    FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                        <Separator Margin="8,2"/>
+                        <Button Content="+" Style="{StaticResource SecondaryButton}"
+                                Width="30" Padding="0" Margin="2,0"
+                                FontWeight="Bold" FontSize="{DynamicResource FontNormal}"
+                                ToolTip="{l:Loc FontIncreaseTooltip}"
+                                Click="FontIncrease_Click"/>
+                        <Button Content="−" Style="{StaticResource SecondaryButton}"
+                                Width="30" Padding="0" Margin="2,0"
+                                FontWeight="Bold" FontSize="{DynamicResource FontNormal}"
+                                ToolTip="{l:Loc FontDecreaseTooltip}"
+                                Click="FontDecrease_Click"/>
                     </StackPanel>
                 </Grid>
             </Grid>

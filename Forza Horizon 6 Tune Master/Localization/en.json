@@ -613,6 +613,9 @@
   "FeedbackCopied": "✓ copied!",
 
   "DonateSymbol": "❤",
+  "FontIncreaseTooltip": "Increase font size by 0.5",
+  "FontDecreaseTooltip": "Decrease font size by 0.5",
+
   "DonateButtonTooltip": "Support the project",
   "DonateWindowTitle": "Support — Tune Master",
   "DonateTitle": "Support the project",

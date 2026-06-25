@@ -1,6 +1,8 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -34,6 +36,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = new MainViewModel();
+        LoadFontOffset();
+        ApplyFontOffset();
         SizeChanged += OnSizeChanged;
         StateChanged += OnWindowStateChanged;
         Loaded += OnLoaded;
@@ -109,11 +113,79 @@ public partial class MainWindow : Window
         new FeedbackWindow { Owner = this }.ShowDialog();
     }
 
+    private static readonly double[] _fontBaseValues = { 13, 12, 11, 10, 15, 22, 24, 32 };
+    private static readonly string[] _fontKeys =
+    {
+        "FontNormal", "FontSmall", "FontXSmall", "FontMicro",
+        "FontHeading", "ValueFontSize", "FontTitle", "FontHuge"
+    };
+
+    private double _fontOffset;
+
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
         // The whole UI now lives inside a Viewbox with a fixed design canvas, so it
         // scales proportionally with the window on its own. Font sizes stay at their
         // base values (scaling them here as well would double-scale the text).
+    }
+
+    private void FontIncrease_Click(object sender, RoutedEventArgs e)
+    {
+        _fontOffset += 0.5;
+        ApplyFontOffset();
+    }
+
+    private void FontDecrease_Click(object sender, RoutedEventArgs e)
+    {
+        if (_fontOffset <= -10) return;
+        _fontOffset -= 0.5;
+        ApplyFontOffset();
+    }
+
+    private void ApplyFontOffset()
+    {
+        var rd = FindFontResourceDictionary();
+        if (rd != null)
+        {
+            for (int i = 0; i < _fontKeys.Length; i++)
+                rd[_fontKeys[i]] = _fontBaseValues[i] + _fontOffset;
+        }
+        SaveFontOffset();
+    }
+
+    private static ResourceDictionary? FindFontResourceDictionary()
+    {
+        foreach (var md in Application.Current.Resources.MergedDictionaries)
+        {
+            if (md.Contains("FontNormal"))
+                return md;
+        }
+        return null;
+    }
+
+    private static string FontOffsetPath => Path.Combine(ForzaPaths.BaseDir, "font_offset.json");
+
+    private void LoadFontOffset()
+    {
+        try
+        {
+            if (!File.Exists(FontOffsetPath)) return;
+            _fontOffset = double.Parse(
+                File.ReadAllText(FontOffsetPath).Trim(),
+                CultureInfo.InvariantCulture);
+        }
+        catch { }
+    }
+
+    private void SaveFontOffset()
+    {
+        try
+        {
+            Directory.CreateDirectory(ForzaPaths.BaseDir);
+            File.WriteAllText(FontOffsetPath,
+                _fontOffset.ToString("F1", CultureInfo.InvariantCulture));
+        }
+        catch { }
     }
 
     private void ProfileSearchBox_GotFocus(object sender, RoutedEventArgs e)
