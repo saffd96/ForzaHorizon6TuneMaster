@@ -141,15 +141,6 @@
                                 <Run Text="  •  " Foreground="{StaticResource TextMutedBrush}"/>
                                 <Run Foreground="{StaticResource TextDimBrush}">
                                     <Run.Text>
-                                        <MultiBinding Converter="{StaticResource UV}" ConverterParameter="power">
-                                            <Binding Path="TuneResult.Car.PowerHP"/>
-                                            <Binding Path="PowerUnit"/>
-                                        </MultiBinding>
-                                    </Run.Text>
-                                </Run>
-                                <Run Text="  •  " Foreground="{StaticResource TextMutedBrush}"/>
-                                <Run Foreground="{StaticResource TextDimBrush}">
-                                    <Run.Text>
                                         <MultiBinding Converter="{StaticResource UV}" ConverterParameter="mass" Mode="OneWay">
                                             <Binding Path="TuneResult.Car.TotalMass"/>
                                             <Binding Path="UseImperial"/>

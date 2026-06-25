@@ -34,22 +34,22 @@ public class EnginePartsViewModel : INotifyPropertyChanged
     // (and thus ForcedInductionPartId) changes — see ReloadForcedInductionLevels.
     public ObservableCollection<PartOption> ForcedInductionLevels { get; } = new();
 
-    public PartOption? SelectedCamshaft     { get => Pick(_parts.CamshaftPartId, Camshafts);     set { if (value != null) _parts.CamshaftPartId = value.Id; } }
-    public PartOption? SelectedDisplacement { get => Pick(_parts.DisplacementPartId, Displacements); set { if (value != null) _parts.DisplacementPartId = value.Id; } }
-    public PartOption? SelectedValves       { get => Pick(_parts.ValvesPartId, Valves);          set { if (value != null) _parts.ValvesPartId = value.Id; } }
-    public PartOption? SelectedPistons      { get => Pick(_parts.PistonsPartId, Pistons);        set { if (value != null) _parts.PistonsPartId = value.Id; } }
-    public PartOption? SelectedFuelSystem   { get => Pick(_parts.FuelSystemPartId, FuelSystems); set { if (value != null) _parts.FuelSystemPartId = value.Id; } }
-    public PartOption? SelectedIgnition     { get => Pick(_parts.IgnitionPartId, Ignitions);     set { if (value != null) _parts.IgnitionPartId = value.Id; } }
-    public PartOption? SelectedExhaust      { get => Pick(_parts.ExhaustPartId, Exhausts);       set { if (value != null) _parts.ExhaustPartId = value.Id; } }
-    public PartOption? SelectedIntake       { get => Pick(_parts.IntakePartId, Intakes);         set { if (value != null) _parts.IntakePartId = value.Id; } }
-    public PartOption? SelectedFlywheel     { get => Pick(_parts.FlywheelPartId, Flywheels);     set { if (value != null) _parts.FlywheelPartId = value.Id; } }
-    public PartOption? SelectedManifold     { get => Pick(_parts.ManifoldPartId, Manifolds);     set { if (value != null) _parts.ManifoldPartId = value.Id; } }
-    public PartOption? SelectedOilCooling   { get => Pick(_parts.OilCoolingPartId, OilCoolings); set { if (value != null) _parts.OilCoolingPartId = value.Id; } }
-    public PartOption? SelectedRestrictor   { get => Pick(_parts.RestrictorPartId, Restrictors); set { if (value != null) _parts.RestrictorPartId = value.Id; } }
-    public PartOption? SelectedIntercooler  { get => Pick(_parts.IntercoolerPartId, Intercoolers); set { if (value != null) _parts.IntercoolerPartId = value.Id; } }
+    public PartOption? SelectedCamshaft     { get => _parts == null ? null : Pick(_parts.CamshaftPartId, Camshafts);     set { if (value != null) _parts.CamshaftPartId = value.Id; } }
+    public PartOption? SelectedDisplacement { get => _parts == null ? null : Pick(_parts.DisplacementPartId, Displacements); set { if (value != null) _parts.DisplacementPartId = value.Id; } }
+    public PartOption? SelectedValves       { get => _parts == null ? null : Pick(_parts.ValvesPartId, Valves);          set { if (value != null) _parts.ValvesPartId = value.Id; } }
+    public PartOption? SelectedPistons      { get => _parts == null ? null : Pick(_parts.PistonsPartId, Pistons);        set { if (value != null) _parts.PistonsPartId = value.Id; } }
+    public PartOption? SelectedFuelSystem   { get => _parts == null ? null : Pick(_parts.FuelSystemPartId, FuelSystems); set { if (value != null) _parts.FuelSystemPartId = value.Id; } }
+    public PartOption? SelectedIgnition     { get => _parts == null ? null : Pick(_parts.IgnitionPartId, Ignitions);     set { if (value != null) _parts.IgnitionPartId = value.Id; } }
+    public PartOption? SelectedExhaust      { get => _parts == null ? null : Pick(_parts.ExhaustPartId, Exhausts);       set { if (value != null) _parts.ExhaustPartId = value.Id; } }
+    public PartOption? SelectedIntake       { get => _parts == null ? null : Pick(_parts.IntakePartId, Intakes);         set { if (value != null) _parts.IntakePartId = value.Id; } }
+    public PartOption? SelectedFlywheel     { get => _parts == null ? null : Pick(_parts.FlywheelPartId, Flywheels);     set { if (value != null) _parts.FlywheelPartId = value.Id; } }
+    public PartOption? SelectedManifold     { get => _parts == null ? null : Pick(_parts.ManifoldPartId, Manifolds);     set { if (value != null) _parts.ManifoldPartId = value.Id; } }
+    public PartOption? SelectedOilCooling   { get => _parts == null ? null : Pick(_parts.OilCoolingPartId, OilCoolings); set { if (value != null) _parts.OilCoolingPartId = value.Id; } }
+    public PartOption? SelectedRestrictor   { get => _parts == null ? null : Pick(_parts.RestrictorPartId, Restrictors); set { if (value != null) _parts.RestrictorPartId = value.Id; } }
+    public PartOption? SelectedIntercooler  { get => _parts == null ? null : Pick(_parts.IntercoolerPartId, Intercoolers); set { if (value != null) _parts.IntercoolerPartId = value.Id; } }
     public PartOption? SelectedForcedInductionLevel
     {
-        get => ForcedInductionLevels.FirstOrDefault(o => o.Id == _parts.ForcedInductionPartId);
+        get => _parts == null ? null : ForcedInductionLevels.FirstOrDefault(o => o.Id == _parts.ForcedInductionPartId);
         set { if (value != null) _parts.ForcedInductionPartId = value.Id; }
     }
 

@@ -9,17 +9,18 @@
   <component name="ChangeListManager">
     <list default="true" id="6f5aca4a-8e95-4953-8a4a-45b281d20313" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" afterPath="$PROJECT_DIR$/CLAUDE.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/SelectedParts.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Models/SelectedParts.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/BrakeCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/BrakeCalculator.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/DbSchema.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/DbSchema.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/Fh6DatabaseService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/Fh6DatabaseService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/PartDisplayNameResolver.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/PartDisplayNameResolver.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/PowerCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/PowerCalculator.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/AeroVisualViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/AeroVisualViewModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/MainViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/MainViewModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/AeroVisualView.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/AeroVisualView.xaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/Models/SelectedPartsTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/Models/SelectedPartsTests.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/Services/BodyKitTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/Services/BodyKitTests.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/EnginePartsViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/EnginePartsViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/MotorPartsViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/MotorPartsViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/SuspensionViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/SuspensionViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/SwapsViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/SwapsViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/TiresWheelsViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/TiresWheelsViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/TransmissionViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/TransmissionViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/GearChartView.xaml.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/GearChartView.xaml.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/PowerCurveView.xaml.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Views/PowerCurveView.xaml.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/Services/PowerAccuracyDiagnostics.cs" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/Services/PowerAccuracyDiagnostics.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,6 +44,7 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/d6a5900c23694563a395d0edcee9eca7c90908/2a/1eb08a12/Math.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/38ad98c9d60c1739a82dce92fa559af31b833496d8d3fba4a86361ff05bf017/XamlReader.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/62b26b8f565e2f771607257cd215a4fd55028ec12c4331bcc6641ffa063e5/XpsFont.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/9349c6a67823e37b4ecda5ffa0ae83c89b566798c0d462b4c5f2f5e49a7c5f/Helper.cs" root0="FORCE_HIGHLIGHTING" />
@@ -63,17 +65,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;.NET Project.Forza Horizon 6 Tune Master.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    ".NET Project.Forza Horizon 6 Tune Master.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "master",
+    "settings.editor.selected.configurable": "preferences.pluginManager"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration name="Forza Horizon 6 Tune Master" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="" />
@@ -111,9 +113,6 @@
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="fix: build warnings" />
-    <MESSAGE value="RecalculateOutdatedProfiles" />
-    <MESSAGE value="add seasons" />
     <MESSAGE value="all fixes" />
     <MESSAGE value="version" />
     <MESSAGE value="fix drag formulas. add tests" />
@@ -136,7 +135,10 @@
     <MESSAGE value="animations" />
     <MESSAGE value="fix calculations" />
     <MESSAGE value="fixes" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixes" />
+    <MESSAGE value="buttons" />
+    <MESSAGE value="refactor: remove dead additive addPower formula; fix mulPower overwrite in NA+first-FI branch&#10;&#10;Dead code: 'addPower = naPureBaseHP*curTurboMult + partHP' was always overwritten by&#10;branch logic but described the old additive model (game is multiplicative).&#10;&#10;Also removed 'mulPower = addPower' from the stockFi==null branch: this was silently&#10;discarding the correct curve-based mulPower (stockHP * fiCurveFull_peak / stockCurve_peak)&#10;and replacing it with a pressure formula that ignores bolt-on parts. The curve-based&#10;formula already implements the exact game equation for NA-engine + first-FI builds.&#10;&#10;Co-Authored-By: Claude Sonnet 4.6 &lt;noreply@anthropic.com&gt;" />
+    <MESSAGE value="claude.md" />
+    <option name="LAST_COMMIT_MESSAGE" value="claude.md" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -153,6 +155,25 @@
           <properties exception="System.Threading.ThreadAbortException" breakIfHandledByOtherCode="false" displayValue="System.Threading.ThreadAbortException" />
           <option name="timeStamp" value="3" />
         </breakpoint>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.NullReferenceException" breakIfHandledByUserCode="true" isInternal="false" displayValue="NullReferenceException" namespaceName="System">
+            <option name="internal" value="false" />
+          </properties>
+          <option name="timeStamp" value="8" />
+        </breakpoint>
+        <line-breakpoint enabled="true" type="DotNet Breakpoints">
+          <url>file://$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/PowerCalculator.cs</url>
+          <line>94</line>
+          <properties documentPath="U:\Forza Horizon 6 Tune Master\Forza Horizon 6 Tune Master\Services\PowerCalculator.cs" containingFunctionPresentation="Method 'ApplyResults'">
+            <startOffsets>
+              <option value="4637" />
+            </startOffsets>
+            <endOffsets>
+              <option value="4673" />
+            </endOffsets>
+          </properties>
+          <option name="timeStamp" value="22" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>

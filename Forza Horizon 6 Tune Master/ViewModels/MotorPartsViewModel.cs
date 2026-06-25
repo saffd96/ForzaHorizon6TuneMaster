@@ -21,13 +21,13 @@ public class MotorPartsViewModel : INotifyPropertyChanged
 
     public PartOption? SelectedMotorSwap
     {
-        get => MotorSwaps.FirstOrDefault(o => o.Id == _parts.MotorSwapPartId);
+        get => _parts == null ? null : MotorSwaps.FirstOrDefault(o => o.Id == _parts.MotorSwapPartId);
         set { if (value != null) _parts.MotorSwapPartId = value.Id; }
     }
 
     public PartOption? SelectedMotorPart
     {
-        get => MotorParts.FirstOrDefault(o => o.Id == _parts.MotorPartId);
+        get => _parts == null ? null : MotorParts.FirstOrDefault(o => o.Id == _parts.MotorPartId);
         set { if (value != null) _parts.MotorPartId = value.Id; }
     }
 

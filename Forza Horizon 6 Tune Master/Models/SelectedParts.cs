@@ -325,8 +325,30 @@ public class SelectedParts : NotifyBase
         total += PartMassDiff(_manifoldPartId, id => _db.GetManifoldById(id));
         total += PartMassDiff(_oilCoolingPartId, id => _db.GetOilCoolingById(id));
         total += PartMassDiff(_restrictorPartId, id => _db.GetRestrictorById(id));
-        total += PartMassDiff(_forcedInductionPartId, id => _db.GetForcedInductionById(id));
-        total += PartMassDiff(_intercoolerPartId, id => _db.GetIntercoolerById(id));
+        // Skip stock FI: its mass is already baked into the car's curbWeight (native engine)
+        // or into the engine swap's MassDiff (swapped engine). Only count non-stock upgrades.
+        if (_forcedInductionPartId != null)
+        {
+            var fi = _db.GetForcedInductionById(_forcedInductionPartId.Value);
+            if (fi is { IsStock: false })
+                total += fi.MassDiff;
+        }
+        // Intercooler: the base (Lv-1) IC is bundled in the FI kit's MassDiff. Only count the
+        // delta above the base to avoid double-counting (the base is auto-installed by the UI).
+        if (_intercoolerPartId != null)
+        {
+            var ic = _db.GetIntercoolerById(_intercoolerPartId.Value);
+            if (ic != null)
+            {
+                double delta = ic.MassDiff;
+                if (_forcedInductionPartId != null)
+                {
+                    var allIcs = _db.GetIntercoolers(EngineId ?? 0);
+                    delta -= allIcs.Count > 0 ? allIcs.OrderBy(x => x.Level).First().MassDiff : 0;
+                }
+                if (delta > 0) total += delta;
+            }
+        }
         total += PartMassDiff(_tireCompoundPartId, id => _db.GetTireCompoundById(id));
         total += PartMassDiff(_springDamperPartId, id => _db.GetSpringDamperById(id));
         total += PartMassDiff(_brakePartId, id => _db.GetBrakesById(id));

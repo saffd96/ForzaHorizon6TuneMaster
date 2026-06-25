@@ -33,7 +33,7 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
 
     public PartOption? SelectedWheelFront
     {
-        get => _find(_parts.WheelFrontId, WheelModels);
+        get => _parts == null ? null : _find(_parts.WheelFrontId, WheelModels);
         set
         {
             if (value == null) return;
@@ -49,7 +49,7 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
 
     public PartOption? SelectedWheelRear
     {
-        get => _find(_parts.WheelRearId, WheelModels);
+        get => _parts == null ? null : _find(_parts.WheelRearId, WheelModels);
         set
         {
             if (value == null || _isSameWheelsFrontRear) return;
@@ -79,15 +79,15 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
 
     // ── Other parts ─────────────────────────────────────────────────────────
 
-    public PartOption? SelectedTireCompound         { get => Pick(_parts.TireCompoundPartId, TireCompounds);         set { if (value != null) _parts.TireCompoundPartId = value.Id; } }
-    public PartOption? SelectedTireWidthFront       { get => Pick(_parts.TireWidthFrontPartId, TireWidthsFront);     set { if (value != null) _parts.TireWidthFrontPartId = value.Id; } }
-    public PartOption? SelectedTireWidthRear        { get => Pick(_parts.TireWidthRearPartId, TireWidthsRear);       set { if (value != null) _parts.TireWidthRearPartId = value.Id; } }
-    public PartOption? SelectedTireAspectRatioFront { get => Pick(_parts.TireAspectRatioFrontPartId, TireAspectRatiosFront); set { if (value != null) _parts.TireAspectRatioFrontPartId = value.Id; } }
-    public PartOption? SelectedTireAspectRatioRear  { get => Pick(_parts.TireAspectRatioRearPartId, TireAspectRatiosRear);   set { if (value != null) _parts.TireAspectRatioRearPartId = value.Id; } }
-    public PartOption? SelectedRimFront             { get => Pick(_parts.RimFrontPartId, RimsFront);                 set { if (value != null) _parts.RimFrontPartId = value.Id; } }
-    public PartOption? SelectedRimRear              { get => Pick(_parts.RimRearPartId, RimsRear);                   set { if (value != null) _parts.RimRearPartId = value.Id; } }
-    public PartOption? SelectedTrackSpacingFront    { get => Pick(_parts.TrackSpacingFrontPartId, TrackSpacingsFront); set { if (value != null) _parts.TrackSpacingFrontPartId = value.Id; } }
-    public PartOption? SelectedTrackSpacingRear     { get => Pick(_parts.TrackSpacingRearPartId, TrackSpacingsRear);   set { if (value != null) _parts.TrackSpacingRearPartId = value.Id; } }
+    public PartOption? SelectedTireCompound         { get => _parts == null ? null : Pick(_parts.TireCompoundPartId, TireCompounds);         set { if (value != null) _parts.TireCompoundPartId = value.Id; } }
+    public PartOption? SelectedTireWidthFront       { get => _parts == null ? null : Pick(_parts.TireWidthFrontPartId, TireWidthsFront);     set { if (value != null) _parts.TireWidthFrontPartId = value.Id; } }
+    public PartOption? SelectedTireWidthRear        { get => _parts == null ? null : Pick(_parts.TireWidthRearPartId, TireWidthsRear);       set { if (value != null) _parts.TireWidthRearPartId = value.Id; } }
+    public PartOption? SelectedTireAspectRatioFront { get => _parts == null ? null : Pick(_parts.TireAspectRatioFrontPartId, TireAspectRatiosFront); set { if (value != null) _parts.TireAspectRatioFrontPartId = value.Id; } }
+    public PartOption? SelectedTireAspectRatioRear  { get => _parts == null ? null : Pick(_parts.TireAspectRatioRearPartId, TireAspectRatiosRear);   set { if (value != null) _parts.TireAspectRatioRearPartId = value.Id; } }
+    public PartOption? SelectedRimFront             { get => _parts == null ? null : Pick(_parts.RimFrontPartId, RimsFront);                 set { if (value != null) _parts.RimFrontPartId = value.Id; } }
+    public PartOption? SelectedRimRear              { get => _parts == null ? null : Pick(_parts.RimRearPartId, RimsRear);                   set { if (value != null) _parts.RimRearPartId = value.Id; } }
+    public PartOption? SelectedTrackSpacingFront    { get => _parts == null ? null : Pick(_parts.TrackSpacingFrontPartId, TrackSpacingsFront); set { if (value != null) _parts.TrackSpacingFrontPartId = value.Id; } }
+    public PartOption? SelectedTrackSpacingRear     { get => _parts == null ? null : Pick(_parts.TrackSpacingRearPartId, TrackSpacingsRear);   set { if (value != null) _parts.TrackSpacingRearPartId = value.Id; } }
 
     public void LoadForCar(CarCard car, SelectedParts parts)
     {

@@ -23,10 +23,10 @@ public class TransmissionViewModel : INotifyPropertyChanged
     public ObservableCollection<PartOption> Drivelines { get; } = new();
     public ObservableCollection<PartOption> Differentials { get; } = new();
 
-    public PartOption? SelectedTransmission  { get => Pick(_parts.TransmissionPartId, Transmissions); set { if (value != null) _parts.TransmissionPartId = value.Id; } }
-    public PartOption? SelectedClutch        { get => Pick(_parts.ClutchPartId, Clutches);            set { if (value != null) _parts.ClutchPartId = value.Id; } }
-    public PartOption? SelectedDriveline     { get => Pick(_parts.DrivelinePartId, Drivelines);        set { if (value != null) _parts.DrivelinePartId = value.Id; } }
-    public PartOption? SelectedDifferential  { get => Pick(_parts.DifferentialPartId, Differentials);  set { if (value != null) _parts.DifferentialPartId = value.Id; } }
+    public PartOption? SelectedTransmission  { get => _parts == null ? null : Pick(_parts.TransmissionPartId, Transmissions); set { if (value != null) _parts.TransmissionPartId = value.Id; } }
+    public PartOption? SelectedClutch        { get => _parts == null ? null : Pick(_parts.ClutchPartId, Clutches);            set { if (value != null) _parts.ClutchPartId = value.Id; } }
+    public PartOption? SelectedDriveline     { get => _parts == null ? null : Pick(_parts.DrivelinePartId, Drivelines);        set { if (value != null) _parts.DrivelinePartId = value.Id; } }
+    public PartOption? SelectedDifferential  { get => _parts == null ? null : Pick(_parts.DifferentialPartId, Differentials);  set { if (value != null) _parts.DifferentialPartId = value.Id; } }
 
     public void LoadForCar(CarCard car, SelectedParts parts)
     {

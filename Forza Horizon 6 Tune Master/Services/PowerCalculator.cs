@@ -55,23 +55,36 @@ public static class PowerCalculator
         double curveTorquePeak = torqueCurve is { Length: > 0 } ? torqueCurve.Max() : peakTorqueNm;
 
         double finalPower, finalTorque;
-        if (targetTorqueNm > MinValidValue && curveTorquePeak > MinValidValue)
+        // Two-pass scaling: match target power, then independently match target torque.
+        // The old single-kt approach let kt_power cancel kt_torque, so trqRatio had no effect.
+        // powerCurve is snapped from the step-1 curve so its peak == targetPowerHP regardless
+        // of step 2 (e.g. CSC trqRatio=0.426 gives tqFix>1, inflating the curve above target).
+        double[]? powerCurve = null;
+        if (torqueCurve is { Length: > 0 })
         {
-            double kt = targetTorqueNm / curveTorquePeak;
-            var tqScaled = torqueCurve!.Select(t => t * kt).ToArray();
-            var pwFromTq = ComputePowerCurveFromTorque(tqScaled, maxRPM);
-            double pwFromTqPeak = pwFromTq is { Length: > 0 } ? pwFromTq.Max() : 0;
-            if (targetPowerHP > MinValidValue && pwFromTqPeak > MinValidValue && targetPowerHP > pwFromTqPeak)
-                kt *= targetPowerHP / pwFromTqPeak;
-            torqueCurve = torqueCurve!.Select(t => Math.Round(t * kt, 1)).ToArray();
-            finalTorque = Math.Round(torqueCurve.Max());
+            // Step 1: scale torque curve so its power peak matches targetPowerHP
+            var origPw = ComputePowerCurveFromTorque(torqueCurve, maxRPM);
+            double origPwPeak = origPw is { Length: > 0 } ? origPw.Max() : 0;
+            double kt = targetPowerHP > MinValidValue && origPwPeak > MinValidValue
+                ? targetPowerHP / origPwPeak : 1.0;
+            torqueCurve = torqueCurve.Select(t => Math.Round(t * kt, 1)).ToArray();
+
+            powerCurve = ComputePowerCurveFromTorque(torqueCurve, maxRPM);
+
+            // Step 2: fine-tune so peak torque matches targetTorqueNm
+            if (targetTorqueNm > MinValidValue && torqueCurve.Max() > MinValidValue)
+            {
+                double tqFix = targetTorqueNm / torqueCurve.Max();
+                if (Math.Abs(tqFix - 1.0) > 0.0001)
+                    torqueCurve = torqueCurve.Select(t => Math.Round(t * tqFix, 1)).ToArray();
+            }
         }
-        else
-        {
-            finalTorque = curveTorquePeak > MinValidValue ? Math.Round(curveTorquePeak) : 0;
-        }
-        var powerCurve = ComputePowerCurveFromTorque(torqueCurve, maxRPM);
-        finalPower = powerCurve is { Length: > 0 } ? Math.Round(powerCurve.Max(), 1) : 0;
+
+        finalTorque = targetTorqueNm > MinValidValue ? Math.Round(targetTorqueNm)
+                      : (curveTorquePeak > MinValidValue ? Math.Round(curveTorquePeak) : 0);
+        powerCurve ??= ComputePowerCurveFromTorque(torqueCurve, maxRPM);
+        finalPower = targetPowerHP > MinValidValue ? Math.Round(targetPowerHP, 1)
+                     : (powerCurve is { Length: > 0 } ? Math.Round(powerCurve.Max(), 1) : 0);
 
         car.MaxRPM = maxRPM;
         car.TorqueNm = finalTorque;
@@ -158,16 +171,40 @@ public static class PowerCalculator
                         ?? db.GetCamshafts(effectiveEngineId).FirstOrDefault();
         double[] torqueCurve = BuildCamTorqueCurve(dbCar, db, baseScale, redlineRPM, peakTorqueNm, selectedCam, out int maxRPM);
 
+        var selectedFi = parts.ForcedInductionPartId != null
+            ? db.GetForcedInductionById(parts.ForcedInductionPartId.Value) as DbUpgradeForcedInduction
+            : null;
+        var stockFi = StockForcedInduction(effectiveEngineId, db);
+        var currentFi = selectedFi ?? stockFi;
+
         double intercoolerMaxScale = 1.0;
-        if (parts.ForcedInductionPartId != null && parts.IntercoolerPartId != null)
+        if (currentFi != null && parts.IntercoolerPartId != null)
         {
             var ic = db.GetIntercoolerById(parts.IntercoolerPartId.Value);
             if (ic != null && ic.MaxScaleScale > 0.001)
-                intercoolerMaxScale = ic.MaxScaleScale;
+            {
+                // The base (Lv=1) intercooler is always bundled with the FI kit; its effect is
+                // already captured in the stock power anchor (SimPeakPower) or FI MassDiff.
+                // Only count the scale DELTA above the base intercooler so that auto-installing
+                // the base IC does not add spurious power.
+                var allIcs = db.GetIntercoolers(effectiveEngineId);
+                double icBaseScale = allIcs.Count > 0
+                    ? allIcs.OrderBy(x => x.Level).First().MaxScaleScale
+                    : 1.0;
+                double icDelta = icBaseScale > 0.001 ? ic.MaxScaleScale / icBaseScale : ic.MaxScaleScale;
+                intercoolerMaxScale = icDelta > 1.0001 ? icDelta : 1.0;
+            }
         }
 
         // FI curve for the multiplicative fallback (mulPower/mulTorque).
-        double[] fiCurveFull = ApplyForcedInductionCurve(torqueCurve, maxRPM, parts, db, intercoolerMaxScale);
+        // Only apply the stock FI directly when an intercooler is actually selected without
+        // an explicit FI upgrade — this captures the intercooler gain on factory-turbocharged
+        // engines while leaving the pure-stock path unchanged (avoids asp6 shape regression).
+        double[] fiCurveFull = parts.ForcedInductionPartId != null
+            ? ApplyForcedInductionCurve(torqueCurve, maxRPM, parts, db, intercoolerMaxScale)
+            : (stockFi != null && intercoolerMaxScale > 1.001)
+                ? ApplyFiCore(torqueCurve, maxRPM, stockFi, intercoolerMaxScale)
+                : torqueCurve;
 
         double powerCapHP = effectiveEngine != null
             ? effectiveEngine.EngineGraphingMaxPower * PhysicsConstants.KwToHp
@@ -178,12 +215,6 @@ public static class PowerCalculator
         var stockCam = db.GetCamshafts(effectiveEngineId).FirstOrDefault(c => c.IsStock)
                        ?? db.GetCamshafts(effectiveEngineId).FirstOrDefault();
         double[] stockCurve = BuildCamTorqueCurve(dbCar, db, torqueScale, redlineRPM, peakTorqueNm, stockCam, out int stockMaxRPM);
-
-        var selectedFi = parts.ForcedInductionPartId != null
-            ? db.GetForcedInductionById(parts.ForcedInductionPartId.Value) as DbUpgradeForcedInduction
-            : null;
-        var stockFi = StockForcedInduction(effectiveEngineId, db);
-        var currentFi = selectedFi ?? stockFi;
 
         // ── Peak curve magnitudes (Nm×rpm proxy — divide by NmRpmToHp for HP) ──
         double naCurPeakProxy = torqueCurve.Length > 0 ? TorqueRpmPeak(torqueCurve, maxRPM) : 0;
@@ -254,7 +285,8 @@ public static class PowerCalculator
         double mulTorque = mulRefTq > MinValidValue ? stockTorqueNm * (fiCurveFull.Length > 0 ? fiCurveFull.Max() : 0) / mulRefTq : 0;
 
         // ── When FI output barely changes, anchor to stock + additive cam delta ──
-        bool fiChanged = currentFi != stockFi || (currentFi != null && stockFi != null && currentFi.Id != stockFi.Id);
+        bool fiChanged = (intercoolerMaxScale > 1.001 && currentFi != null)
+            || currentFi != stockFi || (currentFi != null && stockFi != null && currentFi.Id != stockFi.Id);
         if (!fiChanged)
         {
             // Cam-only (or pure stock): FI didn't change — anchor to SimPeakPower plus
@@ -268,20 +300,25 @@ public static class PowerCalculator
         else if (stockFi == null || Ms(stockFi) <= 0)
         {
             // NA engine receiving its FIRST forced induction.
-            // addPower is a pressure-based floor; mulPower (computed above) is the
-            // curve-based game formula (stockHP × fiCurveFull_peak / stockCurve_peak)
-            // and already includes partScale — so we keep it as the authoritative value.
-            double pressureScale = Ms(currentFi);
-            double baseEff = TurboBaseEff;
-            if (pressureScale <= 0)
+            // Pressure scale and efficiency depend on FI type:
+            //   turbos: MaxScale (pressure ceiling)
+            //   superchargers: RedlineRPMScale (boost at redline, crank-driven)
+            // Efficiencies calibrated per-type on Nissan Fairlady Z '03.
+            double pressureScale;
+            double baseEff;
+            double trqRatio;
+            switch (currentFi)
             {
-                pressureScale = currentFi switch { DbUpgradeCSC csc => csc.RedlineRPMScale, DbUpgradeDSC dsc => dsc.RedlineRPMScale, _ => 1.0 };
-                baseEff = SCBaseEff;
+                case DbUpgradeTurboSingle ts: pressureScale = ts.MaxScale;         baseEff = STBaseEff;  trqRatio = 1.0;   break;
+                case DbUpgradeTurboTwin   tt: pressureScale = tt.MaxScale;         baseEff = TTBaseEff;  trqRatio = 1.0;   break;
+                case DbUpgradeCSC        csc: pressureScale = csc.RedlineRPMScale; baseEff = CSCBaseEff; trqRatio = 0.426; break;
+                case DbUpgradeDSC        dsc: pressureScale = dsc.RedlineRPMScale; baseEff = DSCBaseEff; trqRatio = 1.0;   break;
+                default:                       pressureScale = 1.0;                baseEff = 0;          trqRatio = 0;     break;
             }
             if (pressureScale > 1.0)
             {
                 addPower = stockHP * (1.0 + torqueScale * baseEff * (pressureScale - 1.0));
-                addTorque = stockTorqueNm * (1.0 + torqueScale * baseEff * (pressureScale - 1.0));
+                addTorque = stockTorqueNm * (1.0 + torqueScale * baseEff * trqRatio * (pressureScale - 1.0));
             }
         }
         else
@@ -304,20 +341,23 @@ public static class PowerCalculator
             // curve ratio reaches it. addPower still acts as a floor (never below stock).
         }
 
+        // For NA→Lv-1 FI, the calibrated pressure-efficiency formula (addPower) is authoritative.
+        // mulPower = stockHP×MaxScale (full boost, no efficiency losses) overshoots measurements.
+        // Higher FI levels and factory-FI upgrades use max(addPower, mulPower) as before.
+        bool naFirstFi = stockFi == null && selectedFi != null && IsLowestFiLevel(selectedFi, effectiveEngineId, db);
+
         // When FI is actually upgraded, the reported peak must not fall below the peak of
-        // the forced-induction torque curve the model itself builds (and hands to the UI):
-        // the breathing/anchor scalar under-reports big SINGLE turbos by ~25 %, leaving the
-        // headline power BELOW its own power curve. Stock / cam-only builds keep the exact
-        // SimPeak anchor (fiChanged == false), so they are untouched. Still clamped to the cap.
-        if (fiChanged)
+        // the forced-induction torque curve. Stock / cam-only builds keep the exact
+        // SimPeak anchor (fiChanged == false). Skip for NA→first FI — the curve peak
+        // overshoots the calibrated formula (especially CSC with quadratic ramp).
+        if (fiChanged && !naFirstFi)
         {
             double fiPeakHp = TorqueRpmPeak(fiCurveFull, maxRPM) / PhysicsConstants.NmRpmToHp;
             addPower = Math.Max(addPower, fiPeakHp);
             if (fiCurveFull.Length > 0) addTorque = Math.Max(addTorque, fiCurveFull.Max());
         }
-
-        double targetPowerHP = Math.Clamp(Math.Max(addPower, mulPower), MinValidValue, powerCapHP);
-        double targetTorqueNm = Math.Max(Math.Max(addTorque, mulTorque), MinValidValue);
+        double targetPowerHP = Math.Clamp(naFirstFi ? addPower : Math.Max(addPower, mulPower), MinValidValue, powerCapHP);
+        double targetTorqueNm = Math.Max(naFirstFi ? addTorque : Math.Max(addTorque, mulTorque), MinValidValue);
         if (torqueCapNm > MinValidValue) targetTorqueNm = Math.Min(targetTorqueNm, torqueCapNm);
 
         var finalPower = Math.Round(targetPowerHP, 1);
@@ -350,6 +390,15 @@ public static class PowerCalculator
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static bool IsLowestFiLevel(DbUpgradePart fi, int engineId, Fh6DatabaseService db) => fi switch
+    {
+        DbUpgradeTurboSingle ts => !db.GetTurbosSingle(engineId).Any(x => !x.IsStock && x.Level < ts.Level),
+        DbUpgradeTurboTwin   tt => !db.GetTurbosTwin(engineId).Any(x => !x.IsStock && x.Level < tt.Level),
+        DbUpgradeCSC        csc => !db.GetCSC(engineId).Any(x => !x.IsStock && x.Level < csc.Level),
+        DbUpgradeDSC        dsc => !db.GetDSC(engineId).Any(x => !x.IsStock && x.Level < dsc.Level),
+        _                       => false
+    };
 
     private static int ResolveEffectiveEngineId(CarCard car, DbCar dbCar, Fh6DatabaseService db, SelectedParts? parts = null)
     {
@@ -442,9 +491,13 @@ public static class PowerCalculator
     private const double BreathK = 0.2109;
     private const double BreathAlFactor = 0.5;
 
-    // NA engine receiving its FIRST forced induction: power = stockHP × (1 + GTS × Eff × (Ms−1)).
-    private const double TurboBaseEff = 0.855;
-    private const double SCBaseEff = 0.52;
+    // NA→first FI: addPower = stockHP × (1 + GTS × Eff × (Ms−1)).
+    // Calibrated on Nissan Fairlady Z '03 (CarId=344, GTS=0.850) — Lv1 each FI type.
+    // ST(Ms=1.250→344hp) TT(Ms=1.250→344hp) CSC(Red=1.136→316hp) DSC(Red=1.136→317hp)
+    private const double STBaseEff  = 0.935;
+    private const double TTBaseEff  = 0.935;
+    private const double CSCBaseEff = 0.874;
+    private const double DSCBaseEff = 0.904;
 
     /// <summary>Asymptotic turbo multiplier (no breathing clamp).</summary>
     private static double StockTurboMultiplier(DbUpgradeForcedInduction? fi)

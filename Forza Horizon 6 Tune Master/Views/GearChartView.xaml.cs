@@ -358,46 +358,6 @@ public partial class GearChartView : UserControl
         Canvas.SetLeft(refLbl, refLabelLeft);
         Canvas.SetTop(refLbl, refY - 8);
 
-        // power peak
-        double ppY = RpmToY(PowerPeakRPM);
-        ChartCanvas.Children.Add(new Line
-        {
-            X1 = padL, X2 = w - padR, Y1 = ppY, Y2 = ppY,
-            Stroke = new SolidColorBrush(Color.FromArgb(0x50, 0xFF, 0x5E, 0x0E)),
-            StrokeThickness = 1,
-            StrokeDashArray = new DoubleCollection([4, 4])
-        });
-        refLbl = new TextBlock
-        {
-            Text = FormatLabel("ChartPowerPeakLabel", PowerPeakRPM),
-            Foreground = new SolidColorBrush(Color.FromArgb(0x90, 0xFF, 0x5E, 0x0E)),
-            FontSize = 9,
-            FontFamily = lblFamily
-        };
-        ChartCanvas.Children.Add(refLbl);
-        Canvas.SetLeft(refLbl, refLabelLeft);
-        Canvas.SetTop(refLbl, ppY - 8);
-
-        // torque peak
-        double tpY = RpmToY(TorquePeakRPM);
-        ChartCanvas.Children.Add(new Line
-        {
-            X1 = padL, X2 = w - padR, Y1 = tpY, Y2 = tpY,
-            Stroke = new SolidColorBrush(Color.FromArgb(0x50, 0x1A, 0xBC, 0xFE)),
-            StrokeThickness = 1,
-            StrokeDashArray = new DoubleCollection([4, 4])
-        });
-        refLbl = new TextBlock
-        {
-            Text = FormatLabel("ChartTorquePeakLabel", TorquePeakRPM),
-            Foreground = new SolidColorBrush(Color.FromArgb(0x90, 0x1A, 0xBC, 0xFE)),
-            FontSize = 9,
-            FontFamily = lblFamily
-        };
-        ChartCanvas.Children.Add(refLbl);
-        Canvas.SetLeft(refLbl, refLabelLeft);
-        Canvas.SetTop(refLbl, tpY - 8);
-
         // ── gear lines ──
         // pre-compute end points
         var endX = new double[n];

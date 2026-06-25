@@ -29,25 +29,25 @@ public class SwapsViewModel : INotifyPropertyChanged
 
     public PartOption? SelectedBodyKit
     {
-        get => BodyKits.FirstOrDefault(o => o.Id == _parts.BodyKitPartId);
+        get => _parts == null ? null : BodyKits.FirstOrDefault(o => o.Id == _parts.BodyKitPartId);
         set { if (value != null) _parts.BodyKitPartId = value.Id; }
     }
 
     public PartOption? SelectedEngineSwap
     {
-        get => EngineSwaps.FirstOrDefault(o => o.Id == _parts.EngineSwapPartId);
+        get => _parts == null ? null : EngineSwaps.FirstOrDefault(o => o.Id == _parts.EngineSwapPartId);
         set { if (value != null) _parts.EngineSwapPartId = value.Id; }
     }
 
     public PartOption? SelectedDrivetrainSwap
     {
-        get => DrivetrainSwaps.FirstOrDefault(o => o.Id == _parts.DrivetrainSwapPartId);
+        get => _parts == null ? null : DrivetrainSwaps.FirstOrDefault(o => o.Id == _parts.DrivetrainSwapPartId);
         set { if (value != null) _parts.DrivetrainSwapPartId = value.Id; }
     }
 
     public FiTypeOption? SelectedForcedInductionType
     {
-        get { var kind = CurrentFiKind(); return ForcedInductionTypes.FirstOrDefault(t => t.Kind == kind); }
+        get { if (_parts == null) return null; var kind = CurrentFiKind(); return ForcedInductionTypes.FirstOrDefault(t => t.Kind == kind); }
         set
         {
             if (value == null) return;

@@ -23,12 +23,12 @@ public class SuspensionViewModel : INotifyPropertyChanged
     public ObservableCollection<PartOption> WeightReductions { get; } = new();
     public ObservableCollection<PartOption> ChassisStiffness { get; } = new();
 
-    public PartOption? SelectedSpringDamper  { get => Pick(_parts.SpringDamperPartId, SpringDampers);  set { if (value != null) _parts.SpringDamperPartId = value.Id; } }
-    public PartOption? SelectedBrake         { get => Pick(_parts.BrakePartId, Brakes);                set { if (value != null) _parts.BrakePartId = value.Id; } }
-    public PartOption? SelectedAntiSwayFront { get => Pick(_parts.AntiSwayFrontPartId, AntiSwayFront); set { if (value != null) _parts.AntiSwayFrontPartId = value.Id; } }
-    public PartOption? SelectedAntiSwayRear  { get => Pick(_parts.AntiSwayRearPartId, AntiSwayRear);   set { if (value != null) _parts.AntiSwayRearPartId = value.Id; } }
-    public PartOption? SelectedWeightReduction { get => Pick(_parts.WeightReductionPartId, WeightReductions); set { if (value != null) _parts.WeightReductionPartId = value.Id; } }
-    public PartOption? SelectedChassisStiffness { get => Pick(_parts.ChassisStiffnessPartId, ChassisStiffness); set { if (value != null) _parts.ChassisStiffnessPartId = value.Id; } }
+    public PartOption? SelectedSpringDamper  { get => _parts == null ? null : Pick(_parts.SpringDamperPartId, SpringDampers);  set { if (value != null) _parts.SpringDamperPartId = value.Id; } }
+    public PartOption? SelectedBrake         { get => _parts == null ? null : Pick(_parts.BrakePartId, Brakes);                set { if (value != null) _parts.BrakePartId = value.Id; } }
+    public PartOption? SelectedAntiSwayFront { get => _parts == null ? null : Pick(_parts.AntiSwayFrontPartId, AntiSwayFront); set { if (value != null) _parts.AntiSwayFrontPartId = value.Id; } }
+    public PartOption? SelectedAntiSwayRear  { get => _parts == null ? null : Pick(_parts.AntiSwayRearPartId, AntiSwayRear);   set { if (value != null) _parts.AntiSwayRearPartId = value.Id; } }
+    public PartOption? SelectedWeightReduction { get => _parts == null ? null : Pick(_parts.WeightReductionPartId, WeightReductions); set { if (value != null) _parts.WeightReductionPartId = value.Id; } }
+    public PartOption? SelectedChassisStiffness { get => _parts == null ? null : Pick(_parts.ChassisStiffnessPartId, ChassisStiffness); set { if (value != null) _parts.ChassisStiffnessPartId = value.Id; } }
 
     public void LoadForCar(CarCard car, SelectedParts parts)
     {

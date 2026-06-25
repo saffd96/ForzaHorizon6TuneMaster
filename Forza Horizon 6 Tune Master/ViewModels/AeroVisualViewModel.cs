@@ -26,31 +26,31 @@ public class AeroVisualViewModel : INotifyPropertyChanged
 
     public PartOption? SelectedFrontBumper
     {
-        get => FrontBumpers.FirstOrDefault(o => o.Id == _parts.FrontBumperPartId);
+        get => _parts == null ? null : FrontBumpers.FirstOrDefault(o => o.Id == _parts.FrontBumperPartId);
         set { if (value != null) _parts.FrontBumperPartId = value.Id; }
     }
 
     public PartOption? SelectedRearWing
     {
-        get => RearWings.FirstOrDefault(o => o.Id == _parts.RearWingPartId);
+        get => _parts == null ? null : RearWings.FirstOrDefault(o => o.Id == _parts.RearWingPartId);
         set { if (value != null) _parts.RearWingPartId = value.Id; }
     }
 
     public PartOption? SelectedRearBumper
     {
-        get => RearBumpers.FirstOrDefault(o => o.Id == _parts.RearBumperPartId);
+        get => _parts == null ? null : RearBumpers.FirstOrDefault(o => o.Id == _parts.RearBumperPartId);
         set { if (value != null) _parts.RearBumperPartId = value.Id; }
     }
 
     public PartOption? SelectedSideSkirt
     {
-        get => SideSkirts.FirstOrDefault(o => o.Id == _parts.SideSkirtPartId);
+        get => _parts == null ? null : SideSkirts.FirstOrDefault(o => o.Id == _parts.SideSkirtPartId);
         set { if (value != null) _parts.SideSkirtPartId = value.Id; }
     }
 
     public PartOption? SelectedHood
     {
-        get => Hoods.FirstOrDefault(o => o.Id == _parts.HoodPartId);
+        get => _parts == null ? null : Hoods.FirstOrDefault(o => o.Id == _parts.HoodPartId);
         set { if (value != null) _parts.HoodPartId = value.Id; }
     }
 

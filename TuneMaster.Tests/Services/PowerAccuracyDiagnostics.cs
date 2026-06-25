@@ -280,6 +280,104 @@ public class PowerAccuracyDiagnostics
         _out.WriteLine("Ожидаемое ratio ≈ 1.000. Отклонения указывают на нестандартный GameRedlineScale.");
     }
 
+    [Fact]
+    public async Task Diagnose_BmwM5_1995_EngineSwaps()
+    {
+        using var env = new TestingEnvironment();
+        await Fh6DatabaseService.Instance.InitializeAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        // MediaName follows pattern MAKE_MODEL_YEAR, e.g. BMW_M5_95
+        var m5 = db.GetAllCars().FirstOrDefault(c =>
+            (c.MediaName ?? "").Contains("M5", StringComparison.OrdinalIgnoreCase) && c.Year == 1995);
+        if (m5 == null) { _out.WriteLine("BMW M5 1995 not found in DB"); Assert.True(true); return; }
+
+        _out.WriteLine($"Car: {m5.Id}  CurbWeight={m5.CurbWeight * 100:F0}kg  SimPeakPower={m5.SimPeakPower * 0.1341:F0}hp");
+
+        // Section 1: FI bolt-on to stock engine (no engine swap)
+        var stockSwap = db.GetEngineSwaps(m5.Id).FirstOrDefault(s => s.IsStock);
+        int stockEng = StockEngineId(db, m5.Id);
+        _out.WriteLine($"\n--- Stock engine {stockEng} bolt-on FI options ---");
+        PowerCalculator.VerboseLogging = true;
+        var captureOut = Console.Out;
+        var sw = new System.IO.StringWriter();
+        Console.SetOut(sw);
+        // Prints all FI parts for engine, including non-stock (what user picks via FI type dropdown)
+        _out.WriteLine($"  TurboSingle parts: {string.Join(", ", db.GetTurbosSingle(stockEng).Select(p => $"Id={p.Id} Lv={p.Level} IsStock={p.IsStock} MassDiff={p.MassDiff:F0} MaxScale={((DbUpgradeTurboSingle)p).MaxScale:F2}"))}");
+        _out.WriteLine($"  TurboTwin parts:   {string.Join(", ", db.GetTurbosTwin(stockEng).Select(p => $"Id={p.Id} Lv={p.Level} IsStock={p.IsStock} MassDiff={p.MassDiff:F0} MaxScale={((DbUpgradeTurboTwin)p).MaxScale:F2}"))}");
+        _out.WriteLine($"  DSC parts:         {string.Join(", ", db.GetDSC(stockEng).Select(p => $"Id={p.Id} Lv={p.Level} IsStock={p.IsStock} MassDiff={p.MassDiff:F0} RedlineScale={((DbUpgradeDSC)p).RedlineRPMScale:F2}"))}");
+        _out.WriteLine($"  CSC parts:         {string.Join(", ", db.GetCSC(stockEng).Select(p => $"Id={p.Id} Lv={p.Level} IsStock={p.IsStock} MassDiff={p.MassDiff:F0}"))}");
+        var manifolds = db.GetManifolds(stockEng);
+        _out.WriteLine($"  Manifolds:         {string.Join(", ", manifolds.Select(m => $"Id={m.Id} Lv={m.Level} IsStock={m.IsStock} MassDiff={m.MassDiff:F0}"))}");
+        var intercoolers = db.GetIntercoolers(stockEng);
+        _out.WriteLine($"  Intercoolers:      {string.Join(", ", intercoolers.Select(ic => $"Id={ic.Id} Lv={ic.Level} IsStock={ic.IsStock} MassDiff={ic.MassDiff:F0} MaxScaleScale={ic.MaxScaleScale:F3}"))}");
+        int? stockManifoldId = manifolds.FirstOrDefault(m => m.IsStock)?.Id;
+        int? stockIntercoolerid = intercoolers.FirstOrDefault(ic => ic.IsStock)?.Id;
+
+        // Use first (lowest level) part per kind — same as SelectedForcedInductionType setter
+        // Also set ManifoldPartId and IntercoolerPartId as the app does after FI type change.
+        foreach (var fiParts in new[] {
+            ("ST",  db.GetTurbosSingle(stockEng).OrderBy(p=>p.Level).FirstOrDefault()?.Id),
+            ("TT",  db.GetTurbosTwin(stockEng).OrderBy(p=>p.Level).FirstOrDefault()?.Id),
+            ("DSC", db.GetDSC(stockEng).OrderBy(p=>p.Level).FirstOrDefault()?.Id),
+            ("CSC", db.GetCSC(stockEng).OrderBy(p=>p.Level).FirstOrDefault()?.Id),
+        }.Select(x => (x.Item1, x.Item2)))
+        {
+            if (fiParts.Item2 == null) continue;
+            var p = new SelectedParts();
+            if (stockSwap != null) p.EngineSwapPartId = stockSwap.Id;
+            p.ManifoldPartId = stockManifoldId;
+            p.ForcedInductionPartId = fiParts.Item2;
+            p.IntercoolerPartId = stockIntercoolerid; // app auto-sets stock IC when FI installed
+            var fi = db.GetForcedInductionById(fiParts.Item2.Value);
+            var icPart = stockIntercoolerid.HasValue ? db.GetIntercoolerById(stockIntercoolerid.Value) : null;
+            double mass = m5.CurbWeight * 100
+                + (stockSwap?.MassDiff ?? 0)
+                + (manifolds.FirstOrDefault(m => m.Id == stockManifoldId)?.MassDiff ?? 0)
+                + (fi?.MassDiff ?? 0)
+                + (icPart?.MassDiff ?? 0);
+            sw.GetStringBuilder().Clear();
+            var card = new CarCard { CarDbId = m5.Id, EngineDbId = stockEng, PowertrainType = PowertrainType.ICE };
+            try { PowerCalculator.Calculate(card, p); } catch { continue; }
+            var vb = sw.ToString();
+            _out.WriteLine($"  {fiParts.Item1}  FI_id={fiParts.Item2}  IsStock={fi?.IsStock}  fiMass={fi?.MassDiff:F0}  icMass={icPart?.MassDiff:F0}  totMass={mass:F0}  →  CalcHP={card.PowerHP:F0}  CalcNm={card.TorqueNm:F0}");
+            foreach (var line in vb.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                _out.WriteLine("    " + line.TrimEnd());
+        }
+        Console.SetOut(captureOut);
+        PowerCalculator.VerboseLogging = false;
+
+        _out.WriteLine($"\n--- Engine swaps ---");
+        foreach (var swap in db.GetEngineSwaps(m5.Id))
+        {
+            var eng = db.GetEngine(swap.EngineID);
+            if (eng == null) continue;
+
+            var donor = db.GetCarByMediaName(eng.MediaName);
+            double donorHp = donor?.SimPeakPower > 0 ? donor.SimPeakPower * 0.1341 : -1;
+
+            var parts = new SelectedParts();
+            if (!swap.IsStock) parts.EngineSwapPartId = swap.Id;
+            parts.ForcedInductionPartId =
+                db.GetTurbosSingle(swap.EngineID).FirstOrDefault(p => p.IsStock)?.Id
+                ?? db.GetTurbosTwin(swap.EngineID).FirstOrDefault(p => p.IsStock)?.Id
+                ?? db.GetCSC(swap.EngineID).FirstOrDefault(p => p.IsStock)?.Id
+                ?? db.GetDSC(swap.EngineID).FirstOrDefault(p => p.IsStock)?.Id;
+
+            string fiKind = db.GetTurbosSingle(swap.EngineID).Any(p => p.IsStock) ? "ST"
+                          : db.GetTurbosTwin(swap.EngineID).Any(p => p.IsStock) ? "TT"
+                          : db.GetCSC(swap.EngineID).Any(p => p.IsStock) ? "CSC"
+                          : db.GetDSC(swap.EngineID).Any(p => p.IsStock) ? "DSC" : "NA";
+
+            var card = new CarCard { CarDbId = m5.Id, EngineDbId = swap.EngineID, PowertrainType = PowertrainType.ICE };
+            try { PowerCalculator.Calculate(card, parts); }
+            catch (Exception ex) { _out.WriteLine($"  Swap {swap.Id} ERROR: {ex.Message}"); continue; }
+            _out.WriteLine($"  Lv={swap.Level} {fiKind} DonorHP={donorHp:F0} SwapMass={swap.MassDiff:F0}kg  →  CalcHP={card.PowerHP:F0} CalcNm={card.TorqueNm:F0}  [{eng.MediaName}]");
+        }
+
+        Assert.True(true);
+    }
+
     private static SelectedParts BuildMaxedParts(int? swapId, int engineId, Fh6DatabaseService db)
     {
         int? BestTs<T>(List<T> list) where T : DbUpgradePart =>
