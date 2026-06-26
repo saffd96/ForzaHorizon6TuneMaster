@@ -132,7 +132,7 @@ public class TuningConstraints : INotifyPropertyChanged
 
     // ── Final Drive ───────────────────────────────────────────────────
     private double _finalDriveMin = 2.2;
-    private double _finalDriveMax = 6.0;
+    private double _finalDriveMax = 6.1;
     public double FinalDriveMin { get => _finalDriveMin; set { if (value < 0.1) value = 0.1; if (SetMin(ref _finalDriveMin, ref _finalDriveMax, value)) { Raise(); Raise(nameof(FinalDriveMax)); } } }
     public double FinalDriveMax { get => _finalDriveMax; set { if (SetMax(ref _finalDriveMin, ref _finalDriveMax, value)) { Raise(); Raise(nameof(FinalDriveMin)); } } }
 
