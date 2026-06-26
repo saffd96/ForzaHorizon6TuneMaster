@@ -51,17 +51,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    ".NET Project.Forza Horizon 6 Tune Master.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;.NET Project.Forza Horizon 6 Tune Master.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="Forza Horizon 6 Tune Master" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="" />
@@ -99,7 +99,6 @@
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="all fixes" />
     <MESSAGE value="version" />
     <MESSAGE value="fix drag formulas. add tests" />
     <MESSAGE value="up version" />
@@ -124,7 +123,8 @@
     <MESSAGE value="refactor: remove dead additive addPower formula; fix mulPower overwrite in NA+first-FI branch&#10;&#10;Dead code: 'addPower = naPureBaseHP*curTurboMult + partHP' was always overwritten by&#10;branch logic but described the old additive model (game is multiplicative).&#10;&#10;Also removed 'mulPower = addPower' from the stockFi==null branch: this was silently&#10;discarding the correct curve-based mulPower (stockHP * fiCurveFull_peak / stockCurve_peak)&#10;and replacing it with a pressure formula that ignores bolt-on parts. The curve-based&#10;formula already implements the exact game equation for NA-engine + first-FI builds.&#10;&#10;Co-Authored-By: Claude Sonnet 4.6 &lt;noreply@anthropic.com&gt;" />
     <MESSAGE value="claude.md" />
     <MESSAGE value="fixes" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixes" />
+    <MESSAGE value="add +- buttons" />
+    <option name="LAST_COMMIT_MESSAGE" value="add +- buttons" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

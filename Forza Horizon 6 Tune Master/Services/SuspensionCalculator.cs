@@ -119,11 +119,25 @@ internal static class SuspensionCalculator
         double massRef = PhysicsConstants.RefMassKg;
         double ptw = car.PowerHP / Math.Max(car.TotalMass, 1.0);
         double ptwRef = PhysicsConstants.PtwReferenceHpPerKg;
-        double massFactor = Math.Pow(Math.Max(car.TotalMass / massRef, 0.5), 0.15);
-        double powerFactor = 1.0 + Math.Max(0, (ptw - ptwRef) / ptwRef) * 0.10;
+        double massFactor = Math.Pow(Math.Max(car.TotalMass / massRef, 0.5), 0.15); 
+        
+        // Cap the power factor so hyper-tuned cars (1500+ HP) don't push spring
+        // rates past the suspension's physical maximum. Model: DifferentialCalculator.
+        double basePower = 1.0 + Math.Min(0.30, Math.Max(0, (ptw - ptwRef) / ptwRef) * 0.10);
 
-        hzF *= massFactor * powerFactor;
-        hzR *= massFactor * powerFactor;
+        // Power-delivery character (turbo lag, electric instant torque) adds a small
+        // frequency bias independent of raw power-to-weight.
+        var delivery = CalculationHelpers.GetPowerDeliveryFactors(
+            car.PowertrainType, car.AspirationType, car.AntiLag);
+
+        // Drift: keep the rear softer so it breaks loose under power. The front
+        // still gets the full power stiffening for turn-in precision.
+        double powerFactorR = basePower;
+        if (track.Discipline == Discipline.Drift)
+            powerFactorR = 1.0 + (basePower - 1.0) * 0.55;
+
+        hzF *= massFactor * basePower * delivery.Spring;
+        hzR *= massFactor * powerFactorR * delivery.Spring;
 
         // Softer springs in low-grip seasons and with off-road suspension.
         double seasonMul = CalculationHelpers.SeasonGripMultiplier(track.Season, 0.70, 0.30);
@@ -265,7 +279,9 @@ internal static class SuspensionCalculator
 
         // High-power cars need a touch more damping to control weight transfer.
         double ptwD = car.PowerHP / Math.Max(car.TotalMass, 1.0);
-        double powerFactorD = 1.0 + Math.Max(0, ptwD - PhysicsConstants.PtwReferenceHpPerKg) * 0.20;
+        
+        // Cap the power factor - same rationale as CalculateSprings (line 122).
+        double powerFactorD = 1.0 + Math.Min(0.40, Math.Max(0, ptwD - PhysicsConstants.PtwReferenceHpPerKg) * 0.20);
         dampingRatio *= powerFactorD;
 
         double seasonMul = CalculationHelpers.SeasonGripMultiplier(track.Season, 0.70, 0.35);
@@ -348,8 +364,24 @@ internal static class SuspensionCalculator
     {
         // k [N/m] = (2*pi*f)^2 * m, converted to N/mm (the DB / tune unit) by /1000.
         double kNpm = Math.Pow(2.0 * Math.PI * hz, 2.0) * cornerMassKg;
-        double kNmm = kNpm / PhysicsConstants.NmmToNm;
-        return CalculationHelpers.Clamp(kNmm, phys.MinSpringRate, phys.MaxSpringRate);
+        double raw = kNpm / PhysicsConstants.NmmToNm;
+
+        double range = phys.MaxSpringRate - phys.MinSpringRate;
+        if (range <= 0)
+            return phys.MaxSpringRate;
+
+        // Soft-cap: linear below 85% of max, then exponential approach to max.
+        // Preserves front/rear balance even when power pushes past the DB limit,
+        // instead of hard-clamping every high-HP car to the same ceiling.
+        double threshold = phys.MinSpringRate + range * 0.85;
+        if (raw <= phys.MinSpringRate)
+            return phys.MinSpringRate;
+        if (raw <= threshold)
+            return Math.Round(raw, 2);
+
+        double headroom = phys.MaxSpringRate - threshold;
+        double result = phys.MaxSpringRate - headroom * Math.Exp(-(raw - threshold) / headroom);
+        return Math.Round(result, 2);
     }
 
     private static double DampingFromSpringAndMass(double springNm, double cornerMassKg, DbSpringDamperPhysics phys, double dampingRatio, bool rebound)

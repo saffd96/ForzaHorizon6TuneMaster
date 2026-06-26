@@ -139,7 +139,7 @@ public class UnitValueConverter : IMultiValueConverter
         {
             "pressure" => imp ? $"{val * 14.504:F1} {loc.T("UnitPsi")}"      : $"{val:F2} {loc.T("UnitBar")}",
             "spring"   => su == SpringUnit.KgfMm   ? $"{val / 9.807 * 10.0:F2} {loc.T("UnitKgfMm")}"
-                        : su == SpringUnit.LbsIn  ? $"{val * 5.710:F1} {loc.T("UnitLbsInch")}"
+                        : su == SpringUnit.LbsIn  ? $"{val * PhysicsConstants.NmmToLbsIn:F1} {loc.T("UnitLbsInch")}"
                         :                           $"{val * 10.0:F1} {loc.T("UnitNmm")}",
             "height"   => imp ? $"{val / 25.4:F2}{loc.T("UnitInch")}" : $"{val:F0} {loc.T("UnitMm")}",
             "speed"    => imp ? $"~{val * 0.6214:F0} {loc.T("UnitMph")}" : $"~{val:F0} {loc.T("UnitKmh")}",

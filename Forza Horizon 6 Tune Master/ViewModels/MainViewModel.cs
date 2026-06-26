@@ -117,6 +117,12 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     private int? _lastDrivetrainSwapPartId;
     private int? _lastBodyKitPartId;
 
+    // DB-provided spring-rate bounds (N/mm), refreshed by ApplyPhysicsBounds.
+    // Used by SpringFrontMinDisplay setter to clamp manual edits to the
+    // suspension's physical range.
+    private double _dbSpringFrontMin = 10;
+    private double _dbSpringFrontMax = 300;
+
     private void OnPartsChanged()
     {
         if (_selectedParts.EngineSwapPartId != _lastEngineSwapPartId)
@@ -184,6 +190,10 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         // Always update enums when ANY part changes (spring, tire, brakes, diff, aero, ARB, etc.)
         MapPartIdsToEnums(Car);
         Constraints.ApplyPhysicsBounds(Car, _selectedParts, Fh6DatabaseService.Instance);
+        // Capture the DB-supplied spring bounds so display-property setters can
+        // clamp manual edits to the suspension's physical range.
+        _dbSpringFrontMin = Constraints.SpringFrontMin;
+        _dbSpringFrontMax = Constraints.SpringFrontMax;
         InvalidateDiffDecel(); // the fitted differential may have changed
 
         if (!IsAutoGenerate || _isGenerating) return;
@@ -472,18 +482,22 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             return _springUnit switch
             {
                 SpringUnit.KgfMm => Math.Round(nmm / 9.807 * 10.0, 1),
-                SpringUnit.LbsIn => Math.Round(nmm / 0.175127, 1),
+                SpringUnit.LbsIn => Math.Round(nmm * PhysicsConstants.NmmToLbsIn, 1),
                 _ => nmm * 10.0
             };
         }
         set
         {
-            Constraints.SpringFrontMin = _springUnit switch
+            var nmm = _springUnit switch
             {
                 SpringUnit.KgfMm => value / 10.0 * 9.807,
-                SpringUnit.LbsIn => value * 0.175127,
+                SpringUnit.LbsIn => value / PhysicsConstants.NmmToLbsIn,
                 _ => value / 10.0
             };
+            // Clamp to the suspension's physical range from the DB so manual edits
+            // never push the slider past what the fitted springs can deliver.
+            nmm = Math.Clamp(nmm, _dbSpringFrontMin, _dbSpringFrontMax);
+            Constraints.SpringFrontMin = nmm;
             OnPropertyChanged();
         }
     }
@@ -1083,6 +1097,8 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         _lastBodyKitPartId = parts.BodyKitPartId;
         MapDbToOldEnums(car);
         Constraints.ApplyPhysicsBounds(car, parts, Fh6DatabaseService.Instance);
+        _dbSpringFrontMin = Constraints.SpringFrontMin;
+        _dbSpringFrontMax = Constraints.SpringFrontMax;
         if (isElectric)
             PowerCalculator.Calculate(car, parts);
     }
@@ -1150,8 +1166,15 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     private void MapPartIdsToEnums(CarCard car)
     {
         var db = Fh6DatabaseService.Instance;
-        car.TireType = MapTierFromLevel<TireType>(_selectedParts.TireCompoundPartId,
-            id => db.GetTireCompoundById(id)?.Level ?? 0);
+        
+        // Only override Tire Type when a compound is actually fitted; otherwise keep
+        // the CarCard default (Sport, crr=0.005). Previously MapTierFromLevel(null) 
+        // returned Stock (crr=0.007), adding ~40 % extra rolling resistance for every 
+        // car on first load and further lowering the already-underestimated top speed. 
+
+        if (_selectedParts.TireCompoundPartId != null)
+            car.TireType = MapTierFromLevel<TireType>(_selectedParts.TireCompoundPartId.Value,
+                id => db.GetTireCompoundById(id)?.Level ?? 0);
         car.SuspensionUpgrade = MapTierFromLevel<SuspensionUpgrade>(_selectedParts.SpringDamperPartId,
             id => db.GetSpringDamperById(id)?.Level ?? 0);
         car.BrakesUpgrade = MapTierFromLevel<BrakesUpgrade>(_selectedParts.BrakePartId,
@@ -1495,6 +1518,12 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
                 Constraints.CenterDiffBias = p.Constraints.CenterDiffBias;
             }
             MapPartIdsToEnums(Car);
+            // Saved constraints may carry values from a different car/parts combo or
+            // stale manual edits — always reconcile against the DB physics for the
+            // currently-selected parts so the progress bars show correct limits.
+            Constraints.ApplyPhysicsBounds(Car, _selectedParts, Fh6DatabaseService.Instance);
+            _dbSpringFrontMin = Constraints.SpringFrontMin;
+            _dbSpringFrontMax = Constraints.SpringFrontMax;
             StatusMessage = string.Format(T("StatusProfileLoaded"), SelectedProfile);
         }
         catch (Exception ex) { StatusMessage = string.Format(T("StatusLoadError"), ex.Message); }

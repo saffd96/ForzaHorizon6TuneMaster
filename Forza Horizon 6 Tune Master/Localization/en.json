@@ -316,6 +316,7 @@
   "CarsLoadingError": "Failed to load car list: {0}",
 
   "LanguageLabel": "Language:",
+  "FontLabel": "Font:",
   "LanguageRu": "Русский",
   "LanguageEn": "English",
 

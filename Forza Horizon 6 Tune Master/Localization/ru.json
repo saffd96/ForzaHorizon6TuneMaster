@@ -316,6 +316,7 @@
   "CarsLoadingError": "Не удалось загрузить список авто: {0}",
 
   "LanguageLabel": "Язык:",
+  "FontLabel": "Шрифт:",
   "LanguageRu": "Русский",
   "LanguageEn": "English",
 

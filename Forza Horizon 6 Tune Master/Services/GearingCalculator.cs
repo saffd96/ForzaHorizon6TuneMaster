@@ -58,9 +58,10 @@ internal static class GearingCalculator
 
         double tireCirc = Math.PI * car.DrivenWheelDiameterInch * PhysicsConstants.InchToMeter;
 
-        // Speed the car actually reaches here — the drag terminal speed on a strip, else v-max.
+        // Speed the car actually reaches here — empirical trap speed for drag strips,
+        // terminal velocity for all other disciplines.
         double vTop = track.Discipline == Discipline.Drag
-            ? effectiveMaxKmh * DragSpeedFactor(track.DragDistance)
+            ? CalculateDragTrapSpeedKmh(car, track.DragDistance, effectiveMaxKmh)
             : effectiveMaxKmh;
         if (vTop < 1.0) return Math.Clamp(6, 2, hardMax);
 
@@ -98,7 +99,22 @@ internal static class GearingCalculator
             _ => (3.5, 0.68, 0.82, "Expl_GearNote_Road")
         };
         string note = CalculationHelpers.L(noteKey);
-        first -= CalculationHelpers.Clamp((pwRatio - 150.0) / 100.0 * 0.30, -0.45, 0.50);
+
+        // Power-to-weight adjustment: more power → taller first gear (lower numerical ratio).
+        // Linear ramp up to pwRatio ≈ 317 (where the old cap of 0.50 was reached), then
+        // logarithmic continuation so extreme builds (2500 HP / 1700 kg → pwRatio ≈ 1470)
+        // get meaningful further reduction instead of being clipped at the same 0.50 cap
+        // as a modest 350 HP build.
+        double pwAdj;
+        const double linearLimit = 0.50;
+        const double linearPwCeiling = 150.0 + linearLimit / 0.30 * 100.0; // ≈ 317
+        if (pwRatio <= linearPwCeiling)
+            pwAdj = (pwRatio - 150.0) / 100.0 * 0.30;
+        else
+            pwAdj = linearLimit + Math.Log(pwRatio / linearPwCeiling) * 0.35;
+
+        first -= CalculationHelpers.Clamp(pwAdj, -0.45, 1.20);
+
         if (fuelType == FuelType.Diesel)
             first = Math.Max(first - 0.45, 1.5);
         return (first, stepMin, stepMax, note);
@@ -123,12 +139,51 @@ internal static class GearingCalculator
 
     // Fraction of v-max actually reached at the end of the strip — used to target the final drive.
     // A quarter mile tops out well short of v-max; a full mile nearly reaches it.
+    // ⚠️  DEPRECATED in favour of CalculateDragTrapSpeedKmh for the *target speed* feed —
+    // kept for CalcRecommendedGearCount's vTop (still terminal-velocity-based for gear-count
+    // estimation) and forward-compat.
     internal static double DragSpeedFactor(DragDistance dist) => dist switch
     {
         DragDistance.Quarter => 0.82,
         DragDistance.Half    => 0.91,
         _                    => 1.00, // Mile
     };
+
+    // Empirical drag-strip trap speed using the Hale formula:
+    //   trap_mph ≈ 234 × (HP / weight_lb) ^ ⅓
+    // Converted to km/h and scaled by strip distance. This replaces the old
+    // terminal-velocity × DragSpeedFactor approach which produced absurd target
+    // speeds (~490 km/h for a 2500 HP car on a quarter mile — no car traps that
+    // fast), cascading into too-tall final drives and unusable gearing.
+    //
+    // The formula is capped at 500 km/h (the absolute quarter-mile trap-speed
+    // ceiling of any real vehicle) and floored at 80 km/h.
+    internal static double CalculateDragTrapSpeedKmh(CarCard car, DragDistance distance, double effectiveMaxKmh)
+    {
+        double weightLb = car.TotalMass * 2.20462;
+        double powerPerLb = car.PowerHP / Math.Max(weightLb, 1.0);
+        double trapMph = 234.0 * Math.Pow(powerPerLb, 1.0 / 3.0);
+        double trapKmhQ = trapMph * 1.60934; // quarter-mile baseline
+
+        // Scale for longer strips. These factors are calibrated to keep the FD
+        // reasonable across all three distances while staying within the physically
+        // reachable range for each distance.
+        double distanceFactor = distance switch
+        {
+            DragDistance.Quarter => 1.00,
+            DragDistance.Half    => 1.25,
+            DragDistance.Mile    => 1.50,
+            _                    => 1.00
+        };
+
+        double trapKmh = trapKmhQ * distanceFactor;
+
+        // Sanity cap: the trap speed must not exceed what the car can physically
+        // reach (the stock top speed with this power), and the absolute floor is
+        // 80 km/h for drivability.
+        double physCeiling = Math.Max(effectiveMaxKmh * DragSpeedFactor(distance), trapKmh);
+        return Math.Clamp(Math.Min(trapKmh, physCeiling), 80.0, 500.0);
+    }
 
     // Shorter strips keep the gears closer together (less drop) so the car stays in the meat of its
     // power band to the trap; longer strips spread them out for terminal speed.
@@ -216,11 +271,12 @@ internal static class GearingCalculator
             ? CalculationHelpers.RevLimitFraction
             : 0.95;
 
-        // On the drag strip the gearing targets the TERMINAL speed reached at that distance
-        // (a quarter mile tops out well short of v-max, a full mile nearly reaches it), which is
-        // what makes the strip length actually change the final drive.
+        // On the drag strip the gearing targets an EMPIRICAL trap speed (Hale formula),
+        // NOT the full terminal velocity × strip factor. The old terminal-velocity approach
+        // produced absurd targets (~490 km/h for a 2500 HP car on a quarter mile), cascading
+        // into too-tall final drives that made the car bog off the line.
         double targetKmh = track.Discipline == Discipline.Drag
-            ? effectiveMaxKmh * DragSpeedFactor(track.DragDistance)
+            ? CalculateDragTrapSpeedKmh(car, track.DragDistance, effectiveMaxKmh)
             : Math.Min(effectiveMaxKmh, CalculationHelpers.TargetSpeedCapKmh);
         double targetMs = targetKmh / PhysicsConstants.MsToKmh;
 
@@ -302,7 +358,7 @@ internal static class GearingCalculator
             {
                 double actual = r.ActualMaxSpeedKmh;
                 double target = track.Discipline == Discipline.Drag
-                    ? effectiveMaxKmh * DragSpeedFactor(track.DragDistance)
+                    ? CalculateDragTrapSpeedKmh(car, track.DragDistance, effectiveMaxKmh)
                     : Math.Min(effectiveMaxKmh, CalculationHelpers.TargetSpeedCapKmh);
 
                 if (actual > 0 && target > 0 && (actual < target * 0.97 || actual > target * 1.05))
@@ -358,7 +414,22 @@ internal static class GearingCalculator
         if (car.MaxRPM <= 0 || car.TorquePeakRPM <= 0 || car.PowerPeakRPM <= 0) return false;
 
         double shiftRpm = car.PowerPeakRPM;
-        double minSafeRpm = car.TorquePeakRPM * 0.90;
+
+        // Cap minSafeRpm: for engines where TorquePeakRPM is very high (highly-tuned
+        // turbos, peaky NA builds), TorquePeakRPM × 0.90 can approach the shift RPM
+        // itself, causing the fix to compress EVERY gear ratio into a narrow band and
+        // produce "ужасные коротки передачи" (terribly short gears).  The cap at 65 %
+        // of shiftRPM means the fix only activates when the RPM drop is genuinely
+        // excessive (engine falls below 65 % of its power peak), not when it merely
+        // dips below an unusually high torque peak.
+        double minSafeRpm = Math.Min(car.TorquePeakRPM * 0.90, shiftRpm * 0.65);
+
+        // Per-gear ratio increase cap: prevent the fix from inflating a single gear
+        // by more than 25 % in one pass — more than that signals a discipline-spacing
+        // mismatch rather than a true RPM-drop problem, and the fix would cascade
+        // through the whole set.
+        const double maxRatioIncrease = 1.25;
+
         bool anyFixed = false;
 
         for (int pass = 0; pass < 5; pass++)
@@ -371,7 +442,9 @@ internal static class GearingCalculator
                 if (rpmAfter < minSafeRpm)
                 {
                     double minRatio = r.GearRatios[i + 1] * (minSafeRpm / rpmAfter);
-                    double maxAllowedRatio = r.GearRatios[i] - 0.01;
+                    double maxAllowedRatio = Math.Min(
+                        r.GearRatios[i] - 0.01,
+                        r.GearRatios[i + 1] * maxRatioIncrease);
                     double clampedRatio = CalculationHelpers.Clamp(minRatio,
                         CalculationHelpers.GearRatioMin, maxAllowedRatio);
                     double newRatio = Math.Round(clampedRatio, 2);

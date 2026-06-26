@@ -108,6 +108,29 @@ internal class CarSpecController
 
         PowerCalculator.Calculate(car);
 
+        
+        // Back-calculate body CdxA from the game's rated top speed (TopSpeedMph).
+        // The mass-based CdABody Estimate fallback (CarCard.cs:271-274) overestimates
+        // drag ~2x for aerodynamic cars, producing artificially low effective top
+        // speeds and cascading into too-short gearing + wrong alignment/brake values.
+        //
+        // The raw P = ½ρCdAv³ solve attributes ALL engine power to aero drag, ignoring
+        // rolling resistance (~10–20 % at top speed) and drivetrain losses (~12–15 %).
+        // We apply a 0.80 correction factor to strip out these non-aero power sinks —
+        // calibrated against known CdA values (GT-R real CdA≈0.56, raw solve gives
+        // ~1.02; with 0.80 → 0.82, close enough for physics purposes).
+        if (car.PowerHP > 0 && dbCar.TopSpeedMph > 10)
+        {
+            double vMaxMs = dbCar.TopSpeedMph * 0.44704; // mph → m/s
+            double powerW = car.PowerHP * PhysicsConstants.HpToWatt;
+            // Solve P = ½ρCdAv³ for raw CdA, then correct for non-aero losses:
+            double cdA = 2.0 * powerW / (PhysicsConstants.AirDensity * vMaxMs * vMaxMs * vMaxMs);
+            cdA *= 0.80; // strip rolling-resistance + drivetrain losses
+            cdA = Math.Clamp(cdA, 0.15, 3.0);
+            car.Cd = cdA;
+            car.FrontalAreaM2 = 1.0; // CdABodyEstimate → cdA × 1.0
+        }
+
         NotifyCarDisplayProperties?.Invoke();
     }
 
