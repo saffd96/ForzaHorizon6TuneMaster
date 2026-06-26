@@ -404,7 +404,6 @@ public class UnitValueConverterTests
     {
         var result = _conv.Convert(new object[] { 100.0, SpringUnit.KgfMm }, null, "spring", null);
         Assert.Contains("101,97", (string)result);
-
     }
 
     [Fact]
@@ -412,7 +411,6 @@ public class UnitValueConverterTests
     {
         var result = _conv.Convert(new object[] { 100.0, SpringUnit.NMm }, null, "spring", null);
         Assert.Contains("1000,0", (string)result);
-
     }
 
     [Fact]

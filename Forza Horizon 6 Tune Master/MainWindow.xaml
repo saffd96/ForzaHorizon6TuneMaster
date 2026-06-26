@@ -239,7 +239,13 @@
                                              DisplayMemberPath="DisplayName"
                                              SelectedItem="{Binding SelectedCar}"
                                              ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                             SelectionChanged="CarListBox_SelectionChanged"/>
+                                             SelectionChanged="CarListBox_SelectionChanged">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <EventSetter Event="PreviewMouseLeftButtonDown" Handler="CarListItem_PreviewMouseLeftButtonDown"/>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                    </ListBox>
                                 </Border>
                             </Popup>
                         </Grid>
@@ -327,7 +333,7 @@
                 Padding="10,3">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="{l:Loc ProfilesLabel}" Foreground="{StaticResource TextDimBrush}"
-                           VerticalAlignment="Center" Margin="0,0,6,0" FontSize="11"/>
+                           VerticalAlignment="Center" Margin="0,0,6,0" FontSize="{DynamicResource FontXSmall}"/>
                 <Grid VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -335,7 +341,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0" x:Name="ProfileSearchBox"
                              Text="{Binding ProfileSearchText, UpdateSourceTrigger=PropertyChanged}"
-                             MinWidth="130" Height="24" Padding="6,2" FontSize="11"
+                             MinWidth="130" Height="24" Padding="6,2" FontSize="{DynamicResource FontXSmall}"
                              Background="{StaticResource ElevatedBrush}"
                              BorderBrush="{StaticResource BorderBrush}"
                              GotFocus="ProfileSearchBox_GotFocus"
@@ -360,18 +366,24 @@
                                      ItemsSource="{Binding FilteredProfiles}"
                                      SelectedItem="{Binding SelectedProfile}"
                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                     SelectionChanged="ProfileListBox_SelectionChanged" />
+                                     SelectionChanged="ProfileListBox_SelectionChanged">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ProfileListItem_PreviewMouseLeftButtonDown"/>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                            </ListBox>
                         </Border>
                     </Popup>
                 </Grid>
                 <Button Content="{l:Loc ProfileSave}" Style="{StaticResource SecondaryButton}"
-                        Command="{Binding SaveCommand}" Margin="6,0,0,0" Padding="9,3" FontSize="11"/>
+                        Command="{Binding SaveCommand}" Margin="6,0,0,0" Padding="9,3"/>
                 <Button Content="{l:Loc ProfileLoad}" Style="{StaticResource SecondaryButton}"
-                        Command="{Binding LoadCommand}" Margin="4,0,0,0" Padding="9,3" FontSize="11"/>
+                        Command="{Binding LoadCommand}" Margin="4,0,0,0" Padding="9,3"/>
                 <Button Content="{l:Loc ProfileDelete}" Style="{StaticResource DangerButton}"
-                        Command="{Binding DeleteProfileCommand}" Margin="4,0,0,0" Padding="9,3" FontSize="11"/>
+                        Command="{Binding DeleteProfileCommand}" Margin="4,0,0,0" Padding="9,3"/>
                 <Button Content="{l:Loc ProfileDeleteAll}" Style="{StaticResource DangerButton}"
-                        Command="{Binding DeleteAllProfilesCommand}" Margin="4,0,0,0" Padding="9,3" FontSize="11"/>
+                        Command="{Binding DeleteAllProfilesCommand}" Margin="4,0,0,0" Padding="9,3"/>
 
                 <TextBlock Text="{Binding StatusMessage}"
                            Foreground="{StaticResource TextMutedBrush}"

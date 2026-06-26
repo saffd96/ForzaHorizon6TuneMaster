@@ -100,12 +100,15 @@ public partial class PowerCurveView : UserControl
         SizeChanged += OnSizeChanged;
         Services.LocalizationService.Instance.PropertyChanged -= OnLocaleChanged;
         Services.LocalizationService.Instance.PropertyChanged += OnLocaleChanged;
+        MainWindow.FontSizesChanged -= OnFontSizesChanged;
+        MainWindow.FontSizesChanged += OnFontSizesChanged;
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         SizeChanged -= OnSizeChanged;
         Services.LocalizationService.Instance.PropertyChanged -= OnLocaleChanged;
+        MainWindow.FontSizesChanged -= OnFontSizesChanged;
     }
 
     // On resize, redraw immediately (no animation). If a data-driven animation is
@@ -120,6 +123,12 @@ public partial class PowerCurveView : UserControl
     private void OnLocaleChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName != "Item") return;
+        if (_isTransitioning) { _dirtyAfterRedraw = true; return; }
+        DrawChart();
+    }
+
+    private void OnFontSizesChanged()
+    {
         if (_isTransitioning) { _dirtyAfterRedraw = true; return; }
         DrawChart();
     }
@@ -229,8 +238,9 @@ public partial class PowerCurveView : UserControl
         var gridBrush = new SolidColorBrush(Color.FromRgb(0x20, 0x35, 0x50));
         var lblBrush = new SolidColorBrush(Color.FromRgb(0x88, 0x92, 0xA4));
         var dimLblBrush = new SolidColorBrush(Color.FromRgb(0x66, 0x70, 0x80));
-        var lblFamily = new FontFamily(new Uri("pack://application:,,,/"), "./Resources/Fonts/#JetBrains Mono");
-        const double lblSize = 10;
+        var lblFamily     = new FontFamily(new Uri("pack://application:,,,/"), "./Resources/Fonts/#JetBrains Mono");
+        double fontMicro   = (double?)TryFindResource("FontMicro") ?? 10;
+        double fontNormal  = (double?)TryFindResource("FontNormal") ?? 13;
 
         // ── gridlines (vertical — RPM) ──
         int rpmStep = MaxRPM <= 4000 ? 500 : 1000;
@@ -248,7 +258,7 @@ public partial class PowerCurveView : UserControl
             {
                 Text = txt,
                 Foreground = lblBrush,
-                FontSize = lblSize,
+                FontSize = fontMicro,
                 FontFamily = lblFamily,
                 TextAlignment = TextAlignment.Center
             };
@@ -257,9 +267,9 @@ public partial class PowerCurveView : UserControl
             Canvas.SetTop(tb, padT + ch + 4);
         }
 
-        // ── gridlines (horizontal — Torque) ──
-        double tStep = maxTorque <= 100 ? 25 : maxTorque <= 300 ? 50 : 100;
-        for (double t = 0; t <= maxTorque + tStep; t += tStep)
+        // ── gridlines (horizontal — Torque, max 5 divisions) ──
+        double tStep = NiceStep(maxTorque, 5);
+        for (double t = 0; t <= maxTorque + tStep * 0.001; t += tStep)
         {
             double y = TorqueToY(t);
             ChartCanvas.Children.Add(new Line
@@ -272,31 +282,44 @@ public partial class PowerCurveView : UserControl
             {
                 Text = $"{t:F0}",
                 Foreground = lblBrush,
-                FontSize = lblSize,
+                FontSize = fontMicro,
                 FontFamily = lblFamily,
                 TextAlignment = TextAlignment.Right
             };
             ChartCanvas.Children.Add(tb);
             Canvas.SetLeft(tb, 2);
-            Canvas.SetTop(tb, y - lblSize * 0.5);
+            Canvas.SetTop(tb, y - fontMicro * 0.5);
         }
 
-        // ── horizontal gridlines (power — right side) ──
-        double pStep = maxPower <= 100 ? 25 : maxPower <= 300 ? 50 : maxPower <= 1000 ? 100 : 250;
-        for (double p = 0; p <= maxPower + pStep; p += pStep)
+        // ── horizontal gridlines (power — right side, max 5 divisions) ──
+        double pStep = NiceStep(maxPower, 5);
+        for (double p = 0; p <= maxPower + pStep * 0.001; p += pStep)
         {
             double y = PowerToY(p);
             var tb = new TextBlock
             {
                 Text = $"{p:F0}",
                 Foreground = lblBrush,
-                FontSize = lblSize,
+                FontSize = fontMicro,
                 FontFamily = lblFamily,
                 TextAlignment = TextAlignment.Left
             };
             ChartCanvas.Children.Add(tb);
             Canvas.SetLeft(tb, w - padR + 4);
-            Canvas.SetTop(tb, y - lblSize * 0.5);
+            Canvas.SetTop(tb, y - fontMicro * 0.5);
+        }
+
+        // ── thin orange-transparent power level bars ──
+        var powerBarBrush = new SolidColorBrush(Color.FromArgb(0x18, 0xFF, 0x5E, 0x0E));
+        for (double p = 0; p <= maxPower + pStep * 0.001; p += pStep)
+        {
+            double y = PowerToY(p);
+            ChartCanvas.Children.Add(new Line
+            {
+                X1 = padL, X2 = w - padR, Y1 = y, Y2 = y,
+                Stroke = powerBarBrush,
+                StrokeThickness = 1
+            });
         }
 
         // ── axis labels ──
@@ -313,7 +336,7 @@ public partial class PowerCurveView : UserControl
         {
             Text = $"{loc.T("CurveLegendTorque")}, {torqueUnit}",
             Foreground = dimLblBrush,
-            FontSize = 9,
+            FontSize = fontMicro,
             FontFamily = lblFamily,
             TextAlignment = TextAlignment.Center
         };
@@ -325,7 +348,7 @@ public partial class PowerCurveView : UserControl
         {
             Text = $"{loc.T("CurveLegendPower")}, {powerUnit}",
             Foreground = dimLblBrush,
-            FontSize = 9,
+            FontSize = fontMicro,
             FontFamily = lblFamily,
             TextAlignment = TextAlignment.Center
         };
@@ -337,7 +360,7 @@ public partial class PowerCurveView : UserControl
         {
             Text = loc.T("ChartAxisRPM"),
             Foreground = dimLblBrush,
-            FontSize = 9,
+            FontSize = fontMicro,
             FontFamily = lblFamily,
             TextAlignment = TextAlignment.Center
         };
@@ -415,7 +438,7 @@ public partial class PowerCurveView : UserControl
         {
             Text = loc.T("CurveLegendTorque"),
             Foreground = lblBrush,
-            FontSize = 9,
+            FontSize = fontMicro,
             FontFamily = lblFamily
         };
         ChartCanvas.Children.Add(tLegendLbl);
@@ -436,7 +459,7 @@ public partial class PowerCurveView : UserControl
         {
             Text = loc.T("CurveLegendPower"),
             Foreground = lblBrush,
-            FontSize = 9,
+            FontSize = fontMicro,
             FontFamily = lblFamily
         };
         ChartCanvas.Children.Add(pLegendLbl);
@@ -461,7 +484,7 @@ public partial class PowerCurveView : UserControl
         {
             Text = $"{loc.T("ChartTorquePeakLabel")}: {maxTVal:F0} {torqueUnit}",
             Foreground = torqueBrush,
-            FontSize = 10,
+            FontSize = fontMicro,
             FontFamily = lblFamily,
             FontWeight = FontWeights.Bold
         };
@@ -473,7 +496,7 @@ public partial class PowerCurveView : UserControl
         {
             Text = string.Format(loc.T("ChartPeakAtRpmFmt"), torquePeakRpm),
             Foreground = torqueBrush,
-            FontSize = 10,
+            FontSize = fontMicro,
             FontFamily = lblFamily,
             FontWeight = FontWeights.Bold
         };
@@ -488,7 +511,7 @@ public partial class PowerCurveView : UserControl
         {
             Text = $"{loc.T("ChartPowerPeakLabel")}: {maxPVal:F0} {powerUnit}",
             Foreground = powerBrush,
-            FontSize = 10,
+            FontSize = fontMicro,
             FontFamily = lblFamily,
             FontWeight = FontWeights.Bold
         };
@@ -500,7 +523,7 @@ public partial class PowerCurveView : UserControl
         {
             Text = string.Format(loc.T("ChartPeakAtRpmFmt"), powerPeakRpm),
             Foreground = powerBrush,
-            FontSize = 10,
+            FontSize = fontMicro,
             FontFamily = lblFamily,
             FontWeight = FontWeights.Bold
         };
@@ -513,6 +536,17 @@ public partial class PowerCurveView : UserControl
         ChartCanvas.Children.Add(toleranceIcon);
         Canvas.SetLeft(toleranceIcon, legendX + 64);
         Canvas.SetTop(toleranceIcon, peakY - 72);
+    }
+
+    private static double NiceStep(double range, int maxDivisions)
+    {
+        double raw = range / maxDivisions;
+        double exp = Math.Pow(10, Math.Floor(Math.Log10(raw)));
+        double mant = raw / exp;
+        if (mant <= 1.5) return 1.0 * exp;
+        if (mant <= 3.5) return 2.5 * exp;
+        if (mant <= 7.5) return 5.0 * exp;
+        return 10.0 * exp;
     }
 
     private Border CreateToleranceIcon(string tooltip)
@@ -531,7 +565,7 @@ public partial class PowerCurveView : UserControl
             Text = "!",
             Foreground = Brushes.White,
             FontWeight = FontWeights.Bold,
-            FontSize = 13,
+            FontSize = (double?)TryFindResource("FontNormal") ?? 13,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };

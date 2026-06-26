@@ -277,6 +277,8 @@
   "ResultMaxSpeedTooltip": "~ Estimated top speed at current gear ratios and RPM",
   "ResultRecGears": "REC. GEARS",
   "ResultRecGearsHint": "Recommended number of gears for this build — computed from the engine's powerband and the speed range it can actually reach. It's advice, not a copy of your installed gearbox, so it may differ. For the most out of the engine, fit a gearbox with this many speeds.",
+  "ResultForceRecGears": "Override ratios & chart with recommended gears",
+  "ResultSpringsHint": "Spring rates are calculated from pure physics with no limits — they may exceed the in-game slider range. The game's limits depend on suspension geometry (motion ratio). Use as a starting point — fine-tune exact values in-game.",
   "ResultGearFormat": "Gear ",
 
   "LaunchControlHeader": "🚦 LAUNCH CONTROL",
@@ -348,10 +350,10 @@
 
   "HelpStep8Title": "8 — PROFILES & UNITS",
   "HelpStep8Text": "Profiles save a full build: car, installed parts, discipline/season and the result.\r\n\r\n• '💾 Save' — stores the current build. Name auto-generated: Make_Model_Year_Drive_Discipline.\r\n• 'Load' — pick a profile in the list below and it applies instantly.\r\n• '🗑 Delete' — removes the selected profile.\r\n• 'Delete all' — clears the whole profile list.\r\n\r\nProfiles are stored as JSON in %APPDATA%\\ForzaTuneMaster\\profiles\\ and are recalculated automatically on load when needed.",
-  "HelpStep8Note": "Units and language toggle in the top bar:\r\n• Metric / Imperial — affects all unit displays\r\n• Power: HP / PS / kW\r\n• Spring rate: N/mm · kgf/mm · lb/in\r\n• Interface language: Русский / English\r\n\r\nAll calculations run in metric (SI) units — imperial conversion is for display only.",
+  "HelpStep8Note": "Units and language toggle in the top bar:\r\n• Metric / Imperial — affects all unit displays\r\n• Power: HP / PS / kW\r\n• Spring rate: N/mm · kgf/mm · lb/in\r\n• Interface language: Русский / English\r\n• «+» / «−» buttons — font size across the whole app (charts included). Size is saved.\r\n\r\nAll calculations run in metric (SI) units — imperial conversion is for display only.",
 
   "HelpStep9Title": "9 — FLOATING OVERLAY",
-  "HelpStep9Text": "Tune results can be shown in a separate window on top of the game and other apps:\r\n\r\n• TOGGLE — the 'Overlay' checkbox in the results panel header or Ctrl+Shift+O\r\n• DRAG — by the window header\r\n• RESIZE — by any corner of the window\r\n• OPACITY — slider in the header\r\n• CLOSE — the ✕ button in the header or press Ctrl+Shift+O again\r\n\r\nOverlay position, size and opacity are saved and restored on next open.",
+  "HelpStep9Text": "Tune results can be shown in a separate window on top of the game and other apps:\r\n\r\n• TOGGLE — the 'Overlay' checkbox in the results panel header or Ctrl+Shift+O\r\n• DRAG — by the window header\r\n• RESIZE — by any corner of the window\r\n• OPACITY — slider in the header\r\n• CLOSE — the ✕ button in the header or press Ctrl+Shift+O again\r\n\r\nOverlay position, size and opacity are saved and restored on next open.\r\n\r\n💡 When you change the car or a part, the overlay charts (just like in the main window) update smoothly: fade-out → redraw → fade-in. Language/unit switches redraw instantly.",
 
   "Enum_EngineType_I1": "I1 (single-cylinder)",
   "Enum_EngineType_I2": "I2",
@@ -461,7 +463,7 @@
   "HelpStep6Line7": "• DIFFERENTIAL — accel/decel lock. From discipline/drive, power and torque. For AWD — separate front and center diff.",
   "HelpStep6Line8": "• BRAKES — balance (% front) = weight dist + discipline offset. Pressure: from discipline, mass and speed.",
   "HelpStep6Line9": "• GEARING — final drive targeting max speed, ratios (geometric progression) with post-validation. First/top gear from discipline.",
-  "HelpStep6Line10": "Hover over any value — the tooltip explains the physics. Below: the gear chart (speed range per gear) and the power/torque curve; vertical lines mark peak power (orange) and peak torque (blue). The checkboxes show/hide the charts.",
+  "HelpStep6Line10": "Hover over any value — the tooltip explains the physics. Below: the gear chart (speed range per gear) with a legend (trajectory, rev limit, max speed) and the power/torque curve. The '!' badge next to springs warns that values may exceed in-game limits. Next to final drive — recommended gear count with a force-recalc checkbox. The checkboxes show/hide the charts. Charts animate smoothly when data changes.",
   "CurveAxisTorque": "Torque, Nm",
   "CurveAxisPower": "Power, HP",
   "CurveLegendTorque": "Torque",

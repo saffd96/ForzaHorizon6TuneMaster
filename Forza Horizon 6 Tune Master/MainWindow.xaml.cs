@@ -6,6 +6,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using Forza_Horizon_6_Tune_Master.Services;
@@ -151,7 +152,10 @@ public partial class MainWindow : Window
                 rd[_fontKeys[i]] = _fontBaseValues[i] + _fontOffset;
         }
         SaveFontOffset();
+        FontSizesChanged?.Invoke();
     }
+
+    public static event Action? FontSizesChanged;
 
     private static ResourceDictionary? FindFontResourceDictionary()
     {
@@ -226,5 +230,15 @@ public partial class MainWindow : Window
     {
         if (CarListBox.SelectedItem != null)
             CarDropdownPopup.IsOpen = false;
+    }
+
+    private void CarListItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        CarDropdownPopup.IsOpen = false;
+    }
+
+    private void ProfileListItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        ProfileDropdownPopup.IsOpen = false;
     }
 }

@@ -288,8 +288,10 @@ internal static class GearingCalculator
         // road/drag run a taller, wider spread. RecommendedGearCount is computed independently from
         // the engine's powerband (advisory: "the engine is happiest with N gears") and may
         // deliberately differ from the installed box.
-        int gearCount = trans.GearRatios.Take(trans.NumGears).Count(g => g > 0);
         r.RecommendedGearCount = CalcRecommendedGearCount(car, track, parts, db, effectiveMaxKmh, c);
+        int gearCount = c.ForceRecommendedGears
+            ? r.RecommendedGearCount
+            : trans.GearRatios.Take(trans.NumGears).Count(g => g > 0);
 
         double pwRatio = car.PowerHP / Math.Max(car.TotalMass / 1000.0, 0.1);
         var (firstGear, stepMin, stepMax, gearNote) =

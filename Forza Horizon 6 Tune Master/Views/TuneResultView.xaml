@@ -235,15 +235,23 @@
                     <!-- Springs -->
                     <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource RCard}">
                         <StackPanel>
-                            <TextBlock Text="{l:Loc ResultSprings}" Style="{StaticResource RCardHeader}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{l:Loc ResultSprings}" Style="{StaticResource RCardHeader}"/>
+                                <Border Width="15" Height="15" CornerRadius="7.5" Margin="6,0,0,2"
+                                        VerticalAlignment="Center" Cursor="Help"
+                                        Background="{StaticResource AccentBrush}"
+                                        ToolTip="{l:Loc ResultSpringsHint}"
+                                        ToolTipService.ShowDuration="30000">
+                                    <TextBlock Text="!" Foreground="White" FontWeight="Bold"
+                                               FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </StackPanel>
                             <UniformGrid Columns="2">
                                 <v:ResultParam Label="{l:Loc ResultSpringFront}" Hint="{Binding TuneResult.Explanations[Springs]}" Margin="6,0,6,0">
                                     <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring"><Binding Path="TuneResult.SpringFront"/><Binding Path="SpringUnit"/></MultiBinding></v:ResultParam.ValueText>
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.SpringFront"/><Binding Path="Constraints.SpringFrontMin"/><Binding Path="Constraints.SpringFrontMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
                                 <v:ResultParam Label="{l:Loc ResultSpringRear}" Hint="{Binding TuneResult.Explanations[Springs]}" Margin="6,0,6,0">
                                     <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring"><Binding Path="TuneResult.SpringRear"/><Binding Path="SpringUnit"/></MultiBinding></v:ResultParam.ValueText>
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.SpringRear"/><Binding Path="Constraints.SpringRearMin"/><Binding Path="Constraints.SpringRearMax"/></MultiBinding></v:ResultParam.Progress>
                                 </v:ResultParam>
                             </UniformGrid>
                             <TextBlock Text="{l:Loc ResultRideHeight}" Style="{StaticResource RCardHeader}" Margin="0,8,0,0"/>
@@ -383,6 +391,11 @@
                                 <TextBlock Text="!" Foreground="White" FontWeight="Bold"
                                            FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
+                            <CheckBox IsChecked="{Binding Constraints.ForceRecommendedGears}"
+                                      Content="{l:Loc ResultForceRecGears}"
+                                      Foreground="{StaticResource AccentBrush}" FontSize="11"
+                                      VerticalAlignment="Center" Margin="14,0,0,0"
+                                      ToolTip="{l:Loc ResultRecGearsHint}"/>
                             <CheckBox x:Name="ShowGearChart" Content="{l:Loc ResultGearChart}" IsChecked="True"
                                       Foreground="{StaticResource TextDimBrush}" FontSize="11"
                                       VerticalAlignment="Center" Margin="20,0,0,0"/>

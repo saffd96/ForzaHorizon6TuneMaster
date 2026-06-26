@@ -201,6 +201,13 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         _ = DebounceGenerate();
     }
 
+    private void OnConstraintsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (!IsAutoGenerate || _isGenerating) return;
+        _lastInputChange = DateTime.Now;
+        _ = DebounceGenerate();
+    }
+
     // DB drive-type IDs (List_DriveType): 1 = FWD, 2 = RWD, 3 = AWD.
     private static Models.DriveType MapDriveType(int driveTypeId) => driveTypeId switch
     {
@@ -494,8 +501,6 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
                 SpringUnit.LbsIn => value / PhysicsConstants.NmmToLbsIn,
                 _ => value / 10.0
             };
-            // Clamp to the suspension's physical range from the DB so manual edits
-            // never push the slider past what the fitted springs can deliver.
             nmm = Math.Clamp(nmm, _dbSpringFrontMin, _dbSpringFrontMax);
             Constraints.SpringFrontMin = nmm;
             OnPropertyChanged();
@@ -969,6 +974,8 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     {
         _profileService = new ProfileService(_storage);
 
+        Constraints.PropertyChanged += OnConstraintsChanged;
+
         // Wire CarSpecController callbacks
         _carSpec.NotifyCarDisplayProperties = NotifyCarDisplayProperties;
         _carSpec.NotifyCarSelectionProperties = () =>
@@ -1042,9 +1049,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         var (savedMs, savedPu, savedSu) = LocalizationService.Instance.LoadUnitSettings();
         if (savedMs != null && Enum.TryParse<UnitSystem>(savedMs, out var ms)) MeasurementSystem = ms;
         if (savedPu != null && Enum.TryParse<PowerUnit>(savedPu, out var pu)) PowerUnit = pu;
-        // Spring unit always starts at N/mm to match the in-game tuning screen (e.g. 43-214.8),
-        // so a previously persisted kgf/mm no longer overrides it. Users can still switch in-session.
-        _ = savedSu;
+        if (savedSu != null && Enum.TryParse<SpringUnit>(savedSu, out var su)) SpringUnit = su;
 
         RefreshProfiles();
         // Migrate/recalculate outdated profiles off the UI thread so a large profile folder

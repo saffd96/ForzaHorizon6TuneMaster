@@ -136,6 +136,11 @@ public class TuningConstraints : INotifyPropertyChanged
     public double FinalDriveMin { get => _finalDriveMin; set { if (value < 0.1) value = 0.1; if (SetMin(ref _finalDriveMin, ref _finalDriveMax, value)) { Raise(); Raise(nameof(FinalDriveMax)); } } }
     public double FinalDriveMax { get => _finalDriveMax; set { if (SetMax(ref _finalDriveMin, ref _finalDriveMax, value)) { Raise(); Raise(nameof(FinalDriveMin)); } } }
 
+    // ── Gearing behaviour ─────────────────────────────────────────────
+    private bool _forceRecommendedGears;
+    [JsonPropertyOrder(99)]
+    public bool ForceRecommendedGears { get => _forceRecommendedGears; set { if (_forceRecommendedGears == value) return; _forceRecommendedGears = value; Raise(); } }
+
     // ── Center Diff Bias ──────────────────────────────────────────────
     public double CenterDiffBias { get; set; } = 50;
 

@@ -121,12 +121,15 @@ public partial class GearChartView : UserControl
         SizeChanged += OnSizeChanged;
         Forza_Horizon_6_Tune_Master.Services.LocalizationService.Instance.PropertyChanged -= OnLocaleChanged;
         Forza_Horizon_6_Tune_Master.Services.LocalizationService.Instance.PropertyChanged += OnLocaleChanged;
+        MainWindow.FontSizesChanged -= OnFontSizesChanged;
+        MainWindow.FontSizesChanged += OnFontSizesChanged;
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         SizeChanged -= OnSizeChanged;
         Forza_Horizon_6_Tune_Master.Services.LocalizationService.Instance.PropertyChanged -= OnLocaleChanged;
+        MainWindow.FontSizesChanged -= OnFontSizesChanged;
     }
 
     // On resize, redraw immediately (no animation). If a data-driven animation is
@@ -141,6 +144,12 @@ public partial class GearChartView : UserControl
     private void OnLocaleChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName != "Item") return;
+        if (_isTransitioning) { _dirtyAfterRedraw = true; return; }
+        DrawChart();
+    }
+
+    private void OnFontSizesChanged()
+    {
         if (_isTransitioning) { _dirtyAfterRedraw = true; return; }
         DrawChart();
     }
@@ -253,7 +262,8 @@ public partial class GearChartView : UserControl
         var lblBrush      = new SolidColorBrush(Color.FromRgb(0x88, 0x92, 0xA4));
         var dimLblBrush   = new SolidColorBrush(Color.FromRgb(0x66, 0x70, 0x80));
         var lblFamily     = new FontFamily(new Uri("pack://application:,,,/"), "./Resources/Fonts/#JetBrains Mono");
-        const double lblSize = 10;
+        double fontMicro  = (double?)TryFindResource("FontMicro") ?? 10;
+        double fontNormal = (double?)TryFindResource("FontNormal") ?? 13;
 
         // ── gridlines (vertical – speed) ──
         int speedStep = (int)(speedCap <= 100 ? 20 : speedCap <= 250 ? 50 : 100);
@@ -273,7 +283,7 @@ public partial class GearChartView : UserControl
             {
                 Text = $"{ds}",
                 Foreground = lblBrush,
-                FontSize = lblSize,
+                FontSize = fontMicro,
                 FontFamily = lblFamily,
                 TextAlignment = TextAlignment.Center
             };
@@ -298,13 +308,13 @@ public partial class GearChartView : UserControl
             {
                 Text = txt,
                 Foreground = lblBrush,
-                FontSize = lblSize,
+                FontSize = fontMicro,
                 FontFamily = lblFamily,
                 TextAlignment = TextAlignment.Right
             };
             ChartCanvas.Children.Add(tb);
             Canvas.SetLeft(tb, 2);
-            Canvas.SetTop(tb, y - lblSize * 0.5);
+            Canvas.SetTop(tb, y - fontMicro * 0.5);
         }
 
         // ── axis labels ──
@@ -317,7 +327,7 @@ public partial class GearChartView : UserControl
         {
             Text = axisLabel,
             Foreground = dimLblBrush,
-            FontSize = 9,
+            FontSize = fontMicro,
             FontFamily = lblFamily,
             TextAlignment = TextAlignment.Center
         };
@@ -329,7 +339,7 @@ public partial class GearChartView : UserControl
         {
             Text = locSvc.T("ChartAxisRPM"),
             Foreground = dimLblBrush,
-            FontSize = 9,
+            FontSize = fontMicro,
             FontFamily = lblFamily
         };
         ChartCanvas.Children.Add(axisLbl);
@@ -350,7 +360,7 @@ public partial class GearChartView : UserControl
         {
             Text = FormatLabel("ChartRevLimitLabel", MaxRPM),
             Foreground = new SolidColorBrush(Color.FromArgb(0xAA, 0xEF, 0x44, 0x44)),
-            FontSize = 9,
+            FontSize = fontMicro,
             FontFamily = lblFamily
         };
         ChartCanvas.Children.Add(refLbl);
@@ -390,7 +400,7 @@ public partial class GearChartView : UserControl
             {
                 Text = $"{i + 1}",
                 Foreground = brush,
-                FontSize = 13,
+                FontSize = fontNormal,
                 FontWeight = FontWeights.Bold,
                 FontFamily = lblFamily,
                 TextAlignment = TextAlignment.Center
@@ -405,7 +415,7 @@ public partial class GearChartView : UserControl
             {
                 Text = $"{topSpeed:F0}",
                 Foreground = new SolidColorBrush(Color.FromArgb(0xBB, col.R, col.G, col.B)),
-                FontSize = 9,
+                FontSize = fontMicro,
                 FontFamily = lblFamily,
                 TextAlignment = TextAlignment.Center
             };
@@ -431,7 +441,7 @@ public partial class GearChartView : UserControl
             {
                 Text = $"{actualMaxDisplay:F0}",
                 Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 0x22, 0xC5, 0x5E)),
-                FontSize = 9,
+                FontSize = fontMicro,
                 FontFamily = lblFamily,
                 TextAlignment = TextAlignment.Center
             };
@@ -493,7 +503,7 @@ public partial class GearChartView : UserControl
                 {
                     Text = $"{(int)Math.Round(dropRpm)}",
                     Foreground = shiftLblBrush,
-                    FontSize = 9,
+                    FontSize = fontMicro,
                     FontFamily = lblFamily,
                     TextAlignment = TextAlignment.Center
                 };
@@ -535,7 +545,7 @@ public partial class GearChartView : UserControl
         {
             Text = locSvc.T("GearLegendTrajectory"),
             Foreground = lblBrush,
-            FontSize = 9,
+            FontSize = fontMicro,
             FontFamily = lblFamily
         };
         ChartCanvas.Children.Add(trajLbl);
@@ -555,7 +565,7 @@ public partial class GearChartView : UserControl
         {
             Text = locSvc.T("ChartRevLimitLabel"),
             Foreground = new SolidColorBrush(Color.FromArgb(0xAA, 0xEF, 0x44, 0x44)),
-            FontSize = 9,
+            FontSize = fontMicro,
             FontFamily = lblFamily
         };
         ChartCanvas.Children.Add(revLbl);
@@ -577,7 +587,7 @@ public partial class GearChartView : UserControl
             {
                 Text = locSvc.T("GearLegendMaxSpeed"),
                 Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 0x22, 0xC5, 0x5E)),
-                FontSize = 9,
+                FontSize = fontMicro,
                 FontFamily = lblFamily
             };
             ChartCanvas.Children.Add(maxLbl);
