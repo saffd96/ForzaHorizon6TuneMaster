@@ -290,7 +290,7 @@
   "HelpTitle": "How to use Tune Master",
   "HelpClose": "OK — Close",
   "HelpDontShowAgain": "Don't show on startup",
-  "HelpProgressLabel": "9 steps • Quick guide to Tune Master",
+  "HelpProgressLabel": "10 steps • Quick guide to Tune Master",
 
   "FieldPower": "Power",
   "FieldSpeed": "Max speed",
@@ -321,6 +321,12 @@
   "FontLabel": "Font:",
   "LanguageRu": "Русский",
   "LanguageEn": "English",
+
+  "HelpStep0Title": "0 — DISPLAY SETTINGS",
+
+  "HelpStep0Text": "The top bar of the main window contains all display controls — adjust these first for a comfortable experience.\r\n\r\n• Language: Русский / English — switches the entire interface.\r\n• Font «+» / «−» — changes the font size across the whole app (results, charts, part lists). Size is saved and restored on restart.\r\n• Units: Metric ↔ Imperial — toggles all displayed values (speeds, pressures, lengths, spring rates).\r\n• Power unit: HP / PS / kW — independent from the metric/imperial toggle.\r\n• Spring-rate unit: N/mm · kgf/mm · lb/in — displayed on results and charts.",
+
+  "HelpStep0Note": "All internal calculations always run in metric (SI) units. Units and language switches only affect the displayed text — the underlying physics are unchanged. Font size, selected units and language are persisted to %APPDATA%\\ForzaTuneMaster\\settings.json.",
 
   "HelpStep1Title": "1 — CAR SELECTION",
   "HelpStep1Text": "Top-left, in the 'Car search' box, start typing a make, model or year — the list filters automatically. Pick a car from the dropdown.\r\n\r\nAll specs (mass, weight distribution, power, torque, RPM, engine, drive type, gear count, wheelbase, tires, etc.) fill in automatically from the built-in game database. The '✕' button clears the selection.",
