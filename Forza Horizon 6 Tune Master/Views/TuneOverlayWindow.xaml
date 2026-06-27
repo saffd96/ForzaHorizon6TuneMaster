@@ -74,7 +74,7 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Column="0" Text="{l:Loc ResultHeader}"
-                                   FontSize="13" FontWeight="Bold"
+                                   FontSize="{DynamicResource FontNormal}" FontWeight="Bold"
                                    Foreground="{StaticResource AccentBrush}"
                                    VerticalAlignment="Center"/>
 
@@ -92,7 +92,7 @@
                                 Style="{StaticResource SecondaryButton}"
                                 Width="24" Height="24"
                                 Padding="0"
-                                FontSize="12"
+                                FontSize="{DynamicResource FontSmall}"
                                 FontWeight="Bold"
                                 Click="CloseButton_Click"/>
                     </Grid>

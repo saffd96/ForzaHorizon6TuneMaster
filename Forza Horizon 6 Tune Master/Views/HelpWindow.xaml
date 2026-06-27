@@ -42,7 +42,7 @@
                         <DropShadowEffect Color="#FF5E0E" Opacity="0.3" BlurRadius="10" ShadowDepth="0"/>
                     </Border.Effect>
                     <TextBlock Text="10"
-                                FontSize="18" FontWeight="Bold"
+                                FontSize="{DynamicResource FontHeading}" FontWeight="Bold"
                                 Foreground="#FFFFFF"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"/>
@@ -50,10 +50,10 @@
 
                 <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
                     <TextBlock Text="{l:Loc HelpTitle}"
-                               FontSize="20" FontWeight="Bold"
+                               FontSize="{DynamicResource FontTitle}" FontWeight="Bold"
                                Foreground="{StaticResource TextBrush}"/>
                     <TextBlock Text="{l:Loc AppDescription}"
-                               FontSize="12" Foreground="{StaticResource TextDimBrush}" Margin="0,3,0,0"/>
+                               FontSize="{DynamicResource FontSmall}" Foreground="{StaticResource TextDimBrush}" Margin="0,3,0,0"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -65,7 +65,7 @@
                 BorderThickness="0,0,0,1"
                 Padding="24,10">
             <TextBlock Text="{l:Loc HelpProgressLabel}"
-                       FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                       FontSize="{DynamicResource FontXSmall}" Foreground="{StaticResource TextMutedBrush}"/>
         </Border>
 
         <!-- Content -->
@@ -91,7 +91,7 @@
                                 CornerRadius="10,0,0,10"
                                 BorderThickness="0">
                             <TextBlock Text="0"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{DynamicResource ValueFontSize}" FontWeight="Bold"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
@@ -99,15 +99,15 @@
                         <StackPanel Grid.Column="1" Margin="20,16">
                             <TextBlock Text="{l:Loc HelpStep0Title}"
                                        Foreground="{StaticResource CyanBrush}"
-                                       FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       FontSize="{DynamicResource FontSmall}" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontNormal}" LineHeight="20"
                                        Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep0Text}"/>
                             <Border Background="{StaticResource ElevatedBrush}"
                                     CornerRadius="6"
                                     Padding="12,10"
                                     Margin="0,10,0,0">
-                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                            Foreground="{StaticResource TextDimBrush}"
                                            Text="{l:Loc HelpStep0Note}"/>
                             </Border>
@@ -130,7 +130,7 @@
                                 CornerRadius="10,0,0,10"
                                 BorderThickness="0">
                             <TextBlock Text="1"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{DynamicResource ValueFontSize}" FontWeight="Bold"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
@@ -138,15 +138,15 @@
                         <StackPanel Grid.Column="1" Margin="20,16">
                             <TextBlock Text="{l:Loc HelpStep1Title}"
                                        Foreground="{StaticResource AccentBrush}"
-                                       FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       FontSize="{DynamicResource FontSmall}" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontNormal}" LineHeight="20"
                                        Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep1Text}"/>
                             <Border Background="{StaticResource ElevatedBrush}"
                                     CornerRadius="6"
                                     Padding="12,10"
                                     Margin="0,10,0,0">
-                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                            Foreground="{StaticResource TextDimBrush}"
                                            Text="{l:Loc HelpStep1Note}"/>
                             </Border>
@@ -169,7 +169,7 @@
                                 CornerRadius="10,0,0,10"
                                 BorderThickness="0">
                             <TextBlock Text="2"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{DynamicResource ValueFontSize}" FontWeight="Bold"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
@@ -177,15 +177,15 @@
                         <StackPanel Grid.Column="1" Margin="20,16">
                             <TextBlock Text="{l:Loc HelpStep2Title}"
                                        Foreground="{StaticResource CyanBrush}"
-                                       FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       FontSize="{DynamicResource FontSmall}" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontNormal}" LineHeight="20"
                                        Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep2Text}"/>
                             <Border Background="{StaticResource ElevatedBrush}"
                                     CornerRadius="6"
                                     Padding="12,10"
                                     Margin="0,10,0,0">
-                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                            Foreground="{StaticResource TextDimBrush}"
                                            Text="{l:Loc HelpStep2Note}"/>
                             </Border>
@@ -208,7 +208,7 @@
                                 CornerRadius="10,0,0,10"
                                 BorderThickness="0">
                             <TextBlock Text="3"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{DynamicResource ValueFontSize}" FontWeight="Bold"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
@@ -216,15 +216,15 @@
                         <StackPanel Grid.Column="1" Margin="20,16">
                             <TextBlock Text="{l:Loc HelpStep3Title}"
                                        Foreground="{StaticResource AccentBrush}"
-                                       FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       FontSize="{DynamicResource FontSmall}" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontNormal}" LineHeight="20"
                                        Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep3Text}"/>
                             <Border Background="{StaticResource ElevatedBrush}"
                                     CornerRadius="6"
                                     Padding="12,10"
                                     Margin="0,10,0,0">
-                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                            Foreground="{StaticResource TextDimBrush}"
                                            Text="{l:Loc HelpStep3Note}"/>
                             </Border>
@@ -247,7 +247,7 @@
                                 CornerRadius="10,0,0,10"
                                 BorderThickness="0">
                             <TextBlock Text="4"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{DynamicResource ValueFontSize}" FontWeight="Bold"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
@@ -255,15 +255,15 @@
                         <StackPanel Grid.Column="1" Margin="20,16">
                             <TextBlock Text="{l:Loc HelpStep4Title}"
                                        Foreground="{StaticResource CyanBrush}"
-                                       FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       FontSize="{DynamicResource FontSmall}" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontNormal}" LineHeight="20"
                                        Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep4Text}"/>
                             <Border Background="{StaticResource ElevatedBrush}"
                                     CornerRadius="6"
                                     Padding="12,10"
                                     Margin="0,10,0,0">
-                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                            Foreground="{StaticResource TextDimBrush}"
                                            Text="{l:Loc HelpStep4Note}"/>
                             </Border>
@@ -286,7 +286,7 @@
                                 CornerRadius="10,0,0,10"
                                 BorderThickness="0">
                             <TextBlock Text="5"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{DynamicResource ValueFontSize}" FontWeight="Bold"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
@@ -294,15 +294,15 @@
                         <StackPanel Grid.Column="1" Margin="20,16">
                             <TextBlock Text="{l:Loc HelpStep5Title}"
                                        Foreground="{StaticResource AccentBrush}"
-                                       FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       FontSize="{DynamicResource FontSmall}" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontNormal}" LineHeight="20"
                                        Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep5Text}"/>
                             <Border Background="{StaticResource ElevatedBrush}"
                                     CornerRadius="6"
                                     Padding="12,10"
                                     Margin="0,10,0,0">
-                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                            Foreground="{StaticResource TextDimBrush}"
                                            Text="{l:Loc HelpStep5Note}"/>
                             </Border>
@@ -325,7 +325,7 @@
                                 CornerRadius="10,0,0,10"
                                 BorderThickness="0">
                             <TextBlock Text="6"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{DynamicResource ValueFontSize}" FontWeight="Bold"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
@@ -333,8 +333,8 @@
                         <StackPanel Grid.Column="1" Margin="20,16">
                             <TextBlock Text="{l:Loc HelpStep6Title}"
                                        Foreground="{StaticResource CyanBrush}"
-                                       FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       FontSize="{DynamicResource FontSmall}" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontNormal}" LineHeight="20"
                                        Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep6Text}"/>
                             <Border Background="{StaticResource SurfaceBrush}"
@@ -342,33 +342,33 @@
                                     Padding="14,12"
                                     Margin="0,8,0,0">
                                 <StackPanel>
-                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                    <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                                Text="{l:Loc HelpStep6Line1}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                    <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                                Margin="0,2,0,0"
                                                Text="{l:Loc HelpStep6Line2}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                    <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                                Margin="0,2,0,0"
                                                Text="{l:Loc HelpStep6Line3}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                    <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                                Margin="0,2,0,0"
                                                Text="{l:Loc HelpStep6Line4}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                    <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                                Margin="0,2,0,0"
                                                Text="{l:Loc HelpStep6Line5}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                    <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                                Margin="0,2,0,0"
                                                Text="{l:Loc HelpStep6Line6}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                    <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                                Margin="0,2,0,0"
                                                Text="{l:Loc HelpStep6Line7}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                    <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                                Margin="0,2,0,0"
                                                Text="{l:Loc HelpStep6Line8}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                    <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                                Margin="0,2,0,0"
                                                Text="{l:Loc HelpStep6Line9}"/>
-                                    <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                    <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                                Margin="0,8,0,0"
                                                Foreground="{StaticResource TextDimBrush}"
                                                Text="{l:Loc HelpStep6Line10}"/>
@@ -393,7 +393,7 @@
                                 CornerRadius="10,0,0,10"
                                 BorderThickness="0">
                             <TextBlock Text="7"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{DynamicResource ValueFontSize}" FontWeight="Bold"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
@@ -401,8 +401,8 @@
                         <StackPanel Grid.Column="1" Margin="20,16">
                             <TextBlock Text="{l:Loc HelpStep7Title}"
                                        Foreground="{StaticResource AccentBrush}"
-                                       FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       FontSize="{DynamicResource FontSmall}" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontNormal}" LineHeight="20"
                                        Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep7Text}"/>
                         </StackPanel>
@@ -424,7 +424,7 @@
                                 CornerRadius="10,0,0,10"
                                 BorderThickness="0">
                             <TextBlock Text="8"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{DynamicResource ValueFontSize}" FontWeight="Bold"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
@@ -432,15 +432,15 @@
                         <StackPanel Grid.Column="1" Margin="20,16">
                             <TextBlock Text="{l:Loc HelpStep8Title}"
                                        Foreground="{StaticResource CyanBrush}"
-                                       FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       FontSize="{DynamicResource FontSmall}" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontNormal}" LineHeight="20"
                                        Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep8Text}"/>
                             <Border Background="{StaticResource ElevatedBrush}"
                                     CornerRadius="6"
                                     Padding="12,10"
                                     Margin="0,10,0,0">
-                                <TextBlock TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                            Foreground="{StaticResource TextDimBrush}"
                                            Text="{l:Loc HelpStep8Note}"/>
                             </Border>
@@ -463,7 +463,7 @@
                                 CornerRadius="10,0,0,10"
                                 BorderThickness="0">
                             <TextBlock Text="9"
-                                       FontSize="22" FontWeight="Bold"
+                                       FontSize="{DynamicResource ValueFontSize}" FontWeight="Bold"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
@@ -471,8 +471,8 @@
                         <StackPanel Grid.Column="1" Margin="20,16">
                             <TextBlock Text="{l:Loc HelpStep9Title}"
                                        Foreground="{StaticResource AccentBrush}"
-                                       FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
-                            <TextBlock TextWrapping="Wrap" FontSize="13" LineHeight="20"
+                                       FontSize="{DynamicResource FontSmall}" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource FontNormal}" LineHeight="20"
                                        Foreground="{StaticResource TextBrush}"
                                        Text="{l:Loc HelpStep9Text}"/>
                         </StackPanel>
@@ -505,13 +505,13 @@
                                     VerticalAlignment="Top"
                                     Margin="0,0,10,0">
                                 <TextBlock Text="❤"
-                                           FontSize="14"
+                                           FontSize="{DynamicResource FontHeading}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Grid.Column="1"
                                        Text="{l:Loc HelpDonateText}"
-                                       TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                       TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                        Foreground="{StaticResource TextDimBrush}"/>
                         </Grid>
                     </Border>
@@ -534,13 +534,13 @@
                                     VerticalAlignment="Top"
                                     Margin="0,0,10,0">
                                 <TextBlock Text="✉"
-                                           FontSize="14"
+                                           FontSize="{DynamicResource FontHeading}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"/>
                             </Border>
                             <TextBlock Grid.Column="1"
                                        Text="{l:Loc HelpFeedbackText}"
-                                       TextWrapping="Wrap" FontSize="12" LineHeight="18"
+                                       TextWrapping="Wrap" FontSize="{DynamicResource FontSmall}" LineHeight="18"
                                        Foreground="{StaticResource TextDimBrush}"/>
                         </Grid>
                     </Border>
@@ -566,7 +566,7 @@
                           x:Name="DontShowAgainCheck"
                           Content="{l:Loc HelpDontShowAgain}"
                           Foreground="{StaticResource TextDimBrush}"
-                          FontSize="12"
+                          FontSize="{DynamicResource FontSmall}"
                           VerticalAlignment="Center"/>
 
                 <Button Grid.Column="1"

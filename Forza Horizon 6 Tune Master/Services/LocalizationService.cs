@@ -270,4 +270,27 @@ public sealed class LocalizationService : INotifyPropertyChanged
     {
         SaveSettings(("FirstRunCompleted", "false"));
     }
+
+    public bool IsNewVersion()
+    {
+        try
+        {
+            var current = SavedProfile.ProfileVersion;
+            if (!File.Exists(SettingsPath)) return true;
+            var json = File.ReadAllText(SettingsPath);
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("LastSeenVersion", out var prop))
+                return true;
+            return prop.GetString() != current;
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    public void MarkVersionSeen()
+    {
+        SaveSettings(("LastSeenVersion", SavedProfile.ProfileVersion));
+    }
 }

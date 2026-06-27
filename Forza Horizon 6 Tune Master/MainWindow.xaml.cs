@@ -75,8 +75,20 @@ public partial class MainWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         Loaded -= OnLoaded;
+
+        bool showedHelp = false;
+        // Do not show help and changelog at the same time
         if (LocalizationService.Instance.IsFirstRun())
+        {
             new HelpWindow { Owner = this }.ShowDialog();
+            showedHelp = true;
+        }
+
+        if (!showedHelp && LocalizationService.Instance.IsNewVersion())
+        {
+            new ChangelogWindow { Owner = this }.ShowDialog();
+            LocalizationService.Instance.MarkVersionSeen();
+        }
     }
 
     private void OnWindowStateChanged(object? sender, EventArgs e)
@@ -107,6 +119,11 @@ public partial class MainWindow : Window
     private void HelpButton_Click(object sender, RoutedEventArgs e)
     {
         new HelpWindow { Owner = this }.ShowDialog();
+    }
+
+    private void VersionButton_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        new ChangelogWindow { Owner = this }.ShowDialog();
     }
 
     private void FeedbackButton_Click(object sender, RoutedEventArgs e)

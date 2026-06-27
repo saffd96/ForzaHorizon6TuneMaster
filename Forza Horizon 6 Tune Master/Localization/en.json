@@ -216,6 +216,7 @@
   "MainTitle": "Forza Horizon 6 Tune Master",
   "HelpSymbol": "?",
   "HelpButtonTooltip": "How to use Tune Master",
+  "VersionButtonTooltip": "What\u0027s new",
   "GenerateButton": "⚡  Generate",
   "AutoCheckbox": "✓ Auto",
   "OverlayCheckbox": "Overlay",
@@ -360,6 +361,12 @@
 
   "HelpStep9Title": "9 — FLOATING OVERLAY",
   "HelpStep9Text": "Tune results can be shown in a separate window on top of the game and other apps:\r\n\r\n• TOGGLE — the 'Overlay' checkbox in the results panel header or Ctrl+Shift+O\r\n• DRAG — by the window header\r\n• RESIZE — by any corner of the window\r\n• OPACITY — slider in the header\r\n• CLOSE — the ✕ button in the header or press Ctrl+Shift+O again\r\n\r\nOverlay position, size and opacity are saved and restored on next open.\r\n\r\n💡 When you change the car or a part, the overlay charts (just like in the main window) update smoothly: fade-out → redraw → fade-in. Language/unit switches redraw instantly.",
+
+  "ChangelogWindowTitle": "What\u0027s new — Tune Master",
+  "ChangelogTitle": "What\u0027s new",
+  "ChangelogClose": "OK",
+
+  "ChangelogV0": "• BUILT-IN GAME DATABASE. All cars and parts are bundled into the app, extracted from Forza Horizon 6 files. No internet or manual spec entry needed — pick a car and its parameters fill in automatically.\n\n• INSTALL PARTS LIKE IN-GAME. Instead of abstract \"levels\", you fit the actual parts from the car\u0027s catalog, by section: swaps, engine (or motor for EVs), chassis, drivetrain, tires & wheels, aero.\n\n• PHYSICS-BASED CALCULATION. The tune and its allowed ranges are computed from the real parameters of the installed parts in the database. Calculation formulas fixed.\n\n• AUTOMATIC GENERATION. No more \"Generate\" button — the tune recalculates by itself on any change.\n\n• NEW DESIGN. Reworked interface, result cards with range indicators, gear and power/torque charts, and an improved floating overlay (Ctrl+Shift+O).\n\n• HELP rewritten for the new logic.",
 
   "Enum_EngineType_I1": "I1 (single-cylinder)",
   "Enum_EngineType_I2": "I2",

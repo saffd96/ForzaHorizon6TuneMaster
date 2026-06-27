@@ -167,7 +167,10 @@
                         </StackPanel>
                         <TextBlock Text="{Binding AppVersion}"
                                    Foreground="{StaticResource TextMutedBrush}"
-                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="20,0,0,0"/>
+                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="20,0,0,0"
+                                   Cursor="Hand"
+                                   ToolTip="{l:Loc VersionButtonTooltip}"
+                                   MouseLeftButtonDown="VersionButton_Click"/>
                         <Separator Margin="8,2"/>
                         <TextBlock Text="{l:Loc FontLabel}" Foreground="{StaticResource TextMutedBrush}"
                                    FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,6,0"/>

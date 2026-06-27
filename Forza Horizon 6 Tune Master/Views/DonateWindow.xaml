@@ -41,14 +41,14 @@
                         <DropShadowEffect Color="#EF4444" Opacity="0.2" BlurRadius="8" ShadowDepth="0"/>
                     </Border.Effect>
                     <TextBlock Text="{l:Loc DonateSymbol}"
-                               FontSize="22"
+                               FontSize="{DynamicResource ValueFontSize}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                 </Border>
 
                 <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
                     <TextBlock Text="{l:Loc DonateTitle}"
-                               FontSize="18" FontWeight="Bold"
+                               FontSize="{DynamicResource FontHeading}" FontWeight="Bold"
                                Foreground="{StaticResource TextBrush}"/>
                     <TextBlock Text="{l:Loc DonateDescription}"
                                FontSize="{DynamicResource FontSmall}"
@@ -135,7 +135,7 @@
                                 VerticalAlignment="Top"
                                 Margin="0,0,12,0">
                             <TextBlock Text="❤"
-                                       FontSize="14"
+                                       FontSize="{DynamicResource FontHeading}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
                         </Border>
