@@ -1513,6 +1513,42 @@ public class CalculatorUnitTests
             Assert.True(rFwd.LaunchControlRpm <= rRwd.LaunchControlRpm);
     }
 
+    [Fact]
+    public void LaunchControl_ShorterGearing_ReducesRPM()
+    {
+        // Higher effective 1st gear (shorter gearing) → more wheel torque → lower launch RPM
+        var car = CarFactory.DefaultCar();
+        car.DriveType = DriveType.RWD;
+        car.AspirationType = AspirationType.Natural;
+        var track = new TrackInfo { Discipline = Discipline.Drag };
+
+        var rShort = new TuneResult { FinalDrive = 5.5, GearRatios = new System.Collections.Generic.List<double> { 4.0 } };
+        var rTall = new TuneResult { FinalDrive = 3.0, GearRatios = new System.Collections.Generic.List<double> { 2.5 } };
+
+        LaunchControlCalculator.CalculateLaunchControl(car, track, rShort);
+        LaunchControlCalculator.CalculateLaunchControl(car, track, rTall);
+
+        Assert.NotNull(rShort.LaunchControlRpm);
+        Assert.NotNull(rTall.LaunchControlRpm);
+        // effFirst short = 22.0, tall = 7.5 → short should have lower RPM
+        Assert.True(rShort.LaunchControlRpm < rTall.LaunchControlRpm,
+            $"Short gearing RPM {rShort.LaunchControlRpm} should be < tall gearing RPM {rTall.LaunchControlRpm}");
+    }
+
+    [Fact]
+    public void LaunchControl_NoGearRatios_UsesFactorOne()
+    {
+        var car = CarFactory.DefaultCar();
+        car.DriveType = DriveType.RWD;
+        car.AspirationType = AspirationType.Natural;
+        var track = new TrackInfo { Discipline = Discipline.Drag };
+
+        var rNoGears = new TuneResult(); // No GearRatios, no FinalDrive
+        LaunchControlCalculator.CalculateLaunchControl(car, track, rNoGears);
+        Assert.NotNull(rNoGears.LaunchControlRpm);
+        Assert.InRange(rNoGears.LaunchControlRpm!.Value, 1200, car.MaxRPM * 80 / 100);
+    }
+
     // ─── CalculationHelpers ─────────────────────────────────────────────────
 
     [Fact]

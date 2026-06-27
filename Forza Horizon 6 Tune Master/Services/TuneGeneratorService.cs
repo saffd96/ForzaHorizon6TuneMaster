@@ -39,9 +39,37 @@ public class TuneGeneratorService
         SuspensionCalculator.CalculateDampers(car, track, parts, r, ex);
         BrakeCalculator.CalculateBrakes(car, track, parts, db, r, ex, effectiveMaxKmh);
         DifferentialCalculator.CalculateDifferential(car, track, parts, db, r, ex);
-        GearingCalculator.CalculateGearing(car, track, parts, db, r, ex, effectiveMaxKmh, c);
+
         if (track.Discipline == Discipline.Drag)
-            LaunchControlCalculator.CalculateLaunchControl(car, track, parts, db, r);
+        {
+            double firstGear = GearingCalculator.CalcDragInitialFirstGear(car, parts, db);
+            for (int iter = 0; iter < 3; iter++)
+            {
+                GearingCalculator.CalculateGearing(car, track, parts, db, r, ex, effectiveMaxKmh, c, firstGear);
+                LaunchControlCalculator.CalculateLaunchControl(car, track, parts, db, r);
+
+                if (!r.LaunchControlRpm.HasValue || r.GearRatios.Count == 0)
+                    break;
+
+                double launchRpm = r.LaunchControlRpm.Value;
+                double stallFloor = LaunchControlCalculator.GetStallFloor(car, parts, db);
+                double ceiling = car.MaxRPM * 0.80;
+                double optimal = stallFloor + (ceiling - stallFloor) * 0.45;
+
+                double ratio = optimal / launchRpm;
+                if (Math.Abs(ratio - 1.0) < 0.04)
+                    break;
+
+                double newFirst = CalculationHelpers.Clamp(firstGear / ratio, 1.5, 5.5);
+                if (Math.Abs(newFirst - firstGear) < 0.05)
+                    break;
+                firstGear = newFirst;
+            }
+        }
+        else
+        {
+            GearingCalculator.CalculateGearing(car, track, parts, db, r, ex, effectiveMaxKmh, c);
+        }
 
         GearingCalculator.PostValidateAndRecalculate(car, track, parts, db, r, ex, ref effectiveMaxKmh, c);
 

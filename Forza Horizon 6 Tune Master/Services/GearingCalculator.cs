@@ -137,6 +137,34 @@ internal static class GearingCalculator
         }
     }
 
+    // Physics-based initial first gear for drag — replaces the old fixed table value.
+    // Shorter first gear = higher wheel torque = faster launch IF grip permits;
+    // too short → wheelspin. The iterative loop adjusts this further.
+    internal static double CalcDragInitialFirstGear(CarCard car, SelectedParts parts, Fh6DatabaseService db)
+    {
+        var clutch = TuningPhysicsContext.Clutch(car, parts, db);
+        var compound = TuningPhysicsContext.TireCompound(car, parts, db);
+        var tireData = compound != null ? db.GetTireCompound(compound.TireCompoundID) : null;
+        double tireGrip = tireData?.TorqueFreeLongFrictionScaleAccel0 ?? 1.0;
+
+        double gripScore = clutch.ClutchFriction * tireGrip;
+
+        double driveMul = car.DriveType switch
+        {
+            DriveType.AWD => 1.25,
+            DriveType.FWD => 0.70,
+            _ => 1.00
+        };
+
+        double pwRatio = car.PowerHP / Math.Max(car.TotalMass / 1000.0, 0.1);
+        double pwFactor = Math.Clamp(1.0 + (pwRatio - 150.0) / 300.0, 0.50, 1.80);
+        if (car.FuelType == FuelType.Diesel)
+            pwFactor = Math.Max(pwFactor, 1.20);
+
+        double first = 3.5 * driveMul / (gripScore * pwFactor);
+        return Math.Clamp(first, 1.5, 5.5);
+    }
+
     // Fraction of v-max actually reached at the end of the strip — used to target the final drive.
     // A quarter mile tops out well short of v-max; a full mile nearly reaches it.
     // ⚠️  DEPRECATED in favour of CalculateDragTrapSpeedKmh for the *target speed* feed —
@@ -251,7 +279,7 @@ internal static class GearingCalculator
     }
 
     public static void CalculateGearing(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r,
-        Dictionary<string, string> ex, double effectiveMaxKmh, TuningConstraints? constraints = null)
+        Dictionary<string, string> ex, double effectiveMaxKmh, TuningConstraints? constraints = null, double? forceFirstGear = null)
     {
         if (!car.AllowGearCalculation)
         {
@@ -299,6 +327,8 @@ internal static class GearingCalculator
         ApplyAspirationStepAdjustment(car.AspirationType, car.AntiLag, ref stepMin, ref stepMax);
         if (track.Discipline == Discipline.Drag)
             ApplyDragDistanceSpacing(track.DragDistance, ref stepMin, ref stepMax);
+        if (forceFirstGear.HasValue)
+            firstGear = forceFirstGear.Value;
 
         // Bound the top gear to what the final drive (within [Min, Max]) can gear to the target top
         // speed, so the geared top speed lands ON the car's real max — no overshoot for very

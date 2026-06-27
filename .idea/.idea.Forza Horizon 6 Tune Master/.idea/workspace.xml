@@ -9,8 +9,13 @@
   <component name="ChangeListManager">
     <list default="true" id="6f5aca4a-8e95-4953-8a4a-45b281d20313" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/en.json" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/en.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/ru.json" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/ru.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/DbSchema.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/DbSchema.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/Fh6DatabaseService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/Fh6DatabaseService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/GearingCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/GearingCalculator.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/LaunchControlCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/LaunchControlCalculator.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/TuneGeneratorService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/TuneGeneratorService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/TuningPhysicsContext.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/TuningPhysicsContext.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/Services/CalculatorUnitTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/Services/CalculatorUnitTests.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -126,7 +131,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="version" />
     <MESSAGE value="fix drag formulas. add tests" />
     <MESSAGE value="up version" />
     <MESSAGE value="change counter" />
@@ -151,7 +155,8 @@
     <MESSAGE value="claude.md" />
     <MESSAGE value="add +- buttons" />
     <MESSAGE value="fixes" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixes" />
+    <MESSAGE value="fix main gear" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix main gear" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

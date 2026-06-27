@@ -360,6 +360,7 @@ public sealed record DbUpgradeBrakes : DbUpgradePart
 public sealed record DbUpgradeTransmission : DbUpgradePart
 {
     public int DrivetrainID { get; init; }
+    public double MomentInertia { get; init; }
     public double FinalDriveRatio { get; init; }
     public int NumGears { get; init; }
     public double GearRatio0 { get; init; }

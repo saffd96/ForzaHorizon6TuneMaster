@@ -978,6 +978,7 @@ public class Fh6DatabaseService
             {
                 Id = I(r, 0), DrivetrainID = I(r, 1), Level = I(r, 2), IsStock = B(r, 3),
                 ManufacturerID = I(r, 4), MassDiff = D(r, 5), Price = I(r, 6),
+                MomentInertia = D(r, 7),
                 FinalDriveRatio = D(r, 10), NumGears = I(r, 11),
                 GearRatio0 = D(r, 12), GearRatio1 = D(r, 13), GearRatio2 = D(r, 14),
                 GearRatio3 = D(r, 15), GearRatio4 = D(r, 16), GearRatio5 = D(r, 17),

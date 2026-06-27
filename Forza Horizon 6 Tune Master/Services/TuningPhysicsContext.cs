@@ -105,6 +105,27 @@ internal static class TuningPhysicsContext
         return trans ?? FallbackTransmission(car);
     }
 
+    public static DbUpgradeClutch Clutch(CarCard car, SelectedParts parts, Fh6DatabaseService db)
+    {
+        int drivetrainId = EffectiveDrivetrainId(car, parts, db);
+        DbUpgradeClutch? clutch = null;
+        if (parts.ClutchPartId.HasValue)
+            clutch = db.GetClutchById(parts.ClutchPartId.Value);
+        clutch ??= db.GetClutches(drivetrainId).FirstOrDefault(p => p.IsStock)
+            ?? db.GetClutches(drivetrainId).FirstOrDefault();
+        return clutch ?? FallbackClutch();
+    }
+
+    public static DbUpgradeCamshaft Camshaft(CarCard car, SelectedParts parts, Fh6DatabaseService db)
+    {
+        DbUpgradeCamshaft? cam = null;
+        if (parts.CamshaftPartId.HasValue)
+            cam = db.GetCamshaftById(parts.CamshaftPartId.Value);
+        cam ??= db.GetCamshafts(car.EngineDbId).FirstOrDefault(p => p.IsStock)
+            ?? db.GetCamshafts(car.EngineDbId).FirstOrDefault();
+        return cam ?? FallbackCamshaft();
+    }
+
     public static DbUpgradeDifferential Differential(CarCard car, SelectedParts parts, Fh6DatabaseService db)
     {
         int drivetrainId = EffectiveDrivetrainId(car, parts, db);
@@ -314,6 +335,7 @@ internal static class TuningPhysicsContext
             Level = 1,
             IsStock = true,
             DrivetrainID = 0,
+            MomentInertia = 0.3,
             NumGears = gears,
             FinalDriveRatio = 3.5,
             GearRatio0 = ratios[0],
@@ -349,4 +371,14 @@ internal static class TuningPhysicsContext
             RearToqueSplit = 0.65
         };
     }
+
+    private static DbUpgradeClutch FallbackClutch() => new()
+    {
+        Id = 0, Level = 1, IsStock = true, DrivetrainID = 0, ClutchFriction = 1.0
+    };
+
+    private static DbUpgradeCamshaft FallbackCamshaft() => new()
+    {
+        Id = 0, EngineID = 0, Level = 1, IsStock = true, StallRPM = 800
+    };
 }

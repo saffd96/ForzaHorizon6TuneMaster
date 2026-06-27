@@ -63,8 +63,50 @@ internal static class LaunchControlCalculator
         double disciplineFactor = track.Discipline == Discipline.Drag ? 1.15 : 1.00;
 
         double launch = baseLaunch * driveAdj * torqueFactor * tireFactor * disciplineFactor;
-        launch = CalculationHelpers.Clamp(launch, 1200, maxRpm * 0.80);
+
+        // ── Drivetrain physics ──────────────────────────────────────────
+        // Clutch: more friction = can hold more torque without slip → launch harder.
+        var clutch = TuningPhysicsContext.Clutch(car, parts, db);
+        double clutchFriction = clutch.ClutchFriction;
+        double clutchFactor = 0.85 + clutchFriction * 0.15;
+        launch *= clutchFactor;
+
+        // Transmission inertia: more rotational mass stores more energy → more sustained
+        // torque when the clutch bites → wheelspin risk goes up, so lower the RPM.
+        var trans = TuningPhysicsContext.Transmission(car, parts, db);
+        double transMI = trans.MomentInertia;
+        const double baselineTransMI = 0.3;
+        double inertiaFactor = transMI > 0.001
+            ? CalculationHelpers.Clamp(baselineTransMI / transMI, 0.90, 1.10)
+            : 1.0;
+        launch *= inertiaFactor;
+
+        // Camshaft StallRPM: the engine cannot run cleanly below this — it is the
+        // hard floor for launch RPM. A racing cam with high StallRPM forces the launch
+        // higher, independent of the multiplicative factors.
+        double stallFloor = GetStallFloor(car, parts, db);
+
+        // Gearing factor: shorter effective 1st gear (higher numerical ratio → more torque
+        // multiplication at the wheels) increases wheelspin risk, so lower the launch RPM.
+        // Taller effective 1st gear (less mechanical advantage) increases bog risk, so raise it.
+        double gearFactor = 1.0;
+        if (r.GearRatios.Count > 0 && r.FinalDrive > 0)
+        {
+            double firstGear = r.GearRatios[0];
+            double effFirst = firstGear * r.FinalDrive;
+            const double baselineEffFirst = 12.0;
+            gearFactor = CalculationHelpers.Clamp(baselineEffFirst / effFirst, 0.82, 1.18);
+        }
+        launch *= gearFactor;
+
+        launch = CalculationHelpers.Clamp(launch, stallFloor, maxRpm * 0.80);
 
         r.LaunchControlRpm = (int)(Math.Round(launch / 100.0) * 100);
+    }
+
+    public static double GetStallFloor(CarCard car, SelectedParts parts, Fh6DatabaseService db)
+    {
+        var cam = TuningPhysicsContext.Camshaft(car, parts, db);
+        return Math.Max(1200.0, cam.StallRPM);
     }
 }
