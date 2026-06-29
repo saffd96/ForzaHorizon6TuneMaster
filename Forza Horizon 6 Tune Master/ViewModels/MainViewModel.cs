@@ -1191,7 +1191,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         // A non-stock front bumper/splitter with an aero physics profile adds front downforce.
         var frontBumper = _selectedParts.FrontBumperPartId != null
             ? db.GetFrontBumperById(_selectedParts.FrontBumperPartId.Value) : null;
-        car.HasFrontAero = frontBumper is { IsStock: false, AeroPhysicsID: > 0 };
+        car.HasFrontAero = frontBumper is { AeroPhysicsID: > 0 };
         car.HasFrontARB = _selectedParts.AntiSwayFrontPartId != null;
         car.HasRearARB = _selectedParts.AntiSwayRearPartId != null;
     }
