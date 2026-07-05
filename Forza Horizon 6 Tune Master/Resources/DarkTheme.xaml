@@ -4,7 +4,7 @@
                     xmlns:models="clr-namespace:Forza_Horizon_6_Tune_Master.Models">
 
     <!-- ═══════════════════════════════════════════════════════════════
-         RESPONSIVE FONT SIZES  (updated by MainWindow.SizeChanged)
+         BASE FONT SIZES  (adjusted via +/- font buttons)
          ═══════════════════════════════════════════════════════════════ -->
     <sys:Double x:Key="FontNormal">13</sys:Double>
     <sys:Double x:Key="FontSmall">12</sys:Double>

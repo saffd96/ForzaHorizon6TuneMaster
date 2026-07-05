@@ -1516,4 +1516,127 @@ public class DbIntegrationCalculatorTests
         Assert.True(true);
     }
 
+    // ── Drift tire compound tests ─────────────────────────────────────────
+
+    /// <summary>
+    /// Verifies that drift tire compounds (TireCompoundID=17) exist in the DB
+    /// for at least one car ordinal.  Ordinal 247 (Nissan Silvia) is known to
+    /// have a drift entry at Level=15 with TireModelName "Street".
+    /// </summary>
+    [Fact]
+    public async Task DriftTire_ExistsInDb()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        var compounds = db.GetTireCompounds(247);
+        var drift = compounds.FirstOrDefault(c => c.TireCompoundID == 17);
+
+        Assert.NotNull(drift);
+        Assert.Equal(15, drift.Level);
+        Assert.False(drift.IsStock);
+    }
+
+    /// <summary>
+    /// Verifies that a drift tire compound resolves to "Drift Tire Compound"
+    /// (Upgrades_IDS_Name_298) rather than "Street Tire Compound" (which is
+    /// what its TireModelName "Street" would otherwise produce).
+    /// </summary>
+    [Fact]
+    public async Task DriftTire_ResolvesToDriftDisplayName()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        var compounds = db.GetTireCompounds(247);
+        var drift = compounds.First(c => c.TireCompoundID == 17);
+        var street = compounds.First(c => c.TireModelName == "Street" && c.TireCompoundID != 17);
+
+        var resolver = new PartDisplayNameResolver();
+        int makeId = db.GetCar(247)?.MakeID ?? 0;
+
+        string driftName = resolver.Resolve(drift, makeId);
+        string streetName = resolver.Resolve(street, makeId);
+
+        // The drift compound should NOT have the same name as the street compound
+        Assert.NotEqual(streetName, driftName);
+
+        // The drift compound should contain "Drift" in its resolved name
+        Assert.Contains("Drift", driftName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Verifies that drift tires survive the PopulateTireCompounds dedup logic
+    /// — they must have a distinct display name so the dictionary doesn't drop them.
+    /// </summary>
+    [Fact]
+    public async Task DriftTire_SurvivesDedup()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        var source = db.GetTireCompounds(247);
+        var resolver = new PartDisplayNameResolver();
+        int makeId = db.GetCar(247)?.MakeID ?? 0;
+
+        // Simulate the dedup logic from TiresWheelsViewModel.PopulateTireCompounds
+        var byName = new System.Collections.Generic.Dictionary<string, PartOption>(StringComparer.OrdinalIgnoreCase);
+        var order = new System.Collections.Generic.List<string>();
+        foreach (var p in source)
+        {
+            var opt = new PartOption { Id = p.Id, DisplayName = resolver.Resolve(p, makeId), IsStock = p.IsStock };
+            if (byName.TryGetValue(opt.DisplayName, out var existing))
+            {
+                if (opt.IsStock && !existing.IsStock)
+                    byName[opt.DisplayName] = opt;
+                continue;
+            }
+            byName[opt.DisplayName] = opt;
+            order.Add(opt.DisplayName);
+        }
+
+        // Verify drift tire survived the dedup
+        bool driftSurvived = order.Any(name =>
+            name.Contains("Drift", StringComparison.OrdinalIgnoreCase));
+        Assert.True(driftSurvived,
+            "Drift tire compound was dropped by the dedup logic — " +
+            "it likely shared the same display name as another compound.");
+
+        // Verify drift tire is in the final result
+        bool driftInResult = byName.Values.Any(o =>
+        {
+            var compound = db.GetTireCompoundById(o.Id);
+            return compound?.TireCompoundID == 17;
+        });
+        Assert.True(driftInResult,
+            "Drift tire compound was not in the final deduplicated collection.");
+    }
+
+    /// <summary>
+    /// Verifies that multiple car ordinals have drift tire compounds available.
+    /// </summary>
+    [Fact]
+    public async Task DriftTire_AvailableOnMultipleCars()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        // Ordinals known to have drift compounds (TireCompoundID=17)
+        int[] ordinals = { 247, 295, 323, 411, 513, 633, 1006, 1500, 2002, 3000 };
+        int found = 0;
+
+        foreach (int ord in ordinals)
+        {
+            var compounds = db.GetTireCompounds(ord);
+            if (compounds.Any(c => c.TireCompoundID == 17))
+                found++;
+        }
+
+        Assert.True(found >= 3,
+            $"Expected drift tires on at least 3 of the tested ordinals, found on {found}");
+    }
 }

@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
@@ -206,7 +205,7 @@ public partial class PowerCurveView : UserControl
         double h = ChartCanvas.ActualHeight;
         if (w <= 0 || h <= 0) return;
 
-        const double padL = 48, padR = 150, padT = 48, padB = 48;
+        const double padL = 48, padR = 60, padT = 48, padB = 48;
         double cw = w - padL - padR;
         double ch = h - padT - padB;
         if (cw <= 0 || ch <= 0) return;
@@ -353,8 +352,8 @@ public partial class PowerCurveView : UserControl
             TextAlignment = TextAlignment.Center
         };
         ChartCanvas.Children.Add(pAxisLbl);
-        Canvas.SetLeft(pAxisLbl, w - padR + 0);
-        Canvas.SetTop(pAxisLbl, 0);
+        Canvas.SetLeft(pAxisLbl, w - padR - 50);
+        Canvas.SetTop(pAxisLbl, 8);
 
         var rpmAxisLbl = new TextBlock
         {
@@ -421,52 +420,7 @@ public partial class PowerCurveView : UserControl
         };
         ChartCanvas.Children.Add(pLine);
 
-        // ── legend ──
-        double legendX = w - padR + 46;
-        double legendY = 36;
-
-        // torque legend
-        var tLegendLine = new Line
-        {
-            X1 = legendX, X2 = legendX + 14, Y1 = legendY + 6, Y2 = legendY + 6,
-            Stroke = torqueBrush,
-            StrokeThickness = 2.5
-        };
-        ChartCanvas.Children.Add(tLegendLine);
-
-        var tLegendLbl = new TextBlock
-        {
-            Text = loc.T("CurveLegendTorque"),
-            Foreground = lblBrush,
-            FontSize = fontMicro,
-            FontFamily = lblFamily
-        };
-        ChartCanvas.Children.Add(tLegendLbl);
-        Canvas.SetLeft(tLegendLbl, legendX + 18);
-        Canvas.SetTop(tLegendLbl, legendY);
-
-        // power legend
-        double pLegendY = legendY + 16;
-        var pLegendLine = new Line
-        {
-            X1 = legendX, X2 = legendX + 14, Y1 = pLegendY + 6, Y2 = pLegendY + 6,
-            Stroke = powerBrush,
-            StrokeThickness = 2.5
-        };
-        ChartCanvas.Children.Add(pLegendLine);
-
-        var pLegendLbl = new TextBlock
-        {
-            Text = loc.T("CurveLegendPower"),
-            Foreground = lblBrush,
-            FontSize = fontMicro,
-            FontFamily = lblFamily
-        };
-        ChartCanvas.Children.Add(pLegendLbl);
-        Canvas.SetLeft(pLegendLbl, legendX + 18);
-        Canvas.SetTop(pLegendLbl, pLegendY);
-
-        // ── peak value labels (right side) ──
+        // ── peak value labels ──
         int torquePeakIdx = 0, powerPeakIdx = 0;
         double maxTVal = torque[0], maxPVal = power[0];
         for (int i = 1; i < n; i++)
@@ -477,65 +431,7 @@ public partial class PowerCurveView : UserControl
         int torquePeakRpm = MaxRPM * torquePeakIdx / (n - 1);
         int powerPeakRpm = MaxRPM * powerPeakIdx / (n - 1);
 
-        double peakY = pLegendY + 22;
-
-        // torque peak: two lines
-        var tPeakValLbl = new TextBlock
-        {
-            Text = $"{loc.T("ChartTorquePeakLabel")}: {maxTVal:F0} {torqueUnit}",
-            Foreground = torqueBrush,
-            FontSize = fontMicro,
-            FontFamily = lblFamily,
-            FontWeight = FontWeights.Bold
-        };
-        ChartCanvas.Children.Add(tPeakValLbl);
-        Canvas.SetLeft(tPeakValLbl, legendX);
-        Canvas.SetTop(tPeakValLbl, peakY);
-
-        var tPeakRpmLbl = new TextBlock
-        {
-            Text = string.Format(loc.T("ChartPeakAtRpmFmt"), torquePeakRpm),
-            Foreground = torqueBrush,
-            FontSize = fontMicro,
-            FontFamily = lblFamily,
-            FontWeight = FontWeights.Bold
-        };
-        ChartCanvas.Children.Add(tPeakRpmLbl);
-        Canvas.SetLeft(tPeakRpmLbl, legendX);
-        Canvas.SetTop(tPeakRpmLbl, peakY + 16);
-
-        // power peak: two lines
-        double pPeakY = peakY + 36;
-
-        var pPeakValLbl = new TextBlock
-        {
-            Text = $"{loc.T("ChartPowerPeakLabel")}: {maxPVal:F0} {powerUnit}",
-            Foreground = powerBrush,
-            FontSize = fontMicro,
-            FontFamily = lblFamily,
-            FontWeight = FontWeights.Bold
-        };
-        ChartCanvas.Children.Add(pPeakValLbl);
-        Canvas.SetLeft(pPeakValLbl, legendX);
-        Canvas.SetTop(pPeakValLbl, pPeakY);
-
-        var pPeakRpmLbl = new TextBlock
-        {
-            Text = string.Format(loc.T("ChartPeakAtRpmFmt"), powerPeakRpm),
-            Foreground = powerBrush,
-            FontSize = fontMicro,
-            FontFamily = lblFamily,
-            FontWeight = FontWeights.Bold
-        };
-        ChartCanvas.Children.Add(pPeakRpmLbl);
-        Canvas.SetLeft(pPeakRpmLbl, legendX);
-        Canvas.SetTop(pPeakRpmLbl, pPeakY + 16);
-
-        // single tolerance icon for both peak values (circle badge, same as wheels)
-        var toleranceIcon = CreateToleranceIcon(loc.T("ChartPeakToleranceHint"));
-        ChartCanvas.Children.Add(toleranceIcon);
-        Canvas.SetLeft(toleranceIcon, legendX + 64);
-        Canvas.SetTop(toleranceIcon, peakY - 72);
+        PeakValues.Text = $"{loc.T("ChartTorquePeakLabel")}: {maxTVal:F0} {torqueUnit} @ {torquePeakRpm} rpm  |  {loc.T("ChartPowerPeakLabel")}: {maxPVal:F0} {powerUnit} @ {powerPeakRpm} rpm";
     }
 
     private static double NiceStep(double range, int maxDivisions)
@@ -547,30 +443,5 @@ public partial class PowerCurveView : UserControl
         if (mant <= 3.5) return 2.5 * exp;
         if (mant <= 7.5) return 5.0 * exp;
         return 10.0 * exp;
-    }
-
-    private Border CreateToleranceIcon(string tooltip)
-    {
-        var accentBrush = (Brush)FindResource("AccentBrush");
-        var border = new Border
-        {
-            Width = 20,
-            Height = 20,
-            CornerRadius = new CornerRadius(10),
-            Background = accentBrush,
-            Cursor = System.Windows.Input.Cursors.Help
-        };
-        border.Child = new TextBlock
-        {
-            Text = "!",
-            Foreground = Brushes.White,
-            FontWeight = FontWeights.Bold,
-            FontSize = (double?)TryFindResource("FontNormal") ?? 13,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        System.Windows.Controls.ToolTipService.SetToolTip(border, tooltip);
-        System.Windows.Controls.ToolTipService.SetShowDuration(border, 30000);
-        return border;
     }
 }

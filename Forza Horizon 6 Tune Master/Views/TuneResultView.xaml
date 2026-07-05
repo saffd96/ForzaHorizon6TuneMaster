@@ -40,23 +40,25 @@
         <Style x:Key="DiscChip" TargetType="RadioButton">
             <Setter Property="GroupName" Value="HeaderDiscipline"/>
             <Setter Property="Cursor"    Value="Hand"/>
-            <Setter Property="Margin"    Value="0,0,4,4"/>
+            <Setter Property="Margin"    Value="0,0,3,3"/>
+            <Setter Property="Width"     Value="88"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
                         <Border x:Name="bd" Background="{StaticResource ElevatedBrush}"
                                 BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
-                                CornerRadius="5" Padding="9,5">
+                                CornerRadius="4" Padding="6,3">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Border Width="18" Height="18" CornerRadius="3" Margin="0,0,6,0"
+                                <Border Width="14" Height="14" CornerRadius="2" Margin="0,0,4,0"
                                         Background="{StaticResource BgBrush}"
                                         BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-                                    <TextBlock Text="{TemplateBinding Tag}" FontSize="10" FontWeight="Bold"
+                                    <TextBlock Text="{TemplateBinding Tag}" FontSize="9" FontWeight="Bold"
                                                Foreground="{StaticResource CyanBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock x:Name="lbl" Text="{TemplateBinding Content}" FontSize="13" FontWeight="Bold"
-                                           Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="lbl" Text="{TemplateBinding Content}" FontSize="11" FontWeight="Bold"
+                                            Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center"
+                                            TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -75,6 +77,7 @@
         </Style>
         <Style x:Key="SeasonChip" TargetType="RadioButton" BasedOn="{StaticResource DiscChip}">
             <Setter Property="GroupName" Value="HeaderSeason"/>
+            <Setter Property="Width" Value="130"/>
         </Style>
         <Style x:Key="DragChip" TargetType="RadioButton" BasedOn="{StaticResource SeasonChip}">
             <Setter Property="GroupName" Value="HeaderDrag"/>
@@ -114,16 +117,15 @@
                            FontSize="12" HorizontalAlignment="Center"/>
             </StackPanel>
 
-            <!-- Result: full-height layout -->
+            <!-- Result: single scroll with param cards + gearing -->
             <Grid Visibility="{Binding HasResult, Converter={StaticResource B2V}}" Margin="8,6,8,4">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>   <!-- header -->
-                    <RowDefinition Height="2*"/>     <!-- param cards (scale) -->
-                    <RowDefinition Height="*"/>      <!-- gearing = 1/3 -->
-                    <RowDefinition Height="Auto"/>   <!-- discipline/season footer -->
+                    <RowDefinition Height="*"/>       <!-- scrollable params + gearing -->
+                    <RowDefinition Height="Auto"/>   <!-- footer chips -->
                 </Grid.RowDefinitions>
 
-                <!-- Header card -->
+                <!-- Header card (Row 0) -->
                 <Border Grid.Row="0" Background="{StaticResource CardBrush}"
                         BorderBrush="{StaticResource AccentBrush}" BorderThickness="0,0,0,2"
                         CornerRadius="8,8,0,0" Padding="12,8" Margin="3,3,3,6">
@@ -156,398 +158,387 @@
                     </Grid>
                 </Border>
 
-                <!-- Param cards (stretch to fill 2/3) -->
-                <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Tire pressure -->
-                    <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource RCard}">
-                        <StackPanel>
-                            <TextBlock Text="{l:Loc ResultTirePressure}" Style="{StaticResource RCardHeader}"/>
-                            <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultTirePressureFront}" Hint="{Binding TuneResult.Explanations[TirePressure]}" Margin="6,0,6,0">
-                                    <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="pressure"><Binding Path="TuneResult.TirePressureFront"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.TirePressureFront"/><Binding Path="Constraints.TirePressureFrontMin"/><Binding Path="Constraints.TirePressureFrontMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultTirePressureRear}" Hint="{Binding TuneResult.Explanations[TirePressure]}" Margin="6,0,6,0">
-                                    <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="pressure"><Binding Path="TuneResult.TirePressureRear"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.TirePressureRear"/><Binding Path="Constraints.TirePressureRearMin"/><Binding Path="Constraints.TirePressureRearMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                            </UniformGrid>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Geometry -->
-                    <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource RCard}">
-                        <StackPanel>
-                            <TextBlock Text="{l:Loc ResultGeometry}" Style="{StaticResource RCardHeader}"/>
-                            <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultCamberFront}" Hint="{Binding TuneResult.Explanations[Camber]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.CamberFront, StringFormat='{}{0:F1}°'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.CamberFront"/><Binding Path="Constraints.CamberFrontMin"/><Binding Path="Constraints.CamberFrontMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultCamberRear}" Hint="{Binding TuneResult.Explanations[Camber]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.CamberRear, StringFormat='{}{0:F1}°'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.CamberRear"/><Binding Path="Constraints.CamberRearMin"/><Binding Path="Constraints.CamberRearMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultToeFront}" Hint="{Binding TuneResult.Explanations[Toe]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.ToeFront, StringFormat='{}{0:F1}°'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ToeFront"/><Binding Path="Constraints.ToeFrontMin"/><Binding Path="Constraints.ToeFrontMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultToeRear}" Hint="{Binding TuneResult.Explanations[Toe]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.ToeRear, StringFormat='{}{0:F1}°'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ToeRear"/><Binding Path="Constraints.ToeRearMin"/><Binding Path="Constraints.ToeRearMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultCaster}" Hint="{Binding TuneResult.Explanations[Caster]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.Caster, StringFormat='{}{0:F1}°'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.Caster"/><Binding Path="Constraints.CasterMin"/><Binding Path="Constraints.CasterMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                            </UniformGrid>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- ARB -->
-                    <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource RCard}">
-                        <StackPanel>
-                            <TextBlock Text="{l:Loc ResultARB}" Style="{StaticResource RCardHeader}"/>
-                            <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultARBFront}" Hint="{Binding TuneResult.Explanations[ARB]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.ARBFront, StringFormat='{}{0:F0}'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ARBFront"/><Binding Path="Constraints.ARBFrontMin"/><Binding Path="Constraints.ARBFrontMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultARBRear}" Hint="{Binding TuneResult.Explanations[ARB]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.ARBRear, StringFormat='{}{0:F0}'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ARBRear"/><Binding Path="Constraints.ARBRearMin"/><Binding Path="Constraints.ARBRearMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                            </UniformGrid>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Springs -->
-                    <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource RCard}">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{l:Loc ResultSprings}" Style="{StaticResource RCardHeader}"/>
-                                <Border Width="15" Height="15" CornerRadius="7.5" Margin="6,0,0,2"
-                                        VerticalAlignment="Center" Cursor="Help"
-                                        Background="{StaticResource AccentBrush}"
-                                        ToolTip="{l:Loc ResultSpringsHint}"
-                                        ToolTipService.ShowDuration="30000">
-                                    <TextBlock Text="!" Foreground="White" FontWeight="Bold"
-                                               FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </StackPanel>
-                            <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultSpringFront}" Hint="{Binding TuneResult.Explanations[Springs]}" Margin="6,0,6,0">
-                                    <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring"><Binding Path="TuneResult.SpringFront"/><Binding Path="SpringUnit"/></MultiBinding></v:ResultParam.ValueText>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultSpringRear}" Hint="{Binding TuneResult.Explanations[Springs]}" Margin="6,0,6,0">
-                                    <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring"><Binding Path="TuneResult.SpringRear"/><Binding Path="SpringUnit"/></MultiBinding></v:ResultParam.ValueText>
-                                </v:ResultParam>
-                            </UniformGrid>
-                            <TextBlock Text="{l:Loc ResultRideHeight}" Style="{StaticResource RCardHeader}" Margin="0,8,0,0"/>
-                            <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultRideHeightFront}" Hint="{Binding TuneResult.Explanations[RideHeight]}" Margin="6,0,6,0">
-                                    <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="height"><Binding Path="TuneResult.RideHeightFront"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.RideHeightFront"/><Binding Path="Constraints.RideHeightFrontMin"/><Binding Path="Constraints.RideHeightFrontMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultRideHeightRear}" Hint="{Binding TuneResult.Explanations[RideHeight]}" Margin="6,0,6,0">
-                                    <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="height"><Binding Path="TuneResult.RideHeightRear"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.RideHeightRear"/><Binding Path="Constraints.RideHeightRearMin"/><Binding Path="Constraints.RideHeightRearMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                            </UniformGrid>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Dampers -->
-                    <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource RCard}">
-                        <StackPanel>
-                            <TextBlock Text="{l:Loc ResultDampers}" Style="{StaticResource RCardHeader}"/>
-                            <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultReboundFront}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.ReboundFront, StringFormat='{}{0:F0}'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ReboundFront"/><Binding Path="Constraints.ReboundFrontMin"/><Binding Path="Constraints.ReboundFrontMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultReboundRear}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.ReboundRear, StringFormat='{}{0:F0}'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ReboundRear"/><Binding Path="Constraints.ReboundRearMin"/><Binding Path="Constraints.ReboundRearMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultBumpFront}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.BumpFront, StringFormat='{}{0:F0}'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.BumpFront"/><Binding Path="Constraints.BumpFrontMin"/><Binding Path="Constraints.BumpFrontMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultBumpRear}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.BumpRear, StringFormat='{}{0:F0}'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.BumpRear"/><Binding Path="Constraints.BumpRearMin"/><Binding Path="Constraints.BumpRearMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                            </UniformGrid>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Aero -->
-                    <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource RCard}">
-                        <StackPanel>
-                            <TextBlock Text="{l:Loc ResultAero}" Style="{StaticResource RCardHeader}"/>
-                            <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultAeroFront}" Hint="{Binding TuneResult.Explanations[Aero]}" Margin="6,0,6,0">
-                                    <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="aero"><Binding Path="TuneResult.AeroFront"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.AeroFront"/><Binding Path="Constraints.AeroFrontMin"/><Binding Path="Constraints.AeroFrontMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultAeroRear}" Hint="{Binding TuneResult.Explanations[Aero]}" Margin="6,0,6,0">
-                                    <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="aero"><Binding Path="TuneResult.AeroRear"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.AeroRear"/><Binding Path="Constraints.AeroRearMin"/><Binding Path="Constraints.AeroRearMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                            </UniformGrid>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Brakes -->
-                    <Border Grid.Row="3" Grid.Column="0" Style="{StaticResource RCard}">
-                        <StackPanel>
-                            <TextBlock Text="{l:Loc ResultBrakes}" Style="{StaticResource RCardHeader}"/>
-                            <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultBrakeBalance}" Hint="{Binding TuneResult.Explanations[Brakes]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.BrakeBalance, StringFormat='{}{0:F0}%'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.BrakeBalance"/><Binding Path="Constraints.BrakeBalanceMin"/><Binding Path="Constraints.BrakeBalanceMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultBrakePressure}" Hint="{Binding TuneResult.Explanations[Brakes]}" Margin="6,0,6,0"
-                                               ValueText="{Binding TuneResult.BrakePressure, StringFormat='{}{0:F0}%'}">
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.BrakePressure"/><Binding Path="Constraints.BrakePressureMin"/><Binding Path="Constraints.BrakePressureMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                            </UniformGrid>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Differential -->
-                    <Border Grid.Row="3" Grid.Column="1" Style="{StaticResource RCard}">
-                        <StackPanel>
-                            <TextBlock Text="{l:Loc ResultDiff}" Style="{StaticResource RCardHeader}"/>
-                            <UniformGrid Columns="2">
-                                <v:ResultParam Label="{l:Loc ResultDiffAccel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0"
-                                               Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
-                                    <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffFrontAccel"/><Binding Path="DataContext.DiffFrontSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffFrontAccel"/><Binding Path="Constraints.DiffAccelMin"/><Binding Path="Constraints.DiffAccelMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultDiffDecel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0"
-                                               Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
-                                    <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffFrontDecel"/><Binding Path="DataContext.DiffFrontSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffFrontDecel"/><Binding Path="Constraints.DiffDecelMin"/><Binding Path="Constraints.DiffDecelMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultDiffAccel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0">
-                                    <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffAccel"/><Binding Path="DataContext.DiffMainAxleSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffAccel"/><Binding Path="Constraints.DiffAccelMin"/><Binding Path="Constraints.DiffAccelMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultDiffDecel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0"
-                                               Visibility="{Binding HasRearDiffDecel, Converter={StaticResource B2V}}">
-                                    <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffDecel"/><Binding Path="DataContext.DiffMainAxleSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
-                                    <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffDecel"/><Binding Path="Constraints.DiffDecelMin"/><Binding Path="Constraints.DiffDecelMax"/></MultiBinding></v:ResultParam.Progress>
-                                </v:ResultParam>
-                                <v:ResultParam Label="{l:Loc ResultDiffCenterBias}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0"
-                                               Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}"
-                                               Progress="{Binding TuneResult.CenterDiffBias, Converter={StaticResource P2R}}"
-                                               ValueText="{Binding TuneResult.CenterDiffBias, StringFormat='{}{0:F0}%'}"/>
-                            </UniformGrid>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-
-                <!-- Gearing (always 1/3, charts fill) -->
-                <Border Grid.Row="2" Style="{StaticResource RCard}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
-                            <TextBlock Text="{l:Loc ResultGearing}" Style="{StaticResource RCardHeader}" Margin="0,0,12,0"/>
-                            <TextBlock Text="{l:Loc ResultFinalDrive}" Foreground="{StaticResource TextDimBrush}"
-                                       FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="6,0,6,0"/>
-                            <TextBlock Text="{Binding TuneResult.FinalDrive, StringFormat='{}{0:F2}'}"
-                                       Foreground="{StaticResource CyanBrush}" FontFamily="{StaticResource MonoFontFamily}"
-                                       FontWeight="Bold" FontSize="{DynamicResource FontNormal}" VerticalAlignment="Center"
-                                       ToolTip="{Binding TuneResult.Explanations[FinalDrive]}"/>
-                            <TextBlock Text="{l:Loc ResultRecGears}" Foreground="{StaticResource TextDimBrush}"
-                                       FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="14,0,6,0"/>
-                            <TextBlock Text="{Binding TuneResult.RecommendedGearCount}"
-                                       Foreground="{StaticResource CyanBrush}" FontFamily="{StaticResource MonoFontFamily}"
-                                       FontWeight="Bold" FontSize="{DynamicResource FontNormal}" VerticalAlignment="Center"
-                                       ToolTip="{Binding TuneResult.Explanations[FinalDrive]}"/>
-                            <Border Width="15" Height="15" CornerRadius="7.5" Margin="3,0,0,0"
-                                    VerticalAlignment="Center" Cursor="Help"
-                                    Background="{StaticResource AccentBrush}"
-                                    ToolTip="{l:Loc ResultRecGearsHint}"
-                                    ToolTipService.ShowDuration="30000">
-                                <TextBlock Text="!" Foreground="White" FontWeight="Bold"
-                                           FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <CheckBox IsChecked="{Binding Constraints.ForceRecommendedGears}"
-                                      Content="{l:Loc ResultForceRecGears}"
-                                      Foreground="{StaticResource AccentBrush}" FontSize="11"
-                                      VerticalAlignment="Center" Margin="14,0,0,0"
-                                      ToolTip="{l:Loc ResultRecGearsHint}"/>
-                            <CheckBox x:Name="ShowGearChart" Content="{l:Loc ResultGearChart}" IsChecked="True"
-                                      Foreground="{StaticResource TextDimBrush}" FontSize="11"
-                                      VerticalAlignment="Center" Margin="20,0,0,0"/>
-                            <CheckBox x:Name="ShowPowerChart" Content="{l:Loc ResultPowerCurve}" IsChecked="True"
-                                      Foreground="{StaticResource TextDimBrush}" FontSize="11"
-                                      VerticalAlignment="Center" Margin="12,0,0,0"/>
-                        </StackPanel>
-
-                        <Grid Grid.Row="1" Margin="0,0,0,4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <ItemsControl Grid.Column="0" VerticalAlignment="Center"
-                                          ItemsSource="{Binding TuneResult.GearRatios}" AlternationCount="12">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
-                                                BorderThickness="1" CornerRadius="4" Margin="0,0,6,4" Padding="10,3" MinWidth="48"
-                                                ToolTip="{Binding DataContext.TuneResult.Explanations[FinalDrive], RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                            <StackPanel HorizontalAlignment="Center">
-                                                <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AddOne}, Mode=OneWay}"
-                                                           Foreground="{StaticResource TextMutedBrush}" FontSize="10" HorizontalAlignment="Center"/>
-                                                <TextBlock Text="{Binding StringFormat='{}{0:F2}'}" Foreground="{StaticResource TextBrush}"
-                                                           FontFamily="{StaticResource MonoFontFamily}" FontWeight="Bold"
-                                                           FontSize="{DynamicResource FontSmall}" HorizontalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-
-                            <!-- Launch control RPM: to the right of the gear ratios (drag only) -->
-                            <Border Grid.Column="1" VerticalAlignment="Center"
-                                    Visibility="{Binding HasLaunchControl, Converter={StaticResource B2V}}"
-                                    Background="{StaticResource CardBrush}" BorderBrush="{StaticResource AccentBrush}"
-                                    BorderThickness="2,0,0,0" CornerRadius="4" Margin="6,0,0,4" Padding="10,4">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{l:Loc LaunchControlLabel}" Foreground="{StaticResource TextDimBrush}"
-                                               FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="{Binding TuneResult.LaunchControlRpm, StringFormat='{}{0:F0}'}"
-                                               Foreground="{StaticResource CyanBrush}" FontFamily="{StaticResource MonoFontFamily}"
-                                               FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                    <TextBlock Text="{l:Loc LaunchControlRpm}" Foreground="{StaticResource TextDimBrush}"
-                                               FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-
-                        <Grid Grid.Row="2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid Grid.Column="0" Margin="0,0,4,0"
-                                  Visibility="{Binding IsChecked, ElementName=ShowGearChart, Converter={StaticResource B2V}}">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Text="{l:Loc ResultGearChart}" Foreground="{StaticResource TextMutedBrush}"
-                                           FontSize="{DynamicResource FontXSmall}" Margin="0,0,0,3"/>
-                                <views:GearChartView Grid.Row="1" MinHeight="120"
-                                    GearRatios="{Binding TuneResult.GearRatios}"
-                                    FinalDrive="{Binding TuneResult.FinalDrive}"
-                                    MaxRPM="{Binding TuneResult.Car.MaxRPM}"
-                                    PowerPeakRPM="{Binding TuneResult.Car.PowerPeakRPM}"
-                                    TorquePeakRPM="{Binding TuneResult.Car.TorquePeakRPM}"
-                                    WheelDiameterInch="{Binding TuneResult.Car.RearWheelDiameterInch}"
-                                    ActualMaxSpeedKmh="{Binding TuneResult.ActualMaxSpeedKmh}"
-                                    UseImperial="{Binding UseImperial}"/>
-                            </Grid>
-                            <Grid Grid.Column="1" Margin="4,0,0,0"
-                                  Visibility="{Binding IsChecked, ElementName=ShowPowerChart, Converter={StaticResource B2V}}">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,3">
-                                    <TextBlock Text="{l:Loc ResultPowerCurve}" Foreground="{StaticResource TextMutedBrush}"
-                                               FontSize="{DynamicResource FontXSmall}"/>
-                                    <TextBlock Text="{l:Loc PowerEstimatedMark}" Margin="4,0,0,0"
-                                               Foreground="{StaticResource AccentBrush}" FontWeight="Bold"
-                                               FontSize="{DynamicResource FontXSmall}"
-                                               ToolTipService.ToolTip="{l:Loc PowerEstimatedHint}"
-                                               ToolTipService.ShowDuration="20000"
-                                               Visibility="{Binding TuneResult.Car.PowerIsEstimated, Converter={StaticResource B2V}}"/>
-                                </StackPanel>
-                                <views:PowerCurveView Grid.Row="1" MinHeight="120"
-                                    TorqueCurve="{Binding TuneResult.Car.CachedTorqueCurveNm}"
-                                    PowerCurve="{Binding TuneResult.Car.CachedPowerCurveHP}"
-                                    MaxRPM="{Binding TuneResult.Car.MaxRPM}"
-                                    TorquePeakRPM="{Binding TuneResult.Car.TorquePeakRPM}"
-                                    PowerPeakRPM="{Binding TuneResult.Car.PowerPeakRPM}"
-                                    PowerUnit="{Binding PowerUnit}"
-                                    UseImperial="{Binding UseImperial}"/>
-                            </Grid>
-                        </Grid>
-                    </Grid>
-                </Border>
-
-                <!-- Discipline / Season footer -->
-                <Border Grid.Row="3" Background="{StaticResource SurfaceBrush}"
-                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6"
-                        Margin="3,6,3,0" Padding="8,6">
+                <!-- Scrollable params + gearing (Row 1) -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
+                        <!-- Param cards -->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <WrapPanel Grid.Column="0">
-                                <RadioButton Style="{StaticResource DiscChip}" Tag="R"  Content="{l:Loc DisciplineRoad}"  ToolTip="{l:Loc DisciplineRoadTooltip}"
-                                             IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Road}}"/>
-                                <RadioButton Style="{StaticResource DiscChip}" Tag="T"  Content="{l:Loc DisciplineTouge}" ToolTip="{l:Loc DisciplineTougeTooltip}"
-                                             IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Touge}}"/>
-                                <RadioButton Style="{StaticResource DiscChip}" Tag="Ra" Content="{l:Loc DisciplineRally}" ToolTip="{l:Loc DisciplineRallyTooltip}"
-                                             IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Rally}}"/>
-                                <RadioButton Style="{StaticResource DiscChip}" Tag="C"  Content="{l:Loc DisciplineCrossCountry}" ToolTip="{l:Loc DisciplineCrossCountryTooltip}"
-                                             IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.CrossCountry}}"/>
-                                <RadioButton Style="{StaticResource DiscChip}" Tag="D"  Content="{l:Loc DisciplineDrift}" ToolTip="{l:Loc DisciplineDriftTooltip}"
-                                             IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drift}}"/>
-                                <RadioButton Style="{StaticResource DiscChip}" Tag="S"  Content="{l:Loc DisciplineStreet}" ToolTip="{l:Loc DisciplineStreetTooltip}"
-                                             IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Street}}"/>
-                                <RadioButton Style="{StaticResource DiscChip}" Tag="Dr" Content="{l:Loc DisciplineDrag}" ToolTip="{l:Loc DisciplineDragTooltip}"
-                                             IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drag}}"/>
-                                <!-- Drag distance — sits right next to the Drag button, only when Drag is selected -->
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0"
-                                            Visibility="{Binding Track.IsDrag, Converter={StaticResource B2V}}">
-                                    <RadioButton Style="{StaticResource DragChip}" Content="{l:Loc DragDistQuarter}"
-                                                 IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Quarter}}"/>
-                                    <RadioButton Style="{StaticResource DragChip}" Content="{l:Loc DragDistHalf}"
-                                                 IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Half}}"/>
-                                    <RadioButton Style="{StaticResource DragChip}" Content="{l:Loc DragDistMile}"
-                                                 IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Mile}}"/>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Row 0 -->
+                            <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource RCard}">
+                                <StackPanel>
+                                    <TextBlock Text="{l:Loc ResultTirePressure}" Style="{StaticResource RCardHeader}"/>
+                                    <UniformGrid Columns="2">
+                                        <v:ResultParam Label="{l:Loc ResultTirePressureFront}" Hint="{Binding TuneResult.Explanations[TirePressure]}" Margin="6,0,6,0">
+                                            <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="pressure"><Binding Path="TuneResult.TirePressureFront"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.TirePressureFront"/><Binding Path="Constraints.TirePressureFrontMin"/><Binding Path="Constraints.TirePressureFrontMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultTirePressureRear}" Hint="{Binding TuneResult.Explanations[TirePressure]}" Margin="6,0,6,0">
+                                            <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="pressure"><Binding Path="TuneResult.TirePressureRear"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.TirePressureRear"/><Binding Path="Constraints.TirePressureRearMin"/><Binding Path="Constraints.TirePressureRearMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                    </UniformGrid>
                                 </StackPanel>
-                            </WrapPanel>
-                            <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
-                                <RadioButton Style="{StaticResource SeasonChip}" Tag="&#x1F338;" Content="{l:Loc Enum_Season_Spring}"
-                                             IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Spring}}"/>
-                                <RadioButton Style="{StaticResource SeasonChip}" Tag="&#x2600;" Content="{l:Loc Enum_Season_Summer}"
-                                             IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Summer}}"/>
-                                <RadioButton Style="{StaticResource SeasonChip}" Tag="&#x1F342;" Content="{l:Loc Enum_Season_Autumn}"
-                                             IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Autumn}}"/>
-                                <RadioButton Style="{StaticResource SeasonChip}" Tag="&#x2744;" Content="{l:Loc Enum_Season_Winter}"
-                                             IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Winter}}"/>
-                            </WrapPanel>
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource RCard}">
+                                <StackPanel>
+                                    <TextBlock Text="{l:Loc ResultGeometry}" Style="{StaticResource RCardHeader}"/>
+                                    <UniformGrid Columns="2">
+                                        <v:ResultParam Label="{l:Loc ResultCamberFront}" Hint="{Binding TuneResult.Explanations[Camber]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.CamberFront, StringFormat='{}{0:F1}°'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.CamberFront"/><Binding Path="Constraints.CamberFrontMin"/><Binding Path="Constraints.CamberFrontMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultCamberRear}" Hint="{Binding TuneResult.Explanations[Camber]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.CamberRear, StringFormat='{}{0:F1}°'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.CamberRear"/><Binding Path="Constraints.CamberRearMin"/><Binding Path="Constraints.CamberRearMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultToeFront}" Hint="{Binding TuneResult.Explanations[Toe]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.ToeFront, StringFormat='{}{0:F1}°'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ToeFront"/><Binding Path="Constraints.ToeFrontMin"/><Binding Path="Constraints.ToeFrontMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultToeRear}" Hint="{Binding TuneResult.Explanations[Toe]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.ToeRear, StringFormat='{}{0:F1}°'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ToeRear"/><Binding Path="Constraints.ToeRearMin"/><Binding Path="Constraints.ToeRearMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultCaster}" Hint="{Binding TuneResult.Explanations[Caster]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.Caster, StringFormat='{}{0:F1}°'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.Caster"/><Binding Path="Constraints.CasterMin"/><Binding Path="Constraints.CasterMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Row 1 -->
+                            <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource RCard}">
+                                <StackPanel>
+                                    <TextBlock Text="{l:Loc ResultARB}" Style="{StaticResource RCardHeader}"/>
+                                    <UniformGrid Columns="2">
+                                        <v:ResultParam Label="{l:Loc ResultARBFront}" Hint="{Binding TuneResult.Explanations[ARB]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.ARBFront, StringFormat='{}{0:F0}'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ARBFront"/><Binding Path="Constraints.ARBFrontMin"/><Binding Path="Constraints.ARBFrontMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultARBRear}" Hint="{Binding TuneResult.Explanations[ARB]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.ARBRear, StringFormat='{}{0:F0}'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ARBRear"/><Binding Path="Constraints.ARBRearMin"/><Binding Path="Constraints.ARBRearMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource RCard}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{l:Loc ResultSprings}" Style="{StaticResource RCardHeader}"/>
+                                        <Border Width="15" Height="15" CornerRadius="7.5" Margin="6,0,0,2"
+                                                VerticalAlignment="Center" Cursor="Help"
+                                                Background="{StaticResource AccentBrush}"
+                                                ToolTip="{l:Loc ResultSpringsHint}"
+                                                ToolTipService.ShowDuration="30000">
+                                            <TextBlock Text="!" Foreground="White" FontWeight="Bold"
+                                                       FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <UniformGrid Columns="2">
+                                        <v:ResultParam Label="{l:Loc ResultSpringFront}" Hint="{Binding TuneResult.Explanations[Springs]}" Margin="6,0,6,0">
+                                            <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring"><Binding Path="TuneResult.SpringFront"/><Binding Path="SpringUnit"/></MultiBinding></v:ResultParam.ValueText>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultSpringRear}" Hint="{Binding TuneResult.Explanations[Springs]}" Margin="6,0,6,0">
+                                            <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring"><Binding Path="TuneResult.SpringRear"/><Binding Path="SpringUnit"/></MultiBinding></v:ResultParam.ValueText>
+                                        </v:ResultParam>
+                                    </UniformGrid>
+                                    <TextBlock Text="{l:Loc ResultRideHeight}" Style="{StaticResource RCardHeader}" Margin="0,8,0,0"/>
+                                    <UniformGrid Columns="2">
+                                        <v:ResultParam Label="{l:Loc ResultRideHeightFront}" Hint="{Binding TuneResult.Explanations[RideHeight]}" Margin="6,0,6,0">
+                                            <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="height"><Binding Path="TuneResult.RideHeightFront"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.RideHeightFront"/><Binding Path="Constraints.RideHeightFrontMin"/><Binding Path="Constraints.RideHeightFrontMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultRideHeightRear}" Hint="{Binding TuneResult.Explanations[RideHeight]}" Margin="6,0,6,0">
+                                            <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="height"><Binding Path="TuneResult.RideHeightRear"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.RideHeightRear"/><Binding Path="Constraints.RideHeightRearMin"/><Binding Path="Constraints.RideHeightRearMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Row 2 -->
+                            <Border Grid.Row="2" Grid.Column="0" Style="{StaticResource RCard}">
+                                <StackPanel>
+                                    <TextBlock Text="{l:Loc ResultDampers}" Style="{StaticResource RCardHeader}"/>
+                                    <UniformGrid Columns="2">
+                                        <v:ResultParam Label="{l:Loc ResultReboundFront}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.ReboundFront, StringFormat='{}{0:F0}'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ReboundFront"/><Binding Path="Constraints.ReboundFrontMin"/><Binding Path="Constraints.ReboundFrontMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultReboundRear}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.ReboundRear, StringFormat='{}{0:F0}'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.ReboundRear"/><Binding Path="Constraints.ReboundRearMin"/><Binding Path="Constraints.ReboundRearMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultBumpFront}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.BumpFront, StringFormat='{}{0:F0}'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.BumpFront"/><Binding Path="Constraints.BumpFrontMin"/><Binding Path="Constraints.BumpFrontMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultBumpRear}" Hint="{Binding TuneResult.Explanations[Dampers]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.BumpRear, StringFormat='{}{0:F0}'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.BumpRear"/><Binding Path="Constraints.BumpRearMin"/><Binding Path="Constraints.BumpRearMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource RCard}">
+                                <StackPanel>
+                                    <TextBlock Text="{l:Loc ResultAero}" Style="{StaticResource RCardHeader}"/>
+                                    <UniformGrid Columns="2">
+                                        <v:ResultParam Label="{l:Loc ResultAeroFront}" Hint="{Binding TuneResult.Explanations[Aero]}" Margin="6,0,6,0">
+                                            <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="aero"><Binding Path="TuneResult.AeroFront"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.AeroFront"/><Binding Path="Constraints.AeroFrontMin"/><Binding Path="Constraints.AeroFrontMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultAeroRear}" Hint="{Binding TuneResult.Explanations[Aero]}" Margin="6,0,6,0">
+                                            <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="aero"><Binding Path="TuneResult.AeroRear"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.AeroRear"/><Binding Path="Constraints.AeroRearMin"/><Binding Path="Constraints.AeroRearMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Row 3 -->
+                            <Border Grid.Row="3" Grid.Column="0" Style="{StaticResource RCard}">
+                                <StackPanel>
+                                    <TextBlock Text="{l:Loc ResultBrakes}" Style="{StaticResource RCardHeader}"/>
+                                    <UniformGrid Columns="2">
+                                        <v:ResultParam Label="{l:Loc ResultBrakeBalance}" Hint="{Binding TuneResult.Explanations[Brakes]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.BrakeBalance, StringFormat='{}{0:F0}%'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.BrakeBalance"/><Binding Path="Constraints.BrakeBalanceMin"/><Binding Path="Constraints.BrakeBalanceMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultBrakePressure}" Hint="{Binding TuneResult.Explanations[Brakes]}" Margin="6,0,6,0"
+                                                       ValueText="{Binding TuneResult.BrakePressure, StringFormat='{}{0:F0}%'}">
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.BrakePressure"/><Binding Path="Constraints.BrakePressureMin"/><Binding Path="Constraints.BrakePressureMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Row="3" Grid.Column="1" Style="{StaticResource RCard}">
+                                <StackPanel>
+                                    <TextBlock Text="{l:Loc ResultDiff}" Style="{StaticResource RCardHeader}"/>
+                                    <UniformGrid Columns="2">
+                                        <v:ResultParam Label="{l:Loc ResultDiffAccel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0"
+                                                       Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
+                                            <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffFrontAccel"/><Binding Path="DataContext.DiffFrontSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffFrontAccel"/><Binding Path="Constraints.DiffAccelMin"/><Binding Path="Constraints.DiffAccelMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultDiffDecel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0"
+                                                       Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}">
+                                            <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffFrontDecel"/><Binding Path="DataContext.DiffFrontSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffFrontDecel"/><Binding Path="Constraints.DiffDecelMin"/><Binding Path="Constraints.DiffDecelMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultDiffAccel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0">
+                                            <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffAccel"/><Binding Path="DataContext.DiffMainAxleSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffAccel"/><Binding Path="Constraints.DiffAccelMin"/><Binding Path="Constraints.DiffAccelMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultDiffDecel}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0"
+                                                       Visibility="{Binding HasRearDiffDecel, Converter={StaticResource B2V}}">
+                                            <v:ResultParam.ValueText><MultiBinding StringFormat="{}{0:F0}% {1}"><Binding Path="TuneResult.DiffDecel"/><Binding Path="DataContext.DiffMainAxleSuffix" RelativeSource="{RelativeSource AncestorType=UserControl}"/></MultiBinding></v:ResultParam.ValueText>
+                                            <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.DiffDecel"/><Binding Path="Constraints.DiffDecelMin"/><Binding Path="Constraints.DiffDecelMax"/></MultiBinding></v:ResultParam.Progress>
+                                        </v:ResultParam>
+                                        <v:ResultParam Label="{l:Loc ResultDiffCenterBias}" Hint="{Binding TuneResult.Explanations[Differential]}" Margin="6,0,6,0"
+                                                       Visibility="{Binding HasAWDFrontDiff, Converter={StaticResource B2V}}"
+                                                       Progress="{Binding TuneResult.CenterDiffBias, Converter={StaticResource P2R}}"
+                                                       ValueText="{Binding TuneResult.CenterDiffBias, StringFormat='{}{0:F0}%'}"/>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </Border>
                         </Grid>
+
+                        <!-- Gearing (transmission) -->
+                        <Border Style="{StaticResource RCard}" Margin="0,6,0,0">
+                            <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="{l:Loc ResultGearing}" Style="{StaticResource RCardHeader}" Margin="0,0,12,0"/>
+<TextBlock Text="{l:Loc ResultFinalDrive}" Foreground="{StaticResource TextDimBrush}"
+                                           TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="6,0,6,0"/>
+                                    <TextBlock Text="{Binding TuneResult.FinalDrive, StringFormat='{}{0:F2}'}"
+                                               Foreground="{StaticResource CyanBrush}" FontFamily="{StaticResource MonoFontFamily}"
+                                               FontWeight="Bold" TextElement.FontSize="{DynamicResource FontNormal}" VerticalAlignment="Center"
+                                               ToolTip="{Binding TuneResult.Explanations[FinalDrive]}"/>
+                                    <TextBlock Text="{l:Loc ResultRecGears}" Foreground="{StaticResource TextDimBrush}"
+                                               TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="14,0,6,0"/>
+                                    <TextBlock Text="{Binding TuneResult.RecommendedGearCount}"
+                                               Foreground="{StaticResource CyanBrush}" FontFamily="{StaticResource MonoFontFamily}"
+                                               FontWeight="Bold" TextElement.FontSize="{DynamicResource FontNormal}" VerticalAlignment="Center"
+                                               ToolTip="{Binding TuneResult.Explanations[FinalDrive]}"/>
+                                    <Border Width="15" Height="15" CornerRadius="7.5" Margin="3,0,0,0"
+                                            VerticalAlignment="Center" Cursor="Help"
+                                            Background="{StaticResource AccentBrush}"
+                                            ToolTip="{l:Loc ResultRecGearsHint}"
+                                            ToolTipService.ShowDuration="30000">
+                                        <TextBlock Text="!" Foreground="White" FontWeight="Bold"
+                                                   FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <CheckBox IsChecked="{Binding Constraints.ForceRecommendedGears}"
+                                              Content="{l:Loc ResultForceRecGears}"
+                                              Foreground="{StaticResource AccentBrush}" FontSize="11"
+                                              VerticalAlignment="Center" Margin="14,0,0,0"
+                                              ToolTip="{l:Loc ResultRecGearsHint}"/>
+                                </StackPanel>
+
+                                <Grid Grid.Row="1" Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <ItemsControl Grid.Column="0" VerticalAlignment="Center"
+                                                  ItemsSource="{Binding TuneResult.GearRatios}" AlternationCount="12">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}"
+                                                        BorderThickness="1" CornerRadius="4" Margin="0,0,6,4" Padding="10,3" MinWidth="48"
+                                                        ToolTip="{Binding DataContext.TuneResult.Explanations[FinalDrive], RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                                    <StackPanel HorizontalAlignment="Center">
+                                                        <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AddOne}, Mode=OneWay}"
+                                                                   Foreground="{StaticResource TextMutedBrush}" FontSize="10" HorizontalAlignment="Center"/>
+                                                         <TextBlock Text="{Binding StringFormat='{}{0:F2}'}" Foreground="{StaticResource TextBrush}"
+                                                                    FontFamily="{StaticResource MonoFontFamily}" FontWeight="Bold"
+                                                                    TextElement.FontSize="{DynamicResource FontSmall}" HorizontalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <!-- Launch control RPM: to the right of the gear ratios (drag only) -->
+                                    <Border Grid.Column="1" VerticalAlignment="Center"
+                                            Visibility="{Binding HasLaunchControl, Converter={StaticResource B2V}}"
+                                            Background="{StaticResource CardBrush}" BorderBrush="{StaticResource AccentBrush}"
+                                            BorderThickness="2,0,0,0" CornerRadius="4" Margin="6,0,0,4" Padding="10,4">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{l:Loc LaunchControlLabel}" Foreground="{StaticResource TextDimBrush}"
+                                                        TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="{Binding TuneResult.LaunchControlRpm, StringFormat='{}{0:F0}'}"
+                                                       Foreground="{StaticResource CyanBrush}" FontFamily="{StaticResource MonoFontFamily}"
+                                                       FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                            <TextBlock Text="{l:Loc LaunchControlRpm}" Foreground="{StaticResource TextDimBrush}"
+                                                        TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+
+                                <Grid Grid.Row="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid Grid.Column="0" Margin="0,0,4,0">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <CheckBox Grid.Row="0" x:Name="ShowGearChart" IsChecked="True"
+                                                  Content="{l:Loc ResultGearChart}"
+                                                  Foreground="{StaticResource TextMutedBrush}"
+                                                  TextElement.FontSize="{DynamicResource FontXSmall}" Margin="0,0,0,3"/>
+                                        <views:GearChartView Grid.Row="1" MinHeight="280"
+                                            Visibility="{Binding IsChecked, ElementName=ShowGearChart, Converter={StaticResource B2V}}"
+                                            GearRatios="{Binding TuneResult.GearRatios}"
+                                            FinalDrive="{Binding TuneResult.FinalDrive}"
+                                            MaxRPM="{Binding TuneResult.Car.MaxRPM}"
+                                            PowerPeakRPM="{Binding TuneResult.Car.PowerPeakRPM}"
+                                            TorquePeakRPM="{Binding TuneResult.Car.TorquePeakRPM}"
+                                            WheelDiameterInch="{Binding TuneResult.Car.RearWheelDiameterInch}"
+                                            ActualMaxSpeedKmh="{Binding TuneResult.ActualMaxSpeedKmh}"
+                                            UseImperial="{Binding UseImperial}"/>
+                                    </Grid>
+                                    <Grid Grid.Column="1" Margin="4,0,0,0">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+                                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,3">
+                                            <CheckBox x:Name="ShowPowerChart" IsChecked="True"
+                                                      Content="{l:Loc ResultPowerCurve}"
+                                                      Foreground="{StaticResource TextMutedBrush}"
+                                                      TextElement.FontSize="{DynamicResource FontXSmall}"/>
+                                            <TextBlock Text="{l:Loc PowerEstimatedMark}" Margin="4,0,0,0"
+                                                        Foreground="{StaticResource AccentBrush}" FontWeight="Bold"
+                                                        TextElement.FontSize="{DynamicResource FontXSmall}"
+                                                        ToolTipService.ToolTip="{l:Loc PowerEstimatedHint}"
+                                                        ToolTipService.ShowDuration="20000"
+                                                        Visibility="{Binding TuneResult.Car.PowerIsEstimated, Converter={StaticResource B2V}}"/>
+                                        </StackPanel>
+                                        <views:PowerCurveView Grid.Row="1" MinHeight="280"
+                                            Visibility="{Binding IsChecked, ElementName=ShowPowerChart, Converter={StaticResource B2V}}"
+                                            TorqueCurve="{Binding TuneResult.Car.CachedTorqueCurveNm}"
+                                            PowerCurve="{Binding TuneResult.Car.CachedPowerCurveHP}"
+                                            MaxRPM="{Binding TuneResult.Car.MaxRPM}"
+                                            TorquePeakRPM="{Binding TuneResult.Car.TorquePeakRPM}"
+                                            PowerPeakRPM="{Binding TuneResult.Car.PowerPeakRPM}"
+                                            PowerUnit="{Binding PowerUnit}"
+                                            UseImperial="{Binding UseImperial}"/>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Discipline / Season footer (Row 2) -->
+                <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6"
+                        Margin="3,6,3,0" Padding="8,6">
+                    <StackPanel>
+                        <WrapPanel Margin="0,0,0,4">
+                            <RadioButton Style="{StaticResource SeasonChip}" Tag="&#x1F338;" Content="{l:Loc Enum_Season_Spring}"
+                                         IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Spring}}"/>
+                            <RadioButton Style="{StaticResource SeasonChip}" Tag="&#x2600;" Content="{l:Loc Enum_Season_Summer}"
+                                         IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Summer}}"/>
+                            <RadioButton Style="{StaticResource SeasonChip}" Tag="&#x1F342;" Content="{l:Loc Enum_Season_Autumn}"
+                                         IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Autumn}}"/>
+                            <RadioButton Style="{StaticResource SeasonChip}" Tag="&#x2744;" Content="{l:Loc Enum_Season_Winter}"
+                                         IsChecked="{Binding Track.Season, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Season.Winter}}"/>
+                        </WrapPanel>
+                        <WrapPanel>
+                            <RadioButton Style="{StaticResource DiscChip}" Tag="R"  Content="{l:Loc DisciplineRoad}"  ToolTip="{l:Loc DisciplineRoadTooltip}"
+                                         IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Road}}"/>
+                            <RadioButton Style="{StaticResource DiscChip}" Tag="T"  Content="{l:Loc DisciplineTouge}" ToolTip="{l:Loc DisciplineTougeTooltip}"
+                                         IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Touge}}"/>
+                            <RadioButton Style="{StaticResource DiscChip}" Tag="Ra" Content="{l:Loc DisciplineRally}" ToolTip="{l:Loc DisciplineRallyTooltip}"
+                                         IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Rally}}"/>
+                            <RadioButton Style="{StaticResource DiscChip}" Tag="C"  Content="{l:Loc DisciplineCrossCountry}" ToolTip="{l:Loc DisciplineCrossCountryTooltip}"
+                                         IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.CrossCountry}}"/>
+                            <RadioButton Style="{StaticResource DiscChip}" Tag="D"  Content="{l:Loc DisciplineDrift}" ToolTip="{l:Loc DisciplineDriftTooltip}"
+                                         IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drift}}"/>
+                            <RadioButton Style="{StaticResource DiscChip}" Tag="S"  Content="{l:Loc DisciplineStreet}" ToolTip="{l:Loc DisciplineStreetTooltip}"
+                                         IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Street}}"/>
+                            <RadioButton Style="{StaticResource DiscChip}" Tag="Dr" Content="{l:Loc DisciplineDrag}" ToolTip="{l:Loc DisciplineDragTooltip}"
+                                         IsChecked="{Binding Track.Discipline, Converter={StaticResource E2B}, ConverterParameter={x:Static m:Discipline.Drag}}"/>
+                            <!-- Drag distance -->
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0,0,0"
+                                        Visibility="{Binding Track.IsDrag, Converter={StaticResource B2V}}">
+                                <RadioButton Style="{StaticResource DragChip}" Content="{l:Loc DragDistQuarter}"
+                                             IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Quarter}}"/>
+                                <RadioButton Style="{StaticResource DragChip}" Content="{l:Loc DragDistHalf}"
+                                             IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Half}}"/>
+                                <RadioButton Style="{StaticResource DragChip}" Content="{l:Loc DragDistMile}"
+                                             IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Mile}}"/>
+                            </StackPanel>
+                        </WrapPanel>
                     </StackPanel>
                 </Border>
             </Grid>

@@ -44,6 +44,15 @@ public class PartDisplayNameResolver
         ["Drift"] = "Upgrades_IDS_Name_298",
     };
 
+    // TireCompoundID override: some compounds share the same TireModelName as another type
+    // (e.g. drift tires use TireModelName "Street" and TireCompoundID=17, while regular street
+    // tires use TireModelName "Street" and TireCompoundID=6).  The TireModelName-based lookup
+    // would give both the same display name, so we check TireCompoundID first.
+    private static readonly Dictionary<int, string> TireCompoundIdOverrides = new()
+    {
+        [17] = "Upgrades_IDS_Name_298", // DriftL1 → "Drift Tire Compound"
+    };
+
     private static readonly Dictionary<Type, string> TableNameMap = new()
     {
         { typeof(DbUpgradeEngine),              "List_UpgradeEngine" },
@@ -403,6 +412,12 @@ public class PartDisplayNameResolver
 
     private string? ResolveTireCompoundKey(DbUpgradeTireCompound tc)
     {
+        // Check TireCompoundID override first: compounds like Drift share the same
+        // TireModelName as another type (e.g. "Street") but have a distinct TireCompoundID,
+        // so the name-based lookup would produce a collision.
+        if (TireCompoundIdOverrides.TryGetValue(tc.TireCompoundID, out var compoundKey))
+            return compoundKey;
+
         if (string.IsNullOrEmpty(tc.TireModelName)) return null;
         string root = NormalizeTireModelName(tc.TireModelName);
         return TireCompoundNameIds.TryGetValue(root, out var key) ? key : null;

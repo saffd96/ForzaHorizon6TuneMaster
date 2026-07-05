@@ -1640,4 +1640,153 @@ public class CalculatorUnitTests
     {
         Assert.Equal(expected, CalculationHelpers.Clamp(input, min, max));
     }
+
+    // ─── TireCalculator — Mass Compensation Fix ────────────────────────────
+
+    [Fact]
+    public void TirePressure_MassCompensation_HeavyCarSignificantlyHigherThanLight()
+    {
+        // The mass compensation fix (0.12 → 0.35) must produce a clear, measurable
+        // pressure difference between a very heavy and a very light car.
+        var c = CarFactory.RelaxedConstraints();
+        var ex = new Dictionary<string, string>();
+
+        var carLight = CarFactory.DefaultCar();
+        carLight.TotalMass = 800;
+        var rLight = new TuneResult();
+        TireCalculator.CalculateTirePressure(carLight, CarFactory.DefaultTrack(), c, rLight, ex);
+
+        var carHeavy = CarFactory.DefaultCar();
+        carHeavy.TotalMass = 2500;
+        var rHeavy = new TuneResult();
+        TireCalculator.CalculateTirePressure(carHeavy, CarFactory.DefaultTrack(), c, rHeavy, ex);
+
+        // With 0.35 factor: massAdj = (2500-1400)/1000 * 1.0 * 0.35 = 0.385 bar
+        // distributed by weight dist (55/45) → F~0.212, R~0.173
+        // Plus base pressure 2.068 bar gives F≈2.28, R≈2.24
+        // Light car (800kg): massAdj = -0.210 bar → F≈1.95, R≈1.94
+        // Delta should be at least 0.30 bar
+        double deltaF = rHeavy.TirePressureFront - rLight.TirePressureFront;
+        double deltaR = rHeavy.TirePressureRear - rLight.TirePressureRear;
+        Assert.True(deltaF > 0.25, $"Mass delta front too small: {deltaF:F4}");
+        Assert.True(deltaR > 0.20, $"Mass delta rear too small: {deltaR:F4}");
+    }
+
+    [Fact]
+    public void TirePressure_MassCompensation_ExtremeHeavyVsLight_DeltaOver0_30Bar()
+    {
+        var c = CarFactory.RelaxedConstraints();
+        var ex = new Dictionary<string, string>();
+
+        // 500 kg car (ultra-light)
+        var carLight = CarFactory.DefaultCar();
+        carLight.TotalMass = 500;
+        var rLight = new TuneResult();
+        TireCalculator.CalculateTirePressure(carLight, CarFactory.DefaultTrack(), c, rLight, ex);
+
+        // 3000 kg car (ultra-heavy SUV)
+        var carHeavy = CarFactory.DefaultCar();
+        carHeavy.TotalMass = 3000;
+        var rHeavy = new TuneResult();
+        TireCalculator.CalculateTirePressure(carHeavy, CarFactory.DefaultTrack(), c, rHeavy, ex);
+
+        // Mass delta = (3000-500) = 2500 kg → massAdj = 2500/1000 * 0.35 = 0.875 bar
+        // After weight distribution: F~0.481, R~0.394
+        // Total delta between heaviest and lightest should exceed 0.50 bar
+        double deltaF = rHeavy.TirePressureFront - rLight.TirePressureFront;
+        double deltaR = rHeavy.TirePressureRear - rLight.TirePressureRear;
+        Assert.True(deltaF > 0.45, $"Mass delta front not large enough: {deltaF:F4}");
+        Assert.True(deltaR > 0.35, $"Mass delta rear not large enough: {deltaR:F4}");
+    }
+
+    // ─── TireCalculator — Width Correction Fix ─────────────────────────────
+
+    [Fact]
+    public void TirePressure_WidthCorrection_NarrowTiresSignificantlyHigherThanWide()
+    {
+        var c = CarFactory.RelaxedConstraints();
+        var ex = new Dictionary<string, string>();
+
+        var carNarrow = CarFactory.DefaultCar();
+        carNarrow.FrontTireWidth = 175;
+        carNarrow.RearTireWidth = 195;
+        var rNarrow = new TuneResult();
+        TireCalculator.CalculateTirePressure(carNarrow, CarFactory.DefaultTrack(), c, rNarrow, ex);
+
+        var carWide = CarFactory.DefaultCar();
+        carWide.FrontTireWidth = 335;
+        carWide.RearTireWidth = 355;
+        var rWide = new TuneResult();
+        TireCalculator.CalculateTirePressure(carWide, CarFactory.DefaultTrack(), c, rWide, ex);
+
+        // With 0.20 factor:
+        // Narrow (175/195): tanh((275-175)/100)*0.20 = tanh(1.0)*0.20 = 0.152F
+        //                     tanh((275-195)/100)*0.20 = tanh(0.8)*0.20 = 0.132R
+        // Wide (335/355):   tanh((275-335)/100)*0.20 = tanh(-0.6)*0.20 = -0.107F
+        //                     tanh((275-355)/100)*0.20 = tanh(-0.8)*0.20 = -0.132R
+        // Delta should be ~0.26 bar front and rear
+        double deltaF = rNarrow.TirePressureFront - rWide.TirePressureFront;
+        double deltaR = rNarrow.TirePressureRear - rWide.TirePressureRear;
+        Assert.True(deltaF > 0.20, $"Width delta front too small: {deltaF:F4}");
+        Assert.True(deltaR > 0.20, $"Width delta rear too small: {deltaR:F4}");
+    }
+
+    // ─── TireCalculator — Combined Scenario ─────────────────────────────────
+
+    [Fact]
+    public void TirePressure_Combined_HeavyNarrowSummerVsLightWideWinter_ProduceDistinctValues()
+    {
+        var c = CarFactory.RelaxedConstraints();
+        var ex = new Dictionary<string, string>();
+
+        // Heavy car, narrow tires, Summer (lower pressure)
+        var carA = CarFactory.DefaultCar();
+        carA.TotalMass = 2500;
+        carA.FrontTireWidth = 175;
+        carA.RearTireWidth = 195;
+        var rA = new TuneResult();
+        TireCalculator.CalculateTirePressure(carA, new TrackInfo { Discipline = Discipline.Road, Season = Season.Summer }, c, rA, ex);
+
+        // Light car, wide tires, Winter (higher pressure)
+        var carB = CarFactory.DefaultCar();
+        carB.TotalMass = 800;
+        carB.FrontTireWidth = 335;
+        carB.RearTireWidth = 355;
+        var rB = new TuneResult();
+        TireCalculator.CalculateTirePressure(carB, new TrackInfo { Discipline = Discipline.Road, Season = Season.Winter }, c, rB, ex);
+
+        // The heavy/narrow/summer combo should produce noticeably different
+        // pressure from the light/wide/winter combo. The dominant factors are:
+        // Mass: +0.385 bar (heavy) vs -0.210 bar (light) → 0.595 bar delta
+        // Width: +0.152 (narrow) vs -0.107 (wide) → 0.259 bar delta
+        // Season: -0.08 (summer) vs +0.04 (winter) → 0.12 bar delta
+        // Total delta should exceed 0.40 bar (actual calc: deltaF≈0.47, deltaR≈0.41)
+        double deltaF = Math.Abs(rA.TirePressureFront - rB.TirePressureFront);
+        double deltaR = Math.Abs(rA.TirePressureRear - rB.TirePressureRear);
+        Assert.True(deltaF > 0.40, $"Combined delta front too small: {deltaF:F4}");
+        Assert.True(deltaR > 0.35, $"Combined delta rear too small: {deltaR:F4}");
+    }
+
+    // ─── TuneGeneratorService — Tire pressure via full pipeline ─────────────
+
+    [Fact]
+    public void TuneGenerator_TirePressure_MassCompensationApplied()
+    {
+        var c = CarFactory.RelaxedConstraints();
+
+        var carLight = CarFactory.DefaultCar();
+        carLight.TotalMass = 800;
+        var genLight = new TuneGeneratorService();
+        var rLight = genLight.Generate(carLight, CarFactory.DefaultTrack(), c);
+
+        var carHeavy = CarFactory.DefaultCar();
+        carHeavy.TotalMass = 2500;
+        var genHeavy = new TuneGeneratorService();
+        var rHeavy = genHeavy.Generate(carHeavy, CarFactory.DefaultTrack(), c);
+
+        double deltaF = rHeavy.TirePressureFront - rLight.TirePressureFront;
+        double deltaR = rHeavy.TirePressureRear - rLight.TirePressureRear;
+        Assert.True(deltaF > 0.25, $"TuneGenerator mass delta front too small: {deltaF:F4}");
+        Assert.True(deltaR > 0.20, $"TuneGenerator mass delta rear too small: {deltaR:F4}");
+    }
 }

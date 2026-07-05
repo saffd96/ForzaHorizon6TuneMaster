@@ -39,7 +39,6 @@ public partial class MainWindow : Window
         DataContext = new MainViewModel();
         LoadFontOffset();
         ApplyFontOffset();
-        SizeChanged += OnSizeChanged;
         StateChanged += OnWindowStateChanged;
         Loaded += OnLoaded;
     }
@@ -139,13 +138,6 @@ public partial class MainWindow : Window
     };
 
     private double _fontOffset;
-
-    private void OnSizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        // The whole UI now lives inside a Viewbox with a fixed design canvas, so it
-        // scales proportionally with the window on its own. Font sizes stay at their
-        // base values (scaling them here as well would double-scale the text).
-    }
 
     private void FontIncrease_Click(object sender, RoutedEventArgs e)
     {

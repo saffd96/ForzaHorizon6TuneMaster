@@ -5,7 +5,7 @@
         xmlns:cv="clr-namespace:Forza_Horizon_6_Tune_Master.Converters"
         xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services"
         Title="{l:Loc MainTitle}"
-        MinWidth="900" MinHeight="560"
+        MinWidth="1024" MinHeight="768"
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
         FontFamily="{StaticResource AppFontFamily}"
@@ -53,10 +53,7 @@
         </Style>
     </Window.Resources>
 
-    <!-- Whole UI scales proportionally with the window (base design 2560×1440, 16:9).
-         Stretch="Fill" => scales independently on each axis for non-16:9 windows. -->
-    <Viewbox Stretch="Fill">
-    <Grid Width="2560" Height="1440" ClipToBounds="True">
+    <Grid ClipToBounds="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- Title bar -->
             <RowDefinition Height="*"/>    <!-- Main content -->
@@ -72,7 +69,7 @@
                 BorderThickness="0,0,0,1">
             <Grid>
                 <!-- Logo | Units/Language (right) -->
-                <Grid Margin="20,8">
+                <Grid Margin="16,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -99,42 +96,57 @@
                     </StackPanel>
 
                     <!-- Units/Language + Version (right side) -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,8">
-                        <TextBlock Text="{l:Loc UnitToggleLabel}" Foreground="{StaticResource TextMutedBrush}"
-                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <ComboBox ItemsSource="{Binding UnitSystemOptions}"
+                    <Grid Grid.Column="2" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>      <!-- Units label -->
+                            <ColumnDefinition Width="2*"/>        <!-- Units CB -->
+                            <ColumnDefinition Width="1.5*"/>      <!-- Power CB -->
+                            <ColumnDefinition Width="2*"/>        <!-- Spring CB -->
+                            <ColumnDefinition Width="Auto"/>      <!-- Sep -->
+                            <ColumnDefinition Width="Auto"/>      <!-- Lang label -->
+                            <ColumnDefinition Width="2*"/>        <!-- Lang CB -->
+                            <ColumnDefinition Width="Auto"/>      <!-- Buttons group -->
+                            <ColumnDefinition Width="Auto"/>      <!-- Version -->
+                            <ColumnDefinition Width="Auto"/>      <!-- Font label -->
+                            <ColumnDefinition Width="Auto"/>      <!-- + -->
+                            <ColumnDefinition Width="Auto"/>      <!-- − -->
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="{l:Loc UnitToggleLabel}" Foreground="{StaticResource TextMutedBrush}"
+                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox Grid.Column="1" ItemsSource="{Binding UnitSystemOptions}"
                                   DisplayMemberPath="Label"
                                   SelectedItem="{Binding SelectedUnitSystemItem}"
-                                  MinWidth="120" Margin="0,0,4,0"
+                                  Margin="0,0,4,0"
                                   ToolTip="{l:Loc UnitTooltip}"/>
-                        <ComboBox ItemsSource="{Binding PowerUnitOptions}"
+                        <ComboBox Grid.Column="2" ItemsSource="{Binding PowerUnitOptions}"
                                   DisplayMemberPath="Label"
                                   SelectedItem="{Binding SelectedPowerUnitItem}"
-                                  MinWidth="70" Margin="0,0,4,0"
+                                  Margin="0,0,4,0"
                                   ToolTip="{l:Loc PowerUnitTooltip}"/>
-                        <ComboBox ItemsSource="{Binding SpringUnitOptions}"
+                        <ComboBox Grid.Column="3" ItemsSource="{Binding SpringUnitOptions}"
                                   DisplayMemberPath="Label"
                                   SelectedItem="{Binding SelectedSpringUnitItem}"
-                                  MinWidth="100"
+                                  Margin="0,0,6,0"
                                   ToolTip="{l:Loc SpringUnitTooltip}"/>
-                        <Separator Margin="8,2"/>
-                        <TextBlock Text="{l:Loc LanguageLabel}" Foreground="{StaticResource TextMutedBrush}"
-                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <ComboBox ItemsSource="{Binding LanguageOptions}"
+                        <Separator Grid.Column="4" Margin="0,2,6,2"/>
+                        <TextBlock Grid.Column="5" Text="{l:Loc LanguageLabel}" Foreground="{StaticResource TextMutedBrush}"
+                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox Grid.Column="6" ItemsSource="{Binding LanguageOptions}"
                                   DisplayMemberPath="Label"
                                   SelectedItem="{Binding SelectedLanguageItem}"
-                                  MinWidth="100"/>
-                        <StackPanel Orientation="Horizontal" Margin="10,0,0,0">
+                                  ToolTip="{l:Loc LanguageTooltip}"/>
+                        <StackPanel Grid.Column="7" Orientation="Horizontal" Margin="6,0,0,0">
                             <Button Content="{l:Loc HelpSymbol}"
                                     Style="{StaticResource SecondaryButton}"
-                                    Width="34" Padding="0" Margin="2,0"
-                                    FontWeight="Bold" FontSize="{DynamicResource FontNormal}"
+                                    Width="30" Padding="0" Margin="2,0"
+                                    FontWeight="Bold" FontSize="12"
                                     ToolTip="{l:Loc HelpButtonTooltip}"
                                     Click="HelpButton_Click"/>
                             <Button x:Name="DonateHeartButton"
                                     Style="{StaticResource SecondaryButton}"
-                                    Width="34" Padding="0" Margin="2,0"
-                                    FontWeight="Bold" FontSize="{DynamicResource FontNormal}"
+                                    Width="30" Padding="0" Margin="2,0"
+                                    FontWeight="Bold" FontSize="12"
                                     ToolTip="{l:Loc DonateButtonTooltip}"
                                     Click="DonateButton_Click">
                                 <TextBlock x:Name="HeartIcon"
@@ -160,31 +172,30 @@
                             </Button>
                             <Button Content="{l:Loc FeedbackSymbol}"
                                     Style="{StaticResource SecondaryButton}"
-                                    Width="34" Padding="0" Margin="2,0"
-                                    FontWeight="Bold" FontSize="{DynamicResource FontNormal}"
+                                    Width="30" Padding="0" Margin="2,0"
+                                    FontWeight="Bold" FontSize="12"
                                     ToolTip="{l:Loc FeedbackButtonTooltip}"
                                     Click="FeedbackButton_Click"/>
                         </StackPanel>
-                        <TextBlock Text="{Binding AppVersion}"
+                        <TextBlock Grid.Column="8" Text="{Binding AppVersion}"
                                    Foreground="{StaticResource TextMutedBrush}"
-                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="20,0,0,0"
+                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="8,0,0,0"
                                    Cursor="Hand"
                                    ToolTip="{l:Loc VersionButtonTooltip}"
                                    MouseLeftButtonDown="VersionButton_Click"/>
-                        <Separator Margin="8,2"/>
-                        <TextBlock Text="{l:Loc FontLabel}" Foreground="{StaticResource TextMutedBrush}"
-                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <Button Content="+" Style="{StaticResource SecondaryButton}"
-                                Width="30" Padding="0" Margin="2,0"
-                                FontWeight="Bold" FontSize="{DynamicResource FontNormal}"
+                        <TextBlock Grid.Column="9" Text="{l:Loc FontLabel}" Foreground="{StaticResource TextMutedBrush}"
+                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="8,0,5,0"/>
+                        <Button Grid.Column="10" Content="+" Style="{StaticResource SecondaryButton}"
+                                Width="22" Padding="0" Margin="1,0"
+                                FontWeight="Bold" FontSize="11"
                                 ToolTip="{l:Loc FontIncreaseTooltip}"
                                 Click="FontIncrease_Click"/>
-                        <Button Content="−" Style="{StaticResource SecondaryButton}"
-                                Width="30" Padding="0" Margin="2,0"
-                                FontWeight="Bold" FontSize="{DynamicResource FontNormal}"
+                        <Button Grid.Column="11" Content="−" Style="{StaticResource SecondaryButton}"
+                                Width="22" Padding="0" Margin="1,0"
+                                FontWeight="Bold" FontSize="11"
                                 ToolTip="{l:Loc FontDecreaseTooltip}"
                                 Click="FontDecrease_Click"/>
-                    </StackPanel>
+                    </Grid>
                 </Grid>
             </Grid>
         </Border>
@@ -192,8 +203,8 @@
         <!-- ══ Main Content ═════════════════════════════════════════════ -->
         <Grid Grid.Row="1" ClipToBounds="True">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="460"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="3*" MinWidth="320" MaxWidth="520"/>
+                <ColumnDefinition Width="7*"/>
             </Grid.ColumnDefinitions>
 
             <!-- ════════ LEFT PANEL (parts) ════════════════════════════ -->
@@ -265,7 +276,7 @@
                                 <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleEngine}">
                                     <views:EnginePartsView DataContext="{Binding EngineVM}"/>
                                 </Expander>
-                            </StackPanel>
+                    </StackPanel>
                             <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleElectric}"
                                       Visibility="{Binding IsElectricCar, Converter={StaticResource BoolVis}}">
                                 <views:MotorPartsView DataContext="{Binding MotorVM}"/>
@@ -407,5 +418,4 @@
         </Border>
 
     </Grid>
-    </Viewbox>
 </Window>

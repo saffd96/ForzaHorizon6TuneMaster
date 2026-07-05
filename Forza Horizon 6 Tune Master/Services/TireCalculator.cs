@@ -27,15 +27,18 @@ internal static class TireCalculator
             ? baseCompound.PressureIncreaseWithMassScaler
             : 1.0;
         double massRef = 1400.0;
-        double massAdj = (car.TotalMass - massRef) / 1000.0 * massScaler * 0.12;
+        // Factor calibrated so a 1000 kg mass delta shifts pressure by ~0.35 bar (≈5 PSI),
+        // matching real-world tuning practice where a 500 kg heavier car needs ~2.5 PSI more.
+        double massAdj = (car.TotalMass - massRef) / 1000.0 * massScaler * 0.35;
 
         double wdF = CalculationHelpers.EffectiveWtDist(car) / 100.0;
         barF += massAdj * wdF;
         barR += massAdj * (1.0 - wdF);
 
-        // Width correction: wider tyres need marginally less pressure for the same contact patch.
-        double widthAdjF = Math.Tanh((275 - car.FrontTireWidth) / 100.0) * 0.05;
-        double widthAdjR = Math.Tanh((275 - car.RearTireWidth)  / 100.0) * 0.05;
+        // Width correction: wider tyres need less pressure for the same contact patch.
+        // The factor 0.20 gives a ±0.20 bar swing across the width range (≈3 PSI).
+        double widthAdjF = Math.Tanh((275 - car.FrontTireWidth) / 100.0) * 0.20;
+        double widthAdjR = Math.Tanh((275 - car.RearTireWidth)  / 100.0) * 0.20;
         barF += widthAdjF;
         barR += widthAdjR;
 
