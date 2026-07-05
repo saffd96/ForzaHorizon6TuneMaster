@@ -45,13 +45,16 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="{l:Loc Part_RimStyleRear}" Style="{StaticResource PartRowLabel}"/>
-            <ComboBox Grid.Column="1"
-                      ItemsSource="{Binding WheelModels}"
-                      SelectedItem="{Binding SelectedWheelRear, Mode=TwoWay}"
-                      Height="28" MinHeight="28"
-                      FontSize="{DynamicResource FontSmall}"
-                      HorizontalAlignment="Stretch"
-                      IsEnabled="{Binding IsRearWheelEnabled}"/>
+            <Border Grid.Column="1"
+                    BorderBrush="{Binding SelectedWheelRear.IsStock, Converter={StaticResource BoolToBorderBrush}}"
+                    BorderThickness="2" CornerRadius="3" Padding="1">
+                <ComboBox ItemsSource="{Binding WheelModels}"
+                          SelectedItem="{Binding SelectedWheelRear, Mode=TwoWay}"
+                          Height="28" MinHeight="28"
+                          FontSize="{DynamicResource FontSmall}"
+                          HorizontalAlignment="Stretch"
+                          IsEnabled="{Binding IsRearWheelEnabled}"/>
+            </Border>
         </Grid>
 
         <v:PartRow Label="{l:Loc Part_RimSizeFront}"     Options="{Binding RimsFront}"            Selected="{Binding SelectedRimFront}"/>

@@ -14,6 +14,7 @@
             <cv:InverseBoolToVisibilityConverter x:Key="BoolToCollapsed"/>
             <cv:NullToVisibilityConverter x:Key="NullVis"/>
             <cv:CountToVisibilityConverter x:Key="CountVis"/>
+            <cv:BoolToBorderBrushConverter x:Key="BoolToBorderBrush"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
