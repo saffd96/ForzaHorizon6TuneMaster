@@ -24,7 +24,7 @@ public class SelectedParts : NotifyBase
 
     private int? _engineSwapPartId;
 
-    [ResetToStock]
+    [ResetToStock("Swaps")]
     public int? EngineSwapPartId
     {
         get => _engineSwapPartId;
@@ -36,7 +36,7 @@ public class SelectedParts : NotifyBase
     // new CarBodyID, updates the car body and reloads the dependent modules.
     private int? _bodyKitPartId;
 
-    [ResetToStock]
+    [ResetToStock("Swaps")]
     public int? BodyKitPartId
     {
         get => _bodyKitPartId;
@@ -45,36 +45,36 @@ public class SelectedParts : NotifyBase
 
     private int? _forcedInductionPartId;
 
-    [ResetToStock]
+    [ResetToStock("Swaps")]
     public int? ForcedInductionPartId { get => _forcedInductionPartId; set { if (Set(ref _forcedInductionPartId, value)) OnPartChanged(); } }
 
     private int? _rearWingPartId;
 
-    [ResetToStock]
+    [ResetToStock("Swaps")]
     public int? RearWingPartId { get => _rearWingPartId; set { if (Set(ref _rearWingPartId, value)) OnPartChanged(); } }
 
     private int? _frontBumperPartId;
-    [ResetToStock]
+    [ResetToStock("Swaps")]
     public int? FrontBumperPartId { get => _frontBumperPartId; set { if (Set(ref _frontBumperPartId, value)) OnPartChanged(); } }
 
     private int? _rearBumperPartId;
-    [ResetToStock]
+    [ResetToStock("Swaps")]
     public int? RearBumperPartId { get => _rearBumperPartId; set { if (Set(ref _rearBumperPartId, value)) OnPartChanged(); } }
 
     private int? _sideSkirtPartId;
-    [ResetToStock]
+    [ResetToStock("Swaps")]
     public int? SideSkirtPartId { get => _sideSkirtPartId; set { if (Set(ref _sideSkirtPartId, value)) OnPartChanged(); } }
 
     private int? _hoodPartId;
-    [ResetToStock]
+    [ResetToStock("Swaps")]
     public int? HoodPartId { get => _hoodPartId; set { if (Set(ref _hoodPartId, value)) OnPartChanged(); } }
 
     // Wheel model selection: Id from List_Wheels (null = stock).
     private int? _wheelFrontId;
-    [ResetToStock]
+    [ResetToStock("Swaps")]
     public int? WheelFrontId { get => _wheelFrontId; set { if (Set(ref _wheelFrontId, value)) OnPartChanged(); } }
     private int? _wheelRearId;
-    [ResetToStock]
+    [ResetToStock("Swaps")]
     public int? WheelRearId { get => _wheelRearId; set { if (Set(ref _wheelRearId, value)) OnPartChanged(); } }
     // Stock wheel lightness tier + stock wheel/tyre geometry — baseline for the
     // wheel-style weight delta (see ComputeTotalMassDiff / WheelTierMassDiff).
@@ -84,165 +84,165 @@ public class SelectedParts : NotifyBase
 
     private int? _weightReductionPartId;
 
-    [ResetToStock]
+    [ResetToStock("Swaps")]
     public int? WeightReductionPartId { get => _weightReductionPartId; set { if (Set(ref _weightReductionPartId, value)) OnPartChanged(); } }
 
     private int? _chassisStiffnessPartId;
 
-    [ResetToStock]
+    [ResetToStock("Swaps")]
     public int? ChassisStiffnessPartId { get => _chassisStiffnessPartId; set { if (Set(ref _chassisStiffnessPartId, value)) OnPartChanged(); } }
 
     // ── Engine parts ────────────────────────────────────────────────────────
 
     private int? _camshaftPartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? CamshaftPartId { get => _camshaftPartId; set { if (Set(ref _camshaftPartId, value)) OnPartChanged(); } }
     private int? _displacementPartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? DisplacementPartId { get => _displacementPartId; set { if (Set(ref _displacementPartId, value)) OnPartChanged(); } }
     private int? _valvesPartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? ValvesPartId { get => _valvesPartId; set { if (Set(ref _valvesPartId, value)) OnPartChanged(); } }
     private int? _pistonsPartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? PistonsPartId { get => _pistonsPartId; set { if (Set(ref _pistonsPartId, value)) OnPartChanged(); } }
     private int? _fuelSystemPartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? FuelSystemPartId { get => _fuelSystemPartId; set { if (Set(ref _fuelSystemPartId, value)) OnPartChanged(); } }
     private int? _ignitionPartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? IgnitionPartId { get => _ignitionPartId; set { if (Set(ref _ignitionPartId, value)) OnPartChanged(); } }
     private int? _exhaustPartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? ExhaustPartId { get => _exhaustPartId; set { if (Set(ref _exhaustPartId, value)) OnPartChanged(); } }
     private int? _intakePartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? IntakePartId { get => _intakePartId; set { if (Set(ref _intakePartId, value)) OnPartChanged(); } }
     private int? _flywheelPartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? FlywheelPartId { get => _flywheelPartId; set { if (Set(ref _flywheelPartId, value)) OnPartChanged(); } }
     private int? _manifoldPartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? ManifoldPartId { get => _manifoldPartId; set { if (Set(ref _manifoldPartId, value)) OnPartChanged(); } }
     private int? _oilCoolingPartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? OilCoolingPartId { get => _oilCoolingPartId; set { if (Set(ref _oilCoolingPartId, value)) OnPartChanged(); } }
     private int? _restrictorPartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? RestrictorPartId { get => _restrictorPartId; set { if (Set(ref _restrictorPartId, value)) OnPartChanged(); } }
     private int? _intercoolerPartId;
 
-    [ResetToStock]
+    [ResetToStock("Engine")]
     public int? IntercoolerPartId { get => _intercoolerPartId; set { if (Set(ref _intercoolerPartId, value)) OnPartChanged(); } }
 
     // ── Suspension ──────────────────────────────────────────────────────────
 
     private int? _springDamperPartId;
 
-    [ResetToStock]
+    [ResetToStock("Suspension")]
     public int? SpringDamperPartId { get => _springDamperPartId; set { if (Set(ref _springDamperPartId, value)) OnPartChanged(); } }
     private int? _tireCompoundPartId;
 
-    [ResetToStock]
+    [ResetToStock("Suspension")]
     public int? TireCompoundPartId { get => _tireCompoundPartId; set { if (Set(ref _tireCompoundPartId, value)) OnPartChanged(); } }
     private int? _tireWidthFrontPartId;
 
-    [ResetToStock]
+    [ResetToStock("Suspension")]
     public int? TireWidthFrontPartId { get => _tireWidthFrontPartId; set { if (Set(ref _tireWidthFrontPartId, value)) OnPartChanged(); } }
     private int? _tireWidthRearPartId;
 
-    [ResetToStock]
+    [ResetToStock("Suspension")]
     public int? TireWidthRearPartId { get => _tireWidthRearPartId; set { if (Set(ref _tireWidthRearPartId, value)) OnPartChanged(); } }
     private int? _brakePartId;
 
-    [ResetToStock]
+    [ResetToStock("Suspension")]
     public int? BrakePartId { get => _brakePartId; set { if (Set(ref _brakePartId, value)) OnPartChanged(); } }
     private int? _antiSwayFrontPartId;
 
-    [ResetToStock]
+    [ResetToStock("Suspension")]
     public int? AntiSwayFrontPartId { get => _antiSwayFrontPartId; set { if (Set(ref _antiSwayFrontPartId, value)) OnPartChanged(); } }
     private int? _antiSwayRearPartId;
 
-    [ResetToStock]
+    [ResetToStock("Suspension")]
     public int? AntiSwayRearPartId { get => _antiSwayRearPartId; set { if (Set(ref _antiSwayRearPartId, value)) OnPartChanged(); } }
 
     // ── Transmission ────────────────────────────────────────────────────────
 
     private int? _drivetrainSwapPartId;
 
-    [ResetToStock]
+    [ResetToStock("Transmission")]
     public int? DrivetrainSwapPartId { get => _drivetrainSwapPartId; set { if (Set(ref _drivetrainSwapPartId, value)) OnDrivetrainSwapChanged(); } }
 
     private int? _transmissionPartId;
 
-    [ResetToStock]
+    [ResetToStock("Transmission")]
     public int? TransmissionPartId { get => _transmissionPartId; set { if (Set(ref _transmissionPartId, value)) OnPartChanged(); } }
     private int? _clutchPartId;
 
-    [ResetToStock]
+    [ResetToStock("Transmission")]
     public int? ClutchPartId { get => _clutchPartId; set { if (Set(ref _clutchPartId, value)) OnPartChanged(); } }
     private int? _drivelinePartId;
 
-    [ResetToStock]
+    [ResetToStock("Transmission")]
     public int? DrivelinePartId { get => _drivelinePartId; set { if (Set(ref _drivelinePartId, value)) OnPartChanged(); } }
     private int? _differentialPartId;
 
-    [ResetToStock]
+    [ResetToStock("Transmission")]
     public int? DifferentialPartId { get => _differentialPartId; set { if (Set(ref _differentialPartId, value)) OnPartChanged(); } }
 
     // ── Wheels ──────────────────────────────────────────────────────────────
 
     private int? _tireProfilePartId;
 
-    [ResetToStock]
+    [ResetToStock("Wheels")]
     public int? TireProfilePartId { get => _tireProfilePartId; set { if (Set(ref _tireProfilePartId, value)) OnPartChanged(); } }
     private int? _tireAspectRatioFrontPartId;
 
-    [ResetToStock]
+    [ResetToStock("Wheels")]
     public int? TireAspectRatioFrontPartId { get => _tireAspectRatioFrontPartId; set { if (Set(ref _tireAspectRatioFrontPartId, value)) OnPartChanged(); } }
     private int? _tireAspectRatioRearPartId;
 
-    [ResetToStock]
+    [ResetToStock("Wheels")]
     public int? TireAspectRatioRearPartId { get => _tireAspectRatioRearPartId; set { if (Set(ref _tireAspectRatioRearPartId, value)) OnPartChanged(); } }
     private int? _rimFrontPartId;
 
-    [ResetToStock]
+    [ResetToStock("Wheels")]
     public int? RimFrontPartId { get => _rimFrontPartId; set { if (Set(ref _rimFrontPartId, value)) OnPartChanged(); } }
     private int? _rimRearPartId;
 
-    [ResetToStock]
+    [ResetToStock("Wheels")]
     public int? RimRearPartId { get => _rimRearPartId; set { if (Set(ref _rimRearPartId, value)) OnPartChanged(); } }
     private int? _trackSpacingFrontPartId;
 
-    [ResetToStock]
+    [ResetToStock("Wheels")]
     public int? TrackSpacingFrontPartId { get => _trackSpacingFrontPartId; set { if (Set(ref _trackSpacingFrontPartId, value)) OnPartChanged(); } }
     private int? _trackSpacingRearPartId;
 
-    [ResetToStock]
+    [ResetToStock("Wheels")]
     public int? TrackSpacingRearPartId { get => _trackSpacingRearPartId; set { if (Set(ref _trackSpacingRearPartId, value)) OnPartChanged(); } }
 
     // ── Motor (electric) ────────────────────────────────────────────────────
 
     private int? _motorSwapPartId;
 
-    [ResetToStock]
+    [ResetToStock("Motor")]
     public int? MotorSwapPartId { get => _motorSwapPartId; set { if (Set(ref _motorSwapPartId, value)) OnMotorSwapChanged(); } }
 
     private int? _motorPartId;
 
-    [ResetToStock]
+    [ResetToStock("Motor")]
     public int? MotorPartId { get => _motorPartId; set { if (Set(ref _motorPartId, value)) OnPartChanged(); } }
 
     // ── Resolved IDs (from DB, set when car/engine/swap changes) ────────────
@@ -300,6 +300,16 @@ public class SelectedParts : NotifyBase
     {
         foreach (var prop in _resetTargets)
             prop.SetValue(this, null);
+    }
+
+    public void ResetCategory(string category)
+    {
+        foreach (var prop in _resetTargets)
+        {
+            var attr = prop.GetCustomAttribute<ResetToStockAttribute>(false);
+            if (attr?.Category == category)
+                prop.SetValue(this, null);
+        }
     }
 
     private static readonly PropertyInfo[] _resetTargets = typeof(SelectedParts)

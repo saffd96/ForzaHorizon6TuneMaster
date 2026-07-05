@@ -697,6 +697,11 @@
   "Part_MotorParts": "Motor upgrade",
   "Part_RimStyleFront": "Front wheels",
   "Part_RimStyleRear": "Rear wheels",
-  "Part_SameRimsFrontRear": "Same front / rear"
+  "Part_SameRimsFrontRear": "Same front / rear",
 
+  "ResetAllConfirm": "Are you sure you want to reset ALL parts to stock? All tuning settings will be lost.",
+  "ResetAllCaption": "Reset All",
+  "ResetAll": "Reset All",
+  "ResetCategory": "Reset",
+  "ResetCategoryTooltip": "Reset all parts in this category to stock"
 }

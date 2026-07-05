@@ -970,6 +970,15 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     public RelayCommand NewProfileCommand     { get; }
     public RelayCommand ClearCarSelectionCommand { get; }
 
+    // ── Reset commands ──────────────────────────────────────────────────────
+    public RelayCommand ResetAllPartsCommand { get; }
+    public RelayCommand ResetSwapsCommand { get; }
+    public RelayCommand ResetEngineCommand { get; }
+    public RelayCommand ResetSuspensionCommand { get; }
+    public RelayCommand ResetTransmissionCommand { get; }
+    public RelayCommand ResetWheelsCommand { get; }
+    public RelayCommand ResetMotorCommand { get; }
+
     public MainViewModel()
     {
         _profileService = new ProfileService(_storage);
@@ -999,6 +1008,14 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         DeleteAllProfilesCommand = new RelayCommand(DeleteAllProfiles);
         NewProfileCommand      = new RelayCommand(NewProfile);
         ClearCarSelectionCommand = new RelayCommand(() => _carSpec.ClearCarSelection(_car));
+
+        ResetAllPartsCommand    = new RelayCommand(ExecuteResetAll);
+        ResetSwapsCommand       = new RelayCommand(() => ExecuteResetCategory("Swaps"));
+        ResetEngineCommand      = new RelayCommand(() => ExecuteResetCategory("Engine"));
+        ResetSuspensionCommand  = new RelayCommand(() => ExecuteResetCategory("Suspension"));
+        ResetTransmissionCommand = new RelayCommand(() => ExecuteResetCategory("Transmission"));
+        ResetWheelsCommand      = new RelayCommand(() => ExecuteResetCategory("Wheels"));
+        ResetMotorCommand       = new RelayCommand(() => ExecuteResetCategory("Motor"));
 
         ToggleUnitsCommand      = new RelayCommand(DoToggleUnits);
         TogglePowerUnitCommand  = new RelayCommand(DoTogglePowerUnit);
@@ -1106,6 +1123,34 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         _dbSpringFrontMax = Constraints.SpringFrontMax;
         if (isElectric)
             PowerCalculator.Calculate(car, parts);
+    }
+
+    private void ReloadAllSubViewModels()
+    {
+        SwapsVM.LoadForCar(Car, _selectedParts);
+        EngineVM.LoadForCar(Car, _selectedParts);
+        MotorVM.LoadForCar(Car, _selectedParts);
+        SuspensionVM.LoadForCar(Car, _selectedParts);
+        TransmissionVM.LoadForCar(Car, _selectedParts);
+        TiresWheelsVM.LoadForCar(Car, _selectedParts);
+        AeroVisualVM.LoadForCar(Car, _selectedParts);
+    }
+
+    private void ExecuteResetAll()
+    {
+        var msg = T("ResetAllConfirm");
+        if (MessageBox.Show(msg, T("ResetAllCaption"), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+        _selectedParts.ResetAllToStock();
+        ReloadAllSubViewModels();
+        OnPartsChanged();
+    }
+
+    private void ExecuteResetCategory(string category)
+    {
+        _selectedParts.ResetCategory(category);
+        ReloadAllSubViewModels();
+        OnPartsChanged();
     }
 
     private static void ClearEnginePartIds(SelectedParts parts)

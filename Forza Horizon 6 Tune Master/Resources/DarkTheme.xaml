@@ -800,11 +800,12 @@
                                                 CornerRadius="6,6,0,0"
                                                 Padding="12,8">
                                             <Grid>
-                                                <TextBlock Text="{Binding Header, RelativeSource={RelativeSource AncestorType=Expander}}"
-                                                           FontWeight="Bold"
-                                                           FontSize="14"
-                                                           Foreground="{StaticResource TextBrush}"
-                                                           VerticalAlignment="Center"/>
+                                                <ContentPresenter Content="{Binding Header, RelativeSource={RelativeSource AncestorType=Expander}}"
+                                                                  RecognizesAccessKey="True"
+                                                                  VerticalAlignment="Center"
+                                                                  TextElement.FontWeight="Bold"
+                                                                  TextElement.FontSize="14"
+                                                                  TextElement.Foreground="{StaticResource TextBrush}"/>
                                                 <Path x:Name="chev"
                                                       HorizontalAlignment="Right" VerticalAlignment="Center"
                                                       Data="M0,0 L4,4 L8,0"

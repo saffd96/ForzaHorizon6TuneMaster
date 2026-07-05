@@ -212,6 +212,7 @@
                   DataContext="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=DataContext}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>   <!-- Pinned car search -->
+                    <RowDefinition Height="Auto"/>   <!-- Reset All button -->
                     <RowDefinition Height="*"/>      <!-- Scrolling accordions -->
                 </Grid.RowDefinitions>
 
@@ -266,31 +267,141 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Reset All button — above the accordions, always visible -->
+                <Border Grid.Row="1" Padding="12,4,12,6"
+                        Background="{StaticResource BgBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0,0,0,1">
+                    <Button Content="{l:Loc ResetAll}" Style="{StaticResource DangerButton}"
+                            Command="{Binding ResetAllPartsCommand}"
+                            HorizontalAlignment="Stretch" Height="32" Padding="8,4"
+                            Margin="12,6,12,6"
+                            FontSize="{DynamicResource FontSmall}"/>
+                </Border>
+
                 <!-- Scrolling accordions -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="12,8">
                             <StackPanel Visibility="{Binding IsElectricCar, Converter={StaticResource BoolToCollapsed}}">
-                                <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleSwaps}">
+                                <Expander Style="{StaticResource AccordionExpander}">
+                                    <Expander.Header>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" Content="✕" Style="{StaticResource IconButton}"
+                                                    Width="24" Height="24" Padding="0" VerticalAlignment="Center"
+                                                    Foreground="#FF4444" FontWeight="Bold" Margin="0,0,6,0"
+                                                    Command="{Binding ResetSwapsCommand}"
+                                                    ToolTip="{l:Loc ResetCategoryTooltip}"/>
+                                            <TextBlock Grid.Column="1" Text="{l:Loc ModuleSwaps}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Expander.Header>
                                     <views:SwapsView DataContext="{Binding SwapsVM}"/>
                                 </Expander>
-                                <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleEngine}">
+                                <Expander Style="{StaticResource AccordionExpander}">
+                                    <Expander.Header>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0" Content="✕" Style="{StaticResource IconButton}"
+                                                    Width="24" Height="24" Padding="0" VerticalAlignment="Center"
+                                                    Foreground="#FF4444" FontWeight="Bold" Margin="0,0,6,0"
+                                                    Command="{Binding ResetEngineCommand}"
+                                                    ToolTip="{l:Loc ResetCategoryTooltip}"/>
+                                            <TextBlock Grid.Column="1" Text="{l:Loc ModuleEngine}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Expander.Header>
                                     <views:EnginePartsView DataContext="{Binding EngineVM}"/>
                                 </Expander>
                     </StackPanel>
-                            <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleElectric}"
+                            <Expander Style="{StaticResource AccordionExpander}"
                                       Visibility="{Binding IsElectricCar, Converter={StaticResource BoolVis}}">
+                                <Expander.Header>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Content="✕" Style="{StaticResource IconButton}"
+                                                Width="24" Height="24" Padding="0" VerticalAlignment="Center"
+                                                Foreground="#FF4444" FontWeight="Bold" Margin="0,0,6,0"
+                                                Command="{Binding ResetMotorCommand}"
+                                                ToolTip="{l:Loc ResetCategoryTooltip}"/>
+                                        <TextBlock Grid.Column="1" Text="{l:Loc ModuleElectric}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Expander.Header>
                                 <views:MotorPartsView DataContext="{Binding MotorVM}"/>
                             </Expander>
-                            <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleChassis}">
+                            <Expander Style="{StaticResource AccordionExpander}">
+                                <Expander.Header>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Content="✕" Style="{StaticResource IconButton}"
+                                                Width="24" Height="24" Padding="0" VerticalAlignment="Center"
+                                                Foreground="#FF4444" FontWeight="Bold" Margin="0,0,6,0"
+                                                Command="{Binding ResetSuspensionCommand}"
+                                                ToolTip="{l:Loc ResetCategoryTooltip}"/>
+                                        <TextBlock Grid.Column="1" Text="{l:Loc ModuleChassis}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Expander.Header>
                                 <views:SuspensionView DataContext="{Binding SuspensionVM}"/>
                             </Expander>
-                            <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleTransmission}">
+                            <Expander Style="{StaticResource AccordionExpander}">
+                                <Expander.Header>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Content="✕" Style="{StaticResource IconButton}"
+                                                Width="24" Height="24" Padding="0" VerticalAlignment="Center"
+                                                Foreground="#FF4444" FontWeight="Bold" Margin="0,0,6,0"
+                                                Command="{Binding ResetTransmissionCommand}"
+                                                ToolTip="{l:Loc ResetCategoryTooltip}"/>
+                                        <TextBlock Grid.Column="1" Text="{l:Loc ModuleTransmission}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Expander.Header>
                                 <views:TransmissionView DataContext="{Binding TransmissionVM}"/>
                             </Expander>
-                            <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleTiresWheels}">
+                            <Expander Style="{StaticResource AccordionExpander}">
+                                <Expander.Header>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Content="✕" Style="{StaticResource IconButton}"
+                                                Width="24" Height="24" Padding="0" VerticalAlignment="Center"
+                                                Foreground="#FF4444" FontWeight="Bold" Margin="0,0,6,0"
+                                                Command="{Binding ResetWheelsCommand}"
+                                                ToolTip="{l:Loc ResetCategoryTooltip}"/>
+                                        <TextBlock Grid.Column="1" Text="{l:Loc ModuleTiresWheels}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Expander.Header>
                                 <views:TiresWheelsView DataContext="{Binding TiresWheelsVM}"/>
                             </Expander>
-                            <Expander Style="{StaticResource AccordionExpander}" Header="{l:Loc ModuleAero}">
+                            <Expander Style="{StaticResource AccordionExpander}">
+                                <Expander.Header>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Content="✕" Style="{StaticResource IconButton}"
+                                                Width="24" Height="24" Padding="0" VerticalAlignment="Center"
+                                                Foreground="#FF4444" FontWeight="Bold" Margin="0,0,6,0"
+                                                Command="{Binding ResetSwapsCommand}"
+                                                ToolTip="{l:Loc ResetCategoryTooltip}"/>
+                                        <TextBlock Grid.Column="1" Text="{l:Loc ModuleAero}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Expander.Header>
                                 <views:AeroVisualView DataContext="{Binding AeroVisualVM}"/>
                             </Expander>
                         </StackPanel>

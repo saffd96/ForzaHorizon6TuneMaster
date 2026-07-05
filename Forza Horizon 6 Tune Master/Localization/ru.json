@@ -697,6 +697,11 @@
   "Part_MotorParts": "Апгрейд мотора",
   "Part_RimStyleFront": "Диски перед",
   "Part_RimStyleRear": "Диски зад",
-  "Part_SameRimsFrontRear": "Одинаковые перед/зад"
+  "Part_SameRimsFrontRear": "Одинаковые перед/зад",
 
+  "ResetAllConfirm": "Вы уверены, что хотите сбросить ВСЕ детали в stock? Все настройки будут потеряны.",
+  "ResetAllCaption": "Сбросить всё",
+  "ResetAll": "Сбросить всё",
+  "ResetCategory": "Сбросить",
+  "ResetCategoryTooltip": "Вернуть все детали этой категории в stock"
 }
