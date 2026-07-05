@@ -176,6 +176,43 @@
                                     FontWeight="Bold" FontSize="12"
                                     ToolTip="{l:Loc FeedbackButtonTooltip}"
                                     Click="FeedbackButton_Click"/>
+                            <Button x:Name="UpdateButton" Content="↻"
+                                    Width="30" Padding="0" Margin="2,0"
+                                    FontWeight="Bold" FontSize="14"
+                                    ToolTip="{l:Loc UpdateButtonTooltip}"
+                                    Command="{Binding UpdateCommand}"
+                                    Visibility="{Binding IsUpdating, Converter={StaticResource BoolToCollapsed}}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                                        <Setter Property="Foreground" Value="{StaticResource TextDimBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding UpdateAvailable}" Value="True">
+                                                <Setter Property="Foreground" Value="#FF5E0E"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                            <TextBlock Text="↻"
+                                       FontSize="14" VerticalAlignment="Center"
+                                       Visibility="{Binding IsUpdating, Converter={StaticResource BoolVis}}"
+                                       Margin="6,0,0,0"
+                                       Foreground="{StaticResource AccentBrush}">
+                                <TextBlock.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard RepeatBehavior="Forever">
+                                                <DoubleAnimation Storyboard.TargetProperty="(TextBlock.RenderTransform).(RotateTransform.Angle)"
+                                                                 From="0" To="360"
+                                                                 Duration="0:0:1.5"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </TextBlock.Triggers>
+                                <TextBlock.RenderTransform>
+                                    <RotateTransform CenterX="7" CenterY="7"/>
+                                </TextBlock.RenderTransform>
+                            </TextBlock>
                         </StackPanel>
                         <TextBlock Grid.Column="8" Text="{Binding AppVersion}"
                                    Foreground="{StaticResource TextMutedBrush}"

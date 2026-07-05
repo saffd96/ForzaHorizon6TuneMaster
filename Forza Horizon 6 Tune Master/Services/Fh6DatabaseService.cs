@@ -121,7 +121,7 @@ public class Fh6DatabaseService
                 if (_initialized) return;
 
                 Batteries_V2.Init();
-                byte[] dbBytes = LoadEmbeddedDb();
+                byte[] dbBytes = TryLoadAppDataDb() ?? LoadEmbeddedDbBytes();
                 using var conn = OpenEmbeddedDb(dbBytes);
                 LoadAllTables(conn);
 
@@ -130,7 +130,29 @@ public class Fh6DatabaseService
         }).ConfigureAwait(false);
     }
 
-    private static byte[] LoadEmbeddedDb()
+    private static byte[]? TryLoadAppDataDb()
+    {
+        string path = ForzaPaths.UpdateDbPath;
+        if (!File.Exists(path)) return null;
+        try
+        {
+            byte[] bytes = File.ReadAllBytes(path);
+            using var testConn = new SqliteConnection($"Data Source={path};Mode=ReadOnly");
+            testConn.Open();
+            using var cmd = testConn.CreateCommand();
+            cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table'";
+            int tableCount = Convert.ToInt32(cmd.ExecuteScalar());
+            if (tableCount < 10) return null;
+            testConn.Close();
+            return bytes;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    internal static byte[] LoadEmbeddedDbBytes()
     {
         var asm = Assembly.GetExecutingAssembly();
         using var stream = asm.GetManifestResourceStream("DUMPER.fh6_db.sqlite")

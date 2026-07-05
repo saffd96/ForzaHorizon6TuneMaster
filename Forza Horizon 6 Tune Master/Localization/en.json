@@ -366,7 +366,7 @@
   "ChangelogTitle": "What\u0027s new",
   "ChangelogClose": "OK",
 
-  "ChangelogV0": "• BUILT-IN GAME DATABASE. All cars and parts are bundled into the app, extracted from Forza Horizon 6 files. No internet or manual spec entry needed — pick a car and its parameters fill in automatically.\n\n• INSTALL PARTS LIKE IN-GAME. Instead of abstract \"levels\", you fit the actual parts from the car\u0027s catalog, by section: swaps, engine (or motor for EVs), chassis, drivetrain, tires & wheels, aero.\n\n• PHYSICS-BASED CALCULATION. The tune and its allowed ranges are computed from the real parameters of the installed parts in the database. Calculation formulas fixed.\n\n• AUTOMATIC GENERATION. No more \"Generate\" button — the tune recalculates by itself on any change.\n\n• NEW DESIGN. Reworked interface, result cards with range indicators, gear and power/torque charts, and an improved floating overlay (Ctrl+Shift+O).\n\n• HELP rewritten for the new logic.",
+  "ChangelogV0": "• VERSION 2.1 — a better window, reset buttons, visual feedback, and automatic updates.\n\n• WINDOW FITS ANY SCREEN. The interface is no longer locked to one size — resize freely and everything stays clean. Works great on smaller screens too.\n\n• CATEGORY & FULL RESET. Each part group has a \"✕\" button — click to revert the whole category to stock. \"Reset All\" resets everything at once (with confirmation).\n\n• CHANGED PART HIGHLIGHTING. Replaced parts stand out with an orange border — you always know what\u0027s been tuned.\n\n• REFINED CALCULATIONS. Aero and other formulas have been tweaked for more accurate tunes.\n\n• AUTOMATIC UPDATES. The app checks once a day (and on demand via the ↻ button) whether a fresher car database or localization is available. If so, it asks to restart — say yes and it restarts, downloads the update, then launches with the fresh data; say no and it keeps using what you have.",
 
   "Enum_EngineType_I1": "I1 (single-cylinder)",
   "Enum_EngineType_I2": "I2",
@@ -632,6 +632,12 @@
   "FontIncreaseTooltip": "Increase font size by 0.5",
   "FontDecreaseTooltip": "Decrease font size by 0.5",
 
+  "UpdateButtonTooltip": "Check for database / localization updates",
+  "BusyUpdating": "Checking for updates...",
+  "StatusUpToDate": "Database and localization are up to date",
+  "StatusUpdateNoConnection": "No internet connection",
+  "UpdateAvailablePrompt": "A new version of database is available. Restart to update?",
+  "UpdateCaption": "Update",
   "DonateButtonTooltip": "Support the project",
   "DonateWindowTitle": "Support — Tune Master",
   "DonateTitle": "Support the project",

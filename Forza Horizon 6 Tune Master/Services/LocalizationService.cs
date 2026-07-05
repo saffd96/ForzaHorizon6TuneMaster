@@ -185,9 +185,77 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
         try
         {
-            var asm = Assembly.GetExecutingAssembly();
+            // Tier 1: AppData override (previously downloaded from Supabase)
+            if (TryLoadAppDataJson(code, out dict))
+                return true;
 
-            // Base hand-curated localization file (required)
+            // Tier 2: Embedded resource
+            return TryLoadEmbeddedJson(code, out dict);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool TryLoadAppDataJson(string code, out ConcurrentDictionary<string, string> dict)
+    {
+        dict = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        string basePath = Path.Combine(ForzaPaths.UpdateLocDir, $"{code}.json");
+        string gamePath = Path.Combine(ForzaPaths.UpdateLocDir, $"GameStrings.{code}.json");
+
+        if (!File.Exists(basePath) && !File.Exists(gamePath))
+            return false;
+
+        bool loaded = false;
+
+        if (File.Exists(basePath))
+        {
+            try
+            {
+                var json = File.ReadAllText(basePath);
+                var entries = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+                if (entries != null)
+                {
+                    dict = new ConcurrentDictionary<string, string>(entries, StringComparer.OrdinalIgnoreCase);
+                    loaded = true;
+                }
+            }
+            catch { }
+        }
+
+        if (File.Exists(gamePath))
+        {
+            try
+            {
+                var gameJson = File.ReadAllText(gamePath);
+                var gameTables = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(gameJson);
+                if (gameTables != null)
+                {
+                    foreach (var (table, tableEntries) in gameTables)
+                    {
+                        foreach (var (id, value) in tableEntries)
+                        {
+                            dict[$"{table}_{id}"] = value;
+                        }
+                    }
+                    loaded = true;
+                }
+            }
+            catch { }
+        }
+
+        return loaded;
+    }
+
+    private bool TryLoadEmbeddedJson(string code, out ConcurrentDictionary<string, string> dict)
+    {
+        dict = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var asm = Assembly.GetExecutingAssembly();
+
+        try
+        {
             var resourceName = $"Forza_Horizon_6_Tune_Master.Localization.{code}.json";
             using var stream = asm.GetManifestResourceStream(resourceName);
             if (stream == null) return false;
@@ -199,9 +267,6 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
             dict = new ConcurrentDictionary<string, string>(entries, StringComparer.OrdinalIgnoreCase);
 
-            // Optional game-extracted strings (e.g. Upgrades, List_DriveType, List_Aspiration).
-            // Isolated in its own try-catch so a malformed or oversized GameStrings file
-            // doesn't break the entire language load — the base strings still work.
             try
             {
                 var gameResourceName = $"Forza_Horizon_6_Tune_Master.Localization.GameStrings.{code}.json";

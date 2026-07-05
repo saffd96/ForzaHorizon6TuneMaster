@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -880,7 +881,27 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         set => _carSpec.IsLoadingCars = value;
     }
 
-    public bool IsBusy => _isGenerating || _carSpec.IsLoadingCars;
+    public bool IsBusy => _isGenerating || _carSpec.IsLoadingCars || _isUpdating;
+
+    private bool _isUpdating;
+    public bool IsUpdating
+    {
+        get => _isUpdating;
+        set
+        {
+            _isUpdating = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsBusy));
+            UpdateCommand?.Raise();
+        }
+    }
+
+    private bool _updateAvailable;
+    public bool UpdateAvailable
+    {
+        get => _updateAvailable;
+        set => Set(ref _updateAvailable, value);
+    }
 
     private string _busyMessage = "";
     public string BusyMessage
@@ -969,6 +990,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     public RelayCommand DeleteAllProfilesCommand { get; }
     public RelayCommand NewProfileCommand     { get; }
     public RelayCommand ClearCarSelectionCommand { get; }
+    public RelayCommand UpdateCommand         { get; }
 
     // ── Reset commands ──────────────────────────────────────────────────────
     public RelayCommand ResetAllPartsCommand { get; }
@@ -1020,7 +1042,8 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         ToggleUnitsCommand      = new RelayCommand(DoToggleUnits);
         TogglePowerUnitCommand  = new RelayCommand(DoTogglePowerUnit);
         ToggleSpringUnitCommand = new RelayCommand(DoToggleSpringUnit);
-        SetLanguageCommand      = new RelayCommand(() => { }); // no-op: switching handled by SelectedLanguageItem setter
+        SetLanguageCommand      = new RelayCommand(() => { });
+        UpdateCommand           = new RelayCommand(ExecuteUpdate, () => !IsUpdating);
 
         _car.PropertyChanged += OnModelChanged;
         _car.PropertyChanged += OnCarPropertyChanged;
@@ -1498,6 +1521,46 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         finally
         {
             IsGenerating = false;
+        }
+    }
+
+    private async void ExecuteUpdate()
+    {
+        try { await ExecuteUpdateAsync(); }
+        catch (HttpRequestException) { StatusMessage = T("StatusUpdateNoConnection"); }
+        catch (TaskCanceledException) { StatusMessage = T("StatusUpdateNoConnection"); }
+        catch (Exception ex) { StatusMessage = string.Format(T("StatusDbUpdateError"), ex.Message); }
+    }
+
+    private async Task ExecuteUpdateAsync()
+    {
+        if (IsUpdating) return;
+        BusyMessage = T("BusyUpdating");
+        IsUpdating = true;
+        try
+        {
+            var (dbOutdated, locOutdated) = await UpdateService.Instance.CheckAsync().ConfigureAwait(true);
+
+            if (!dbOutdated && !locOutdated)
+            {
+                StatusMessage = T("StatusUpToDate");
+                UpdateAvailable = false;
+                return;
+            }
+
+            UpdateAvailable = true;
+            var result = MessageBox.Show(T("UpdateAvailablePrompt"), T("UpdateCaption"), MessageBoxButton.YesNo, MessageBoxImage.Information);
+            if (result == MessageBoxResult.Yes)
+            {
+                UpdateService.MarkPendingUpdate();
+                System.Diagnostics.Process.Start(
+                    System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName);
+                Application.Current?.Shutdown();
+            }
+        }
+        finally
+        {
+            IsUpdating = false;
         }
     }
 

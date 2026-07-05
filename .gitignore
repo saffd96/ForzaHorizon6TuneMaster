@@ -6,6 +6,7 @@
 [Bb]in/
 [Oo]bj/
 DUMPER/
+[Tt]ools/
 
 # Rider / JetBrains ignored files
 /projectSettingsUpdater.xml
