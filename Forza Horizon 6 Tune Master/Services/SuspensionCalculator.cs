@@ -147,6 +147,11 @@ internal static class SuspensionCalculator
         double springF_nmm = SpringFromHz(hzF, massF);
         double springR_nmm = SpringFromHz(hzR, massR);
 
+        // Clamp to the spring's physical bounds — the game's tuning slider uses
+        // [MinSpringRate, MaxSpringRate] as its range (linear interpolation).
+        springF_nmm = CalculationHelpers.Clamp(springF_nmm, frontPhys.MinSpringRate, frontPhys.MaxSpringRate);
+        springR_nmm = CalculationHelpers.Clamp(springR_nmm, rearPhys.MinSpringRate, rearPhys.MaxSpringRate);
+
         r.SpringFront = Math.Round(springF_nmm, 1);
         r.SpringRear  = Math.Round(springR_nmm, 1);
 
