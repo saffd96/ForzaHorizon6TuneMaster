@@ -13,6 +13,11 @@ public class PartDisplayNameResolver
     public int StockFrontTireProfile { get; set; }
     public int StockRearTireProfile { get; set; }
 
+    // Stock tire width (mm), needed alongside StockFrontTireProfile/StockRearTireProfile to
+    // work out the equivalent profile for each width tier (see FormatTireWidth).
+    public int StockFrontTireWidth { get; set; }
+    public int StockRearTireWidth { get; set; }
+
     // Imperial vs metric for unit-bearing option labels (e.g. track spacing). Static because
     // resolvers are created per sub-VM; the host VM keeps this in sync with the unit toggle.
     public static bool UseImperial { get; set; }
@@ -51,6 +56,10 @@ public class PartDisplayNameResolver
     private static readonly Dictionary<int, string> TireCompoundIdOverrides = new()
     {
         [17] = "Upgrades_IDS_Name_298", // DriftL1 → "Drift Tire Compound"
+        // On "Forza Edition" cars the drag row's TireModelName is mislabeled "Slick_FE" instead
+        // of "*_Drag" (unlike the same car's non-FE trim), colliding with that car's other Slick
+        // tiers and getting silently dropped by the compound dropdown's name-based dedup.
+        [14] = "Upgrades_IDS_Name_280", // Drag → "Drag Tire Compound"
     };
 
     private static readonly Dictionary<Type, string> TableNameMap = new()
@@ -322,10 +331,10 @@ public class PartDisplayNameResolver
             // rim size" strings are identical across every option, so show the actual
             // dimension instead. That is what disambiguates the choices in the dropdown.
             case DbUpgradeTireWidthFront twf:
-                name = FormatTireWidth(twf.FrontTireWidth, StockFrontTireProfile, twf.IsStock);
+                name = FormatTireWidth(twf.FrontTireWidth, StockFrontTireWidth, StockFrontTireProfile, twf.IsStock);
                 return true;
             case DbUpgradeTireWidthRear twr:
-                name = FormatTireWidth(twr.RearTireWidth, StockRearTireProfile, twr.IsStock);
+                name = FormatTireWidth(twr.RearTireWidth, StockRearTireWidth, StockRearTireProfile, twr.IsStock);
                 return true;
             case DbUpgradeRimFront rf:
                 name = FormatRimSize(rf.FrontWheelDiameter, rf.IsStock);
@@ -457,10 +466,25 @@ public class PartDisplayNameResolver
         return $"{baseName} ({m})";
     }
 
-    private static string FormatTireWidth(int widthMm, int profile, bool isStock)
+    // The width table carries no profile column, but the game still shows an aspect ratio next
+    // to every width tier — one that keeps the tire's overall (sidewall) diameter close to
+    // stock as width increases, same as real-world "plus sizing" (wider tire → lower profile).
+    // Verified against the in-game values for a Sprinter Trueno GT-APEX FE (stock 215/50):
+    // front 225/50 235/45 245/45, rear 245/45 255/40 265/40 — matches round-to-nearest-5 of
+    // (stockWidth * stockProfile / thisWidth).
+    private static string FormatTireWidth(int widthMm, int stockWidthMm, int stockProfile, bool isStock)
     {
+        int profile = EquivalentProfile(stockWidthMm, stockProfile, widthMm);
         string s = $"{widthMm}/{profile}";
         return isStock ? $"{s} ({T("Part_Stock")})" : s;
+    }
+
+    private static int EquivalentProfile(int stockWidthMm, int stockProfile, int widthMm)
+    {
+        if (widthMm <= 0 || stockWidthMm <= 0) return stockProfile;
+        double sidewallMm = stockWidthMm * stockProfile / 100.0;
+        double profile = sidewallMm / widthMm * 100.0;
+        return (int)(Math.Round(profile / 5.0) * 5.0);
     }
 
     private static string FormatRimSize(int diameterIn, bool isStock)

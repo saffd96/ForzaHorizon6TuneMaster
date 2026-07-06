@@ -95,6 +95,8 @@ public class TiresWheelsViewModel : INotifyPropertyChanged
         _makeId = _db.GetCar(car.CarDbId)?.MakeID ?? 0;
         _resolver.StockFrontTireProfile = car.StockFrontTireProfile;
         _resolver.StockRearTireProfile = car.StockRearTireProfile;
+        _resolver.StockFrontTireWidth = car.FrontTireWidth;
+        _resolver.StockRearTireWidth = car.RearTireWidth;
 
         int ordinal = car.CarDbId;
         int carBodyId = car.CarBodyId;
