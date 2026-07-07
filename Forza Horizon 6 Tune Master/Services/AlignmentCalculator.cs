@@ -10,16 +10,16 @@ internal static class AlignmentCalculator
     private const double ToeMin = -1.0, ToeMax = 1.0;
     private const double CasterMin = 3.0, CasterMax = 7.0;
 
-    public static void CalculateCamber(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r,
+    public static void CalculateCamber(CarCard car, TrackInfo track, TuningConstraints constraints, TuneResult r,
         Dictionary<string, string> ex, double effectiveMaxKmh) =>
-        CalculateCamber(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh);
+        CalculateCamber(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh, constraints);
 
     public static void CalculateCamber(CarCard car, TrackInfo track, SelectedParts parts, TuneResult r,
         Dictionary<string, string> ex, double effectiveMaxKmh) =>
         CalculateCamber(car, track, parts, Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh);
 
     public static void CalculateCamber(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r,
-        Dictionary<string, string> ex, double effectiveMaxKmh)
+        Dictionary<string, string> ex, double effectiveMaxKmh, TuningConstraints? constraints = null)
     {
         DbSpringDamperPhysics? frontPhys = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
         DbSpringDamperPhysics? rearPhys  = TuningPhysicsContext.RearSpringDamper(car, parts, db);
@@ -64,18 +64,25 @@ internal static class AlignmentCalculator
         camF += wd * 0.20;
         camR -= wd * 0.20;
 
+        // Driving-style bias: +1 (Agile) adds front grip / trims rear grip so the car rotates
+        // more readily, -1 (Stable) does the opposite. Small enough to leave applied in Drag too,
+        // for consistency with the diff/ARB lever it's paired with.
+        double chassisRotation = constraints?.ChassisRotation ?? 0.0;
+        camF -= chassisRotation * 0.15;
+        camR += chassisRotation * 0.15;
+
         r.CamberFront = Math.Round(CalculationHelpers.Clamp(camF, CamberMin, CamberMax), 1);
         r.CamberRear  = Math.Round(CalculationHelpers.Clamp(camR, CamberMin, CamberMax), 1);
         ex["Camber"] = string.Format(CalculationHelpers.L("Expl_Camber_Fmt"), r.CamberFront, r.CamberRear, reason);
     }
 
-    public static void CalculateToe(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh) =>
-        CalculateToe(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh);
+    public static void CalculateToe(CarCard car, TrackInfo track, TuningConstraints constraints, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh) =>
+        CalculateToe(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh, constraints);
 
     public static void CalculateToe(CarCard car, TrackInfo track, SelectedParts parts, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh) =>
         CalculateToe(car, track, parts, Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh);
 
-    public static void CalculateToe(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
+    public static void CalculateToe(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh, TuningConstraints? constraints = null)
     {
         var (frontPhys, rearPhys) = (
             TuningPhysicsContext.FrontSpringDamper(car, parts, db),
@@ -103,6 +110,12 @@ internal static class AlignmentCalculator
         double toeF = staticF + baseF * (1.0 - speedFactor * 0.25);
         double toeR = staticR + baseR * (1.0 - speedFactor * 0.15);
 
+        // Driving-style bias: +1 (Agile) adds front toe-out (sharper turn-in) and trims rear
+        // toe-in (less corner-entry stability, more rotation), -1 (Stable) does the opposite.
+        double chassisRotation = constraints?.ChassisRotation ?? 0.0;
+        toeF -= chassisRotation * 0.06;
+        toeR -= chassisRotation * 0.06;
+
         r.ToeFront = Math.Round(CalculationHelpers.Clamp(toeF, ToeMin, ToeMax), 2);
         r.ToeRear  = Math.Round(CalculationHelpers.Clamp(toeR, ToeMin, ToeMax), 2);
 
@@ -111,13 +124,13 @@ internal static class AlignmentCalculator
         ex["Toe"] = string.Format(CalculationHelpers.L("Expl_Toe_Fmt"), r.ToeFront, fd, r.ToeRear, rd);
     }
 
-    public static void CalculateCaster(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh) =>
-        CalculateCaster(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh);
+    public static void CalculateCaster(CarCard car, TrackInfo track, TuningConstraints constraints, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh) =>
+        CalculateCaster(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh, constraints);
 
     public static void CalculateCaster(CarCard car, TrackInfo track, SelectedParts parts, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh) =>
         CalculateCaster(car, track, parts, Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh);
 
-    public static void CalculateCaster(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
+    public static void CalculateCaster(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh, TuningConstraints? constraints = null)
     {
         var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
         double caster = frontPhys?.Caster ?? 6.0;
@@ -138,6 +151,11 @@ internal static class AlignmentCalculator
 
         // High-speed builds need a touch more caster for straight-line stability.
         caster += CalculationHelpers.Clamp((effectiveMaxKmh - 200.0) / 200.0, 0, 1) * 0.4;
+
+        // Driving-style bias: +1 (Agile) reduces caster for lighter, quicker steering response,
+        // -1 (Stable) adds caster for more self-centering and high-speed planted feel.
+        double chassisRotation = constraints?.ChassisRotation ?? 0.0;
+        caster -= chassisRotation * 0.3;
 
         r.Caster = Math.Round(CalculationHelpers.Clamp(caster, CasterMin, CasterMax), 1);
         ex["Caster"] = string.Format(CalculationHelpers.L("Expl_Caster_Fmt"),

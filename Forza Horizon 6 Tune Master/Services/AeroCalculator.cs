@@ -6,10 +6,10 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 internal static class AeroCalculator
 {
-    public static void CalculateAero(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex, double? overrideSpeedKmh = null) =>
-        CalculateAero(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, overrideSpeedKmh);
+    public static void CalculateAero(CarCard car, TrackInfo track, TuningConstraints constraints, TuneResult r, Dictionary<string, string> ex, double? overrideSpeedKmh = null) =>
+        CalculateAero(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, overrideSpeedKmh, constraints);
 
-    public static void CalculateAero(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, double? overrideSpeedKmh = null)
+    public static void CalculateAero(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, double? overrideSpeedKmh = null, TuningConstraints? constraints = null)
     {
         var rearWing  = TuningPhysicsContext.RearWingAero(car, parts, db);
         var frontWing = TuningPhysicsContext.FrontBumperAero(car, parts, db);
@@ -35,6 +35,28 @@ internal static class AeroCalculator
         double frontClampKg = dbCar?.FrontDownforceClampKG ?? 0.0;
 
         (double rearFraction, double frontFraction, string noteKey) = AeroFractions(track.Discipline, car.DriveType);
+
+        // Driving-style bias: -1 (Grip) pushes further up the wing's own downforce range,
+        // +1 (Speed) pulls back toward less drag. Shifts the discipline's own fraction rather
+        // than replacing it, so a Drift car biased toward "Speed" still keeps more downforce
+        // than a Drag car biased toward "Grip" would.
+        double aeroBalance = constraints?.AeroBalance ?? 0.0;
+        if (aeroBalance != 0.0)
+        {
+            rearFraction = CalculationHelpers.Clamp(rearFraction - aeroBalance * 0.35, 0.0, 1.0);
+            frontFraction = CalculationHelpers.Clamp(frontFraction - aeroBalance * 0.35, 0.0, 1.0);
+        }
+
+        // Driving-style bias: +1 (Agile) shifts the front/rear downforce split toward the front
+        // (more front bite, less planted rear -> more rotation), -1 (Stable) shifts it toward the
+        // rear (more high-speed stability, more understeer). Same lever as ARB/springs/dampers,
+        // applied to aero balance instead of mechanical grip.
+        double chassisRotation = constraints?.ChassisRotation ?? 0.0;
+        if (chassisRotation != 0.0)
+        {
+            frontFraction = CalculationHelpers.Clamp(frontFraction + chassisRotation * 0.15, 0.0, 1.0);
+            rearFraction = CalculationHelpers.Clamp(rearFraction - chassisRotation * 0.15, 0.0, 1.0);
+        }
 
         double ptw = car.PowerHP / Math.Max(car.TotalMass, 1.0);
         double ptwRef = PhysicsConstants.PtwReferenceHpPerKg;

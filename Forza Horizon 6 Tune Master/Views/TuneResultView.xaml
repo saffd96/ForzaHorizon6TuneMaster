@@ -539,6 +539,35 @@
                                              IsChecked="{Binding Track.DragDistance, Converter={StaticResource E2B}, ConverterParameter={x:Static m:DragDistance.Mile}}"/>
                             </StackPanel>
                         </WrapPanel>
+
+                        <!-- Driving style: biases aero balance/diff (incl. AWD centre split)/ARB/springs/dampers/ride height (rake)/tire pressure/brakes/camber/toe/caster together, on top of the discipline's own baseline -->
+                        <WrapPanel Margin="0,6,0,0">
+                            <TextBlock Text="{l:Loc DrivingStyleHeader}" Foreground="{StaticResource AccentBrush}"
+                                       FontWeight="Bold" TextElement.FontSize="{DynamicResource FontXSmall}"
+                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                            <TextBlock Text="{l:Loc DrivingStyleAero}" Foreground="{StaticResource TextDimBrush}"
+                                       TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,4,0"
+                                       ToolTip="{l:Loc DrivingStyleAeroHint}"/>
+                            <TextBlock Text="{l:Loc DrivingStyleAeroGrip}" Foreground="{StaticResource TextMutedBrush}"
+                                       TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <Slider Value="{Binding Constraints.AeroBalance}" Minimum="-1" Maximum="1" Width="90"
+                                    VerticalAlignment="Center" TickFrequency="0.1" IsSnapToTickEnabled="False"
+                                    ToolTip="{l:Loc DrivingStyleAeroHint}"/>
+                            <TextBlock Text="{l:Loc DrivingStyleAeroSpeed}" Foreground="{StaticResource TextMutedBrush}"
+                                       TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="4,0,14,0"/>
+
+                            <TextBlock Text="{l:Loc DrivingStyleChassis}" Foreground="{StaticResource TextDimBrush}"
+                                       TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,4,0"
+                                       ToolTip="{l:Loc DrivingStyleChassisHint}"/>
+                            <TextBlock Text="{l:Loc DrivingStyleChassisStable}" Foreground="{StaticResource TextMutedBrush}"
+                                       TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <Slider Value="{Binding Constraints.ChassisRotation}" Minimum="-1" Maximum="1" Width="90"
+                                    VerticalAlignment="Center" TickFrequency="0.1" IsSnapToTickEnabled="False"
+                                    ToolTip="{l:Loc DrivingStyleChassisHint}"/>
+                            <TextBlock Text="{l:Loc DrivingStyleChassisAgile}" Foreground="{StaticResource TextMutedBrush}"
+                                       TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                        </WrapPanel>
                     </StackPanel>
                 </Border>
             </Grid>

@@ -185,9 +185,13 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
         try
         {
-            // Tier 1: AppData override (previously downloaded from Supabase)
+#if !DEBUG
+            // Tier 1: AppData override (previously downloaded from Supabase) — Release only. A
+            // Debug build always reads the embedded resource being actively edited, instead of a
+            // stale AppData snapshot silently shadowing every local string change.
             if (TryLoadAppDataJson(code, out dict))
                 return true;
+#endif
 
             // Tier 2: Embedded resource
             return TryLoadEmbeddedJson(code, out dict);

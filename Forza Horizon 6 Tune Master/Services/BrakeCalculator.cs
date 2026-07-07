@@ -10,10 +10,10 @@ internal static class BrakeCalculator
     // keeps the typical car around 110-130% before friction/mass/speed/slider scaling.
     private const double BaseBrakePressurePct = 125.0;
     
-    public static void CalculateBrakes(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh = 250) =>
-        CalculateBrakes(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh);
+    public static void CalculateBrakes(CarCard car, TrackInfo track, TuningConstraints constraints, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh = 250) =>
+        CalculateBrakes(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, effectiveMaxKmh, constraints);
 
-    public static void CalculateBrakes(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh)
+    public static void CalculateBrakes(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, double effectiveMaxKmh, TuningConstraints? constraints = null)
     {
         var brakes = TuningPhysicsContext.Brakes(car, parts, db);
         if (brakes == null)
@@ -39,6 +39,8 @@ internal static class BrakeCalculator
             };
             if (track.Discipline == Discipline.Drag)
                 fbBias = 50.0;
+            else
+                fbBias -= (constraints?.ChassisRotation ?? 0.0) * 6.0;
 
             double fbMassFactor = Math.Pow(car.TotalMass / PhysicsConstants.RefMassKg, 0.55);
             double fbSpeedFactor = 1.0 + Math.Max(0, effectiveMaxKmh - 200.0) / 400.0 * 0.10;
@@ -98,6 +100,10 @@ internal static class BrakeCalculator
                 Discipline.Street       => +1.0,
                 _                       => 0.0
             };
+
+            // Driving-style bias: +1 (Agile) shifts bias rearward (more rotation on entry,
+            // more lock-up risk), -1 (Stable) shifts it forward.
+            bias -= (constraints?.ChassisRotation ?? 0.0) * 6.0;
         }
 
         // Pressure: in-game brake pressure defaults to 100% and a firm race tune sits a bit

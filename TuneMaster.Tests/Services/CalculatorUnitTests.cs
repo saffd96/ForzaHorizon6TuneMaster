@@ -98,6 +98,64 @@ public class CalculatorUnitTests
     }
 
     [Fact]
+    public void Aero_GripBalance_IncreasesAeroOverDefault()
+    {
+        var car = CarFactory.DefaultCar();
+        var track = CarFactory.DefaultTrack();
+
+        var rDefault = new TuneResult();
+        AeroCalculator.CalculateAero(car, track, CarFactory.RelaxedConstraints(), rDefault, new Dictionary<string, string>());
+
+        var cGrip = CarFactory.RelaxedConstraints();
+        cGrip.AeroBalance = -1.0;
+        var rGrip = new TuneResult();
+        AeroCalculator.CalculateAero(car, track, cGrip, rGrip, new Dictionary<string, string>());
+
+        Assert.True(rGrip.AeroRear >= rDefault.AeroRear,
+            $"Grip-biased aero ({rGrip.AeroRear}) should be >= default ({rDefault.AeroRear})");
+    }
+
+    [Fact]
+    public void Aero_SpeedBalance_DecreasesAeroBelowDefault()
+    {
+        var car = CarFactory.DefaultCar();
+        var track = CarFactory.DefaultTrack();
+
+        var rDefault = new TuneResult();
+        AeroCalculator.CalculateAero(car, track, CarFactory.RelaxedConstraints(), rDefault, new Dictionary<string, string>());
+
+        var cSpeed = CarFactory.RelaxedConstraints();
+        cSpeed.AeroBalance = 1.0;
+        var rSpeed = new TuneResult();
+        AeroCalculator.CalculateAero(car, track, cSpeed, rSpeed, new Dictionary<string, string>());
+
+        Assert.True(rSpeed.AeroRear <= rDefault.AeroRear,
+            $"Speed-biased aero ({rSpeed.AeroRear}) should be <= default ({rDefault.AeroRear})");
+    }
+
+    [Fact]
+    public void Aero_AgileRotation_MoreFrontLessRearThanStable()
+    {
+        var car = CarFactory.DefaultCar();
+        var track = CarFactory.DefaultTrack();
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult();
+        AeroCalculator.CalculateAero(car, track, cAgile, rAgile, new Dictionary<string, string>());
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult();
+        AeroCalculator.CalculateAero(car, track, cStable, rStable, new Dictionary<string, string>());
+
+        Assert.True(rAgile.AeroFront >= rStable.AeroFront,
+            $"Agile front aero ({rAgile.AeroFront}) should be >= stable ({rStable.AeroFront})");
+        Assert.True(rAgile.AeroRear <= rStable.AeroRear,
+            $"Agile rear aero ({rAgile.AeroRear}) should be <= stable ({rStable.AeroRear})");
+    }
+
+    [Fact]
     public void Aero_SpeedFactorCapped()
     {
         var car = CarFactory.DefaultCar();
@@ -322,6 +380,28 @@ public class CalculatorUnitTests
         Assert.InRange(r.TirePressureFront, 2.0, 2.5);
     }
 
+    [Fact]
+    public void TirePressure_AgileRotation_HigherFrontLowerRearThanStable()
+    {
+        var car = CarFactory.DefaultCar();
+        var track = CarFactory.DefaultTrack();
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult();
+        TireCalculator.CalculateTirePressure(car, track, cAgile, rAgile, new Dictionary<string, string>());
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult();
+        TireCalculator.CalculateTirePressure(car, track, cStable, rStable, new Dictionary<string, string>());
+
+        Assert.True(rAgile.TirePressureFront >= rStable.TirePressureFront,
+            $"Agile front pressure ({rAgile.TirePressureFront}) should be >= stable ({rStable.TirePressureFront})");
+        Assert.True(rAgile.TirePressureRear <= rStable.TirePressureRear,
+            $"Agile rear pressure ({rAgile.TirePressureRear}) should be <= stable ({rStable.TirePressureRear})");
+    }
+
     // ─── SuspensionCalculator — ARB ─────────────────────────────────────────
 
     [Fact]
@@ -416,6 +496,28 @@ public class CalculatorUnitTests
         SuspensionCalculator.CalculateARB(carWide, CarFactory.DefaultTrack(), c, rWide, new Dictionary<string, string>());
 
         Assert.True(rNarrow.ARBFront > rWide.ARBFront);
+    }
+
+    [Fact]
+    public void ARB_AgileRotation_SoftensFrontStiffensRearRelativeToStable()
+    {
+        var car = CarFactory.DefaultCar();
+        var track = CarFactory.DefaultTrack();
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult();
+        SuspensionCalculator.CalculateARB(car, track, cAgile, rAgile, new Dictionary<string, string>());
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult();
+        SuspensionCalculator.CalculateARB(car, track, cStable, rStable, new Dictionary<string, string>());
+
+        Assert.True(rAgile.ARBFront <= rStable.ARBFront,
+            $"Agile front ARB ({rAgile.ARBFront}) should be <= stable ({rStable.ARBFront})");
+        Assert.True(rAgile.ARBRear >= rStable.ARBRear,
+            $"Agile rear ARB ({rAgile.ARBRear}) should be >= stable ({rStable.ARBRear})");
     }
 
     // ─── SuspensionCalculator — Springs ─────────────────────────────────────
@@ -554,6 +656,29 @@ public class CalculatorUnitTests
         Assert.True(r.SpringFront > 0);
     }
 
+    [Fact]
+    public void Springs_AgileRotation_SoftensFrontStiffensRearRelativeToStable()
+    {
+        var car = CarFactory.DefaultCar();
+        car.SuspensionUpgrade = SuspensionUpgrade.Race;
+        var track = CarFactory.DefaultTrack();
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult();
+        SuspensionCalculator.CalculateSprings(car, track, cAgile, rAgile, new Dictionary<string, string>());
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult();
+        SuspensionCalculator.CalculateSprings(car, track, cStable, rStable, new Dictionary<string, string>());
+
+        Assert.True(rAgile.SpringFront <= rStable.SpringFront,
+            $"Agile front spring ({rAgile.SpringFront}) should be <= stable ({rStable.SpringFront})");
+        Assert.True(rAgile.SpringRear >= rStable.SpringRear,
+            $"Agile rear spring ({rAgile.SpringRear}) should be >= stable ({rStable.SpringRear})");
+    }
+
     // ─── SuspensionCalculator — RideHeight ──────────────────────────────────
 
     [Fact]
@@ -648,6 +773,29 @@ public class CalculatorUnitTests
 
         Assert.Equal(30.0, r.RideHeightFront, 1);
         Assert.Equal(40.0, r.RideHeightRear, 1);
+    }
+
+    [Fact]
+    public void RideHeight_AgileRotation_MoreRakeThanStable()
+    {
+        var car = CarFactory.DefaultCar();
+        car.SuspensionUpgrade = SuspensionUpgrade.Race;
+        var track = CarFactory.DefaultTrack();
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult();
+        SuspensionCalculator.CalculateRideHeight(car, track, cAgile, rAgile, new Dictionary<string, string>());
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult();
+        SuspensionCalculator.CalculateRideHeight(car, track, cStable, rStable, new Dictionary<string, string>());
+
+        Assert.True(rAgile.RideHeightFront <= rStable.RideHeightFront,
+            $"Agile front ride height ({rAgile.RideHeightFront}) should be <= stable ({rStable.RideHeightFront})");
+        Assert.True(rAgile.RideHeightRear >= rStable.RideHeightRear,
+            $"Agile rear ride height ({rAgile.RideHeightRear}) should be >= stable ({rStable.RideHeightRear})");
     }
 
     // ─── SuspensionCalculator — SpringRideHeightFix ─────────────────────────
@@ -813,6 +961,28 @@ public class CalculatorUnitTests
         Assert.True(rSu.ReboundFront >= rWi.ReboundFront - 0.1);
     }
 
+    [Fact]
+    public void Dampers_AgileRotation_SoftensFrontStiffensRearRelativeToStable()
+    {
+        var car = CarFactory.DefaultCar();
+        var track = CarFactory.DefaultTrack();
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult { SpringFront = 200, SpringRear = 200 };
+        SuspensionCalculator.CalculateDampers(car, track, cAgile, rAgile, new Dictionary<string, string>());
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult { SpringFront = 200, SpringRear = 200 };
+        SuspensionCalculator.CalculateDampers(car, track, cStable, rStable, new Dictionary<string, string>());
+
+        Assert.True(rAgile.ReboundFront <= rStable.ReboundFront,
+            $"Agile front rebound ({rAgile.ReboundFront}) should be <= stable ({rStable.ReboundFront})");
+        Assert.True(rAgile.ReboundRear >= rStable.ReboundRear,
+            $"Agile rear rebound ({rAgile.ReboundRear}) should be >= stable ({rStable.ReboundRear})");
+    }
+
     // ─── AlignmentCalculator — Camber ───────────────────────────────────────
 
     [Fact]
@@ -956,6 +1126,28 @@ public class CalculatorUnitTests
         Assert.InRange(r.CamberRear, -2.0, -0.5);
     }
 
+    [Fact]
+    public void Camber_AgileRotation_MoreFrontLessRearGripThanStable()
+    {
+        var car = CarFactory.DefaultCar();
+        var track = CarFactory.DefaultTrack();
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult();
+        AlignmentCalculator.CalculateCamber(car, track, cAgile, rAgile, new Dictionary<string, string>(), 200);
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult();
+        AlignmentCalculator.CalculateCamber(car, track, cStable, rStable, new Dictionary<string, string>(), 200);
+
+        Assert.True(rAgile.CamberFront <= rStable.CamberFront,
+            $"Agile front camber ({rAgile.CamberFront}) should be more negative than stable ({rStable.CamberFront})");
+        Assert.True(rAgile.CamberRear >= rStable.CamberRear,
+            $"Agile rear camber ({rAgile.CamberRear}) should be less negative than stable ({rStable.CamberRear})");
+    }
+
     // ─── AlignmentCalculator — Toe ──────────────────────────────────────────
 
     [Fact]
@@ -1039,6 +1231,28 @@ public class CalculatorUnitTests
         Assert.InRange(r.ToeRear, -0.5, 0.5);
     }
 
+    [Fact]
+    public void Toe_AgileRotation_MoreFrontOutLessRearInThanStable()
+    {
+        var car = CarFactory.DefaultCar();
+        var track = CarFactory.DefaultTrack();
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult();
+        AlignmentCalculator.CalculateToe(car, track, cAgile, rAgile, new Dictionary<string, string>(), 200);
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult();
+        AlignmentCalculator.CalculateToe(car, track, cStable, rStable, new Dictionary<string, string>(), 200);
+
+        Assert.True(rAgile.ToeFront <= rStable.ToeFront,
+            $"Agile front toe ({rAgile.ToeFront}) should be more toe-out than stable ({rStable.ToeFront})");
+        Assert.True(rAgile.ToeRear <= rStable.ToeRear,
+            $"Agile rear toe ({rAgile.ToeRear}) should be less toe-in than stable ({rStable.ToeRear})");
+    }
+
     // ─── AlignmentCalculator — Caster ───────────────────────────────────────
 
     [Fact]
@@ -1094,6 +1308,26 @@ public class CalculatorUnitTests
             new Dictionary<string, string>(), 300);
 
         Assert.InRange(r.Caster, 3.0, 10.0);
+    }
+
+    [Fact]
+    public void Caster_AgileRotation_LessCasterThanStable()
+    {
+        var car = CarFactory.DefaultCar();
+        var track = CarFactory.DefaultTrack();
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult();
+        AlignmentCalculator.CalculateCaster(car, track, cAgile, rAgile, new Dictionary<string, string>(), 200);
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult();
+        AlignmentCalculator.CalculateCaster(car, track, cStable, rStable, new Dictionary<string, string>(), 200);
+
+        Assert.True(rAgile.Caster <= rStable.Caster,
+            $"Agile caster ({rAgile.Caster}) should be <= stable ({rStable.Caster})");
     }
 
     // ─── BrakeCalculator ────────────────────────────────────────────────────
@@ -1197,6 +1431,26 @@ public class CalculatorUnitTests
             CarFactory.RelaxedConstraints(), rRoad, new Dictionary<string, string>(), 200);
 
         Assert.True(rDrift.BrakePressure <= rRoad.BrakePressure);
+    }
+
+    [Fact]
+    public void Brakes_AgileRotation_ShiftsBiasRearwardOfStable()
+    {
+        var car = CarFactory.DefaultCar();
+        var track = CarFactory.DefaultTrack();
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult();
+        BrakeCalculator.CalculateBrakes(car, track, cAgile, rAgile, new Dictionary<string, string>(), 200);
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult();
+        BrakeCalculator.CalculateBrakes(car, track, cStable, rStable, new Dictionary<string, string>(), 200);
+
+        Assert.True(rAgile.BrakeBalance <= rStable.BrakeBalance,
+            $"Agile brake balance ({rAgile.BrakeBalance}) should be <= stable ({rStable.BrakeBalance})");
     }
 
     // ─── DifferentialCalculator ─────────────────────────────────────────────
@@ -1332,6 +1586,49 @@ public class CalculatorUnitTests
         Assert.True(r.DiffAccel > 0);
     }
 
+    [Fact]
+    public void Diff_AgileRotation_LooserThanStable()
+    {
+        var car = CarFactory.DefaultCar();
+        var track = CarFactory.DefaultTrack();
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult();
+        DifferentialCalculator.CalculateDifferential(car, track, cAgile, rAgile, new Dictionary<string, string>());
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult();
+        DifferentialCalculator.CalculateDifferential(car, track, cStable, rStable, new Dictionary<string, string>());
+
+        Assert.True(rAgile.DiffAccel <= rStable.DiffAccel,
+            $"Agile diff accel lock ({rAgile.DiffAccel}) should be <= stable ({rStable.DiffAccel})");
+    }
+
+    [Fact]
+    public void Diff_Drag_ChassisRotation_StillApplies()
+    {
+        // Launch traction vs. wheelspin is a real axis on the strip too, even without cornering —
+        // ChassisRotation should keep affecting diff lock in Drag, unlike BrakeBalance (which the
+        // discipline itself forces to a neutral 50/50 regardless of style).
+        var car = CarFactory.DefaultCar();
+        var track = new TrackInfo { Discipline = Discipline.Drag };
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult();
+        DifferentialCalculator.CalculateDifferential(car, track, cAgile, rAgile, new Dictionary<string, string>());
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult();
+        DifferentialCalculator.CalculateDifferential(car, track, cStable, rStable, new Dictionary<string, string>());
+
+        Assert.True(rAgile.DiffAccel < rStable.DiffAccel,
+            $"Agile diff accel lock ({rAgile.DiffAccel}) should be < stable ({rStable.DiffAccel}) even in Drag");
+    }
+
     // ─── DifferentialCalculator — AWD ───────────────────────────────────────
 
     [Fact]
@@ -1347,6 +1644,29 @@ public class CalculatorUnitTests
         Assert.NotNull(r.CenterDiffBias);
         Assert.NotNull(r.DiffFrontAccel);
         Assert.InRange(r.CenterDiffBias!.Value, 0, 100);
+    }
+
+    [Fact]
+    public void Diff_AWD_AgileRotation_MoreRearBiasThanStable()
+    {
+        var car = CarFactory.AWDPerformanceCar();
+        car.DifferentialUpgrade = DifferentialUpgrade.Race;
+        var track = CarFactory.DefaultTrack();
+
+        var cAgile = CarFactory.RelaxedConstraints();
+        cAgile.ChassisRotation = 1.0;
+        var rAgile = new TuneResult();
+        DifferentialCalculator.CalculateDifferential(car, track, cAgile, rAgile, new Dictionary<string, string>());
+
+        var cStable = CarFactory.RelaxedConstraints();
+        cStable.ChassisRotation = -1.0;
+        var rStable = new TuneResult();
+        DifferentialCalculator.CalculateDifferential(car, track, cStable, rStable, new Dictionary<string, string>());
+
+        Assert.NotNull(rAgile.CenterDiffBias);
+        Assert.NotNull(rStable.CenterDiffBias);
+        Assert.True(rAgile.CenterDiffBias!.Value >= rStable.CenterDiffBias!.Value,
+            $"Agile centre bias ({rAgile.CenterDiffBias}) should be >= stable ({rStable.CenterDiffBias})");
     }
 
     [Fact]

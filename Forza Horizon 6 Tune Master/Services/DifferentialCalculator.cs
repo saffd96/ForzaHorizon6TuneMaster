@@ -6,10 +6,10 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 internal static class DifferentialCalculator
 {
-    public static void CalculateDifferential(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex) =>
-        CalculateDifferential(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex);
+    public static void CalculateDifferential(CarCard car, TrackInfo track, TuningConstraints constraints, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateDifferential(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, constraints);
 
-    public static void CalculateDifferential(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex)
+    public static void CalculateDifferential(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, TuningConstraints? constraints = null)
     {
         // Differential() always resolves a part (falls back to a synthetic stock diff), so no
         // null check is needed here.
@@ -34,6 +34,13 @@ internal static class DifferentialCalculator
         // Less grip in winter -> less diff lock to avoid understeer/power-on instability.
         double seasonMul = CalculationHelpers.SeasonGripMultiplier(track.Season, 0.85, 0.15);
 
+        // Driving-style bias: +1 (Agile) loosens the diff so the car rotates more easily
+        // (or, at launch, allows a bit more wheelspin/rotation off the line), -1 (Stable)
+        // tightens it for more straight-line security. Applies in Drag too — it's not about
+        // cornering there, but the same lock still governs launch traction vs. wheelspin.
+        double chassisRotation = constraints?.ChassisRotation ?? 0.0;
+        double rotationMul = 1.0 - chassisRotation * 0.25;
+
         string aspLabel = car.AspirationType switch
         {
             AspirationType.SingleTurbo          => CalculationHelpers.L("Enum_AspirationType_SingleTurbo"),
@@ -56,15 +63,15 @@ internal static class DifferentialCalculator
         {
             // ── AWD: front + rear + center ──────────────────────────────────
             (double rearAccelTarget, double rearDecelTarget) = RearLockTargets(track.Discipline, car.DriveType);
-            rearAccelTarget *= powerMul * wheelbaseFactor * seasonMul;
-            rearDecelTarget *= powerMul * wheelbaseFactor * seasonMul;
+            rearAccelTarget *= powerMul * wheelbaseFactor * seasonMul * rotationMul;
+            rearDecelTarget *= powerMul * wheelbaseFactor * seasonMul * rotationMul;
 
             double rearAccel = ClampToMax(rearAccelTarget, diff.RearLimitedSlipTorqueAccel);
             double rearDecel = hasDecel ? ClampToMax(rearDecelTarget, diff.RearLimitedSlipTorqueDecel) : 0.0;
 
             (double frontAccelTarget, double frontDecelTarget) = FrontLockTargets(track.Discipline);
-            frontAccelTarget *= wheelbaseFactor * seasonMul;
-            frontDecelTarget *= wheelbaseFactor * seasonMul;
+            frontAccelTarget *= wheelbaseFactor * seasonMul * rotationMul;
+            frontDecelTarget *= wheelbaseFactor * seasonMul * rotationMul;
             double frontAccel = ClampToMax(frontAccelTarget, diff.FrontLimitedSlipTorqueAccel);
             double frontDecel = hasDecel ? ClampToMax(frontDecelTarget, diff.FrontLimitedSlipTorqueDecel) : 0.0;
 
@@ -79,6 +86,10 @@ internal static class DifferentialCalculator
                 _                       => 0.03
             };
             if (car.EnginePosition == EnginePosition.Rear) centerBias += 0.03;
+
+            // Driving-style bias: +1 (Agile) sends more torque rearward (more RWD-like, more
+            // rotation), -1 (Stable) sends more forward (more FWD-like, more understeer safety).
+            centerBias += chassisRotation * 0.10;
             centerBias = CalculationHelpers.Clamp(centerBias, 0.30, 0.85);
 
             // Re-bias the rear diff output to account for the centre split.
@@ -100,8 +111,8 @@ internal static class DifferentialCalculator
         {
             // ── FWD: main diff is on the front axle ─────────────────────────
             (double accelTarget, double decelTarget) = FrontLockTargets(track.Discipline);
-            accelTarget *= powerMul * wheelbaseFactor * seasonMul;
-            decelTarget *= powerMul * wheelbaseFactor * seasonMul;
+            accelTarget *= powerMul * wheelbaseFactor * seasonMul * rotationMul;
+            decelTarget *= powerMul * wheelbaseFactor * seasonMul * rotationMul;
 
             double accel = ClampToMax(accelTarget, diff.FrontLimitedSlipTorqueAccel);
             double decel = hasDecel ? ClampToMax(decelTarget, diff.FrontLimitedSlipTorqueDecel) : 0.0;
@@ -118,8 +129,8 @@ internal static class DifferentialCalculator
         {
             // ── RWD: main diff is on the rear axle ──────────────────────────
             (double accelTarget, double decelTarget) = RearLockTargets(track.Discipline, car.DriveType);
-            accelTarget *= powerMul * wheelbaseFactor * seasonMul;
-            decelTarget *= powerMul * wheelbaseFactor * seasonMul;
+            accelTarget *= powerMul * wheelbaseFactor * seasonMul * rotationMul;
+            decelTarget *= powerMul * wheelbaseFactor * seasonMul * rotationMul;
 
             double accel = ClampToMax(accelTarget, diff.RearLimitedSlipTorqueAccel);
             double decel = hasDecel ? ClampToMax(decelTarget, diff.RearLimitedSlipTorqueDecel) : 0.0;

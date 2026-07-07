@@ -144,6 +144,25 @@ public class TuningConstraints : INotifyPropertyChanged
     // ── Center Diff Bias ──────────────────────────────────────────────
     public double CenterDiffBias { get; set; } = 50;
 
+    // ── Driving style preferences ──────────────────────────────────────
+    // -1 = max grip/stability, 0 = discipline default (unchanged behaviour), +1 = max
+    // speed/agility. These bias each calculator's own discipline baseline by a bounded amount
+    // rather than replacing the calculation, so they compose with everything else already
+    // driving that baseline (power, mass, season, weight distribution, etc).
+    private double _aeroBalance;
+    public double AeroBalance
+    {
+        get => _aeroBalance;
+        set { value = CalculationHelpers.Clamp(value, -1.0, 1.0); if (Math.Abs(_aeroBalance - value) < 0.0001) return; _aeroBalance = value; Raise(); }
+    }
+
+    private double _chassisRotation;
+    public double ChassisRotation
+    {
+        get => _chassisRotation;
+        set { value = CalculationHelpers.Clamp(value, -1.0, 1.0); if (Math.Abs(_chassisRotation - value) < 0.0001) return; _chassisRotation = value; Raise(); }
+    }
+
     // ── Data-driven bounds refresh ────────────────────────────────────
     public void ApplyPhysicsBounds(CarCard car, SelectedParts parts, Fh6DatabaseService db)
     {

@@ -105,6 +105,14 @@ internal static class TireCalculator
         barF += seasonPressAdj;
         barR += seasonPressAdj;
 
+        // Driving-style bias: +1 (Agile) raises front pressure / lowers rear pressure (less rear
+        // grip relative to front -> more rotation), -1 (Stable) does the opposite (more rear
+        // grip, more understeer safety). Matches the well-known "pressure up = less grip at that
+        // end" tuning rule.
+        double chassisRotation = constraints?.ChassisRotation ?? 0.0;
+        barF += chassisRotation * 0.12;
+        barR -= chassisRotation * 0.12;
+
         double tpMinF = constraints?.TirePressureFrontMin ?? 1.0;
         double tpMaxF = constraints?.TirePressureFrontMax ?? 5.0;
         double tpMinR = constraints?.TirePressureRearMin  ?? 0.5;

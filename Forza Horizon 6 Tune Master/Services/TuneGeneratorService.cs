@@ -18,27 +18,27 @@ public class TuneGeneratorService
         if (Math.Abs(inertiaFactor - 1.0) > 0.005)
             ex["Inertia"] = string.Format(CalculationHelpers.L("Expl_Inertia"), inertiaFactor);
 
-        AeroCalculator.CalculateAero(car, track, parts, db, r, ex);
+        AeroCalculator.CalculateAero(car, track, parts, db, r, ex, null, c);
         double effectiveMaxKmh = CalculationHelpers.ComputeEffectiveMaxSpeedKmh(car, r);
-        AeroCalculator.CalculateAero(car, track, parts, db, r, ex, effectiveMaxKmh);
+        AeroCalculator.CalculateAero(car, track, parts, db, r, ex, effectiveMaxKmh, c);
         double prevMaxKmh = effectiveMaxKmh;
         effectiveMaxKmh = CalculationHelpers.ComputeEffectiveMaxSpeedKmh(car, r);
         if (Math.Abs(effectiveMaxKmh - prevMaxKmh) > 1)
         {
-            AeroCalculator.CalculateAero(car, track, parts, db, r, ex, effectiveMaxKmh);
+            AeroCalculator.CalculateAero(car, track, parts, db, r, ex, effectiveMaxKmh, c);
             effectiveMaxKmh = CalculationHelpers.ComputeEffectiveMaxSpeedKmh(car, r);
         }
 
-        TireCalculator.CalculateTirePressure(car, track, parts, db, r, ex);
-        AlignmentCalculator.CalculateCamber(car, track, parts, r, ex, effectiveMaxKmh);
-        AlignmentCalculator.CalculateToe(car, track, parts, r, ex, effectiveMaxKmh);
-        AlignmentCalculator.CalculateCaster(car, track, parts, r, ex, effectiveMaxKmh);
-        SuspensionCalculator.CalculateARB(car, track, parts, r, ex);
-        SuspensionCalculator.CalculateSprings(car, track, parts, r, ex);
-        SuspensionCalculator.CalculateRideHeight(car, track, parts, r, ex);
-        SuspensionCalculator.CalculateDampers(car, track, parts, r, ex);
-        BrakeCalculator.CalculateBrakes(car, track, parts, db, r, ex, effectiveMaxKmh);
-        DifferentialCalculator.CalculateDifferential(car, track, parts, db, r, ex);
+        TireCalculator.CalculateTirePressure(car, track, parts, db, r, ex, c);
+        AlignmentCalculator.CalculateCamber(car, track, parts, db, r, ex, effectiveMaxKmh, c);
+        AlignmentCalculator.CalculateToe(car, track, parts, db, r, ex, effectiveMaxKmh, c);
+        AlignmentCalculator.CalculateCaster(car, track, parts, db, r, ex, effectiveMaxKmh, c);
+        SuspensionCalculator.CalculateARB(car, track, parts, db, r, ex, c);
+        SuspensionCalculator.CalculateSprings(car, track, parts, db, r, ex, c);
+        SuspensionCalculator.CalculateRideHeight(car, track, parts, db, r, ex, c);
+        SuspensionCalculator.CalculateDampers(car, track, parts, db, r, ex, c);
+        BrakeCalculator.CalculateBrakes(car, track, parts, db, r, ex, effectiveMaxKmh, c);
+        DifferentialCalculator.CalculateDifferential(car, track, parts, db, r, ex, c);
 
         if (track.Discipline == Discipline.Drag)
         {

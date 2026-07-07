@@ -12,13 +12,13 @@ internal static class SuspensionCalculator
     // pinning the result to the minimum. No spring-rate unit conversion is needed here.
     private const double MmToM = 0.001;
 
-    public static void CalculateARB(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex) =>
-        CalculateARB(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex);
+    public static void CalculateARB(CarCard car, TrackInfo track, TuningConstraints constraints, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateARB(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, constraints);
 
     public static void CalculateARB(CarCard car, TrackInfo track, SelectedParts parts, TuneResult r, Dictionary<string, string> ex) =>
         CalculateARB(car, track, parts, Fh6DatabaseService.Instance, r, ex);
 
-    public static void CalculateARB(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex)
+    public static void CalculateARB(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, TuningConstraints? constraints = null)
     {
         var frontPhys = TuningPhysicsContext.FrontArb(car, parts, db);
         var rearPhys = TuningPhysicsContext.RearArb(car, parts, db);
@@ -53,6 +53,17 @@ internal static class SuspensionCalculator
             (_, DriveType.FWD)               => (0.75, 0.55, "Expl_ARBNote_RoadFWD"),
             (_, _)                           => (0.55, 0.70, "Expl_ARBNote_RoadAWD")
         };
+
+        // Driving-style bias: +1 (Agile) softens the front / stiffens the rear (relatively) so
+        // the rear lets go first and the car rotates more readily; -1 (Stable) does the
+        // opposite. Applies in Drag too — a softer front / stiffer rear balance there shifts
+        // weight transfer at launch, not cornering rotation, but it's the same lever.
+        double chassisRotation = constraints?.ChassisRotation ?? 0.0;
+        if (chassisRotation != 0.0)
+        {
+            baseFrontFraction = CalculationHelpers.Clamp(baseFrontFraction - chassisRotation * 0.15, 0.0, 1.0);
+            baseRearFraction = CalculationHelpers.Clamp(baseRearFraction + chassisRotation * 0.15, 0.0, 1.0);
+        }
 
         // Adjust balance for weight distribution: move stiffness toward the heavier axle.
         double wdShiftF = (wdF - 0.5) * 0.20;
@@ -92,7 +103,6 @@ internal static class SuspensionCalculator
 
     public static void CalculateSprings(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, TuningConstraints? constraints = null)
     {
-        _ = constraints; // kept for backward compat — clamping now uses DB physics directly
         var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
         var rearPhys = TuningPhysicsContext.RearSpringDamper(car, parts, db);
         if (frontPhys == null || rearPhys == null)
@@ -143,6 +153,13 @@ internal static class SuspensionCalculator
             seasonMul *= 0.90;
         hzF *= seasonMul;
         hzR *= seasonMul;
+
+        // Driving-style bias: same lever as ARB/dampers — +1 (Agile) softens the front spring /
+        // stiffens the rear (relatively) so the front lets go of load faster and the car rotates
+        // more readily, -1 (Stable) does the opposite.
+        double chassisRotation = constraints?.ChassisRotation ?? 0.0;
+        hzF *= 1.0 - chassisRotation * 0.06;
+        hzR *= 1.0 + chassisRotation * 0.06;
 
         double springF_nmm = SpringFromHz(hzF, massF);
         double springR_nmm = SpringFromHz(hzR, massR);
@@ -208,6 +225,13 @@ internal static class SuspensionCalculator
         fFrac += seasonOffset;
         rFrac += seasonOffset;
 
+        // Driving-style bias: same lever as the engine-position rake above — +1 (Agile) lowers
+        // the front / raises the rear (more rake -> more front bite, more rotation), -1 (Stable)
+        // does the opposite (less/reverse rake -> more front grip retention, more understeer).
+        double chassisRotation = c.ChassisRotation;
+        fFrac -= chassisRotation * 0.04;
+        rFrac += chassisRotation * 0.04;
+
         double rhF = InterpolateHeight(frontPhys, CalculationHelpers.Clamp(fFrac, 0.0, 1.0));
         double rhR = InterpolateHeight(rearPhys,  CalculationHelpers.Clamp(rFrac, 0.0, 1.0));
 
@@ -220,13 +244,13 @@ internal static class SuspensionCalculator
         ex["RideHeight"] = string.Format(CalculationHelpers.L("Expl_RideHeight_Fmt"), r.RideHeightFront, r.RideHeightRear, CalculationHelpers.L(noteKey));
     }
 
-    public static void CalculateDampers(CarCard car, TrackInfo track, TuningConstraints _, TuneResult r, Dictionary<string, string> ex) =>
-        CalculateDampers(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex);
+    public static void CalculateDampers(CarCard car, TrackInfo track, TuningConstraints constraints, TuneResult r, Dictionary<string, string> ex) =>
+        CalculateDampers(car, track, new SelectedParts(), Fh6DatabaseService.Instance, r, ex, constraints);
 
     public static void CalculateDampers(CarCard car, TrackInfo track, SelectedParts parts, TuneResult r, Dictionary<string, string> ex) =>
         CalculateDampers(car, track, parts, Fh6DatabaseService.Instance, r, ex);
 
-    public static void CalculateDampers(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex)
+    public static void CalculateDampers(CarCard car, TrackInfo track, SelectedParts parts, Fh6DatabaseService db, TuneResult r, Dictionary<string, string> ex, TuningConstraints? constraints = null)
     {
         var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
         var rearPhys = TuningPhysicsContext.RearSpringDamper(car, parts, db);
@@ -285,10 +309,18 @@ internal static class SuspensionCalculator
 
         double seasonMul = CalculationHelpers.SeasonGripMultiplier(track.Season, 0.70, 0.35);
 
-        double rebF = DampingFromSpringAndMass(springF_Nm, massF, frontPhys, dampingRatio, true) * seasonMul;
-        double rebR = DampingFromSpringAndMass(springR_Nm, massR, rearPhys,  dampingRatio, true) * seasonMul;
-        double bmpF = DampingFromSpringAndMass(springF_Nm, massF, frontPhys, dampingRatio * bumpRatio, false) * seasonMul;
-        double bmpR = DampingFromSpringAndMass(springR_Nm, massR, rearPhys,  dampingRatio * bumpRatio, false) * seasonMul;
+        // Driving-style bias: same lever as ARB — +1 (Agile) softens the front / stiffens the
+        // rear (relatively) so weight transfers off the front faster on turn-in (or at launch),
+        // -1 (Stable) does the opposite. Applied to both rebound and bump so the front/rear
+        // balance shifts consistently, not just one damping phase.
+        double chassisRotation = constraints?.ChassisRotation ?? 0.0;
+        double dampFrontMul = 1.0 - chassisRotation * 0.12;
+        double dampRearMul = 1.0 + chassisRotation * 0.12;
+
+        double rebF = DampingFromSpringAndMass(springF_Nm, massF, frontPhys, dampingRatio, true) * seasonMul * dampFrontMul;
+        double rebR = DampingFromSpringAndMass(springR_Nm, massR, rearPhys,  dampingRatio, true) * seasonMul * dampRearMul;
+        double bmpF = DampingFromSpringAndMass(springF_Nm, massF, frontPhys, dampingRatio * bumpRatio, false) * seasonMul * dampFrontMul;
+        double bmpR = DampingFromSpringAndMass(springR_Nm, massR, rearPhys,  dampingRatio * bumpRatio, false) * seasonMul * dampRearMul;
 
         r.ReboundFront = Math.Round(CalculationHelpers.Clamp(rebF, frontPhys.MinDampenReboundRate, frontPhys.MaxDampenReboundRate), 1);
         r.ReboundRear  = Math.Round(CalculationHelpers.Clamp(rebR, rearPhys.MinDampenReboundRate,  rearPhys.MaxDampenReboundRate), 1);
