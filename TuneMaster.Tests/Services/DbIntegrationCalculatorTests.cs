@@ -1212,6 +1212,93 @@ public class DbIntegrationCalculatorTests
             $"geared top speed {r.ActualMaxSpeedKmh} should track the reachable max {effMax:F0}, not overshoot it");
     }
 
+    // Gear spacing is now solved from each car's own cached torque curve (equal wheel-force at the
+    // shift point — see docs/superpowers/specs/2026-07-06-physics-based-gear-spacing-design.md)
+    // instead of a fixed per-discipline ramp. For a normal powerband (torque peak comfortably below
+    // the shift RPM), every upshift should land back at or above the torque peak — the engine never
+    // falls out of its usable powerband. Spread of real cars: peaky turbo, flat torque, high-revving.
+    [Theory]
+    [InlineData(4162)]  // Sprinter Trueno GT-APEX FE — small NA four
+    [InlineData(2636)]
+    [InlineData(1367)]
+    [InlineData(3785)]
+    [InlineData(423)]
+    public async Task Generate_GearShifts_DoNotDropBelowTorquePeak(int carDbId)
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+        var car = BuildCarCard(carDbId);
+        var track = new TrackInfo { Discipline = Discipline.Road };
+
+        var result = new TuneGeneratorService().Generate(car, track, new SelectedParts(), db);
+        Assert.True(result.GearRatios.Count >= 2, "test car should have a multi-gear box");
+
+        double shiftRpm = car.MaxRPM * CalculationHelpers.RevLimitFraction;
+        for (int i = 0; i < result.GearRatios.Count - 1; i++)
+        {
+            double rpmAfterShift = shiftRpm * result.GearRatios[i + 1] / result.GearRatios[i];
+            Assert.True(rpmAfterShift >= car.TorquePeakRPM,
+                $"car {carDbId} shift {i + 1}->{i + 2}: post-shift RPM {rpmAfterShift:F0} fell below torque peak {car.TorquePeakRPM}");
+        }
+    }
+
+    // BuildDisciplineRatios recenters the discipline's own wide-low/tight-high shape on the
+    // crossover-solved step instead of flattening it into one constant percentage (see the spec
+    // doc addendum) — real gear ladders taper this way near-universally (a Lada 2110 and a
+    // 268 km/h turbo build show the same shape), not just draggy cars, so the ratio set should
+    // never come out as a perfectly uniform percentage ladder.
+    [Fact]
+    public async Task Generate_GearSteps_TaperForHighDragCar()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+        var car = BuildCarCard(423); // high CdA ≈ 2.0 fallback estimate — tapers under Road
+        var track = new TrackInfo { Discipline = Discipline.Road };
+
+        var result = new TuneGeneratorService().Generate(car, track, new SelectedParts(), db);
+        Assert.True(result.GearRatios.Count >= 4, "test car should have at least 4 gears");
+
+        var steps = new List<double>();
+        for (int i = 0; i < result.GearRatios.Count - 1; i++)
+            steps.Add(result.GearRatios[i + 1] / result.GearRatios[i]);
+
+        Assert.True(steps.Max() - steps.Min() > 0.02,
+            $"expected non-uniform gear steps for a draggy car, got {string.Join(", ", steps.Select(s => s.ToString("F3")))}");
+    }
+
+    // Landing RPM (the RPM the engine drops to right after an upshift) should trend upward toward
+    // redline as gear number increases — the same shape real gearbox calculator tools show for
+    // road cars regardless of drag (see the spec doc addendum). Checked on the last intermediate
+    // shift vs. the first, since the very last shift (into the FD-matched top gear) is governed by
+    // an independent target-top-speed constraint and isn't expected to continue the trend exactly.
+    [Theory]
+    [InlineData(4162)]
+    [InlineData(1367)]
+    [InlineData(1200)]
+    public async Task Generate_LandingRpm_TrendsUpwardTowardRedline(int carDbId)
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+        var car = BuildCarCard(carDbId);
+        var track = new TrackInfo { Discipline = Discipline.Road };
+
+        var result = new TuneGeneratorService().Generate(car, track, new SelectedParts(), db);
+        Assert.True(result.GearRatios.Count >= 4, "test car should have at least 4 gears");
+
+        double shiftRpm = car.MaxRPM * CalculationHelpers.RevLimitFraction;
+        var landingRpm = new List<double>();
+        for (int i = 0; i < result.GearRatios.Count - 1; i++)
+            landingRpm.Add(shiftRpm * result.GearRatios[i + 1] / result.GearRatios[i]);
+
+        double first = landingRpm[0];
+        double lastIntermediate = landingRpm[^2]; // excludes the shift into the top gear
+        Assert.True(lastIntermediate > first,
+            $"car {carDbId}: expected landing RPM to trend upward ({string.Join(", ", landingRpm.Select(l => l.ToString("F0")))})");
+    }
+
     [Fact]
     public async Task Generate_PostValidation_FixesGearRatios()
     {

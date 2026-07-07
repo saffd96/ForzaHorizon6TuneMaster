@@ -41,20 +41,36 @@ internal static class GearingCalculator
 
         double pwRatio = car.PowerHP / Math.Max(car.TotalMass / 1000.0, 0.1);
         var (firstGear, stepMin, stepMax, _) = GetDisciplineGearParams(track.Discipline, pwRatio, car.FuelType);
+        // Same adjustments CalculateGearing applies before solving its own crossover step — without
+        // these, a turbo/centrifugal car (or a Drag car on a Quarter/Mile strip) would have its gear
+        // COUNT solved against a different [stepMin, stepMax] envelope than its actual RATIOS,
+        // silently disagreeing with each other.
+        ApplyAspirationStepAdjustment(car.AspirationType, car.AntiLag, ref stepMin, ref stepMax);
+        if (track.Discipline == Discipline.Drag)
+            ApplyDragDistanceSpacing(track.DragDistance, ref stepMin, ref stepMax);
 
-        // Speed factor a gear covers. Start from the discipline's own ratio spacing (the per-shift
-        // RPM drop a tuner accepts → keeps the count coherent with the ratios that get built), then
-        // let the ENGINE'S character nudge it: a PEAKY engine (torque peaks high, near the limiter)
-        // only pulls up top and wants closer gears (smaller band → more gears); a FLAT, torquey one
-        // pulls from low RPM and can run wider gears (fewer). torquePeakRatio ≈ 0.45 (flat) … 0.78
-        // (peaky); the effect is bounded so it refines the count by ~a gear rather than dominating
-        // (an unbounded powerband band collapsed to "10 for everything" / "2 for everything").
-        double avgStep = CalculationHelpers.Clamp((stepMin + stepMax) / 2.0, 0.55, 0.90);
-        double bandDisc = 1.0 / avgStep;
-        double tqRatio = car.MaxRPM > 0 && car.TorquePeakRPM > 0
-            ? (double)car.TorquePeakRPM / car.MaxRPM : 0.55;
-        double engineFactor = CalculationHelpers.Clamp(1.0 + (0.55 - tqRatio) * 0.45, 0.90, 1.12);
-        double band = CalculationHelpers.Clamp(bandDisc * engineFactor, 1.28, 1.62);
+        // Speed factor a gear covers. Prefer the torque-curve crossover step (same physics as
+        // BuildDisciplineRatios — see docs/superpowers/specs/2026-07-06-physics-based-gear-spacing-design.md):
+        // a PEAKY engine wants a wider step (smaller x → bigger band → fewer, more widely-spaced
+        // gears), a FLAT/torquey one wants a tighter step (x close to 1 → smaller band → more gears).
+        // Falls back to the old two-point (TorquePeakRPM/MaxRPM) heuristic when there's no cached
+        // torque curve to solve from.
+        double? crossoverStep = TorqueCurveSampler.SolveCrossoverStep(
+            car.CachedTorqueCurveNm, car.MaxRPM, rpmShift, stepMin, stepMax);
+        double band;
+        if (crossoverStep.HasValue)
+        {
+            band = CalculationHelpers.Clamp(1.0 / crossoverStep.Value, 1.28, 1.62);
+        }
+        else
+        {
+            double avgStep = CalculationHelpers.Clamp((stepMin + stepMax) / 2.0, 0.55, 0.90);
+            double bandDisc = 1.0 / avgStep;
+            double tqRatio = car.MaxRPM > 0 && car.TorquePeakRPM > 0
+                ? (double)car.TorquePeakRPM / car.MaxRPM : 0.55;
+            double engineFactor = CalculationHelpers.Clamp(1.0 + (0.55 - tqRatio) * 0.45, 0.90, 1.12);
+            band = CalculationHelpers.Clamp(bandDisc * engineFactor, 1.28, 1.62);
+        }
 
         double tireCirc = Math.PI * car.DrivenWheelDiameterInch * PhysicsConstants.InchToMeter;
 
@@ -225,15 +241,20 @@ internal static class GearingCalculator
         }
     }
 
-    // Build a descending ratio set from the discipline's first-gear height and gear spacing:
-    // gear 1 = first, each next gear = previous × step, where step ramps from stepMin (big drops
-    // between the low gears) up to stepMax (close ratios up top).
+    // Build a descending ratio set from the discipline's first-gear height and gear spacing.
+    // When resolvedStep is supplied (the torque-curve crossover solution — see
+    // docs/superpowers/specs/2026-07-06-physics-based-gear-spacing-design.md), every gear uses
+    // that single physically-derived step: gear 1 = first, each next gear = previous × resolvedStep.
+    // Without it (no cached torque curve — e.g. a hand-built CarCard in a unit test), the step
+    // ramps from stepMin (big drops between the low gears) up to stepMax (close ratios up top),
+    // same as before this change.
     //
     // Naively multiplying down can underflow the legal minimum on cars with many gears, which used
     // to leave the top gears all piled up on GearRatioMin (several identical 0.48 gears). To avoid
     // that we build the raw ramped shape, then — only if it underflows — re-fit it in log space
     // between the first gear and the floor, keeping every gear strictly descending and distinct.
-    internal static List<double> BuildDisciplineRatios(double first, double stepMin, double stepMax, int count, double topFloor = 0, double topCeiling = 0)
+    internal static List<double> BuildDisciplineRatios(double first, double stepMin, double stepMax, int count,
+        double topFloor = 0, double topCeiling = 0, double? resolvedStep = null)
     {
         var list = new List<double>();
         if (count <= 0) return list;
@@ -250,13 +271,41 @@ internal static class GearingCalculator
         double maxTop = topCeiling > 0 ? Math.Min(topCeiling, first - 0.01) : first - 0.01;
         if (maxTop < minTop) maxTop = minTop;
 
-        // Raw ramped progression (tighter steps up top).
+        // Raw ramped progression (tighter steps up top). Real gearboxes taper this way even with
+        // negligible aerodynamic drag (a Lada 2110 and a low-revving car both show the same wide-
+        // low/tight-high shape as a 268 km/h turbo build) — it's a near-universal layout
+        // convention, not purely a drag effect. So even with a physically-solved crossover step
+        // (resolvedStep), we keep the discipline's own wide-to-tight shape and only RECENTER it on
+        // that step (instead of on the discipline's plain stepMin/stepMax midpoint) — the physical
+        // solve still shifts the whole car's gearing tighter or looser (peaky vs. torquey engine),
+        // it just no longer flattens the shape into one constant percentage.
+        //
+        // (A separate per-gear drag-reserve fix was tried on top of this and removed: once the
+        // baseline already tapers, that fix's own iterative tightening interacted badly with the
+        // final-drive-vs-top-speed refit below and reintroduced sharp last-gear jumps instead of
+        // removing them — see git history for the attempt.)
         var raw = new double[count];
         raw[0] = first;
         for (int i = 1; i < count; i++)
         {
             double t = count > 2 ? (double)(i - 1) / (count - 2) : 0.5;
-            double step = stepMin + (stepMax - stepMin) * CalculationHelpers.Clamp(t, 0.0, 1.0);
+            t = CalculationHelpers.Clamp(t, 0.0, 1.0);
+            double step;
+            if (resolvedStep.HasValue)
+            {
+                // Same total spread as the no-curve fallback below (stepMax - stepMin) — just
+                // recentered on the physically-solved average instead of run flat from stepMin to
+                // stepMax. An earlier version damped this to 45% of the discipline's span and the
+                // resulting taper was too faint to see next to real gearbox data (e.g. a Ferrari
+                // F40's 6-speed spans steps 0.54 to 0.82 — a much wider swing than a shrunk spread
+                // could ever produce here).
+                double spread = stepMax - stepMin;
+                step = CalculationHelpers.Clamp(resolvedStep.Value + (t - 0.5) * spread, stepMin, stepMax);
+            }
+            else
+            {
+                step = stepMin + (stepMax - stepMin) * t;
+            }
             raw[i] = raw[i - 1] * step;
         }
 
@@ -338,7 +387,14 @@ internal static class GearingCalculator
         double topGearFloor = targetKmh > 1.0 ? kFd / (c.FinalDriveMax * targetKmh) : 0.0;
         double topGearCeiling = targetKmh > 1.0 && c.FinalDriveMin > 0.01 ? kFd / (c.FinalDriveMin * targetKmh) : 0.0;
 
-        var ratios = BuildDisciplineRatios(firstGear, stepMin, stepMax, gearCount, topGearFloor, topGearCeiling);
+        // Physically-derived step (equal wheel-force at the shift RPM) from the car's own torque
+        // curve, clamped into this discipline's [stepMin, stepMax] envelope. Null when there's no
+        // cached curve to work from — BuildDisciplineRatios falls back to the plain ramp then.
+        double shiftRpm = car.MaxRPM * targetRpmFraction;
+        double? resolvedStep = TorqueCurveSampler.SolveCrossoverStep(
+            car.CachedTorqueCurveNm, car.MaxRPM, shiftRpm, stepMin, stepMax);
+
+        var ratios = BuildDisciplineRatios(firstGear, stepMin, stepMax, gearCount, topGearFloor, topGearCeiling, resolvedStep);
 
         if (ratios.Count == 0)
         {

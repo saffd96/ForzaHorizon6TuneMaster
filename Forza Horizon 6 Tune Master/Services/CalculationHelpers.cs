@@ -54,19 +54,7 @@ internal static class CalculationHelpers
 
         if (cdATotal < 0.3) cdATotal = 0.3; 
 
-        double crr = car.TireType switch
-        {
-            TireType.Slick     => 0.004,
-            TireType.SemiSlick => 0.005,
-            TireType.Sport     => 0.005,
-            TireType.Street    => 0.006,
-            TireType.Stock     => 0.007,
-            TireType.Rally     => 0.008,
-            TireType.Winter    => 0.009,
-            TireType.Offroad   => 0.011,
-            TireType.Drag      => 0.005,
-            _                  => 0.006
-        };
+        double crr = RollingResistanceCoefficient(car.TireType);
 
         double powerW = car.PowerHP * PhysicsConstants.HpToWatt;
         const double rho = PhysicsConstants.AirDensity;
@@ -84,6 +72,22 @@ internal static class CalculationHelpers
         }
         return Math.Round(Math.Clamp(v * PhysicsConstants.MsToKmh, 60.0, TargetSpeedCapKmh));
     }
+
+    // Rolling-resistance coefficient by tire compound. Shared between ComputeEffectiveMaxSpeedKmh
+    // (top-speed solve) and GearingCalculator's drag-taper gear fix — same physics, one table.
+    internal static double RollingResistanceCoefficient(TireType tireType) => tireType switch
+    {
+        TireType.Slick     => 0.004,
+        TireType.SemiSlick => 0.005,
+        TireType.Sport     => 0.005,
+        TireType.Street    => 0.006,
+        TireType.Stock     => 0.007,
+        TireType.Rally     => 0.008,
+        TireType.Winter    => 0.009,
+        TireType.Offroad   => 0.011,
+        TireType.Drag      => 0.005,
+        _                  => 0.006
+    };
 
     internal static double GetSeasonGripFactor(Season s) => s switch
     {

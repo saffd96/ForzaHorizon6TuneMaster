@@ -8,9 +8,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6f5aca4a-8e95-4953-8a4a-45b281d20313" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/TorqueCurveSampler.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/TuneMaster.Tests/Services/TorqueCurveSamplerTests.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/PartDisplayNameResolver.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/PartDisplayNameResolver.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/TiresWheelsViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/ViewModels/TiresWheelsViewModel.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/CalculationHelpers.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/CalculationHelpers.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/GearingCalculator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Services/GearingCalculator.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ROADMAP.md" beforeDir="false" afterPath="$PROJECT_DIR$/ROADMAP.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TuneMaster.Tests/Services/DbIntegrationCalculatorTests.cs" beforeDir="false" afterPath="$PROJECT_DIR$/TuneMaster.Tests/Services/DbIntegrationCalculatorTests.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -127,7 +131,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="fix: aerodynamic" />
     <MESSAGE value="fix gering" />
     <MESSAGE value="update formulas" />
     <MESSAGE value="tests" />
@@ -152,7 +155,8 @@
     <MESSAGE value="add qol 11" />
     <MESSAGE value="add selection for changed parts" />
     <MESSAGE value="add remote db update" />
-    <option name="LAST_COMMIT_MESSAGE" value="add remote db update" />
+    <MESSAGE value="fix: tires" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix: tires" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
