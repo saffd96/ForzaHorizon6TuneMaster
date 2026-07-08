@@ -113,10 +113,10 @@ internal static class TireCalculator
         barF += chassisRotation * 0.12;
         barR -= chassisRotation * 0.12;
 
-        double tpMinF = constraints?.TirePressureFrontMin ?? 1.0;
-        double tpMaxF = constraints?.TirePressureFrontMax ?? 5.0;
-        double tpMinR = constraints?.TirePressureRearMin  ?? 0.5;
-        double tpMaxR = constraints?.TirePressureRearMax  ?? 5.0;
+        double tpMinF = constraints?.TirePressureFrontMin ?? TuningConstraints.TirePressureAbsoluteMin;
+        double tpMaxF = constraints?.TirePressureFrontMax ?? TuningConstraints.TirePressureAbsoluteMax;
+        double tpMinR = constraints?.TirePressureRearMin  ?? TuningConstraints.TirePressureAbsoluteMin;
+        double tpMaxR = constraints?.TirePressureRearMax  ?? TuningConstraints.TirePressureAbsoluteMax;
         r.TirePressureFront = Math.Round(CalculationHelpers.Clamp(barF, tpMinF, tpMaxF), 2);
         r.TirePressureRear  = Math.Round(CalculationHelpers.Clamp(barR, tpMinR, tpMaxR), 2);
         ex["TirePressure"] = string.Format(CalculationHelpers.L("Expl_TirePressure_Fmt"), r.TirePressureFront, r.TirePressureRear, reason);

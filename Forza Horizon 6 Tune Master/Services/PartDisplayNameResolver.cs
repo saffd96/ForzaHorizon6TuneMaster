@@ -56,6 +56,7 @@ public class PartDisplayNameResolver
     private static readonly Dictionary<int, string> TireCompoundIdOverrides = new()
     {
         [17] = "Upgrades_IDS_Name_298", // DriftL1 → "Drift Tire Compound"
+        [20] = "Upgrades_IDS_Name_298", // FormulaDrift → "Drift Tire Compound" (TireModelName is mislabeled "Street_OW")
         // On "Forza Edition" cars the drag row's TireModelName is mislabeled "Slick_FE" instead
         // of "*_Drag" (unlike the same car's non-FE trim), colliding with that car's other Slick
         // tiers and getting silently dropped by the compound dropdown's name-based dedup.

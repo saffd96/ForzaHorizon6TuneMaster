@@ -13,12 +13,15 @@ public class TuningConstraints : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
     // ── Tire Pressure ────────────────────────────────────────────────────
-    private double _tirePressureFrontMin = 1.0;
-    private double _tirePressureFrontMax = 3.8;
+    // Single source of truth for the tire-pressure slider range (front and rear share it).
+    public const double TirePressureAbsoluteMin = 1.0;
+    public const double TirePressureAbsoluteMax = 3.8;
+    private double _tirePressureFrontMin = TirePressureAbsoluteMin;
+    private double _tirePressureFrontMax = TirePressureAbsoluteMax;
     [JsonPropertyOrder(1)] public double TirePressureFrontMin { get => _tirePressureFrontMin; set { if (SetMin(ref _tirePressureFrontMin, ref _tirePressureFrontMax, value)) { Raise(); Raise(nameof(TirePressureFrontMax)); } } }
     [JsonPropertyOrder(0)] public double TirePressureFrontMax { get => _tirePressureFrontMax; set { if (SetMax(ref _tirePressureFrontMin, ref _tirePressureFrontMax, value)) { Raise(); Raise(nameof(TirePressureFrontMin)); } } }
-    private double _tirePressureRearMin = 0.5;
-    private double _tirePressureRearMax = 5.0;
+    private double _tirePressureRearMin = TirePressureAbsoluteMin;
+    private double _tirePressureRearMax = TirePressureAbsoluteMax;
     public double TirePressureRearMin { get => _tirePressureRearMin; set { if (SetMin(ref _tirePressureRearMin, ref _tirePressureRearMax, value)) { Raise(); Raise(nameof(TirePressureRearMax)); } } }
     public double TirePressureRearMax { get => _tirePressureRearMax; set { if (SetMax(ref _tirePressureRearMin, ref _tirePressureRearMax, value)) { Raise(); Raise(nameof(TirePressureRearMin)); } } }
 
@@ -166,6 +169,13 @@ public class TuningConstraints : INotifyPropertyChanged
     // ── Data-driven bounds refresh ────────────────────────────────────
     public void ApplyPhysicsBounds(CarCard car, SelectedParts parts, Fh6DatabaseService db)
     {
+        // Fixed, car-independent range (see TirePressureAbsoluteMin/Max). Always reset here
+        // so stale saved profiles can't keep carrying an out-of-range bound forward.
+        TirePressureFrontMin = TirePressureAbsoluteMin;
+        TirePressureFrontMax = TirePressureAbsoluteMax;
+        TirePressureRearMin = TirePressureAbsoluteMin;
+        TirePressureRearMax = TirePressureAbsoluteMax;
+
         var fSp = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
         var rSp = TuningPhysicsContext.RearSpringDamper(car, parts, db);
 
