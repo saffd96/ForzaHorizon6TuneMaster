@@ -50,7 +50,14 @@ internal static class CalculationHelpers
         // reads a little lower than CarCard.MaxSpeedKmh (which is a quick body-drag-only label).
         double cdABody = car.CdABodyEstimate;
         const double AeroDragFactor = 0.001787;
-        double cdATotal = cdABody + (r.AeroFront + r.AeroRear) * AeroDragFactor;
+        // GameDragScale is the DB's own per-car aero-drag scale (Data_Car.GameDragScale) — the
+        // sibling of GameDownforceScale, which AeroCalculator already applies to wing downforce.
+        // It was previously loaded and never used, so every car's wing-induced drag was computed
+        // as if this scale were 1.0 regardless of the car's real value (0.8–0.95 for the two
+        // profiles that surfaced this). Applied only to the wing/downforce-derived term, not
+        // cdABody — the body figure is back-solved per-car from that car's own recorded top
+        // speed, which already reflects whatever drag scale the game itself used.
+        double cdATotal = cdABody + (r.AeroFront + r.AeroRear) * AeroDragFactor * car.GameDragScale;
 
         if (cdATotal < 0.3) cdATotal = 0.3; 
 

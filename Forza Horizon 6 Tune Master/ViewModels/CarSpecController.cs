@@ -119,9 +119,18 @@ internal class CarSpecController
         // We apply a 0.80 correction factor to strip out these non-aero power sinks —
         // calibrated against known CdA values (GT-R real CdA≈0.56, raw solve gives
         // ~1.02; with 0.80 → 0.82, close enough for physics purposes).
-        if (car.PowerHP > 0 && dbCar.TopSpeedMph > 10)
+        if (car.PowerHP > 0 && (dbCar.TopSpeedMph > 10 || dbCar.SimTopSpeed > 5))
         {
-            double vMaxMs = dbCar.TopSpeedMph * 0.44704; // mph → m/s
+            // TopSpeedMph is the game's advertised top speed, which for many cars is capped by
+            // the STOCK gearbox rather than by aerodynamics/power (e.g. an economy coupe never
+            // geared to actually reach its aero-limited speed) — back-solving CdA from a
+            // gearing-limited figure fabricates far too much drag. SimTopSpeed (already m/s) is
+            // an independent sim-derived figure that on 636 DB cars agrees with TopSpeedMph
+            // within ~2% on average, but for the gearing-limited outliers it is up to 2.4×
+            // higher — i.e. closer to the true aero ceiling. Whichever of the two is LOWER is
+            // the one more likely explained by a non-aero limiter (gearing, stale data), so the
+            // higher of the two is the safer anchor for a body-drag solve.
+            double vMaxMs = Math.Max(dbCar.TopSpeedMph * 0.44704, dbCar.SimTopSpeed); // mph → m/s
             double powerW = car.PowerHP * PhysicsConstants.HpToWatt;
             // Solve P = ½ρCdAv³ for raw CdA, then correct for non-aero losses:
             double cdA = 2.0 * powerW / (PhysicsConstants.AirDensity * vMaxMs * vMaxMs * vMaxMs);
@@ -130,6 +139,8 @@ internal class CarSpecController
             car.Cd = cdA;
             car.FrontalAreaM2 = 1.0; // CdABodyEstimate → cdA × 1.0
         }
+
+        car.GameDragScale = dbCar.GameDragScale > 0 ? dbCar.GameDragScale : 1.0;
 
         NotifyCarDisplayProperties?.Invoke();
     }

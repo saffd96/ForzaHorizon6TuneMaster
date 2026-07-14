@@ -261,6 +261,11 @@ public class CarCard : NotifyBase
         set { Set(ref _frontalAreaM2, value); OnPropertyChanged(nameof(MaxSpeedKmh)); }
     }
 
+    // Per-car aero drag scale from the DB (Data_Car.GameDragScale) — the sibling of
+    // GameDownforceScale (already used to scale wing downforce in AeroCalculator). Defaults to
+    // 1.0 (no scaling) for profiles saved before this field existed.
+    public double GameDragScale { get; set; } = 1.0;
+
     [JsonIgnore]
     public double CdABodyEstimate
     {

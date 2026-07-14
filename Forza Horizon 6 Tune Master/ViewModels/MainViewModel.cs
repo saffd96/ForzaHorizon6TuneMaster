@@ -1241,13 +1241,19 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         var db = Fh6DatabaseService.Instance;
         
         // Only override Tire Type when a compound is actually fitted; otherwise keep
-        // the CarCard default (Sport, crr=0.005). Previously MapTierFromLevel(null) 
-        // returned Stock (crr=0.007), adding ~40 % extra rolling resistance for every 
-        // car on first load and further lowering the already-underestimated top speed. 
+        // the CarCard default (Sport, crr=0.005). Previously MapTierFromLevel(null)
+        // returned Stock (crr=0.007), adding ~40 % extra rolling resistance for every
+        // car on first load and further lowering the already-underestimated top speed.
 
+        // NOT MapTierFromLevel: List_UpgradeTireCompound.Level is a fixed GAME-WIDE code
+        // (0/1/15=street, 2=sport, 3/4=semi-slick, 5=rally, 6=slick, 7=offroad, 8=snow,
+        // 9=drag, 10-12=vintage race), verified across the whole DB — it does NOT line up
+        // with TireType's declaration order (…, Offroad=6, Drag=7, Winter=8). Ordinal mapping
+        // clamped Level=9 (Drag) to index 8 = Winter, so every car with a Drag compound
+        // silently got Winter's rolling resistance (0.009 vs Drag's real 0.005) and any other
+        // code keyed on TireType saw "Winter" instead of "Drag".
         if (_selectedParts.TireCompoundPartId != null)
-            car.TireType = MapTierFromLevel<TireType>(_selectedParts.TireCompoundPartId.Value,
-                id => db.GetTireCompoundById(id)?.Level ?? 0);
+            car.TireType = TireTypeFromCompoundLevel(db.GetTireCompoundById(_selectedParts.TireCompoundPartId.Value)?.Level ?? 0);
         car.SuspensionUpgrade = MapTierFromLevel<SuspensionUpgrade>(_selectedParts.SpringDamperPartId,
             id => db.GetSpringDamperById(id)?.Level ?? 0);
         car.BrakesUpgrade = MapTierFromLevel<BrakesUpgrade>(_selectedParts.BrakePartId,
@@ -1428,6 +1434,22 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         int idx = Math.Clamp(level, 0, values.Length - 1);
         return (T)values.GetValue(idx)!;
     }
+
+    // List_UpgradeTireCompound.Level's game-wide meaning, confirmed against every car in the DB
+    // (see MapPartIdsToEnums) — direct lookup instead of MapTierFromLevel's ordinal assumption.
+    private static TireType TireTypeFromCompoundLevel(int level) => level switch
+    {
+        0 or 1 or 15 => TireType.Street,
+        2 => TireType.Sport,
+        3 or 4 => TireType.SemiSlick,
+        5 => TireType.Rally,
+        6 => TireType.Slick,
+        7 => TireType.Offroad,
+        8 => TireType.Winter,
+        9 => TireType.Drag,
+        10 or 11 or 12 => TireType.Sport, // vintage/classic race compounds — closest modern grip tier
+        _ => TireType.Street
+    };
 
     private void NotifyCarDisplayProperties()
     {

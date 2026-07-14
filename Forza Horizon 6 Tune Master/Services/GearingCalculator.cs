@@ -224,8 +224,17 @@ internal static class GearingCalculator
 
         // Sanity cap: the trap speed must not exceed what the car can physically
         // reach (the stock top speed with this power), and the absolute floor is
-        // 80 km/h for drivability.
-        double physCeiling = Math.Max(effectiveMaxKmh * DragSpeedFactor(distance), trapKmh);
+        // 80 km/h for drivability. The Hale formula is an empirical fit that knows
+        // nothing about THIS car's actual drag (Cd/CdA) — for a light, very high-power,
+        // very draggy build (common on drag cars loaded with wings/scoops) it can predict
+        // a trap speed the car could never physically reach. Previously this was
+        // `Math.Max(physCeiling, trapKmh)`, which made the cap a no-op (the max of a
+        // value and the ceiling is never less than the ceiling, but here it was compared
+        // against the value it was supposed to bound) — the impossible trapKmh always
+        // passed through uncapped, pulling the final drive down toward its floor to chase
+        // a speed the car can't reach and leaving the gearing stretched too tall for the
+        // engine's real usable range.
+        double physCeiling = effectiveMaxKmh * DragSpeedFactor(distance);
         return Math.Clamp(Math.Min(trapKmh, physCeiling), 80.0, 500.0);
     }
 
@@ -260,7 +269,25 @@ internal static class GearingCalculator
         if (count <= 0) return list;
 
         first = CalculationHelpers.Clamp(first, CalculationHelpers.GearRatioMin, CalculationHelpers.GearRatioMax);
-        if (count == 1) { list.Add(Math.Round(first, 2)); return list; }
+        if (count == 1)
+        {
+            // A single-speed box (EVs, direct-drive hypercars like the Regera) has no separate
+            // first/top split — this one ratio IS the top gear. It must land in the same
+            // FD-reachable [topFloor, topCeiling] band the top gear of a multi-gear box gets
+            // reconciled into below, or the car is stuck with a short, launch-sized ratio the
+            // final drive can never stretch far enough to compensate — capping top speed well
+            // under the car's real potential (final drive pinned at its floor).
+            double single = first;
+            if (topFloor > 0 || topCeiling > 0)
+            {
+                double loSingle = Math.Max(CalculationHelpers.GearRatioMin, topFloor);
+                double hiSingle = topCeiling > 0 ? topCeiling : CalculationHelpers.GearRatioMax;
+                if (hiSingle < loSingle) hiSingle = loSingle;
+                single = CalculationHelpers.Clamp(first, loSingle, hiSingle);
+            }
+            list.Add(Math.Round(single, 2));
+            return list;
+        }
 
         // The top gear must stay within the range the final drive can gear to the target top speed:
         //   minTop  — tallest top gear (FD at its MAX); below it the geared top speed overshoots the
