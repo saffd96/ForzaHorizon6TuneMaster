@@ -1262,10 +1262,17 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             id => db.GetDifferentialById(id)?.Level ?? 0);
 
         car.HasRearAero = _selectedParts.RearWingPartId != null;
-        // A non-stock front bumper/splitter with an aero physics profile adds front downforce.
+        // A front bumper/splitter adds front downforce only if its resolved aero physics
+        // actually produce any — AeroPhysicsID > 0 alone isn't enough (see
+        // TuningPhysicsContext.HasRealAero: IDs 1/2/3/20 are shared zero-downforce placeholders
+        // that every plain stock/cosmetic bumper points at, including on widebody kits whose
+        // only bumper option is one of these — so a widebody's real aero profile, if any, was
+        // never picked up here).
         var frontBumper = _selectedParts.FrontBumperPartId != null
             ? db.GetFrontBumperById(_selectedParts.FrontBumperPartId.Value) : null;
-        car.HasFrontAero = frontBumper is { AeroPhysicsID: > 0 };
+        var frontAeroPhys = frontBumper != null && frontBumper.AeroPhysicsID > 0
+            ? db.GetAeroPhysics(frontBumper.AeroPhysicsID) : null;
+        car.HasFrontAero = TuningPhysicsContext.HasRealAero(frontAeroPhys);
         car.HasFrontARB = _selectedParts.AntiSwayFrontPartId != null;
         car.HasRearARB = _selectedParts.AntiSwayRearPartId != null;
     }

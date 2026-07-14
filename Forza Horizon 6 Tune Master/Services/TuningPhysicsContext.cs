@@ -246,17 +246,28 @@ internal static class TuningPhysicsContext
     }
 
     // Front bumpers/splitters are keyed by CarBodyId (not Ordinal). When no specific bumper
-    // is selected, fall back to a non-stock bumper that actually carries an aero profile —
-    // a stock bumper usually has none (AeroPhysicsID == 0), which is why HasFrontAero only
-    // turns true for a fitted aero front bumper.
+    // is selected, fall back to a non-stock bumper that actually carries a real aero profile.
+    // AeroPhysicsID > 0 is NOT enough on its own: IDs 1/2/3/20 are shared "no-op" placeholder
+    // physics rows (750+ front-bumper entries across the DB point at them) with
+    // Downforce0 == Downforce1 == 0 — every plain stock bumper carries one of these, not a
+    // real ID of 0. Must resolve the physics and check its actual downforce range.
     private static DbUpgradeFrontBumper? ResolveFrontBumperUpgrade(CarCard car, SelectedParts parts, Fh6DatabaseService db)
     {
         if (parts.FrontBumperPartId.HasValue)
             return db.GetFrontBumperById(parts.FrontBumperPartId.Value);
         var bumpers = db.GetFrontBumpers(car.CarBodyId);
-        return bumpers.FirstOrDefault(p => !p.IsStock && p.AeroPhysicsID > 0)
-            ?? bumpers.FirstOrDefault(p => p.AeroPhysicsID > 0);
+        bool HasAero(DbUpgradeFrontBumper p) => p.AeroPhysicsID > 0 && HasRealAero(db.GetAeroPhysics(p.AeroPhysicsID));
+        return bumpers.FirstOrDefault(p => !p.IsStock && HasAero(p))
+            ?? bumpers.FirstOrDefault(HasAero)
+            ?? bumpers.FirstOrDefault(p => p.AeroPhysicsID > 0)
+            ?? bumpers.FirstOrDefault();
     }
+
+    // A resolved aero-physics row is only "real" if it actually produces downforce — IDs
+    // 1/2/3/20 (and similar shared placeholders) exist purely as "no aero" filler and would
+    // otherwise pass a naive AeroPhysicsID > 0 check.
+    internal static bool HasRealAero(DbAeroPhysics? phys) =>
+        phys != null && (phys.Downforce0 > 0 || phys.Downforce1 > 0);
 
     // ── Synthetic fallbacks for cars/tests without DB part records ──────
     private static DbSpringDamperPhysics FallbackSpringDamper(CarCard car, bool front)
