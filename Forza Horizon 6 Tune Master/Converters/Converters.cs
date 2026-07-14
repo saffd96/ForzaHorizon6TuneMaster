@@ -156,7 +156,11 @@ public class UnitValueConverter : IMultiValueConverter
                         :                           $"{val * 10.0:F1} {loc.T("UnitNmm")}",
             "height"   => imp ? $"{val / 25.4:F2}{loc.T("UnitInch")}" : $"{val:F0} {loc.T("UnitMm")}",
             "speed"    => imp ? $"~{val * 0.6214:F0} {loc.T("UnitMph")}" : $"~{val:F0} {loc.T("UnitKmh")}",
-            "mass"     => imp ? $"{val * 2.2046:F0} {loc.T("UnitLb")}"    : $"{val:F0} {loc.T("UnitKg")}",
+            // F1 (not F0): many engine bolt-ons (valves, camshaft) carry sub-1kg mass deltas —
+            // whole-kg rounding could show the identical number before/after a real part change
+            // (e.g. 1156.66 -> 1156.60 both round to 1157), making a correctly-applied change
+            // look like it did nothing.
+            "mass"     => imp ? $"{val * 2.2046:F1} {loc.T("UnitLb")}"    : $"{val:F1} {loc.T("UnitKg")}",
             "aero"     => imp ? $"{val * 2.2046:F0} {loc.T("UnitLb")}"    : $"{val:F0} {loc.T("UnitKg")}",
             "power"    => pu == PowerUnit.KW ? $"{val * 0.7457:F0} {loc.T("UnitKw")}"
                         : pu == PowerUnit.PS ? $"{val * 1.01387:F0} {loc.T("UnitPs")}"

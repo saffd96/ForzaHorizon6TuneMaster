@@ -207,10 +207,50 @@ internal static class TuningPhysicsContext
         }
         else drivelineMI = stockDrivelineMI;
 
-        double currentTotal = engineMI + flyMI + drivelineMI;
+        // Wheel/tyre rotational inertia: I ≈ k·m·r² per wheel (thin-ring/disk hybrid — k=0.6
+        // is a standard automotive-engineering approximation between a solid disk (0.5) and a
+        // thin ring (1.0)), two wheels per axle. `m` is List_Wheels' own kg figure (the bare
+        // rim — no separate tyre-mass field exists anywhere in the DB, see CLAUDE.md), `r` is
+        // the car's actual rolling radius (rim + tyre sidewall), so a taller/wider tyre profile
+        // still raises the effective radius even though only the rim's mass is counted.
+        double stockWheelMI = 0, currentWheelMI = 0;
+        var dbCar = db.GetCar(car.CarDbId);
+        double stockWheelMassKg = db.GetStockWheelMass(dbCar?.MediaName) ?? 0;
+        if (stockWheelMassKg > 0 && dbCar != null)
+        {
+            const double ShapeFactor = 0.6;
+            double stockFrontDiameterIn = dbCar.FrontWheelDiameterIN +
+                2.0 * dbCar.FrontTireWidthMM * dbCar.FrontTireAspect / 100.0 / PhysicsConstants.MmPerInch;
+            double stockRearDiameterIn = dbCar.RearWheelDiameterIN +
+                2.0 * dbCar.RearTireWidthMM * dbCar.RearTireAspect / 100.0 / PhysicsConstants.MmPerInch;
+            double stockFrontRadiusM = stockFrontDiameterIn * PhysicsConstants.InchToMeter / 2.0;
+            double stockRearRadiusM = stockRearDiameterIn * PhysicsConstants.InchToMeter / 2.0;
+            stockWheelMI = 2.0 * ShapeFactor * stockWheelMassKg *
+                (stockFrontRadiusM * stockFrontRadiusM + stockRearRadiusM * stockRearRadiusM);
+
+            double frontWheelMassKg = parts.WheelFrontId.HasValue
+                ? db.GetWheelMassById(parts.WheelFrontId.Value) ?? stockWheelMassKg
+                : stockWheelMassKg;
+            double rearWheelMassKg = parts.WheelRearId.HasValue
+                ? db.GetWheelMassById(parts.WheelRearId.Value) ?? stockWheelMassKg
+                : stockWheelMassKg;
+            // Fall back to the stock diameter when the car's own tyre/rim geometry hasn't been
+            // populated yet (e.g. PowerCalculator invoked before CarSpecController fills in
+            // FrontTireWidth/FrontRimDiameter/FrontTireProfile) — treating an unset geometry as
+            // "0 radius" would fabricate a large, spurious stock/current mismatch and clamp the
+            // whole power/torque figure to +/-30% for reasons that have nothing to do with wheels.
+            double frontDiameterIn = car.FrontWheelDiameterInch > 0 ? car.FrontWheelDiameterInch : stockFrontDiameterIn;
+            double rearDiameterIn = car.RearWheelDiameterInch > 0 ? car.RearWheelDiameterInch : stockRearDiameterIn;
+            double frontRadiusM = frontDiameterIn * PhysicsConstants.InchToMeter / 2.0;
+            double rearRadiusM = rearDiameterIn * PhysicsConstants.InchToMeter / 2.0;
+            currentWheelMI = 2.0 * ShapeFactor *
+                (frontWheelMassKg * frontRadiusM * frontRadiusM + rearWheelMassKg * rearRadiusM * rearRadiusM);
+        }
+
+        double currentTotal = engineMI + flyMI + drivelineMI + currentWheelMI;
         if (currentTotal <= 0) return 1.0;
 
-        return Math.Clamp(stockTotal / currentTotal, 0.7, 1.3);
+        return Math.Clamp((stockTotal + stockWheelMI) / currentTotal, 0.7, 1.3);
     }
 
     private static DbUpgradeSpringDamper? ResolveSpringDamperUpgrade(CarCard car, SelectedParts parts, Fh6DatabaseService db)

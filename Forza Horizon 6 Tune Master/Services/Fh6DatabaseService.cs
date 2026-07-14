@@ -73,6 +73,7 @@ public class Fh6DatabaseService
     // InitializeAsync can run from several threads (parallel tests) before the
     // _initialized guard is set — a plain Dictionary corrupts under concurrent writes.
     private readonly ConcurrentDictionary<string, int> _stockWheelTierByMedia = new();
+    private readonly ConcurrentDictionary<string, double> _stockWheelMassByMedia = new();
     private volatile List<DbWheel> _allWheelOptions = new();
     private readonly ConcurrentDictionary<int, DbWheel> _allWheelOptionsById = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeWeightReduction>> _weightReductionsByCarBodyId = new();
@@ -259,6 +260,7 @@ public class Fh6DatabaseService
                 if (!string.IsNullOrEmpty(media))
                 {
                     _stockWheelTierByMedia[media] = massLevel;
+                    _stockWheelMassByMedia[media] = mass;
                 }
             }
             if (!stock && displayName != "" && !displayName.StartsWith("_&"))
@@ -1448,9 +1450,19 @@ public class Fh6DatabaseService
         return !string.IsNullOrEmpty(mediaName) && _stockWheelTierByMedia.TryGetValue(mediaName, out var t) ? t : null;
     }
 
+    public double? GetStockWheelMass(string? mediaName)
+    {
+        return !string.IsNullOrEmpty(mediaName) && _stockWheelMassByMedia.TryGetValue(mediaName, out var m) ? m : null;
+    }
+
     public int? GetWheelTierById(int id)
     {
         return _allWheelOptionsById.TryGetValue(id, out var w) ? w.MassLevel : null;
+    }
+
+    public double? GetWheelMassById(int id)
+    {
+        return _allWheelOptionsById.TryGetValue(id, out var w) ? w.Mass : null;
     }
 
     public IReadOnlyList<DbWheel> GetAllAftermarketWheels()

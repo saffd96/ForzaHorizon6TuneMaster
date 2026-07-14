@@ -256,6 +256,10 @@ public class SelectedParts : NotifyBase
     private int? _carBodyOrdinal;
     public int? CarBodyOrdinal { get => _carBodyOrdinal; set => Set(ref _carBodyOrdinal, value); }
 
+    // CarBodyId at load time (Ordinal×1000, before any body-kit swap) — the baseline for
+    // BodyKitCurbWeightDiff(). Captured once in SetCarData, same pattern as _stockRimTier etc.
+    private int _stockCarBodyId;
+
     private int? _motorId;
     public int? MotorId { get => _motorId; set => Set(ref _motorId, value); }
 
@@ -272,6 +276,7 @@ public class SelectedParts : NotifyBase
         var stockDt = _db.GetStockDrivetrain(car.CarDbId);
         DrivetrainId = stockDt?.DrivetrainID;
         CarBodyOrdinal = car.CarBodyId;
+        _stockCarBodyId = car.CarBodyId;
         _stockRimTier = _db.GetStockWheelTier(dbCar?.MediaName) ?? 0;
         _stockFrontDiameterIn = dbCar?.FrontWheelDiameterIN ?? 0;
         _stockRearDiameterIn = dbCar?.RearWheelDiameterIN ?? 0;
@@ -387,6 +392,12 @@ public class SelectedParts : NotifyBase
         total += PartMassDiff(_weightReductionPartId, id => _db.GetWeightReductionById(id));
         total += PartMassDiff(_chassisStiffnessPartId, id => _db.GetChassisStiffnessById(id));
         total += PartMassDiff(_bodyKitPartId, id => _db.GetCarBodyKitById(id));
+        // List_UpgradeCarBody.MassDiff (above) is 0 for the vast majority of body-kit
+        // conversions — it is NOT where the game encodes a kit's real mass difference. The
+        // authoritative per-body curb weight is List_UpgradeCarBodyWeight's stock (Level 0)
+        // InitialMass, which is keyed per CarBodyID and can differ from the original body's
+        // by over 100 kg (e.g. a stripped race-shell conversion) with zero reflected above.
+        total += BodyKitCurbWeightDiff();
         // Wheel style: the game's weight change is driven by the wheel's lightness
         // tier (List_Wheels.MassLevel), NOT its raw Mass. Δ per axle scales with the
         // fitted rim diameter² and tyre width. (Reverse-engineered from in-game
@@ -401,8 +412,15 @@ public class SelectedParts : NotifyBase
     }
 
     // Per-tier kg ≈ COEF · D² · W for the whole car; each axle is half of that.
-    // COEF fitted to in-game weight readings across several cars/rim sizes.
-    private const double WheelTierMassCoef = 6.8e-5;
+    // Refitted against 4 real in-game readings on a 2018 Ferrari FXXK Evo (stock wheel
+    // MassLevel 4) at TWO different fitment sizes — confirming the D²·W shape itself (not
+    // just the coefficient), since the residual stays within ~0.6 kg at both sizes:
+    //   stock fitment  (front 19"×305mm, rear 20"×365mm): VS XX (diff=1) +7 kg,  Design DH (diff=4) +26 kg
+    //   20"/355 front, 21"/395 rear fitment:              VS XX (diff=1) +8 kg,  Design DH (diff=4) +31 kg
+    // The prior 6.8e-5 (fitted "across several cars/rim sizes" with no recorded reference
+    // data) overshot every one of these by 24-34%. Least-squares fit through all 4 points
+    // (line forced through the origin, since diff=0 must give 0 kg): COEF ≈ 4.99e-5.
+    private const double WheelTierMassCoef = 4.99e-5;
 
     private double WheelTierMassDiff(int? wheelId, int stockDiameterIn, int stockTireWidthMm,
         int? rimPartId, Func<int, int?> rimDiameter,
@@ -418,6 +436,23 @@ public class SelectedParts : NotifyBase
 
         // Higher tier = lighter wheel ⇒ negative when fitting a lighter wheel than stock.
         return (_stockRimTier - tier.Value) * WheelTierMassCoef * d * d * w * 0.5;
+    }
+
+    // Mass delta from swapping to an alternate body (List_UpgradeCarBody.CarBodyId != stock).
+    // Uses each body's own stock List_UpgradeCarBodyWeight entry as its true curb weight —
+    // that InitialMass is per-CarBodyID and is where the game actually encodes a kit's mass
+    // change (List_UpgradeCarBody.MassDiff is a separate, usually-zero hardware delta; see
+    // ComputeTotalMass). Falls back to 0 (no adjustment) if either body has no stock entry.
+    private double BodyKitCurbWeightDiff()
+    {
+        int currentBodyId = CarBodyOrdinal ?? _stockCarBodyId;
+        if (currentBodyId == _stockCarBodyId) return 0;
+
+        var stock = _db.GetWeightReductions(_stockCarBodyId).FirstOrDefault(w => w.IsStock);
+        var kit = _db.GetWeightReductions(currentBodyId).FirstOrDefault(w => w.IsStock);
+        if (stock == null || kit == null) return 0;
+
+        return kit.InitialMass - stock.InitialMass;
     }
 
     public double? ComputeTotalWeightDistDiff()

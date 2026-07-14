@@ -86,6 +86,12 @@ public static class PowerCalculator
         finalPower = targetPowerHP > MinValidValue ? Math.Round(targetPowerHP, 1)
                      : (powerCurve is { Length: > 0 } ? Math.Round(powerCurve.Max(), 1) : 0);
 
+        // Rotational inertia (RotationalInertiaFactor, below) intentionally does NOT scale
+        // PowerHP/TorqueNm/the cached curves — it was tried (2026-07) and reverted: the one
+        // real-game calibration point that seemed to require it turned out to be explained by
+        // a mismatched forced-induction level in a saved profile, not a missing effect, and
+        // applying it let a maxed-out build's power exceed the engine's own documented ceiling
+        // (EngineGraphingMaxPower) after the ceiling clamp above had already been applied.
         car.MaxRPM = maxRPM;
         car.TorqueNm = finalTorque;
         car.PowerHP = finalPower;

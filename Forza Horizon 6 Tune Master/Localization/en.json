@@ -601,7 +601,7 @@
   "Expl_GearNote_Drag": "Straight-line ratios; final drive set by strip length.",
   "Expl_GearNote_Street": "All-round street ratios.",
 
-  "Expl_Inertia": "Rotational inertia reduced (factor {0:F2}): faster rev pickup and response; peak power unchanged.",
+  "Expl_Inertia": "Rotational inertia factor {0:F2} (flywheel/driveline/wheels vs stock): faster or slower rev pickup and response; peak power unchanged.",
 
   "Expl_DragDistStr_0": "1/4 mile",
   "Expl_DragDistStr_1": "1/2 mile",
