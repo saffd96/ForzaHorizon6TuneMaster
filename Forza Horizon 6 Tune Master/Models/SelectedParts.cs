@@ -378,12 +378,16 @@ public class SelectedParts : NotifyBase
         total += PartMassDiff(_hoodPartId, id => _db.GetHoodById(id));
         total += PartMassDiff(_antiSwayFrontPartId, id => _db.GetArbFrontById(id));
         total += PartMassDiff(_antiSwayRearPartId, id => _db.GetArbRearById(id));
-        total += PartMassDiff(_tireWidthFrontPartId, id => _db.GetTireWidthFrontById(id));
-        total += PartMassDiff(_tireWidthRearPartId, id => _db.GetTireWidthRearById(id));
+        // TireWidthMassCoef: the DB's flat width MassDiff undershoots real in-game growth —
+        // see constant definition below for calibration.
+        total += PartMassDiff(_tireWidthFrontPartId, id => _db.GetTireWidthFrontById(id)) * TireWidthMassCoef;
+        total += PartMassDiff(_tireWidthRearPartId, id => _db.GetTireWidthRearById(id)) * TireWidthMassCoef;
         total += PartMassDiff(_tireAspectRatioFrontPartId, id => _db.GetTireAspectRatioFrontById(id));
         total += PartMassDiff(_tireAspectRatioRearPartId, id => _db.GetTireAspectRatioRearById(id));
-        total += PartMassDiff(_rimFrontPartId, id => _db.GetRimFrontById(id));
-        total += PartMassDiff(_rimRearPartId, id => _db.GetRimRearById(id));
+        // RimSizeMassCoef: the DB's flat rim-diameter MassDiff undershoots real in-game growth —
+        // see constant definition below for calibration.
+        total += PartMassDiff(_rimFrontPartId, id => _db.GetRimFrontById(id)) * RimSizeMassCoef;
+        total += PartMassDiff(_rimRearPartId, id => _db.GetRimRearById(id)) * RimSizeMassCoef;
         total += PartMassDiff(_trackSpacingFrontPartId, id => _db.GetTrackSpacingFrontById(id));
         total += PartMassDiff(_trackSpacingRearPartId, id => _db.GetTrackSpacingRearById(id));
         total += PartMassDiff(_drivetrainSwapPartId, id => _db.GetDrivetrainSwapById(id));
@@ -421,6 +425,29 @@ public class SelectedParts : NotifyBase
     // data) overshot every one of these by 24-34%. Least-squares fit through all 4 points
     // (line forced through the origin, since diff=0 must give 0 kg): COEF ≈ 4.99e-5.
     private const double WheelTierMassCoef = 4.99e-5;
+
+    // List_UpgradeCarBodyTireWidthFront/Rear.MassDiff is a real, per-car-consistent field (unlike
+    // rim diameter, see the CLAUDE.md invariants table) but undershoots in-game weight growth by a
+    // stable factor. Calibrated 2026-07 from 9 real in-game readings across two very different
+    // cars, isolating width alone (both cars only expose ONE tire-aspect-ratio row in the DB — the
+    // displayed profile is a fixed function of width, not an independent choice, so no separate
+    // aspect-ratio effect confounds these readings):
+    //   Toyota GT86 (17" stock, 215mm): 7 points, front+rear, width 215->295mm
+    //   Ferrari FXXK Evo WP (19-20" stock): 2 points, front 305->355mm, rear 365->395mm
+    // Least-squares fit through the origin (real = k * dbMassDiff) across all 9 points: k = 2.596.
+    private const double TireWidthMassCoef = 2.6;
+
+    // List_UpgradeRimSizeFront/Rear.MassDiff also undershoots real growth, but by a much smaller,
+    // near-1x factor. Early 1-2-step tests on 3 cars looked wildly inconsistent (ratio 0.7x-2.2x)
+    // because whole-kg in-game weight rounding dominates such small deltas. Resolved 2026-07 with
+    // an 8-step test on a Toyota Tacoma TRD Pro (16" stock, all 8 rim-size levels, front+rear
+    // together, profile held stock) — cumulative deltas up to +25 kg swamp the rounding noise and
+    // give a tight, consistent fit (ratio 0.92-1.15 across all 8 points). Combined least-squares
+    // fit (Tacoma's 8 points + GT86's 2 + FXXK Evo's 2, all stock-tier wheel so WheelTierMassDiff
+    // contributes nothing): k = 1.10. One car (1985 Toyota Sprinter FE) is a confirmed 2x outlier
+    // against this otherwise-consistent formula — see the CLAUDE.md invariants table; not
+    // accommodated in code, since 3 of 4 tested cars agree tightly on k=1.10.
+    private const double RimSizeMassCoef = 1.10;
 
     private double WheelTierMassDiff(int? wheelId, int stockDiameterIn, int stockTireWidthMm,
         int? rimPartId, Func<int, int?> rimDiameter,

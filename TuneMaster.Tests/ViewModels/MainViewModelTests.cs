@@ -427,8 +427,8 @@ public class MainViewModelTests : IDisposable
         var vm = new MainViewModel();
         vm.SpringUnit = SpringUnit.NMm;
 
-        vm.SpringFrontMinDisplay = 100.0; // internal unit ×10: stored = 100/10 = 10, display = 10*10 = 100
-        Assert.True(Math.Abs(vm.Constraints.SpringFrontMin - 10.0) < 0.01);
+        vm.SpringFrontMinDisplay = 150.0; // N/mm is the canonical unit: no scaling
+        Assert.True(Math.Abs(vm.Constraints.SpringFrontMin - 150.0) < 0.01);
     }
 
     [Fact]
@@ -437,8 +437,8 @@ public class MainViewModelTests : IDisposable
         var vm = new MainViewModel();
         vm.SpringUnit = SpringUnit.KgfMm;
 
-        vm.SpringFrontMinDisplay = 100.0; // kgf/mm display is scaled x10 => 100/10*9.807 = 98.07 N/mm
-        Assert.True(Math.Abs(vm.Constraints.SpringFrontMin - 98.07) < 0.1);
+        vm.SpringFrontMinDisplay = 15.0; // kgf/mm -> N/mm: 15 * 9.807 = 147.105
+        Assert.True(Math.Abs(vm.Constraints.SpringFrontMin - 147.105) < 0.1);
     }
 
     [Fact]

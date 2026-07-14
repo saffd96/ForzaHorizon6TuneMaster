@@ -489,18 +489,18 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             var nmm = Constraints.SpringFrontMin;
             return _springUnit switch
             {
-                SpringUnit.KgfMm => Math.Round(nmm / 9.807 * 10.0, 1),
+                SpringUnit.KgfMm => Math.Round(nmm / 9.807, 1),
                 SpringUnit.LbsIn => Math.Round(nmm * PhysicsConstants.NmmToLbsIn, 1),
-                _ => nmm * 10.0
+                _ => nmm
             };
         }
         set
         {
             var nmm = _springUnit switch
             {
-                SpringUnit.KgfMm => value / 10.0 * 9.807,
+                SpringUnit.KgfMm => value * 9.807,
                 SpringUnit.LbsIn => value / PhysicsConstants.NmmToLbsIn,
-                _ => value / 10.0
+                _ => value
             };
             nmm = Math.Clamp(nmm, _dbSpringFrontMin, _dbSpringFrontMax);
             Constraints.SpringFrontMin = nmm;

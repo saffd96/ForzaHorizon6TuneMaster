@@ -403,14 +403,14 @@ public class UnitValueConverterTests
     public void Convert_Spring_KgfMm()
     {
         var result = _conv.Convert(new object[] { 100.0, SpringUnit.KgfMm }, null, "spring", null);
-        Assert.Contains("101,97", (string)result);
+        Assert.Contains("10,20", (string)result);
     }
 
     [Fact]
     public void Convert_Spring_NMm()
     {
         var result = _conv.Convert(new object[] { 100.0, SpringUnit.NMm }, null, "spring", null);
-        Assert.Contains("1000,0", (string)result);
+        Assert.Contains("100,0", (string)result);
     }
 
     [Fact]
