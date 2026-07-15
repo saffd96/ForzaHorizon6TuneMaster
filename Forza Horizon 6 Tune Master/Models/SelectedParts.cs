@@ -147,6 +147,16 @@ public class SelectedParts : NotifyBase
     [ResetToStock("Engine")]
     public int? IntercoolerPartId { get => _intercoolerPartId; set { if (Set(ref _intercoolerPartId, value)) OnPartChanged(); } }
 
+    // Manual rev-limiter override: when set, PowerCalculator uses this value as car.MaxRPM
+    // instead of the DB-derived redline (GameRedlineScale is only validated on one car —
+    // this is the escape hatch for the rest). Everything downstream (gearing, top speed,
+    // launch RPM, power/torque curve display) reads car.MaxRPM, so setting this alone is
+    // enough to make it "participate in calculations" without reshaping the curve data.
+    private int? _maxRpmOverride;
+
+    [ResetToStock("Engine")]
+    public int? MaxRpmOverride { get => _maxRpmOverride; set { if (Set(ref _maxRpmOverride, value)) OnPartChanged(); } }
+
     // ── Suspension ──────────────────────────────────────────────────────────
 
     private int? _springDamperPartId;

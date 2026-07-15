@@ -92,7 +92,7 @@ public static class PowerCalculator
         // a mismatched forced-induction level in a saved profile, not a missing effect, and
         // applying it let a maxed-out build's power exceed the engine's own documented ceiling
         // (EngineGraphingMaxPower) after the ceiling clamp above had already been applied.
-        car.MaxRPM = maxRPM;
+        car.MaxRPM = parts.MaxRpmOverride ?? maxRPM;
         car.TorqueNm = finalTorque;
         car.PowerHP = finalPower;
         car.PowerIsEstimated = estimated;

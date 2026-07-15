@@ -103,6 +103,7 @@ public class EnginePartsViewModel : INotifyPropertyChanged
         _parts.OilCoolingPartId   = PickStock(_db.GetOilCooling(engineId))?.Id;
         _parts.RestrictorPartId   = PickStock(_db.GetRestrictors(engineId))?.Id;
         _parts.IntercoolerPartId  = PickStock(_db.GetIntercoolers(engineId))?.Id;
+        _parts.MaxRpmOverride     = null;
 
         LoadForEngine(engineId);
     }

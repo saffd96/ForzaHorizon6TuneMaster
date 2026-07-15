@@ -9,10 +9,6 @@
   <component name="ChangeListManager">
     <list default="true" id="6f5aca4a-8e95-4953-8a4a-45b281d20313" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Forza Horizon 6 Tune Master/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/GameStrings.en.json" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/GameStrings.en.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/GameStrings.ru.json" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/GameStrings.ru.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/en.json" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/en.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/ru.json" beforeDir="false" afterPath="$PROJECT_DIR$/Forza Horizon 6 Tune Master/Localization/ru.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -118,7 +114,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="v 1.9" />
     <MESSAGE value="new design" />
     <MESSAGE value="update dll's" />
     <MESSAGE value="add body kit swap" />
@@ -143,7 +138,8 @@
     <MESSAGE value="fix bodykit" />
     <MESSAGE value="fix: tires" />
     <MESSAGE value="revert x10" />
-    <option name="LAST_COMMIT_MESSAGE" value="revert x10" />
+    <MESSAGE value="update locals" />
+    <option name="LAST_COMMIT_MESSAGE" value="update locals" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

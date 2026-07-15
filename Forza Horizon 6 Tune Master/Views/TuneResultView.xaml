@@ -393,6 +393,20 @@
                                               Foreground="{StaticResource AccentBrush}" FontSize="11"
                                               VerticalAlignment="Center" Margin="14,0,0,0"
                                               ToolTip="{l:Loc ResultRecGearsHint}"/>
+
+                                    <TextBlock Text="{l:Loc ResultMaxRpmOverride}" Foreground="{StaticResource TextDimBrush}"
+                                               TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="14,0,6,0"/>
+                                    <TextBox Text="{Binding MaxRpmOverrideText, UpdateSourceTrigger=LostFocus}"
+                                             Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                             FontFamily="{StaticResource MonoFontFamily}"
+                                             Foreground="{StaticResource CyanBrush}"
+                                             ToolTip="{l:Loc ResultMaxRpmOverrideHint}"/>
+                                    <Button Content="&#x21BA;" Style="{StaticResource SecondaryButton}"
+                                            Width="20" Height="20" Padding="0" FontSize="11" Margin="4,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Command="{Binding ResetMaxRpmOverrideCommand}"
+                                            Visibility="{Binding HasMaxRpmOverride, Converter={StaticResource B2V}}"
+                                            ToolTip="{l:Loc ResultMaxRpmOverrideResetTooltip}"/>
                                 </StackPanel>
 
                                 <Grid Grid.Row="1" Margin="0,0,0,4">

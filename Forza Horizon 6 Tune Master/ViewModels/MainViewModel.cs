@@ -49,6 +49,23 @@ public class MainViewModel : NotifyBase
         }
     }
 
+    // Manual rev-limiter override shown next to "override ratios with recommended gears" in
+    // the gearing card — same spirit, but for the RPM ceiling everything else is computed
+    // from. Falls back to displaying the calculated Car.MaxRPM when no override is set; an
+    // invalid/empty edit is discarded by re-raising the getter instead of committing garbage.
+    public string MaxRpmOverrideText
+    {
+        get => (_selectedParts.MaxRpmOverride ?? Car.MaxRPM).ToString();
+        set
+        {
+            if (int.TryParse(value, out int rpm) && rpm > 0)
+                _selectedParts.MaxRpmOverride = rpm;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool HasMaxRpmOverride => _selectedParts.MaxRpmOverride.HasValue;
+
     private void OnCarMassUpdated(double totalMass, double? frontWeightDistPercent)
     {
         Car.TotalMass = totalMass;
@@ -186,6 +203,8 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
 
         // Recalculate power/torque/RPM when any engine part changes.
         PowerCalculator.Calculate(Car, _selectedParts);
+        OnPropertyChanged(nameof(MaxRpmOverrideText));
+        OnPropertyChanged(nameof(HasMaxRpmOverride));
         // Update tire/rim dimensions from selected parts.
         UpdateTireAndWheelData();
         // Always update enums when ANY part changes (spring, tire, brakes, diff, aero, ARB, etc.)
@@ -229,6 +248,8 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             OnPropertyChanged(nameof(HasAWDFrontDiff));
             OnPropertyChanged(nameof(HasRearDiffDecel));
             OnPropertyChanged(nameof(HasLaunchControl));
+            OnPropertyChanged(nameof(MaxRpmOverrideText));
+            OnPropertyChanged(nameof(HasMaxRpmOverride));
         }
     }
     public bool HasResult        => _tuneResult != null;
@@ -1000,6 +1021,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     public RelayCommand ResetTransmissionCommand { get; }
     public RelayCommand ResetWheelsCommand { get; }
     public RelayCommand ResetMotorCommand { get; }
+    public RelayCommand ResetMaxRpmOverrideCommand { get; }
 
     public MainViewModel()
     {
@@ -1038,6 +1060,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         ResetTransmissionCommand = new RelayCommand(() => ExecuteResetCategory("Transmission"));
         ResetWheelsCommand      = new RelayCommand(() => ExecuteResetCategory("Wheels"));
         ResetMotorCommand       = new RelayCommand(() => ExecuteResetCategory("Motor"));
+        ResetMaxRpmOverrideCommand = new RelayCommand(() => _selectedParts.MaxRpmOverride = null);
 
         ToggleUnitsCommand      = new RelayCommand(DoToggleUnits);
         TogglePowerUnitCommand  = new RelayCommand(DoTogglePowerUnit);
