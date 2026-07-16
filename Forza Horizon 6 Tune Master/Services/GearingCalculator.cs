@@ -200,8 +200,8 @@ internal static class GearingCalculator
     // speeds (~490 km/h for a 2500 HP car on a quarter mile — no car traps that
     // fast), cascading into too-tall final drives and unusable gearing.
     //
-    // The formula is capped at 500 km/h (the absolute quarter-mile trap-speed
-    // ceiling of any real vehicle) and floored at 80 km/h.
+    // The formula is capped at CalculationHelpers.TargetSpeedCapKmh (700 km/h), the same flat
+    // ceiling every other discipline uses, and floored at 80 km/h.
     internal static double CalculateDragTrapSpeedKmh(CarCard car, DragDistance distance, double effectiveMaxKmh)
     {
         double weightLb = car.TotalMass * 2.20462;
@@ -211,12 +211,15 @@ internal static class GearingCalculator
 
         // Scale for longer strips. These factors are calibrated to keep the FD
         // reasonable across all three distances while staying within the physically
-        // reachable range for each distance.
+        // reachable range for each distance. Mile recalibrated from 1.50 to 1.65 against two
+        // real in-game readings on the same car at very different power levels (1065.7 HP →
+        // 500 km/h, 1599.1 HP → 597 km/h on a Mile strip), which independently imply a factor
+        // of ≈1.62 and ≈1.69 — 1.50 was undershooting both.
         double distanceFactor = distance switch
         {
             DragDistance.Quarter => 1.00,
             DragDistance.Half    => 1.25,
-            DragDistance.Mile    => 1.50,
+            DragDistance.Mile    => 1.65,
             _                    => 1.00
         };
 
@@ -235,7 +238,7 @@ internal static class GearingCalculator
         // a speed the car can't reach and leaving the gearing stretched too tall for the
         // engine's real usable range.
         double physCeiling = effectiveMaxKmh * DragSpeedFactor(distance);
-        return Math.Clamp(Math.Min(trapKmh, physCeiling), 80.0, 500.0);
+        return Math.Clamp(Math.Min(trapKmh, physCeiling), 80.0, CalculationHelpers.TargetSpeedCapKmh);
     }
 
     // Shorter strips keep the gears closer together (less drop) so the car stays in the meat of its
@@ -262,8 +265,18 @@ internal static class GearingCalculator
     // to leave the top gears all piled up on GearRatioMin (several identical 0.48 gears). To avoid
     // that we build the raw ramped shape, then — only if it underflows — re-fit it in log space
     // between the first gear and the floor, keeping every gear strictly descending and distinct.
+    //
+    // shapeCount (optional, ≤ count): how many of the leading gears the [first, top] band and its
+    // taper shape are actually built for. When the installed gearbox has MORE gears than that (a
+    // short drag strip's trap speed makes for a much narrower reachable band than the box's real
+    // gear count), forcing every installed gear into that same narrow band compresses every step
+    // toward 1.0 — each upshift barely drops RPM, so the engine never climbs meaningfully through
+    // its range before the next shift ("the engine never opens up"). Instead only the first
+    // shapeCount gears are spaced/rescaled into the band; any remaining installed gears extend
+    // PAST it at stepMax, same as real overdrive gears on a short strip the car never actually
+    // reaches — see docs/superpowers/specs/2026-07-06-physics-based-gear-spacing-design.md addendum.
     internal static List<double> BuildDisciplineRatios(double first, double stepMin, double stepMax, int count,
-        double topFloor = 0, double topCeiling = 0, double? resolvedStep = null)
+        double topFloor = 0, double topCeiling = 0, double? resolvedStep = null, int? shapeCount = null)
     {
         var list = new List<double>();
         if (count <= 0) return list;
@@ -298,6 +311,8 @@ internal static class GearingCalculator
         double maxTop = topCeiling > 0 ? Math.Min(topCeiling, first - 0.01) : first - 0.01;
         if (maxTop < minTop) maxTop = minTop;
 
+        int shape = shapeCount.HasValue ? Math.Clamp(shapeCount.Value, 2, count) : count;
+
         // Raw ramped progression (tighter steps up top). Real gearboxes taper this way even with
         // negligible aerodynamic drag (a Lada 2110 and a low-revving car both show the same wide-
         // low/tight-high shape as a 268 km/h turbo build) — it's a near-universal layout
@@ -311,11 +326,11 @@ internal static class GearingCalculator
         // baseline already tapers, that fix's own iterative tightening interacted badly with the
         // final-drive-vs-top-speed refit below and reintroduced sharp last-gear jumps instead of
         // removing them — see git history for the attempt.)
-        var raw = new double[count];
+        var raw = new double[shape];
         raw[0] = first;
-        for (int i = 1; i < count; i++)
+        for (int i = 1; i < shape; i++)
         {
-            double t = count > 2 ? (double)(i - 1) / (count - 2) : 0.5;
+            double t = shape > 2 ? (double)(i - 1) / (shape - 2) : 0.5;
             t = CalculationHelpers.Clamp(t, 0.0, 1.0);
             double step;
             if (resolvedStep.HasValue)
@@ -337,13 +352,13 @@ internal static class GearingCalculator
         }
 
         // Target top gear: the raw endpoint, pulled into the FD-reachable [minTop, maxTop] band.
-        double rawTop = raw[count - 1];
+        double rawTop = raw[shape - 1];
         double top = CalculationHelpers.Clamp(rawTop, minTop, maxTop);
 
         double logFirst = Math.Log(first);
         double denom = logFirst - Math.Log(rawTop);
 
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < shape; i++)
         {
             // f: 0 at the first gear, 1 at the top gear — preserves the ramp's spacing shape.
             double ratio = Math.Abs(denom) < 1e-9
@@ -351,6 +366,18 @@ internal static class GearingCalculator
                 : Math.Exp(logFirst - (logFirst - Math.Log(raw[i])) / denom * (logFirst - Math.Log(top)));
             list.Add(Math.Round(CalculationHelpers.Clamp(ratio, CalculationHelpers.GearRatioMin, CalculationHelpers.GearRatioMax), 2));
         }
+
+        // Extra installed gears beyond `shape`: real overdrive ratios the strip's trap speed never
+        // calls for. Continue the taper at stepMax (the tightest step the discipline allows) instead
+        // of folding them into [minTop, maxTop] — they stay strictly descending and simply extend
+        // past what the car reaches on this pass, exactly like an unused top gear on a real box.
+        for (int i = shape; i < count; i++)
+        {
+            double next = Math.Round(CalculationHelpers.Clamp(list[^1] * stepMax, CalculationHelpers.GearRatioMin, CalculationHelpers.GearRatioMax), 2);
+            if (next >= list[^1]) next = Math.Round(Math.Max(CalculationHelpers.GearRatioMin, list[^1] - 0.01), 2);
+            list.Add(next);
+        }
+
         return list;
     }
 
@@ -421,7 +448,17 @@ internal static class GearingCalculator
         double? resolvedStep = TorqueCurveSampler.SolveCrossoverStep(
             car.CachedTorqueCurveNm, car.MaxRPM, shiftRpm, stepMin, stepMax);
 
-        var ratios = BuildDisciplineRatios(firstGear, stepMin, stepMax, gearCount, topGearFloor, topGearCeiling, resolvedStep);
+        // On a short drag strip the physically-recommended count (RecommendedGearCount, based on
+        // the empirical trap speed) is often well below the installed box's real gear count — the
+        // trap speed just doesn't leave room for all of them. Rather than cram every installed gear
+        // into that narrow band (compressing every step toward 1.0 so the engine barely climbs
+        // before each upshift — "не раскрывается"), only the useful leading gears are spaced/rescaled
+        // into the band; the rest extend past it as unused overdrive ratios (see BuildDisciplineRatios).
+        int? shapeCount = track.Discipline == Discipline.Drag && r.RecommendedGearCount >= 2 && r.RecommendedGearCount < gearCount
+            ? r.RecommendedGearCount
+            : null;
+
+        var ratios = BuildDisciplineRatios(firstGear, stepMin, stepMax, gearCount, topGearFloor, topGearCeiling, resolvedStep, shapeCount);
 
         if (ratios.Count == 0)
         {

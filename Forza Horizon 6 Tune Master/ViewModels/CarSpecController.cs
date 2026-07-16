@@ -119,6 +119,19 @@ internal class CarSpecController
         // We apply a 0.80 correction factor to strip out these non-aero power sinks —
         // calibrated against known CdA values (GT-R real CdA≈0.56, raw solve gives
         // ~1.02; with 0.80 → 0.82, close enough for physics purposes).
+        //
+        // Tried lowering this to 0.55 (2026-07) after a second real reference (1985 Sprinter
+        // FE, CarDbId 4162: two real in-game Mile-drag top speeds — 500 km/h @ 1065.7 HP,
+        // 597 km/h @ 1599.1 HP — implied CdA≈0.43–0.48) converged closely with a tighter GT-R
+        // fit. Reverted: this constant feeds CdABodyEstimate for EVERY car and discipline (it's
+        // the effectiveMaxKmh anchor for Road/Rally/etc. gearing targets too, not just Drag), so
+        // a ~13% roster-wide top-speed inflation to fix one car's Mile-drag figure was too broad
+        // a trade-off. See CalculateDragTrapSpeedKmh's Mile distanceFactor (recalibrated to 1.65
+        // against the same two Sprinter readings) for the narrower fix that was kept — it only
+        // touches Drag+Mile. With 0.80 + the distanceFactor fix, the Sprinter still lands at
+        // ~513 km/h (vs the true 500/597 at the two power levels) — better than the original
+        // ~424 km/h, not a full match; no further general fix without per-body-kit drag data
+        // the DB doesn't have (see CLAUDE.md's Sprinter-FE wheel-mass outlier for the same car).
         if (car.PowerHP > 0 && (dbCar.TopSpeedMph > 10 || dbCar.SimTopSpeed > 5))
         {
             // TopSpeedMph is the game's advertised top speed, which for many cars is capped by
@@ -130,7 +143,18 @@ internal class CarSpecController
             // higher — i.e. closer to the true aero ceiling. Whichever of the two is LOWER is
             // the one more likely explained by a non-aero limiter (gearing, stale data), so the
             // higher of the two is the safer anchor for a body-drag solve.
-            double vMaxMs = Math.Max(dbCar.TopSpeedMph * 0.44704, dbCar.SimTopSpeed); // mph → m/s
+            //
+            // Even SimTopSpeed can share the same gearing-limited flaw when the STOCK gearbox's
+            // OWN top-gear-at-redline ceiling sits close to (or below) it — that means the sim
+            // never actually explored the car's real aero ceiling either, it just ran out of
+            // gears too. (Confirmed against a real car: a 1985 Sprinter FE's SimTopSpeed of
+            // 226 km/h sits right at its stock 6-speed's kinematic 239 km/h redline ceiling — a
+            // mile-long full-upgrade build of that car reaches ~500 km/h in-game, far past what a
+            // CdA solved from 226 km/h would ever predict.) Folding the stock kinematic ceiling
+            // into the anchor (when it's the highest of the three) stops that case from capping
+            // CdA on a limit the car never actually tested aerodynamically.
+            double stockKinematicMs = ComputeStockTopGearRedlineSpeedMs(car, dbCar);
+            double vMaxMs = new[] { dbCar.TopSpeedMph * 0.44704, dbCar.SimTopSpeed, stockKinematicMs }.Max(); // mph → m/s
             double powerW = car.PowerHP * PhysicsConstants.HpToWatt;
             // Solve P = ½ρCdAv³ for raw CdA, then correct for non-aero losses:
             double cdA = 2.0 * powerW / (PhysicsConstants.AirDensity * vMaxMs * vMaxMs * vMaxMs);
@@ -143,6 +167,37 @@ internal class CarSpecController
         car.GameDragScale = dbCar.GameDragScale > 0 ? dbCar.GameDragScale : 1.0;
 
         NotifyCarDisplayProperties?.Invoke();
+    }
+
+    // The stock gearbox's own top-gear speed at the stock engine's redline (car.MaxRPM is
+    // already the stock figure here — PowerCalculator.Calculate ran above with no swaps
+    // applied yet). Purely kinematic (gear ratio × final drive × tire circumference), no
+    // aero involved — used only as a floor to detect when the DB's recorded top speed was
+    // itself gearing-limited (see caller).
+    private static double ComputeStockTopGearRedlineSpeedMs(CarCard car, DbCar dbCar)
+    {
+        if (car.MaxRPM <= 0) return 0;
+        var db = Fh6DatabaseService.Instance;
+
+        var stockDrivetrain = db.GetDrivetrainSwaps(dbCar.Id).FirstOrDefault(p => p.IsStock);
+        int drivetrainId = stockDrivetrain?.DrivetrainID ?? 0;
+        int driveTypeId = stockDrivetrain?.DriveTypeID ?? dbCar.DriveTypeID;
+
+        var trans = db.GetTransmissions(drivetrainId).FirstOrDefault(p => p.IsStock);
+        if (trans == null || trans.FinalDriveRatio <= 0) return 0;
+
+        double topGear = trans.GearRatios.Take(Math.Max(trans.NumGears, 1))
+            .Where(g => g > 0).DefaultIfEmpty(0).Min();
+        if (topGear <= 0) return 0;
+
+        // List_DriveType: 1 = FWD, 2 = RWD, 3 = AWD — FWD is driven by the front wheels.
+        bool fwd = driveTypeId == 1;
+        double diameterIn = fwd
+            ? dbCar.FrontWheelDiameterIN + 2.0 * dbCar.FrontTireWidthMM * dbCar.FrontTireAspect / 100.0 / PhysicsConstants.MmPerInch
+            : dbCar.RearWheelDiameterIN + 2.0 * dbCar.RearTireWidthMM * dbCar.RearTireAspect / 100.0 / PhysicsConstants.MmPerInch;
+        double tireCirc = Math.PI * diameterIn * PhysicsConstants.InchToMeter;
+
+        return car.MaxRPM * tireCirc / (60.0 * trans.FinalDriveRatio * topGear);
     }
 
     public void SelectCar(CarData? value, CarCard car, bool isLoadingProfile)
