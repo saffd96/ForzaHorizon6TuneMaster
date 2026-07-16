@@ -49,7 +49,9 @@ public class DbIntegrationCalculatorTests
             EnginePosition = EnginePositionFromPlacement(dbCar.EnginePlacementID),
             AspirationType = AspirationTypeFromId(dbCar.AspirationTypeId),
             FuelType = FuelType.Gasoline,
-            PowertrainType = dbCar.PowertrainID == 1 ? PowertrainType.Electric : PowertrainType.ICE,
+            // Matches CarSpecController.PopulateCarFromDb — PowertrainID is not the field production
+            // uses for this; AspirationTypeId == 8 is the real electric-motor marker in the DB.
+            PowertrainType = dbCar.AspirationTypeId == 8 ? PowertrainType.Electric : PowertrainType.ICE,
             DriveType = DriveTypeFromId(dbCar.DriveTypeID),
             GearCount = dbCar.NumGears,
             MaxAvailableGearCount = 10,
@@ -1297,6 +1299,42 @@ public class DbIntegrationCalculatorTests
         double lastIntermediate = landingRpm[^2]; // excludes the shift into the top gear
         Assert.True(lastIntermediate > first,
             $"car {carDbId}: expected landing RPM to trend upward ({string.Join(", ", landingRpm.Select(l => l.ToString("F0")))})");
+    }
+
+    // On a short strip, RecommendedGearCount (built from the empirical trap speed) can fall well
+    // below the installed box's real gear count — the trap speed just doesn't leave room for all of
+    // them. Regression for the fix that stops BuildDisciplineRatios from cramming every installed
+    // gear into that narrow band: previously this compressed every step toward 1.0, so landing RPM
+    // came back nearly flat across shifts (the engine barely climbed before the next upshift —
+    // "the engine never opens up"). Now only the useful leading gears are spaced/rescaled into the
+    // band and the rest extend past it as unused overdrive ratios, so the useful gears should show
+    // the same upward-trending landing RPM shape Road does.
+    [Fact]
+    public async Task Generate_DragQuarter_UsefulGearsNotCompressed_WhenBoxHasMoreGearsThanNeeded()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+        var car = BuildCarCard(1367);
+        var track = new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Quarter };
+
+        var result = new TuneGeneratorService().Generate(car, track, new SelectedParts(), db);
+
+        Assert.True(result.RecommendedGearCount >= 2 && result.RecommendedGearCount < result.GearRatios.Count,
+            $"this regression needs a car/strip combo where the box has more gears ({result.GearRatios.Count}) " +
+            $"than the drag strip calls for (recommended {result.RecommendedGearCount})");
+
+        double shiftRpm = car.MaxRPM * CalculationHelpers.RevLimitFraction;
+        var landingRpm = new List<double>();
+        for (int i = 0; i < result.GearRatios.Count - 1; i++)
+            landingRpm.Add(shiftRpm * result.GearRatios[i + 1] / result.GearRatios[i]);
+
+        // Transitions within the useful range (gear 1 through RecommendedGearCount) should climb,
+        // same as a normal box — not stay flat because extra installed gears got squeezed in too.
+        for (int i = 1; i < result.RecommendedGearCount - 1; i++)
+            Assert.True(landingRpm[i] > landingRpm[i - 1],
+                $"expected landing RPM to trend upward across the useful gears, got " +
+                $"{string.Join(", ", landingRpm.Select(l => l.ToString("F0")))}");
     }
 
     [Fact]
