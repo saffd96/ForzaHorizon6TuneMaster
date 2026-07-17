@@ -207,6 +207,7 @@
   "ProfileLoad": "Load",
   "ProfileDelete": "🗑 Delete",
   "ProfileDeleteAll": "🗑 Delete All",
+  "ProfileOpenFolderTooltip": "Open profiles folder",
   "DeleteAllProfilesConfirm": "Delete ALL profiles? This cannot be undone.",
   "DeleteAllProfilesTitle": "Confirm",
   "StatusAllProfilesDeleted": "All profiles deleted",

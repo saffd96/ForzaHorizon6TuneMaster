@@ -1009,6 +1009,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     public RelayCommand LoadCommand           { get; }
     public RelayCommand DeleteProfileCommand  { get; }
     public RelayCommand DeleteAllProfilesCommand { get; }
+    public RelayCommand OpenProfilesFolderCommand { get; }
     public RelayCommand NewProfileCommand     { get; }
     public RelayCommand ClearCarSelectionCommand { get; }
     public RelayCommand UpdateCommand         { get; }
@@ -1050,6 +1051,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         LoadCommand            = new RelayCommand(LoadProfile, () => SelectedProfile != null);
         DeleteProfileCommand   = new RelayCommand(DeleteProfile, () => SelectedProfile != null);
         DeleteAllProfilesCommand = new RelayCommand(DeleteAllProfiles);
+        OpenProfilesFolderCommand = new RelayCommand(OpenProfilesFolder);
         NewProfileCommand      = new RelayCommand(NewProfile);
         ClearCarSelectionCommand = new RelayCommand(() => _carSpec.ClearCarSelection(_car));
 
@@ -1617,6 +1619,19 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     }
 
     // ── Profile management ──────────────────────────────────────────────────
+    private void OpenProfilesFolder()
+    {
+        try
+        {
+            Directory.CreateDirectory(ForzaPaths.ProfilesDir);
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(ForzaPaths.ProfilesDir)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex) { StatusMessage = ex.Message; }
+    }
+
     private void SaveProfile()
     {
         try

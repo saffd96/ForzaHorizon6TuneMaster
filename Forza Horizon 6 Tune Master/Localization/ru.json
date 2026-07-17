@@ -207,6 +207,7 @@
   "ProfileLoad": "Загрузить",
   "ProfileDelete": "🗑 Удалить",
   "ProfileDeleteAll": "🗑 Удалить все",
+  "ProfileOpenFolderTooltip": "Открыть папку профилей",
   "DeleteAllProfilesConfirm": "Удалить ВСЕ профили? Это действие нельзя отменить.",
   "DeleteAllProfilesTitle": "Подтверждение",
   "StatusAllProfilesDeleted": "Все профили удалены",

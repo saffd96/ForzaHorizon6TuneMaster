@@ -496,6 +496,10 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="{l:Loc ProfilesLabel}" Foreground="{StaticResource TextDimBrush}"
                            VerticalAlignment="Center" Margin="0,0,6,0" FontSize="{DynamicResource FontXSmall}"/>
+                <Button Content="📂" Style="{StaticResource IconButton}"
+                        Width="24" Height="24"
+                        ToolTip="{l:Loc ProfileOpenFolderTooltip}"
+                        Command="{Binding OpenProfilesFolderCommand}" Margin="0,0,6,0"/>
                 <Grid VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
