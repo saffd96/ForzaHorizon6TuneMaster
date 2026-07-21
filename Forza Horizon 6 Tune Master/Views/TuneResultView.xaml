@@ -257,12 +257,12 @@
                                         </v:ResultParam>
                                     </UniformGrid>
                                     <UniformGrid Columns="2">
-                                        <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
+                                        <WrapPanel Margin="6,0,6,0">
                                             <TextBlock Text="{l:Loc ResultOverride}" Foreground="{StaticResource TextDimBrush}"
                                                        TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                             <CheckBox IsChecked="{Binding HasSpringFrontOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
                                                       ToolTip="{l:Loc ResultOverrideEnableTooltip}"/>
-                                            <StackPanel Orientation="Horizontal" Visibility="{Binding HasSpringFrontOverride, Converter={StaticResource B2H}}">
+                                            <WrapPanel Visibility="{Binding HasSpringFrontOverride, Converter={StaticResource B2H}}">
                                                 <TextBox Text="{Binding SpringFrontMinOverrideText, UpdateSourceTrigger=LostFocus}"
                                                          Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
                                                          FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
@@ -272,14 +272,14 @@
                                                          Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
                                                          FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
                                                          ToolTip="{l:Loc ResultSpringOverrideHint}"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
+                                            </WrapPanel>
+                                        </WrapPanel>
+                                        <WrapPanel Margin="6,0,6,0">
                                             <TextBlock Text="{l:Loc ResultOverride}" Foreground="{StaticResource TextDimBrush}"
                                                        TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                             <CheckBox IsChecked="{Binding HasSpringRearOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
                                                       ToolTip="{l:Loc ResultOverrideEnableTooltip}"/>
-                                            <StackPanel Orientation="Horizontal" Visibility="{Binding HasSpringRearOverride, Converter={StaticResource B2H}}">
+                                            <WrapPanel Visibility="{Binding HasSpringRearOverride, Converter={StaticResource B2H}}">
                                                 <TextBox Text="{Binding SpringRearMinOverrideText, UpdateSourceTrigger=LostFocus}"
                                                          Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
                                                          FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
@@ -289,8 +289,8 @@
                                                          Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
                                                          FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
                                                          ToolTip="{l:Loc ResultSpringOverrideHint}"/>
-                                            </StackPanel>
-                                        </StackPanel>
+                                            </WrapPanel>
+                                        </WrapPanel>
                                     </UniformGrid>
                                     <TextBlock Text="{l:Loc ResultRideHeight}" Style="{StaticResource RCardHeader}" Margin="0,8,0,0"/>
                                     <UniformGrid Columns="2">
@@ -304,7 +304,7 @@
                                         </v:ResultParam>
                                     </UniformGrid>
                                     <UniformGrid Columns="2">
-                                        <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
+                                        <WrapPanel Margin="6,0,6,0">
                                             <TextBlock Text="{l:Loc ResultOverride}" Foreground="{StaticResource TextDimBrush}"
                                                        TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                             <CheckBox IsChecked="{Binding HasRideHeightFrontOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
@@ -314,8 +314,8 @@
                                                      FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
                                                      ToolTip="{l:Loc ResultRideHeightOverrideHint}"
                                                      Visibility="{Binding HasRideHeightFrontOverride, Converter={StaticResource B2H}}"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
+                                        </WrapPanel>
+                                        <WrapPanel Margin="6,0,6,0">
                                             <TextBlock Text="{l:Loc ResultOverride}" Foreground="{StaticResource TextDimBrush}"
                                                        TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                             <CheckBox IsChecked="{Binding HasRideHeightRearOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
@@ -325,7 +325,7 @@
                                                      FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
                                                      ToolTip="{l:Loc ResultRideHeightOverrideHint}"
                                                      Visibility="{Binding HasRideHeightRearOverride, Converter={StaticResource B2H}}"/>
-                                        </StackPanel>
+                                        </WrapPanel>
                                     </UniformGrid>
                                 </StackPanel>
                             </Border>
@@ -427,7 +427,7 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                                <WrapPanel Grid.Row="0" Margin="0,0,0,4">
                                     <TextBlock Text="{l:Loc ResultGearing}" Style="{StaticResource RCardHeader}" Margin="0,0,12,0"/>
 <TextBlock Text="{l:Loc ResultFinalDrive}" Foreground="{StaticResource TextDimBrush}"
                                            TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="6,0,6,0"/>
@@ -468,7 +468,7 @@
                                             Command="{Binding ResetMaxRpmOverrideCommand}"
                                             Visibility="{Binding HasMaxRpmOverride, Converter={StaticResource B2V}}"
                                             ToolTip="{l:Loc ResultMaxRpmOverrideResetTooltip}"/>
-                                </StackPanel>
+                                </WrapPanel>
 
                                 <Grid Grid.Row="1" Margin="0,0,0,4">
                                     <Grid.ColumnDefinitions>
