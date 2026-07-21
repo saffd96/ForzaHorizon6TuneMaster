@@ -11,6 +11,7 @@
         <cv:NullToVisibilityConverter        x:Key="N2V"/>
         <cv:InverseBoolToVisibilityConverter x:Key="IBV"/>
         <cv:BoolToVisibilityConverter        x:Key="B2V"/>
+        <cv:BoolToHiddenConverter            x:Key="B2H"/>
         <cv:UnitValueConverter               x:Key="UV"/>
         <cv:AddOneConverter                  x:Key="AddOne"/>
         <cv:DateDisplayConverter             x:Key="DateDisplay"/>
@@ -261,7 +262,7 @@
                                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                                             <CheckBox IsChecked="{Binding HasSpringFrontOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
                                                       ToolTip="{l:Loc ResultOverrideEnableTooltip}"/>
-                                            <StackPanel Orientation="Horizontal" Visibility="{Binding HasSpringFrontOverride, Converter={StaticResource B2V}}">
+                                            <StackPanel Orientation="Horizontal" Visibility="{Binding HasSpringFrontOverride, Converter={StaticResource B2H}}">
                                                 <TextBox Text="{Binding SpringFrontMinOverrideText, UpdateSourceTrigger=LostFocus}"
                                                          Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
                                                          FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
@@ -276,7 +277,7 @@
                                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                                             <CheckBox IsChecked="{Binding HasSpringRearOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
                                                       ToolTip="{l:Loc ResultOverrideEnableTooltip}"/>
-                                            <StackPanel Orientation="Horizontal" Visibility="{Binding HasSpringRearOverride, Converter={StaticResource B2V}}">
+                                            <StackPanel Orientation="Horizontal" Visibility="{Binding HasSpringRearOverride, Converter={StaticResource B2H}}">
                                                 <TextBox Text="{Binding SpringRearMinOverrideText, UpdateSourceTrigger=LostFocus}"
                                                          Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
                                                          FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
@@ -310,7 +311,7 @@
                                                      Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
                                                      FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
                                                      ToolTip="{l:Loc ResultRideHeightOverrideHint}"
-                                                     Visibility="{Binding HasRideHeightFrontOverride, Converter={StaticResource B2V}}"/>
+                                                     Visibility="{Binding HasRideHeightFrontOverride, Converter={StaticResource B2H}}"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                                             <CheckBox IsChecked="{Binding HasRideHeightRearOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
@@ -319,7 +320,7 @@
                                                      Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
                                                      FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
                                                      ToolTip="{l:Loc ResultRideHeightOverrideHint}"
-                                                     Visibility="{Binding HasRideHeightRearOverride, Converter={StaticResource B2V}}"/>
+                                                     Visibility="{Binding HasRideHeightRearOverride, Converter={StaticResource B2H}}"/>
                                         </StackPanel>
                                     </UniformGrid>
                                 </StackPanel>

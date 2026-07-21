@@ -83,6 +83,18 @@ public class InverseBoolToVisibilityConverter : IValueConverter
         => throw new NotImplementedException();
 }
 
+// Unlike BoolToVisibilityConverter, this hides with Visibility.Hidden instead of Collapsed —
+// the element still reserves its layout space, so a sibling (e.g. a checkbox that toggles this
+// content) doesn't shift position when the row's measured height would otherwise change.
+public class BoolToHiddenConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is true ? Visibility.Visible : Visibility.Hidden;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
+
 public class CountToVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
