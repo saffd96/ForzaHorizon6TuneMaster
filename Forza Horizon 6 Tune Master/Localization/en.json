@@ -283,7 +283,6 @@
   "ResultMaxRpmOverride": "MAX RPM",
   "ResultMaxRpmOverrideHint": "Manually set the rev limiter used in every calculation (gearing, top speed, launch RPM). Overrides the calculated value until reset.",
   "ResultMaxRpmOverrideResetTooltip": "Reset to calculated value",
-  "ResultOverrideMinMax": "Min/Max override",
   "ResultOverride": "Override",
   "ResultOverrideEnableTooltip": "Enable manual override — unchecking returns to the calculated value",
   "ResultSpringOverrideHint": "Manually set the min/max spring-rate range the calculator is allowed to use. Overrides the selected suspension part's own DB range while checked.",
