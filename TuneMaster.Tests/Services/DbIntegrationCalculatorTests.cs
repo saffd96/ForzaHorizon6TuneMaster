@@ -652,6 +652,63 @@ public class DbIntegrationCalculatorTests
         Assert.InRange(result.SpringFront, frontPhys!.MinSpringRate, frontPhys.MaxSpringRate);
     }
 
+    // Damper min/max override, same shape/mechanism as the spring min/max override above
+    // (SuspensionCalculator.CalculateDampers reads parts.ReboundXxxOverride/BumpXxxOverride
+    // directly, falling back to the DB physics range when not set).
+    [Fact]
+    public async Task Dampers_WithMinMaxOverride_ClampsToOverrideNotDbRange()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+
+        var db = Fh6DatabaseService.Instance;
+        var car = BuildCarCard(247);
+        var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, new SelectedParts(), db);
+        Assert.NotNull(frontPhys);
+
+        double reboundMin = frontPhys!.MinDampenReboundRate;
+        double reboundMax = frontPhys.MinDampenReboundRate + 0.5;
+        double bumpMin = frontPhys.MinDampenBumpRate;
+        double bumpMax = frontPhys.MinDampenBumpRate + 0.5;
+        var parts = new SelectedParts
+        {
+            ReboundFrontMinOverride = reboundMin, ReboundFrontMaxOverride = reboundMax,
+            BumpFrontMinOverride = bumpMin, BumpFrontMaxOverride = bumpMax
+        };
+
+        var result = new TuneResult();
+        var ex = new System.Collections.Generic.Dictionary<string, string>();
+        SuspensionCalculator.CalculateSprings(car, CarFactory.DefaultTrack(), parts, db, result, ex);
+        SuspensionCalculator.CalculateDampers(car, CarFactory.DefaultTrack(), parts, db, result, ex);
+
+        Assert.InRange(result.ReboundFront, reboundMin, reboundMax);
+        Assert.InRange(result.BumpFront, bumpMin, bumpMax);
+    }
+
+    [Fact]
+    public async Task Dampers_OverrideReset_FallsBackToDbRange()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+
+        var db = Fh6DatabaseService.Instance;
+        var car = BuildCarCard(247);
+        var parts = new SelectedParts();
+
+        parts.ReboundFrontMinOverride = 999;
+        parts.ReboundFrontMaxOverride = 1000;
+        parts.ReboundFrontMinOverride = null;
+        parts.ReboundFrontMaxOverride = null;
+
+        var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
+        var result = new TuneResult();
+        var ex = new System.Collections.Generic.Dictionary<string, string>();
+        SuspensionCalculator.CalculateSprings(car, CarFactory.DefaultTrack(), parts, db, result, ex);
+        SuspensionCalculator.CalculateDampers(car, CarFactory.DefaultTrack(), parts, db, result, ex);
+
+        Assert.InRange(result.ReboundFront, frontPhys!.MinDampenReboundRate, frontPhys.MaxDampenReboundRate);
+    }
+
     // Ride height uses a direct-value override (same shape as SelectedParts.MaxRpmOverride),
     // not a min/max range like the spring overrides above: the exact value the user types
     // replaces the computed ride height outright.

@@ -47,14 +47,6 @@
 - [ ] Сохранять выбранный режим в профиль
 - [ ] Оба режима должны использовать одни и те же калькуляторы (промежуточные значения в «быстром» — из БД по умолчанию)
 
-### 18. Ручной ввод min/max для демпферов (отбой/сжатие)
-**Отзыв пользователя:** «I also find the springs and damping to be average, is it possible to input minimums and maximums to get it more accurate?» Пружины и клиренс уже сделаны; демпферы (rebound/bump) — ещё нет.
-
-**Что сделать:**
-- [ ] Добавить в `SelectedParts` override-поля min/max для rebound/bump (перед/зад), по аналогии с уже сделанными `SpringFrontMinOverride`/`SpringFrontMaxOverride`
-- [ ] `SuspensionCalculator.CalculateDampers` должен клэмпить в эти границы, если заданы, вместо диапазона из `List_SpringDamperPhysics`
-- [ ] UI в `TuneResultView.xaml` — та же пара полей Min/Max с кнопкой сброса, что уже есть у пружин
-
 ---
 
 ## Приоритет 6 — Новые модули
@@ -86,5 +78,4 @@
 | 19 | Drag gearing feels like it just caps out at the user-set target speed instead of truly optimizing | P1 — Bug |
 | 6 | Car weight inaccuracies in DB (CurbWeight × 100) | P3 — DB |
 | 8 | Old/new data entry mode toggle (sliders vs dropdowns) | P4 — UX |
-| 18 | Manual min/max override for dampers (rebound/bump) | P4 — UX |
 | 20 | PI (Performance Index) class system — build/check viability before buying a car | P6 — New feature |

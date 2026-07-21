@@ -190,6 +190,10 @@ public class TuningConstraints : INotifyPropertyChanged
             SpringFrontMax = parts.SpringFrontMaxOverride ?? fSp.MaxSpringRate;
             RideHeightFrontMin = fSp.MinRideHeight * 1000.0;
             RideHeightFrontMax = fSp.MaxRideHeight * 1000.0;
+            ReboundFrontMin = parts.ReboundFrontMinOverride ?? fSp.MinDampenReboundRate;
+            ReboundFrontMax = parts.ReboundFrontMaxOverride ?? fSp.MaxDampenReboundRate;
+            BumpFrontMin = parts.BumpFrontMinOverride ?? fSp.MinDampenBumpRate;
+            BumpFrontMax = parts.BumpFrontMaxOverride ?? fSp.MaxDampenBumpRate;
         }
         if (rSp != null)
         {
@@ -197,6 +201,10 @@ public class TuningConstraints : INotifyPropertyChanged
             SpringRearMax = parts.SpringRearMaxOverride ?? rSp.MaxSpringRate;
             RideHeightRearMin = rSp.MinRideHeight * 1000.0;
             RideHeightRearMax = rSp.MaxRideHeight * 1000.0;
+            ReboundRearMin = parts.ReboundRearMinOverride ?? rSp.MinDampenReboundRate;
+            ReboundRearMax = parts.ReboundRearMaxOverride ?? rSp.MaxDampenReboundRate;
+            BumpRearMin = parts.BumpRearMinOverride ?? rSp.MinDampenBumpRate;
+            BumpRearMax = parts.BumpRearMaxOverride ?? rSp.MaxDampenBumpRate;
         }
 
         var fArb = TuningPhysicsContext.FrontArb(car, parts, db);
