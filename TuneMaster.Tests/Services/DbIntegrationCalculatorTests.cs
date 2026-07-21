@@ -1489,6 +1489,53 @@ public class DbIntegrationCalculatorTests
                 $"{string.Join(", ", landingRpm.Select(l => l.ToString("F0")))}");
     }
 
+    // Roadmap #19 ("drag gearing feels forced to hit the target mark"): TuneGeneratorService's
+    // Discipline.Drag branch nudges its first-gear anchor across up to 3 passes to pull
+    // LaunchControlRpm toward an "optimal" launch band. That lever assumes changing the anchor
+    // moves LaunchControlRpm — but CalculateGearing re-solves FinalDrive from scratch every call
+    // to keep the SAME top gear hitting the SAME target top speed, so for many cars FD moves
+    // opposite to whatever first gear is fed in and effFirst (= GearRatios[0] × FinalDrive, what
+    // actually drives LaunchControlRpm) barely changes — the loop's own lever is self-cancelling.
+    // Before the fix this walked first gear to its 5.5 hard clamp (and FinalDrive to its own
+    // floor) for zero actual benefit: an artificially over-short first gear no grip-based physics
+    // called for. car 247/Half and car 4162 (all three distances) are confirmed repros — the loop
+    // never once closed on the "optimal" launch RPM for either, so it should fall back to
+    // GearingCalculator.CalcDragInitialFirstGear's grip-based estimate rather than the clamp.
+    [Theory]
+    [InlineData(247, DragDistance.Half)]
+    [InlineData(4162, DragDistance.Quarter)]
+    [InlineData(4162, DragDistance.Half)]
+    [InlineData(4162, DragDistance.Mile)]
+    public async Task Generate_Drag_FirstGearNotPushedToClamp_WhenLaunchRpmLeverIsNeutralized(int carDbId, DragDistance dist)
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+        var car = BuildCarCard(carDbId);
+        var parts = new SelectedParts();
+        var track = new TrackInfo { Discipline = Discipline.Drag, DragDistance = dist };
+        var constraints = new TuningConstraints();
+
+        var result = new TuneGeneratorService().Generate(car, track, parts, db, constraints);
+        Assert.NotEmpty(result.GearRatios);
+
+        double idealFirst = GearingCalculator.CalcDragInitialFirstGear(BuildCarCard(carDbId), parts, db);
+
+        // The clamp ceiling for this loop's anchor is 5.5 — pinning against it (or against
+        // FinalDrive's own floor) is the symptom of the bug. The fitted first gear should stay
+        // close to the grip-based estimate instead.
+        Assert.True(result.GearRatios[0] < 5.3,
+            $"car {carDbId} dist {dist}: first gear {result.GearRatios[0]} looks pinned near the 5.5 clamp " +
+            $"(grip-based estimate was {idealFirst:F2}) — the launch-RPM iteration may be chasing a " +
+            "neutralized lever again");
+        Assert.True(Math.Abs(result.GearRatios[0] - idealFirst) < idealFirst * 0.5,
+            $"car {carDbId} dist {dist}: fitted first gear {result.GearRatios[0]} strayed too far from the " +
+            $"grip-based estimate {idealFirst:F2}");
+        Assert.True(result.FinalDrive > constraints.FinalDriveMin + 0.05,
+            $"car {carDbId} dist {dist}: FinalDrive {result.FinalDrive} sits right at its floor — sign the " +
+            "loop pushed first gear to compensate for its own non-progress instead of stopping");
+    }
+
     [Fact]
     public async Task Generate_PostValidation_FixesGearRatios()
     {

@@ -4,18 +4,6 @@
 
 ---
 
-## Приоритет 1 — Критические баги
-
-### 19. Драг-тюн «упирается» в заданную пользователем отметку максималки вместо реальной оптимизации
-**Отзыв пользователя:** «your drag settings are... eh at best, its trying to top out at the mark you've set.» То есть расчёт передач на драге ощущается так, будто просто подгоняется под целевую скорость/дистанцию, а не считает реально оптимальный разгон.
-
-**Что сделать:**
-- [ ] Перепроверить после фикса `c3de745` (trap-speed cap, Mile distance factor) — воспроизводится ли ещё это ощущение
-- [ ] Если да — разобраться, не зажимает ли `GearingCalculator` передачи искусственно под целевой trap speed вместо честной оптимизации ускорения
-- [ ] Тест: сравнить расчётный разгон/трап-спид с реальными заездами на паре машин
-
----
-
 ## Приоритет 3 — Погрешности в БД
 
 ### 6. Вес машин — иногда больше, иногда меньше реального
@@ -66,7 +54,6 @@
 
 | # | Item | Priority |
 |---|------|----------|
-| 19 | Drag gearing feels like it just caps out at the user-set target speed instead of truly optimizing | P1 — Bug |
 | 6 | Car weight inaccuracies in DB (CurbWeight × 100) | P3 — DB |
 | 8 | Old/new data entry mode toggle (sliders vs dropdowns) | P4 — UX |
 | 20 | PI (Performance Index) class system — build/check viability before buying a car | P6 — New feature |
