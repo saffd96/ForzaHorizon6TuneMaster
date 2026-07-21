@@ -214,32 +214,6 @@ public class SelectedParts : NotifyBase
     [ResetToStock("Suspension")]
     public double? RideHeightRearOverride { get => _rideHeightRearOverride; set { if (Set(ref _rideHeightRearOverride, value)) OnPartChanged(); } }
 
-    // Damper min/max overrides — same min/max pattern as the spring overrides above.
-    private double? _reboundFrontMinOverride;
-    [ResetToStock("Suspension")]
-    public double? ReboundFrontMinOverride { get => _reboundFrontMinOverride; set { if (Set(ref _reboundFrontMinOverride, value)) OnPartChanged(); } }
-    private double? _reboundFrontMaxOverride;
-    [ResetToStock("Suspension")]
-    public double? ReboundFrontMaxOverride { get => _reboundFrontMaxOverride; set { if (Set(ref _reboundFrontMaxOverride, value)) OnPartChanged(); } }
-    private double? _reboundRearMinOverride;
-    [ResetToStock("Suspension")]
-    public double? ReboundRearMinOverride { get => _reboundRearMinOverride; set { if (Set(ref _reboundRearMinOverride, value)) OnPartChanged(); } }
-    private double? _reboundRearMaxOverride;
-    [ResetToStock("Suspension")]
-    public double? ReboundRearMaxOverride { get => _reboundRearMaxOverride; set { if (Set(ref _reboundRearMaxOverride, value)) OnPartChanged(); } }
-    private double? _bumpFrontMinOverride;
-    [ResetToStock("Suspension")]
-    public double? BumpFrontMinOverride { get => _bumpFrontMinOverride; set { if (Set(ref _bumpFrontMinOverride, value)) OnPartChanged(); } }
-    private double? _bumpFrontMaxOverride;
-    [ResetToStock("Suspension")]
-    public double? BumpFrontMaxOverride { get => _bumpFrontMaxOverride; set { if (Set(ref _bumpFrontMaxOverride, value)) OnPartChanged(); } }
-    private double? _bumpRearMinOverride;
-    [ResetToStock("Suspension")]
-    public double? BumpRearMinOverride { get => _bumpRearMinOverride; set { if (Set(ref _bumpRearMinOverride, value)) OnPartChanged(); } }
-    private double? _bumpRearMaxOverride;
-    [ResetToStock("Suspension")]
-    public double? BumpRearMaxOverride { get => _bumpRearMaxOverride; set { if (Set(ref _bumpRearMaxOverride, value)) OnPartChanged(); } }
-
     // ── Transmission ────────────────────────────────────────────────────────
 
     private int? _drivetrainSwapPartId;

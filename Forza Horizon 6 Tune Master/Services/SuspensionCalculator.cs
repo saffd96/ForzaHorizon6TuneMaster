@@ -334,21 +334,10 @@ internal static class SuspensionCalculator
         double bmpF = DampingFromSpringAndMass(springF_Nm, massF, frontPhys, dampingRatio * bumpRatio, false) * seasonMul * dampFrontMul;
         double bmpR = DampingFromSpringAndMass(springR_Nm, massR, rearPhys,  dampingRatio * bumpRatio, false) * seasonMul * dampRearMul;
 
-        // A user override (SelectedParts.ReboundFrontMinOverride etc.) wins over the DB range,
-        // same as the spring min/max overrides in CalculateSprings.
-        double rebMinF = parts.ReboundFrontMinOverride ?? frontPhys.MinDampenReboundRate;
-        double rebMaxF = parts.ReboundFrontMaxOverride ?? frontPhys.MaxDampenReboundRate;
-        double rebMinR = parts.ReboundRearMinOverride  ?? rearPhys.MinDampenReboundRate;
-        double rebMaxR = parts.ReboundRearMaxOverride  ?? rearPhys.MaxDampenReboundRate;
-        double bmpMinF = parts.BumpFrontMinOverride ?? frontPhys.MinDampenBumpRate;
-        double bmpMaxF = parts.BumpFrontMaxOverride ?? frontPhys.MaxDampenBumpRate;
-        double bmpMinR = parts.BumpRearMinOverride  ?? rearPhys.MinDampenBumpRate;
-        double bmpMaxR = parts.BumpRearMaxOverride  ?? rearPhys.MaxDampenBumpRate;
-
-        r.ReboundFront = Math.Round(CalculationHelpers.Clamp(rebF, rebMinF, rebMaxF), 1);
-        r.ReboundRear  = Math.Round(CalculationHelpers.Clamp(rebR, rebMinR, rebMaxR), 1);
-        r.BumpFront    = Math.Round(CalculationHelpers.Clamp(bmpF, bmpMinF, bmpMaxF), 1);
-        r.BumpRear     = Math.Round(CalculationHelpers.Clamp(bmpR, bmpMinR, bmpMaxR), 1);
+        r.ReboundFront = Math.Round(CalculationHelpers.Clamp(rebF, frontPhys.MinDampenReboundRate, frontPhys.MaxDampenReboundRate), 1);
+        r.ReboundRear  = Math.Round(CalculationHelpers.Clamp(rebR, rearPhys.MinDampenReboundRate,  rearPhys.MaxDampenReboundRate), 1);
+        r.BumpFront    = Math.Round(CalculationHelpers.Clamp(bmpF, frontPhys.MinDampenBumpRate,    frontPhys.MaxDampenBumpRate), 1);
+        r.BumpRear     = Math.Round(CalculationHelpers.Clamp(bmpR, rearPhys.MinDampenBumpRate,     rearPhys.MaxDampenBumpRate), 1);
 
         ex["Dampers"] = string.Format(CalculationHelpers.L("Expl_Dampers_Fmt"),
             r.ReboundFront, r.ReboundRear, r.BumpFront, r.BumpRear,

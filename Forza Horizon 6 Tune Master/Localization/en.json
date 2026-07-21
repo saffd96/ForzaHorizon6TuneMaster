@@ -288,7 +288,6 @@
   "ResultOverrideEnableTooltip": "Enable manual override — unchecking returns to the calculated value",
   "ResultSpringOverrideHint": "Manually set the min/max spring-rate range the calculator is allowed to use. Overrides the selected suspension part's own DB range while checked.",
   "ResultRideHeightOverrideHint": "Manually set the exact ride height used in every calculation. Overrides the calculated value while checked.",
-  "ResultDamperOverrideHint": "Manually set the min/max damper range the calculator is allowed to use. Overrides the selected suspension part's own DB range while checked.",
   "DrivingStyleHeader": "Driving Style",
   "DrivingStyleAero": "Aero Balance",
   "DrivingStyleAeroGrip": "Grip",

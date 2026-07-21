@@ -199,128 +199,6 @@ public class MainViewModel : NotifyBase
         }
     }
 
-    // Damper min/max overrides — same shape/plumbing as the spring ones above. Dampers are
-    // shown as plain numbers everywhere else (no unit system), so no Format/Parse conversion
-    // is needed beyond culture-invariant parsing.
-    private static string FormatPlainOverride(double v) => Math.Round(v, 1).ToString(CultureInfo.InvariantCulture);
-    private static bool TryParsePlainOverride(string s, out double v) =>
-        double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out v);
-
-    public string ReboundFrontMinOverrideText
-    {
-        get => FormatPlainOverride(Constraints.ReboundFrontMin);
-        set { if (TryParsePlainOverride(value, out double v)) _selectedParts.ReboundFrontMinOverride = v; OnPropertyChanged(); }
-    }
-    public string ReboundFrontMaxOverrideText
-    {
-        get => FormatPlainOverride(Constraints.ReboundFrontMax);
-        set { if (TryParsePlainOverride(value, out double v)) _selectedParts.ReboundFrontMaxOverride = v; OnPropertyChanged(); }
-    }
-    public bool HasReboundFrontOverride
-    {
-        get => _selectedParts.ReboundFrontMinOverride.HasValue || _selectedParts.ReboundFrontMaxOverride.HasValue;
-        set
-        {
-            if (value)
-            {
-                _selectedParts.ReboundFrontMinOverride ??= Constraints.ReboundFrontMin;
-                _selectedParts.ReboundFrontMaxOverride ??= Constraints.ReboundFrontMax;
-            }
-            else
-            {
-                _selectedParts.ReboundFrontMinOverride = null;
-                _selectedParts.ReboundFrontMaxOverride = null;
-            }
-            OnPropertyChanged();
-        }
-    }
-
-    public string ReboundRearMinOverrideText
-    {
-        get => FormatPlainOverride(Constraints.ReboundRearMin);
-        set { if (TryParsePlainOverride(value, out double v)) _selectedParts.ReboundRearMinOverride = v; OnPropertyChanged(); }
-    }
-    public string ReboundRearMaxOverrideText
-    {
-        get => FormatPlainOverride(Constraints.ReboundRearMax);
-        set { if (TryParsePlainOverride(value, out double v)) _selectedParts.ReboundRearMaxOverride = v; OnPropertyChanged(); }
-    }
-    public bool HasReboundRearOverride
-    {
-        get => _selectedParts.ReboundRearMinOverride.HasValue || _selectedParts.ReboundRearMaxOverride.HasValue;
-        set
-        {
-            if (value)
-            {
-                _selectedParts.ReboundRearMinOverride ??= Constraints.ReboundRearMin;
-                _selectedParts.ReboundRearMaxOverride ??= Constraints.ReboundRearMax;
-            }
-            else
-            {
-                _selectedParts.ReboundRearMinOverride = null;
-                _selectedParts.ReboundRearMaxOverride = null;
-            }
-            OnPropertyChanged();
-        }
-    }
-
-    public string BumpFrontMinOverrideText
-    {
-        get => FormatPlainOverride(Constraints.BumpFrontMin);
-        set { if (TryParsePlainOverride(value, out double v)) _selectedParts.BumpFrontMinOverride = v; OnPropertyChanged(); }
-    }
-    public string BumpFrontMaxOverrideText
-    {
-        get => FormatPlainOverride(Constraints.BumpFrontMax);
-        set { if (TryParsePlainOverride(value, out double v)) _selectedParts.BumpFrontMaxOverride = v; OnPropertyChanged(); }
-    }
-    public bool HasBumpFrontOverride
-    {
-        get => _selectedParts.BumpFrontMinOverride.HasValue || _selectedParts.BumpFrontMaxOverride.HasValue;
-        set
-        {
-            if (value)
-            {
-                _selectedParts.BumpFrontMinOverride ??= Constraints.BumpFrontMin;
-                _selectedParts.BumpFrontMaxOverride ??= Constraints.BumpFrontMax;
-            }
-            else
-            {
-                _selectedParts.BumpFrontMinOverride = null;
-                _selectedParts.BumpFrontMaxOverride = null;
-            }
-            OnPropertyChanged();
-        }
-    }
-
-    public string BumpRearMinOverrideText
-    {
-        get => FormatPlainOverride(Constraints.BumpRearMin);
-        set { if (TryParsePlainOverride(value, out double v)) _selectedParts.BumpRearMinOverride = v; OnPropertyChanged(); }
-    }
-    public string BumpRearMaxOverrideText
-    {
-        get => FormatPlainOverride(Constraints.BumpRearMax);
-        set { if (TryParsePlainOverride(value, out double v)) _selectedParts.BumpRearMaxOverride = v; OnPropertyChanged(); }
-    }
-    public bool HasBumpRearOverride
-    {
-        get => _selectedParts.BumpRearMinOverride.HasValue || _selectedParts.BumpRearMaxOverride.HasValue;
-        set
-        {
-            if (value)
-            {
-                _selectedParts.BumpRearMinOverride ??= Constraints.BumpRearMin;
-                _selectedParts.BumpRearMaxOverride ??= Constraints.BumpRearMax;
-            }
-            else
-            {
-                _selectedParts.BumpRearMinOverride = null;
-                _selectedParts.BumpRearMaxOverride = null;
-            }
-            OnPropertyChanged();
-        }
-    }
 
     private static readonly string[] BoundOverridePropertyNames =
     {
@@ -328,10 +206,6 @@ public class MainViewModel : NotifyBase
         nameof(SpringRearMinOverrideText),  nameof(SpringRearMaxOverrideText),  nameof(HasSpringRearOverride),
         nameof(RideHeightFrontOverrideText), nameof(HasRideHeightFrontOverride),
         nameof(RideHeightRearOverrideText),  nameof(HasRideHeightRearOverride),
-        nameof(ReboundFrontMinOverrideText), nameof(ReboundFrontMaxOverrideText), nameof(HasReboundFrontOverride),
-        nameof(ReboundRearMinOverrideText),  nameof(ReboundRearMaxOverrideText),  nameof(HasReboundRearOverride),
-        nameof(BumpFrontMinOverrideText),    nameof(BumpFrontMaxOverrideText),    nameof(HasBumpFrontOverride),
-        nameof(BumpRearMinOverrideText),     nameof(BumpRearMaxOverrideText),     nameof(HasBumpRearOverride),
     };
 
     private void RaiseBoundOverridePropertiesChanged()

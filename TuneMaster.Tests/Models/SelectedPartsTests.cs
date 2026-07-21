@@ -22,7 +22,7 @@ public class SelectedPartsTests
     }
 
     [Fact]
-    public void ResetToStock_MarksExactly61Properties()
+    public void ResetToStock_MarksExactly53Properties()
     {
         var count = typeof(SelectedParts)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -30,8 +30,7 @@ public class SelectedPartsTests
 
         // 39 original + FrontBumper/RearBumper/SideSkirt/Hood (body kits) + RimMassFront/RimMassRear
         // + BodyKit (body-kit conversion) + MaxRpmOverride + 4 spring min/max overrides
-        // + RideHeightFrontOverride/RideHeightRearOverride (direct-value, not min/max)
-        // + 8 damper min/max overrides (Rebound/Bump × Front/Rear × Min/Max).
-        Assert.Equal(61, count);
+        // + RideHeightFrontOverride/RideHeightRearOverride (direct-value, not min/max).
+        Assert.Equal(53, count);
     }
 }
