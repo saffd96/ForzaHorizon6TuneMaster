@@ -1420,6 +1420,39 @@ public class DbIntegrationCalculatorTests
             $"car {carDbId}: expected landing RPM to trend upward ({string.Join(", ", landingRpm.Select(l => l.ToString("F0")))})");
     }
 
+    // SelectedParts.IsManualTransmission: a manual box is shifted by the player and can be held
+    // to the rev limiter, so gearing should target 100% of MaxRPM instead of the automatic's
+    // CalculationHelpers.RevLimitFraction (95%) safety margin. Regression guard that the flag
+    // actually changes the computed gearing rather than being ignored.
+    //
+    // 247 is deliberately excluded from this spread: its physically-solved crossover step
+    // (TorqueCurveSampler.SolveCrossoverStep) saturates against the discipline's [stepMin,
+    // stepMax] envelope on both sides, so the ~5% shift-RPM difference gets clamped away and the
+    // two configs legitimately produce identical ratios for that car — not a bug, just not a
+    // useful case for this particular assertion.
+    [Theory]
+    [InlineData(295)]
+    [InlineData(423)]
+    [InlineData(1367)]
+    [InlineData(3631)]
+    public async Task ManualTransmission_ChangesGearingVsAutomatic(int carDbId)
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+        var track = new TrackInfo { Discipline = Discipline.Road };
+
+        var autoResult = new TuneGeneratorService().Generate(BuildCarCard(carDbId), track, new SelectedParts { IsManualTransmission = false }, db);
+        var manualResult = new TuneGeneratorService().Generate(BuildCarCard(carDbId), track, new SelectedParts { IsManualTransmission = true }, db);
+
+        Assert.True(autoResult.GearRatios.Count >= 2 && manualResult.GearRatios.Count >= 2,
+            $"car {carDbId} should have a multi-gear box in both runs");
+        bool anyRatioDiffers = autoResult.GearRatios.Count != manualResult.GearRatios.Count
+            || autoResult.GearRatios.Zip(manualResult.GearRatios, (a, m) => Math.Abs(a - m) > 0.001).Any(diff => diff);
+        Assert.True(anyRatioDiffers || Math.Abs(autoResult.FinalDrive - manualResult.FinalDrive) > 0.001,
+            $"car {carDbId}: manual gearing should differ from automatic (auto FD={autoResult.FinalDrive}, manual FD={manualResult.FinalDrive})");
+    }
+
     // On a short strip, RecommendedGearCount (built from the empirical trap speed) can fall well
     // below the installed box's real gear count — the trap speed just doesn't leave room for all of
     // them. Regression for the fix that stops BuildDisciplineRatios from cramming every installed

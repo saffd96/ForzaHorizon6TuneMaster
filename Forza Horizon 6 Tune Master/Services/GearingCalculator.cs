@@ -398,9 +398,11 @@ internal static class GearingCalculator
         // never null here.
         var trans = TuningPhysicsContext.Transmission(car, parts, db);
 
-        double targetRpmFraction = CalculationHelpers.RevLimitFraction > 0
-            ? CalculationHelpers.RevLimitFraction
-            : 0.95;
+        // Manual gearbox: the player holds each gear to the rev limiter, so gearing is computed
+        // against 100% of MaxRPM instead of the automatic's safety-margin fraction.
+        double targetRpmFraction = parts.IsManualTransmission
+            ? 1.0
+            : CalculationHelpers.RevLimitFraction > 0 ? CalculationHelpers.RevLimitFraction : 0.95;
 
         // On the drag strip the gearing targets an EMPIRICAL trap speed (Hale formula),
         // NOT the full terminal velocity × strip factor. The old terminal-velocity approach

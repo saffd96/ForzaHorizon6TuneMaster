@@ -701,6 +701,8 @@
   "Part_Intercooler": "Интеркулер",
   "Part_Clutch": "Сцепление",
   "Part_Transmission": "КПП",
+  "Transmission_ManualCheckbox": "Механическая коробка",
+  "Transmission_ManualCheckboxHint": "Передачи переключаешь сам и можешь держать до отсечки. Передаточные числа рассчитываются на 100% диапазона оборотов, а не с запасом под отсечку, как для автомата.",
   "Part_Driveline": "Кардан",
   "Part_Differential": "Дифференциал",
   "Part_FrontBumper": "Передний бампер",

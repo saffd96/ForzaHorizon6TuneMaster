@@ -28,6 +28,14 @@ public class TransmissionViewModel : INotifyPropertyChanged
     public PartOption? SelectedDriveline     { get => _parts == null ? null : Pick(_parts.DrivelinePartId, Drivelines);        set { if (value != null) _parts.DrivelinePartId = value.Id; } }
     public PartOption? SelectedDifferential  { get => _parts == null ? null : Pick(_parts.DifferentialPartId, Differentials);  set { if (value != null) _parts.DifferentialPartId = value.Id; } }
 
+    // Manual gearbox: shift-to-redline gearing instead of the automatic's safety-margin target
+    // (see SelectedParts.IsManualTransmission / GearingCalculator.CalculateGearing).
+    public bool IsManualTransmission
+    {
+        get => _parts != null && _parts.IsManualTransmission;
+        set { if (_parts != null) _parts.IsManualTransmission = value; }
+    }
+
     public void LoadForCar(CarCard car, SelectedParts parts)
     {
         _parts = parts;
@@ -93,6 +101,7 @@ public class TransmissionViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedClutch));
         OnPropertyChanged(nameof(SelectedDriveline));
         OnPropertyChanged(nameof(SelectedDifferential));
+        OnPropertyChanged(nameof(IsManualTransmission));
     }
 
     private void Populate<T>(ObservableCollection<PartOption> target, System.Collections.Generic.List<T> source) where T : DbUpgradePart

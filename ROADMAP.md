@@ -6,14 +6,6 @@
 
 ## Приоритет 1 — Критические баги
 
-### 17. Ручная коробка передач не использует весь диапазон оборотов
-**Отзыв пользователя:** «Gearing works well, but it doesn't accommodate the entire rev range when using manual.» Автоматическая коробка ощущается нормально, но при ручной передаточные числа не растягиваются так, чтобы каждая передача доходила до редлайна/использовала весь рабочий диапазон RPM.
-
-**Что сделать:**
-- [ ] Проверить `GearingCalculator`/`BuildDisciplineRatios` на предмет разницы поведения auto vs manual (флаг коробки может обрезать растяжку передач)
-- [ ] Сверить с недавним фиксом сжатия gear-ladder (`c3de745`) — не регрессия ли это того же места
-- [ ] Тест на нескольких машинах/дисциплинах: ручная коробка должна использовать полный диапазон RPM на каждой передаче, а не только на части
-
 ### 19. Драг-тюн «упирается» в заданную пользователем отметку максималки вместо реальной оптимизации
 **Отзыв пользователя:** «your drag settings are... eh at best, its trying to top out at the mark you've set.» То есть расчёт передач на драге ощущается так, будто просто подгоняется под целевую скорость/дистанцию, а не считает реально оптимальный разгон.
 
@@ -74,7 +66,6 @@
 
 | # | Item | Priority |
 |---|------|----------|
-| 17 | Manual transmission doesn't use full rev range per gear | P1 — Bug |
 | 19 | Drag gearing feels like it just caps out at the user-set target speed instead of truly optimizing | P1 — Bug |
 | 6 | Car weight inaccuracies in DB (CurbWeight × 100) | P3 — DB |
 | 8 | Old/new data entry mode toggle (sliders vs dropdowns) | P4 — UX |

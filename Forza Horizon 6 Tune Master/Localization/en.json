@@ -701,6 +701,8 @@
   "Part_Intercooler": "Intercooler",
   "Part_Clutch": "Clutch",
   "Part_Transmission": "Transmission",
+  "Transmission_ManualCheckbox": "Manual gearbox",
+  "Transmission_ManualCheckboxHint": "Gears you shift yourself and can hold to the rev limiter. Gearing is calculated to use 100% of the rev range instead of the automatic's safety margin below redline.",
   "Part_Driveline": "Driveline",
   "Part_Differential": "Differential",
   "Part_FrontBumper": "Front bumper",

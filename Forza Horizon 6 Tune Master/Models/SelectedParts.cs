@@ -238,6 +238,17 @@ public class SelectedParts : NotifyBase
     [ResetToStock("Transmission")]
     public int? DifferentialPartId { get => _differentialPartId; set { if (Set(ref _differentialPartId, value)) OnPartChanged(); } }
 
+    // Manual gearbox: the player decides exactly when to shift and can hold each gear all the
+    // way to the rev limiter, unlike an automatic which GearingCalculator targets at
+    // CalculationHelpers.RevLimitFraction (95% of MaxRPM) to leave a safety margin. When set,
+    // GearingCalculator computes gear ratios/final drive against 100% of MaxRPM instead.
+    // Not [ResetToStock] — it's a driving/calculation preference, not a fitted part, and the
+    // reset mechanism sets tagged properties to null via reflection, which a non-nullable bool
+    // can't accept.
+    private bool _isManualTransmission;
+
+    public bool IsManualTransmission { get => _isManualTransmission; set { if (Set(ref _isManualTransmission, value)) OnPartChanged(); } }
+
     // ── Wheels ──────────────────────────────────────────────────────────────
 
     private int? _tireProfilePartId;
