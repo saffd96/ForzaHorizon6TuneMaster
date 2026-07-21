@@ -121,6 +121,14 @@ public class EnginePartsViewModel : INotifyPropertyChanged
     // forced induction is installed.
     public bool ShowManifold => _parts == null || !_parts.ForcedInductionPartId.HasValue;
 
+    // Carbureted engines (e.g. 1984 DeTomaso Pantera GT5 84) use the same
+    // List_UpgradeEngineFuelSystem slot as fuel-injected engines — Forza just relabels its
+    // entries "Stock/Street/Sport/Race Carburetor" (see PartDisplayNameResolver.ResolveFuelSystemKey).
+    // The row label needs to follow suit or the dropdown reads "Fuel System" for a carbureted
+    // car and looks like there's no carburetor option at all.
+    public bool IsCarbureted => _parts != null && (_db.GetEngine(_parts.EngineId ?? 0)?.Carbureted ?? false);
+    public string FuelSystemLabel => LocalizationService.Instance.T(IsCarbureted ? "Part_Carburetor" : "Part_FuelSystem");
+
     public void ReloadManifold(int engineId)
     {
         LoadManifolds(engineId);
@@ -188,6 +196,8 @@ public class EnginePartsViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(SelectedValves));
         OnPropertyChanged(nameof(SelectedPistons));
         OnPropertyChanged(nameof(SelectedFuelSystem));
+        OnPropertyChanged(nameof(IsCarbureted));
+        OnPropertyChanged(nameof(FuelSystemLabel));
         OnPropertyChanged(nameof(SelectedIgnition));
         OnPropertyChanged(nameof(SelectedExhaust));
         OnPropertyChanged(nameof(SelectedIntake));
