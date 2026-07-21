@@ -4,25 +4,20 @@
              xmlns:v="clr-namespace:Forza_Horizon_6_Tune_Master.Views"
              xmlns:l="clr-namespace:Forza_Horizon_6_Tune_Master.Services">
     <StackPanel>
-        <TextBlock Text="{l:Loc SectionEngineValvetrain}" Style="{StaticResource PartGroupHeader}" Margin="0,0,0,4"/>
-        <v:PartRow Label="{l:Loc Part_Camshaft}"          Options="{Binding Camshafts}"     Selected="{Binding SelectedCamshaft}"/>
-        <v:PartRow Label="{l:Loc Part_Displacement}"      Options="{Binding Displacements}" Selected="{Binding SelectedDisplacement}"/>
-        <v:PartRow Label="{l:Loc Part_Valves}"            Options="{Binding Valves}"        Selected="{Binding SelectedValves}"/>
-        <v:PartRow Label="{l:Loc Part_PistonsCompression}" Options="{Binding Pistons}"      Selected="{Binding SelectedPistons}"/>
-        <v:PartRow Label="{l:Loc Part_Flywheel}"          Options="{Binding Flywheels}"     Selected="{Binding SelectedFlywheel}"/>
-
-        <TextBlock Text="{l:Loc SectionEngineAirFuel}" Style="{StaticResource PartGroupHeader}"/>
+        <v:PartRow Label="{l:Loc Part_RestrictorPlate}"   Options="{Binding Restrictors}"   Selected="{Binding SelectedRestrictor}"/>
         <v:PartRow Label="{l:Loc Part_Intake}"            Options="{Binding Intakes}"       Selected="{Binding SelectedIntake}"/>
         <v:PartRow Label="{l:Loc Part_Manifold}"          Options="{Binding Manifolds}"     Selected="{Binding SelectedManifold}"
                    Visibility="{Binding ShowManifold, Converter={StaticResource BoolVis}}"/>
-        <v:PartRow Label="{l:Loc Part_Exhaust}"           Options="{Binding Exhausts}"      Selected="{Binding SelectedExhaust}"/>
         <v:PartRow Label="{Binding FuelSystemLabel}"      Options="{Binding FuelSystems}"   Selected="{Binding SelectedFuelSystem}"/>
+        <v:PartRow Label="{l:Loc Part_Ignition}"          Options="{Binding Ignitions}"     Selected="{Binding SelectedIgnition}"/>
+        <v:PartRow Label="{l:Loc Part_Exhaust}"           Options="{Binding Exhausts}"      Selected="{Binding SelectedExhaust}"/>
+        <v:PartRow Label="{l:Loc Part_Camshaft}"          Options="{Binding Camshafts}"     Selected="{Binding SelectedCamshaft}"/>
+        <v:PartRow Label="{l:Loc Part_Valves}"            Options="{Binding Valves}"        Selected="{Binding SelectedValves}"/>
+        <v:PartRow Label="{l:Loc Part_Displacement}"      Options="{Binding Displacements}" Selected="{Binding SelectedDisplacement}"/>
+        <v:PartRow Label="{l:Loc Part_PistonsCompression}" Options="{Binding Pistons}"      Selected="{Binding SelectedPistons}"/>
         <v:PartRow Label="{l:Loc Part_ForcedInductionLevel}" Options="{Binding ForcedInductionLevels}" Selected="{Binding SelectedForcedInductionLevel}"/>
         <v:PartRow Label="{l:Loc Part_Intercooler}"       Options="{Binding Intercoolers}"  Selected="{Binding SelectedIntercooler}"/>
-        <v:PartRow Label="{l:Loc Part_RestrictorPlate}"   Options="{Binding Restrictors}"   Selected="{Binding SelectedRestrictor}"/>
-
-        <TextBlock Text="{l:Loc SectionEngineIgnitionCooling}" Style="{StaticResource PartGroupHeader}"/>
-        <v:PartRow Label="{l:Loc Part_Ignition}"          Options="{Binding Ignitions}"     Selected="{Binding SelectedIgnition}"/>
         <v:PartRow Label="{l:Loc Part_OilCooling}"        Options="{Binding OilCoolings}"   Selected="{Binding SelectedOilCooling}"/>
+        <v:PartRow Label="{l:Loc Part_Flywheel}"          Options="{Binding Flywheels}"     Selected="{Binding SelectedFlywheel}"/>
     </StackPanel>
 </UserControl>
