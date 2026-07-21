@@ -261,28 +261,32 @@
                                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                                             <CheckBox IsChecked="{Binding HasSpringFrontOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
                                                       ToolTip="{l:Loc ResultOverrideEnableTooltip}"/>
-                                            <TextBox Text="{Binding SpringFrontMinOverrideText, UpdateSourceTrigger=LostFocus}"
-                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
-                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultSpringOverrideHint}"/>
-                                            <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="4,0"/>
-                                            <TextBox Text="{Binding SpringFrontMaxOverrideText, UpdateSourceTrigger=LostFocus}"
-                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
-                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultSpringOverrideHint}"/>
+                                            <StackPanel Orientation="Horizontal" Visibility="{Binding HasSpringFrontOverride, Converter={StaticResource B2V}}">
+                                                <TextBox Text="{Binding SpringFrontMinOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                         FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                         ToolTip="{l:Loc ResultSpringOverrideHint}"/>
+                                                <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="4,0"/>
+                                                <TextBox Text="{Binding SpringFrontMaxOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                         FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                         ToolTip="{l:Loc ResultSpringOverrideHint}"/>
+                                            </StackPanel>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                                             <CheckBox IsChecked="{Binding HasSpringRearOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
                                                       ToolTip="{l:Loc ResultOverrideEnableTooltip}"/>
-                                            <TextBox Text="{Binding SpringRearMinOverrideText, UpdateSourceTrigger=LostFocus}"
-                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
-                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultSpringOverrideHint}"/>
-                                            <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="4,0"/>
-                                            <TextBox Text="{Binding SpringRearMaxOverrideText, UpdateSourceTrigger=LostFocus}"
-                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
-                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultSpringOverrideHint}"/>
+                                            <StackPanel Orientation="Horizontal" Visibility="{Binding HasSpringRearOverride, Converter={StaticResource B2V}}">
+                                                <TextBox Text="{Binding SpringRearMinOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                         FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                         ToolTip="{l:Loc ResultSpringOverrideHint}"/>
+                                                <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="4,0"/>
+                                                <TextBox Text="{Binding SpringRearMaxOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                         FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                         ToolTip="{l:Loc ResultSpringOverrideHint}"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </UniformGrid>
                                     <TextBlock Text="{l:Loc ResultRideHeight}" Style="{StaticResource RCardHeader}" Margin="0,8,0,0"/>
@@ -305,7 +309,8 @@
                                             <TextBox Text="{Binding RideHeightFrontOverrideText, UpdateSourceTrigger=LostFocus}"
                                                      Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
                                                      FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultRideHeightOverrideHint}"/>
+                                                     ToolTip="{l:Loc ResultRideHeightOverrideHint}"
+                                                     Visibility="{Binding HasRideHeightFrontOverride, Converter={StaticResource B2V}}"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                                             <CheckBox IsChecked="{Binding HasRideHeightRearOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
@@ -313,7 +318,8 @@
                                             <TextBox Text="{Binding RideHeightRearOverrideText, UpdateSourceTrigger=LostFocus}"
                                                      Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
                                                      FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultRideHeightOverrideHint}"/>
+                                                     ToolTip="{l:Loc ResultRideHeightOverrideHint}"
+                                                     Visibility="{Binding HasRideHeightRearOverride, Converter={StaticResource B2V}}"/>
                                         </StackPanel>
                                     </UniformGrid>
                                 </StackPanel>
@@ -347,54 +353,62 @@
                                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                                             <CheckBox IsChecked="{Binding HasReboundFrontOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
                                                       ToolTip="{l:Loc ResultOverrideEnableTooltip}"/>
-                                            <TextBox Text="{Binding ReboundFrontMinOverrideText, UpdateSourceTrigger=LostFocus}"
-                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
-                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultDamperOverrideHint}"/>
-                                            <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="4,0"/>
-                                            <TextBox Text="{Binding ReboundFrontMaxOverrideText, UpdateSourceTrigger=LostFocus}"
-                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
-                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultDamperOverrideHint}"/>
+                                            <StackPanel Orientation="Horizontal" Visibility="{Binding HasReboundFrontOverride, Converter={StaticResource B2V}}">
+                                                <TextBox Text="{Binding ReboundFrontMinOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                         FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                         ToolTip="{l:Loc ResultDamperOverrideHint}"/>
+                                                <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="4,0"/>
+                                                <TextBox Text="{Binding ReboundFrontMaxOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                         FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                         ToolTip="{l:Loc ResultDamperOverrideHint}"/>
+                                            </StackPanel>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                                             <CheckBox IsChecked="{Binding HasReboundRearOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
                                                       ToolTip="{l:Loc ResultOverrideEnableTooltip}"/>
-                                            <TextBox Text="{Binding ReboundRearMinOverrideText, UpdateSourceTrigger=LostFocus}"
-                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
-                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultDamperOverrideHint}"/>
-                                            <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="4,0"/>
-                                            <TextBox Text="{Binding ReboundRearMaxOverrideText, UpdateSourceTrigger=LostFocus}"
-                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
-                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultDamperOverrideHint}"/>
+                                            <StackPanel Orientation="Horizontal" Visibility="{Binding HasReboundRearOverride, Converter={StaticResource B2V}}">
+                                                <TextBox Text="{Binding ReboundRearMinOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                         FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                         ToolTip="{l:Loc ResultDamperOverrideHint}"/>
+                                                <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="4,0"/>
+                                                <TextBox Text="{Binding ReboundRearMaxOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                         FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                         ToolTip="{l:Loc ResultDamperOverrideHint}"/>
+                                            </StackPanel>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                                             <CheckBox IsChecked="{Binding HasBumpFrontOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
                                                       ToolTip="{l:Loc ResultOverrideEnableTooltip}"/>
-                                            <TextBox Text="{Binding BumpFrontMinOverrideText, UpdateSourceTrigger=LostFocus}"
-                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
-                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultDamperOverrideHint}"/>
-                                            <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="4,0"/>
-                                            <TextBox Text="{Binding BumpFrontMaxOverrideText, UpdateSourceTrigger=LostFocus}"
-                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
-                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultDamperOverrideHint}"/>
+                                            <StackPanel Orientation="Horizontal" Visibility="{Binding HasBumpFrontOverride, Converter={StaticResource B2V}}">
+                                                <TextBox Text="{Binding BumpFrontMinOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                         FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                         ToolTip="{l:Loc ResultDamperOverrideHint}"/>
+                                                <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="4,0"/>
+                                                <TextBox Text="{Binding BumpFrontMaxOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                         FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                         ToolTip="{l:Loc ResultDamperOverrideHint}"/>
+                                            </StackPanel>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                                             <CheckBox IsChecked="{Binding HasBumpRearOverride}" VerticalAlignment="Center" Margin="0,0,4,0"
                                                       ToolTip="{l:Loc ResultOverrideEnableTooltip}"/>
-                                            <TextBox Text="{Binding BumpRearMinOverrideText, UpdateSourceTrigger=LostFocus}"
-                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
-                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultDamperOverrideHint}"/>
-                                            <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="4,0"/>
-                                            <TextBox Text="{Binding BumpRearMaxOverrideText, UpdateSourceTrigger=LostFocus}"
-                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
-                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
-                                                     ToolTip="{l:Loc ResultDamperOverrideHint}"/>
+                                            <StackPanel Orientation="Horizontal" Visibility="{Binding HasBumpRearOverride, Converter={StaticResource B2V}}">
+                                                <TextBox Text="{Binding BumpRearMinOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                         FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                         ToolTip="{l:Loc ResultDamperOverrideHint}"/>
+                                                <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="4,0"/>
+                                                <TextBox Text="{Binding BumpRearMaxOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                         FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                         ToolTip="{l:Loc ResultDamperOverrideHint}"/>
+                                            </StackPanel>
                                         </StackPanel>
                                     </UniformGrid>
                                 </StackPanel>
