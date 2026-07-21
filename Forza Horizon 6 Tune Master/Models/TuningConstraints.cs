@@ -180,17 +180,21 @@ public class TuningConstraints : INotifyPropertyChanged
         var rSp = TuningPhysicsContext.RearSpringDamper(car, parts, db);
 
         // DB spring rates are already in N/mm (the unit the constraints store internally).
+        // A user-entered override (SelectedParts.SpringFrontMinOverride etc.) wins over the
+        // DB-derived bound, same escape-hatch pattern as SelectedParts.MaxRpmOverride. Ride height
+        // does NOT use a min/max override — see SelectedParts.RideHeightFrontOverride, it's a
+        // direct-value override applied in SuspensionCalculator.CalculateRideHeight instead.
         if (fSp != null)
         {
-            SpringFrontMin = fSp.MinSpringRate;
-            SpringFrontMax = fSp.MaxSpringRate;
+            SpringFrontMin = parts.SpringFrontMinOverride ?? fSp.MinSpringRate;
+            SpringFrontMax = parts.SpringFrontMaxOverride ?? fSp.MaxSpringRate;
             RideHeightFrontMin = fSp.MinRideHeight * 1000.0;
             RideHeightFrontMax = fSp.MaxRideHeight * 1000.0;
         }
         if (rSp != null)
         {
-            SpringRearMin = rSp.MinSpringRate;
-            SpringRearMax = rSp.MaxSpringRate;
+            SpringRearMin = parts.SpringRearMinOverride ?? rSp.MinSpringRate;
+            SpringRearMax = parts.SpringRearMaxOverride ?? rSp.MaxSpringRate;
             RideHeightRearMin = rSp.MinRideHeight * 1000.0;
             RideHeightRearMax = rSp.MaxRideHeight * 1000.0;
         }

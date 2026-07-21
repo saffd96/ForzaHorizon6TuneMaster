@@ -563,6 +563,125 @@ public class DbIntegrationCalculatorTests
         Assert.True(result.SpringRear > 0, $"SpringRear={result.SpringRear} should be positive");
     }
 
+    // Regression test: SuspensionCalculator.CalculateSprings used to clamp its Hz-derived spring
+    // rate to the selected part's [MinSpringRate, MaxSpringRate] before storing it, but that
+    // clamp was accidentally commented out in a later commit, letting the rate exceed what the
+    // part can physically produce (observed on rally suspension: computed rate above the part's
+    // own MaxSpringRate). Checked across a spread of cars/drivetrains with the stiffest available
+    // suspension level explicitly selected, since that is the tier most likely to hit the ceiling.
+    [Theory]
+    [InlineData(247)]
+    [InlineData(295)]
+    [InlineData(423)]
+    [InlineData(1367)]
+    [InlineData(3631)]
+    public async Task Springs_StiffestAvailableLevel_StaysWithinPartPhysicalLimits(int carDbId)
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+
+        var db = Fh6DatabaseService.Instance;
+        var car = BuildCarCard(carDbId);
+        var springDampers = db.GetSpringDampers(carDbId);
+        if (springDampers.Count == 0)
+            return; // no selectable suspension parts for this car — nothing to clamp
+
+        var stiffest = springDampers.OrderByDescending(p => p.Level).First();
+        var parts = new SelectedParts { SpringDamperPartId = stiffest.Id };
+
+        var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
+        var rearPhys = TuningPhysicsContext.RearSpringDamper(car, parts, db);
+        Assert.NotNull(frontPhys);
+        Assert.NotNull(rearPhys);
+
+        var result = new TuneResult();
+        var ex = new System.Collections.Generic.Dictionary<string, string>();
+        SuspensionCalculator.CalculateSprings(car, CarFactory.DefaultTrack(), parts, db, result, ex);
+
+        Assert.InRange(result.SpringFront, frontPhys!.MinSpringRate, frontPhys.MaxSpringRate);
+        Assert.InRange(result.SpringRear, rearPhys!.MinSpringRate, rearPhys.MaxSpringRate);
+    }
+
+    // Manual spring-rate min/max override (SelectedParts.SpringFrontMinOverride etc.), same
+    // escape-hatch pattern as MaxRpmOverride: when set, it replaces the DB part's own
+    // [MinSpringRate, MaxSpringRate] range for the clamp, letting a user tighten or widen it.
+    [Fact]
+    public async Task Springs_WithMinMaxOverride_ClampsToOverrideNotDbRange()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+
+        var db = Fh6DatabaseService.Instance;
+        var car = BuildCarCard(247);
+        var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, new SelectedParts(), db);
+        Assert.NotNull(frontPhys);
+
+        // Force the clamp to bite by overriding to a tiny window far below the DB's own range.
+        double overrideMin = frontPhys!.MinSpringRate;
+        double overrideMax = frontPhys.MinSpringRate + 0.5;
+        var parts = new SelectedParts { SpringFrontMinOverride = overrideMin, SpringFrontMaxOverride = overrideMax };
+
+        var result = new TuneResult();
+        var ex = new System.Collections.Generic.Dictionary<string, string>();
+        SuspensionCalculator.CalculateSprings(car, CarFactory.DefaultTrack(), parts, db, result, ex);
+
+        Assert.InRange(result.SpringFront, overrideMin, overrideMax);
+    }
+
+    [Fact]
+    public async Task Springs_OverrideReset_FallsBackToDbRange()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+
+        var db = Fh6DatabaseService.Instance;
+        var car = BuildCarCard(247);
+        var parts = new SelectedParts();
+
+        SuspensionCalculator.CalculateSprings(car, CarFactory.DefaultTrack(), parts, db, new TuneResult(), new System.Collections.Generic.Dictionary<string, string>());
+
+        parts.SpringFrontMinOverride = 999;
+        parts.SpringFrontMaxOverride = 1000;
+        parts.SpringFrontMinOverride = null;
+        parts.SpringFrontMaxOverride = null;
+
+        var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
+        var result = new TuneResult();
+        SuspensionCalculator.CalculateSprings(car, CarFactory.DefaultTrack(), parts, db, result, new System.Collections.Generic.Dictionary<string, string>());
+
+        Assert.InRange(result.SpringFront, frontPhys!.MinSpringRate, frontPhys.MaxSpringRate);
+    }
+
+    // Ride height uses a direct-value override (same shape as SelectedParts.MaxRpmOverride),
+    // not a min/max range like the spring overrides above: the exact value the user types
+    // replaces the computed ride height outright.
+    [Fact]
+    public async Task RideHeight_WithDirectOverride_ReplacesComputedValue()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+
+        var db = Fh6DatabaseService.Instance;
+        var car = BuildCarCard(247);
+        var parts = new SelectedParts();
+        var frontPhys = TuningPhysicsContext.FrontSpringDamper(car, parts, db);
+        Assert.NotNull(frontPhys);
+
+        // Pick a value clearly different from whatever the formula would compute, but still
+        // inside the part's own [MinRideHeight, MaxRideHeight] so the clamp doesn't mask it.
+        double overrideValue = Math.Round((frontPhys!.MinRideHeight + frontPhys.MaxRideHeight) / 2.0 * 1000.0, 1);
+        parts.RideHeightFrontOverride = overrideValue;
+
+        var constraints = new TuningConstraints();
+        constraints.ApplyPhysicsBounds(car, parts, db);
+
+        var result = new TuneResult();
+        var ex = new System.Collections.Generic.Dictionary<string, string>();
+        SuspensionCalculator.CalculateRideHeight(car, CarFactory.DefaultTrack(), parts, db, result, ex, constraints);
+
+        Assert.Equal(overrideValue, result.RideHeightFront, 1);
+    }
+
     [Fact]
     public async Task RideHeight_WithRealDbPart_RangeFromDbInMm()
     {

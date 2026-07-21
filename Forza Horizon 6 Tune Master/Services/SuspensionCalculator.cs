@@ -165,9 +165,16 @@ internal static class SuspensionCalculator
         double springR_nmm = SpringFromHz(hzR, massR);
 
         // Clamp to the spring's physical bounds — the game's tuning slider uses
-        // [MinSpringRate, MaxSpringRate] as its range (linear interpolation).
-        //springF_nmm = CalculationHelpers.Clamp(springF_nmm, frontPhys.MinSpringRate, frontPhys.MaxSpringRate);
-        //springR_nmm = CalculationHelpers.Clamp(springR_nmm, rearPhys.MinSpringRate, rearPhys.MaxSpringRate);
+        // [MinSpringRate, MaxSpringRate] as its range (linear interpolation). A user override
+        // (SelectedParts.SpringFrontMinOverride etc.) wins over the DB range, same as the other
+        // suspension clamps (ARB, dampers) read straight from the DB physics rather than from
+        // TuningConstraints — that object only mirrors these bounds for UI display purposes.
+        double springMinF = parts.SpringFrontMinOverride ?? frontPhys.MinSpringRate;
+        double springMaxF = parts.SpringFrontMaxOverride ?? frontPhys.MaxSpringRate;
+        double springMinR = parts.SpringRearMinOverride  ?? rearPhys.MinSpringRate;
+        double springMaxR = parts.SpringRearMaxOverride  ?? rearPhys.MaxSpringRate;
+        springF_nmm = CalculationHelpers.Clamp(springF_nmm, springMinF, springMaxF);
+        springR_nmm = CalculationHelpers.Clamp(springR_nmm, springMinR, springMaxR);
 
         r.SpringFront = Math.Round(springF_nmm, 1);
         r.SpringRear  = Math.Round(springR_nmm, 1);
@@ -238,6 +245,11 @@ internal static class SuspensionCalculator
         // Clamp to the user's adjustable constraints if they are provided.
         rhF = CalculationHelpers.Clamp(rhF, c.RideHeightFrontMin, c.RideHeightFrontMax);
         rhR = CalculationHelpers.Clamp(rhR, c.RideHeightRearMin,  c.RideHeightRearMax);
+
+        // A direct-value override (same shape as SelectedParts.MaxRpmOverride) replaces the
+        // computed value outright rather than just bounding it.
+        if (parts.RideHeightFrontOverride.HasValue) rhF = parts.RideHeightFrontOverride.Value;
+        if (parts.RideHeightRearOverride.HasValue)  rhR = parts.RideHeightRearOverride.Value;
 
         r.RideHeightFront = Math.Round(rhF, 1);
         r.RideHeightRear  = Math.Round(rhR, 1);

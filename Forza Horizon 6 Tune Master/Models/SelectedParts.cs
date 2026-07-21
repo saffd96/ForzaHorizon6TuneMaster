@@ -188,6 +188,33 @@ public class SelectedParts : NotifyBase
     [ResetToStock("Suspension")]
     public int? AntiSwayRearPartId { get => _antiSwayRearPartId; set { if (Set(ref _antiSwayRearPartId, value)) OnPartChanged(); } }
 
+    // Manual min/max overrides for spring rate and ride height — same escape-hatch pattern as
+    // MaxRpmOverride above: when set, TuningConstraints.ApplyPhysicsBounds uses these instead of
+    // the selected SpringDamper part's DB range, and the suspension calculators clamp against
+    // whatever TuningConstraints ends up holding. Null means "use the DB-derived bound" (default).
+    private double? _springFrontMinOverride;
+    [ResetToStock("Suspension")]
+    public double? SpringFrontMinOverride { get => _springFrontMinOverride; set { if (Set(ref _springFrontMinOverride, value)) OnPartChanged(); } }
+    private double? _springFrontMaxOverride;
+    [ResetToStock("Suspension")]
+    public double? SpringFrontMaxOverride { get => _springFrontMaxOverride; set { if (Set(ref _springFrontMaxOverride, value)) OnPartChanged(); } }
+    private double? _springRearMinOverride;
+    [ResetToStock("Suspension")]
+    public double? SpringRearMinOverride { get => _springRearMinOverride; set { if (Set(ref _springRearMinOverride, value)) OnPartChanged(); } }
+    private double? _springRearMaxOverride;
+    [ResetToStock("Suspension")]
+    public double? SpringRearMaxOverride { get => _springRearMaxOverride; set { if (Set(ref _springRearMaxOverride, value)) OnPartChanged(); } }
+
+    // Ride height uses a direct-value override, same shape as MaxRpmOverride — not a min/max
+    // range like the spring overrides above: the user types the exact clearance they want and
+    // SuspensionCalculator.CalculateRideHeight uses it as-is instead of the computed value.
+    private double? _rideHeightFrontOverride;
+    [ResetToStock("Suspension")]
+    public double? RideHeightFrontOverride { get => _rideHeightFrontOverride; set { if (Set(ref _rideHeightFrontOverride, value)) OnPartChanged(); } }
+    private double? _rideHeightRearOverride;
+    [ResetToStock("Suspension")]
+    public double? RideHeightRearOverride { get => _rideHeightRearOverride; set { if (Set(ref _rideHeightRearOverride, value)) OnPartChanged(); } }
+
     // ── Transmission ────────────────────────────────────────────────────────
 
     private int? _drivetrainSwapPartId;

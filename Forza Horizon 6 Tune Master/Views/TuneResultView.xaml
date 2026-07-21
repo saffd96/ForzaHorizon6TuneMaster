@@ -255,6 +255,44 @@
                                             <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="spring"><Binding Path="TuneResult.SpringRear"/><Binding Path="SpringUnit"/></MultiBinding></v:ResultParam.ValueText>
                                         </v:ResultParam>
                                     </UniformGrid>
+                                    <TextBlock Text="{l:Loc ResultOverrideMinMax}" Foreground="{StaticResource TextDimBrush}"
+                                               TextElement.FontSize="{DynamicResource FontXSmall}" Margin="6,2,0,0"/>
+                                    <UniformGrid Columns="2">
+                                        <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
+                                            <TextBox Text="{Binding SpringFrontMinOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                     ToolTip="{l:Loc ResultSpringOverrideHint}"/>
+                                            <Button Content="&#x21BA;" Style="{StaticResource SecondaryButton}"
+                                                    Width="18" Height="18" Padding="0" FontSize="10" Margin="4,0,4,0"
+                                                    VerticalAlignment="Center"
+                                                    Command="{Binding ResetSpringFrontOverrideCommand}"
+                                                    Visibility="{Binding HasSpringFrontOverride, Converter={StaticResource B2V}}"
+                                                    ToolTip="{l:Loc ResultOverrideResetTooltip}"/>
+                                            <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                            <TextBox Text="{Binding SpringFrontMaxOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                     ToolTip="{l:Loc ResultSpringOverrideHint}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
+                                            <TextBox Text="{Binding SpringRearMinOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                     ToolTip="{l:Loc ResultSpringOverrideHint}"/>
+                                            <Button Content="&#x21BA;" Style="{StaticResource SecondaryButton}"
+                                                    Width="18" Height="18" Padding="0" FontSize="10" Margin="4,0,4,0"
+                                                    VerticalAlignment="Center"
+                                                    Command="{Binding ResetSpringRearOverrideCommand}"
+                                                    Visibility="{Binding HasSpringRearOverride, Converter={StaticResource B2V}}"
+                                                    ToolTip="{l:Loc ResultOverrideResetTooltip}"/>
+                                            <TextBlock Text="–" Foreground="{StaticResource TextDimBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                            <TextBox Text="{Binding SpringRearMaxOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                     ToolTip="{l:Loc ResultSpringOverrideHint}"/>
+                                        </StackPanel>
+                                    </UniformGrid>
                                     <TextBlock Text="{l:Loc ResultRideHeight}" Style="{StaticResource RCardHeader}" Margin="0,8,0,0"/>
                                     <UniformGrid Columns="2">
                                         <v:ResultParam Label="{l:Loc ResultRideHeightFront}" Hint="{Binding TuneResult.Explanations[RideHeight]}" Margin="6,0,6,0">
@@ -265,6 +303,34 @@
                                             <v:ResultParam.ValueText><MultiBinding Converter="{StaticResource UV}" ConverterParameter="height"><Binding Path="TuneResult.RideHeightRear"/><Binding Path="UseImperial"/></MultiBinding></v:ResultParam.ValueText>
                                             <v:ResultParam.Progress><MultiBinding Converter="{StaticResource VTR}"><Binding Path="TuneResult.RideHeightRear"/><Binding Path="Constraints.RideHeightRearMin"/><Binding Path="Constraints.RideHeightRearMax"/></MultiBinding></v:ResultParam.Progress>
                                         </v:ResultParam>
+                                    </UniformGrid>
+                                    <TextBlock Text="{l:Loc ResultOverride}" Foreground="{StaticResource TextDimBrush}"
+                                               TextElement.FontSize="{DynamicResource FontXSmall}" Margin="6,2,0,0"/>
+                                    <UniformGrid Columns="2">
+                                        <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
+                                            <TextBox Text="{Binding RideHeightFrontOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                     ToolTip="{l:Loc ResultRideHeightOverrideHint}"/>
+                                            <Button Content="&#x21BA;" Style="{StaticResource SecondaryButton}"
+                                                    Width="18" Height="18" Padding="0" FontSize="10" Margin="4,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Command="{Binding ResetRideHeightFrontOverrideCommand}"
+                                                    Visibility="{Binding HasRideHeightFrontOverride, Converter={StaticResource B2V}}"
+                                                    ToolTip="{l:Loc ResultOverrideResetToCalculatedTooltip}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
+                                            <TextBox Text="{Binding RideHeightRearOverrideText, UpdateSourceTrigger=LostFocus}"
+                                                     Width="80" VerticalAlignment="Center" TextAlignment="Right" Padding="4,2"
+                                                     FontFamily="{StaticResource MonoFontFamily}" Foreground="{StaticResource CyanBrush}"
+                                                     ToolTip="{l:Loc ResultRideHeightOverrideHint}"/>
+                                            <Button Content="&#x21BA;" Style="{StaticResource SecondaryButton}"
+                                                    Width="18" Height="18" Padding="0" FontSize="10" Margin="4,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Command="{Binding ResetRideHeightRearOverrideCommand}"
+                                                    Visibility="{Binding HasRideHeightRearOverride, Converter={StaticResource B2V}}"
+                                                    ToolTip="{l:Loc ResultOverrideResetToCalculatedTooltip}"/>
+                                        </StackPanel>
                                     </UniformGrid>
                                 </StackPanel>
                             </Border>

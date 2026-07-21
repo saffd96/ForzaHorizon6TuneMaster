@@ -66,6 +66,96 @@ public class MainViewModel : NotifyBase
 
     public bool HasMaxRpmOverride => _selectedParts.MaxRpmOverride.HasValue;
 
+    // Manual min/max overrides for spring rate and ride height — same pattern as
+    // MaxRpmOverrideText above. Constraints.SpringFrontMin/Max etc. already resolve to
+    // "override if set, else DB-derived bound" via TuningConstraints.ApplyPhysicsBounds, so the
+    // getters just read the constraint directly; the setter writes the override (always stored
+    // canonically — N/mm for spring, mm for ride height), which is what ApplyPhysicsBounds reads
+    // back the next time parts change. Display/parse goes through the same SpringUnit/UseImperial
+    // conversion as the rest of the UI, so the override field always matches what's shown next to
+    // it (see UnitValueConverter's "spring"/"height" branches).
+    private string FormatSpringOverride(double nmm) => _springUnit switch
+    {
+        SpringUnit.KgfMm => Math.Round(nmm / 9.807 * 10.0, 1).ToString(CultureInfo.InvariantCulture),
+        SpringUnit.LbsIn => Math.Round(nmm * PhysicsConstants.NmmToLbsIn, 1).ToString(CultureInfo.InvariantCulture),
+        _                => Math.Round(nmm * 10.0, 1).ToString(CultureInfo.InvariantCulture)
+    };
+    private bool TryParseSpringOverride(string s, out double nmm)
+    {
+        if (!double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out double v)) { nmm = 0; return false; }
+        nmm = _springUnit switch
+        {
+            SpringUnit.KgfMm => v / 10.0 * 9.807,
+            SpringUnit.LbsIn => v / PhysicsConstants.NmmToLbsIn,
+            _                => v / 10.0
+        };
+        return true;
+    }
+
+    private string FormatRideHeightOverride(double mm) =>
+        (UseImperial ? Math.Round(mm / 25.4, 2) : Math.Round(mm, 1)).ToString(CultureInfo.InvariantCulture);
+    private bool TryParseRideHeightOverride(string s, out double mm)
+    {
+        if (!double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out double v)) { mm = 0; return false; }
+        mm = UseImperial ? v * 25.4 : v;
+        return true;
+    }
+
+    public string SpringFrontMinOverrideText
+    {
+        get => FormatSpringOverride(Constraints.SpringFrontMin);
+        set { if (TryParseSpringOverride(value, out double v)) _selectedParts.SpringFrontMinOverride = v; OnPropertyChanged(); }
+    }
+    public string SpringFrontMaxOverrideText
+    {
+        get => FormatSpringOverride(Constraints.SpringFrontMax);
+        set { if (TryParseSpringOverride(value, out double v)) _selectedParts.SpringFrontMaxOverride = v; OnPropertyChanged(); }
+    }
+    public bool HasSpringFrontOverride => _selectedParts.SpringFrontMinOverride.HasValue || _selectedParts.SpringFrontMaxOverride.HasValue;
+
+    public string SpringRearMinOverrideText
+    {
+        get => FormatSpringOverride(Constraints.SpringRearMin);
+        set { if (TryParseSpringOverride(value, out double v)) _selectedParts.SpringRearMinOverride = v; OnPropertyChanged(); }
+    }
+    public string SpringRearMaxOverrideText
+    {
+        get => FormatSpringOverride(Constraints.SpringRearMax);
+        set { if (TryParseSpringOverride(value, out double v)) _selectedParts.SpringRearMaxOverride = v; OnPropertyChanged(); }
+    }
+    public bool HasSpringRearOverride => _selectedParts.SpringRearMinOverride.HasValue || _selectedParts.SpringRearMaxOverride.HasValue;
+
+    // Direct-value override, same shape as MaxRpmOverrideText: shows the effective value
+    // (override if set, else the last computed ride height) and replaces it outright rather
+    // than bounding it — unlike the spring min/max overrides above.
+    public string RideHeightFrontOverrideText
+    {
+        get => FormatRideHeightOverride(_selectedParts.RideHeightFrontOverride ?? _tuneResult?.RideHeightFront ?? Constraints.RideHeightFrontMin);
+        set { if (TryParseRideHeightOverride(value, out double v)) _selectedParts.RideHeightFrontOverride = v; OnPropertyChanged(); }
+    }
+    public bool HasRideHeightFrontOverride => _selectedParts.RideHeightFrontOverride.HasValue;
+
+    public string RideHeightRearOverrideText
+    {
+        get => FormatRideHeightOverride(_selectedParts.RideHeightRearOverride ?? _tuneResult?.RideHeightRear ?? Constraints.RideHeightRearMin);
+        set { if (TryParseRideHeightOverride(value, out double v)) _selectedParts.RideHeightRearOverride = v; OnPropertyChanged(); }
+    }
+    public bool HasRideHeightRearOverride => _selectedParts.RideHeightRearOverride.HasValue;
+
+    private static readonly string[] BoundOverridePropertyNames =
+    {
+        nameof(SpringFrontMinOverrideText), nameof(SpringFrontMaxOverrideText), nameof(HasSpringFrontOverride),
+        nameof(SpringRearMinOverrideText),  nameof(SpringRearMaxOverrideText),  nameof(HasSpringRearOverride),
+        nameof(RideHeightFrontOverrideText), nameof(HasRideHeightFrontOverride),
+        nameof(RideHeightRearOverrideText),  nameof(HasRideHeightRearOverride),
+    };
+
+    private void RaiseBoundOverridePropertiesChanged()
+    {
+        foreach (var name in BoundOverridePropertyNames)
+            OnPropertyChanged(name);
+    }
+
     private void OnCarMassUpdated(double totalMass, double? frontWeightDistPercent)
     {
         Car.TotalMass = totalMass;
@@ -214,6 +304,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         // clamp manual edits to the suspension's physical range.
         _dbSpringFrontMin = Constraints.SpringFrontMin;
         _dbSpringFrontMax = Constraints.SpringFrontMax;
+        RaiseBoundOverridePropertiesChanged();
         InvalidateDiffDecel(); // the fitted differential may have changed
 
         if (!IsAutoGenerate || _isGenerating) return;
@@ -250,6 +341,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             OnPropertyChanged(nameof(HasLaunchControl));
             OnPropertyChanged(nameof(MaxRpmOverrideText));
             OnPropertyChanged(nameof(HasMaxRpmOverride));
+            RaiseBoundOverridePropertiesChanged();
         }
     }
     public bool HasResult        => _tuneResult != null;
@@ -379,6 +471,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             OnPropertyChanged(nameof(RearTrackFieldLabel));
             OnPropertyChanged(nameof(UnitToggleLabel));
             ApplyUnitSystemToPartLabels();
+            RaiseBoundOverridePropertiesChanged();
             if (!_syncingUnitSystem)
             {
                 _syncingUnitSystem = true;
@@ -427,6 +520,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             _springUnit = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(SpringUnitToggleLabel));
+            RaiseBoundOverridePropertiesChanged();
             if (!_syncingSpringUnit)
             {
                 _syncingSpringUnit = true;
@@ -605,6 +699,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
                 OnPropertyChanged(nameof(RearTrackFieldLabel));
                 OnPropertyChanged(nameof(UnitToggleLabel));
                 ApplyUnitSystemToPartLabels();
+                RaiseBoundOverridePropertiesChanged();
                 SaveUnitSettings();
             }
             finally { _syncingUnitSystem = false; }
@@ -651,6 +746,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
                 _springUnit = value.Value;
                 OnPropertyChanged(nameof(SpringUnit));
                 OnPropertyChanged(nameof(SpringUnitToggleLabel));
+                RaiseBoundOverridePropertiesChanged();
                 SaveUnitSettings();
             }
             finally { _syncingSpringUnit = false; }
@@ -1023,6 +1119,10 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     public RelayCommand ResetWheelsCommand { get; }
     public RelayCommand ResetMotorCommand { get; }
     public RelayCommand ResetMaxRpmOverrideCommand { get; }
+    public RelayCommand ResetSpringFrontOverrideCommand { get; }
+    public RelayCommand ResetSpringRearOverrideCommand { get; }
+    public RelayCommand ResetRideHeightFrontOverrideCommand { get; }
+    public RelayCommand ResetRideHeightRearOverrideCommand { get; }
 
     public MainViewModel()
     {
@@ -1063,6 +1163,12 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         ResetWheelsCommand      = new RelayCommand(() => ExecuteResetCategory("Wheels"));
         ResetMotorCommand       = new RelayCommand(() => ExecuteResetCategory("Motor"));
         ResetMaxRpmOverrideCommand = new RelayCommand(() => _selectedParts.MaxRpmOverride = null);
+        ResetSpringFrontOverrideCommand = new RelayCommand(() =>
+            { _selectedParts.SpringFrontMinOverride = null; _selectedParts.SpringFrontMaxOverride = null; });
+        ResetSpringRearOverrideCommand = new RelayCommand(() =>
+            { _selectedParts.SpringRearMinOverride = null; _selectedParts.SpringRearMaxOverride = null; });
+        ResetRideHeightFrontOverrideCommand = new RelayCommand(() => _selectedParts.RideHeightFrontOverride = null);
+        ResetRideHeightRearOverrideCommand = new RelayCommand(() => _selectedParts.RideHeightRearOverride = null);
 
         ToggleUnitsCommand      = new RelayCommand(DoToggleUnits);
         TogglePowerUnitCommand  = new RelayCommand(DoTogglePowerUnit);
