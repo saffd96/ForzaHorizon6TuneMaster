@@ -7,8 +7,6 @@
         <TextBlock Text="{l:Loc SectionTransmissionClutch}" Style="{StaticResource PartGroupHeader}" Margin="0,0,0,4"/>
         <v:PartRow Label="{l:Loc Part_Transmission}" Options="{Binding Transmissions}" Selected="{Binding SelectedTransmission}"/>
         <v:PartRow Label="{l:Loc Part_Clutch}"       Options="{Binding Clutches}"      Selected="{Binding SelectedClutch}"/>
-        <CheckBox IsChecked="{Binding IsManualTransmission}" Content="{l:Loc Transmission_ManualCheckbox}"
-                  Margin="6,4,6,4" ToolTip="{l:Loc Transmission_ManualCheckboxHint}"/>
 
         <TextBlock Text="{l:Loc SectionDrivelineDiff}" Style="{StaticResource PartGroupHeader}"/>
         <v:PartRow Label="{l:Loc Part_Driveline}"    Options="{Binding Drivelines}"    Selected="{Binding SelectedDriveline}"/>

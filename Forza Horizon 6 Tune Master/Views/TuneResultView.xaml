@@ -455,6 +455,12 @@
                                               VerticalAlignment="Center" Margin="14,0,0,0"
                                               ToolTip="{l:Loc ResultRecGearsHint}"/>
 
+                                    <CheckBox IsChecked="{Binding IsManualTransmission}"
+                                              Content="{l:Loc Transmission_ManualCheckbox}"
+                                              Foreground="{StaticResource AccentBrush}" FontSize="11"
+                                              VerticalAlignment="Center" Margin="14,0,0,0"
+                                              ToolTip="{l:Loc Transmission_ManualCheckboxHint}"/>
+
                                     <TextBlock Text="{l:Loc ResultMaxRpmOverride}" Foreground="{StaticResource TextDimBrush}"
                                                TextElement.FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="14,0,6,0"/>
                                     <TextBox Text="{Binding MaxRpmOverrideText, UpdateSourceTrigger=LostFocus}"

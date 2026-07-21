@@ -66,6 +66,16 @@ public class MainViewModel : NotifyBase
 
     public bool HasMaxRpmOverride => _selectedParts.MaxRpmOverride.HasValue;
 
+    // Manual gearbox: shift-to-redline gearing instead of the automatic's safety-margin target
+    // (see SelectedParts.IsManualTransmission / GearingCalculator.CalculateGearing). Lives in the
+    // results Gearing card next to the other gearing controls (Force Rec. Gears, Max RPM
+    // override), not in the Transmission parts tab.
+    public bool IsManualTransmission
+    {
+        get => _selectedParts.IsManualTransmission;
+        set { if (_selectedParts.IsManualTransmission != value) { _selectedParts.IsManualTransmission = value; OnPropertyChanged(); } }
+    }
+
     // Manual min/max overrides for spring rate and ride height — same pattern as
     // MaxRpmOverrideText above. Constraints.SpringFrontMin/Max etc. already resolve to
     // "override if set, else DB-derived bound" via TuningConstraints.ApplyPhysicsBounds, so the
@@ -353,6 +363,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         PowerCalculator.Calculate(Car, _selectedParts);
         OnPropertyChanged(nameof(MaxRpmOverrideText));
         OnPropertyChanged(nameof(HasMaxRpmOverride));
+        OnPropertyChanged(nameof(IsManualTransmission));
         // Update tire/rim dimensions from selected parts.
         UpdateTireAndWheelData();
         // Always update enums when ANY part changes (spring, tire, brakes, diff, aero, ARB, etc.)
