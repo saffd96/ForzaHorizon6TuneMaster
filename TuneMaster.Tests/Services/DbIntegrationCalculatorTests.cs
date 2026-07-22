@@ -2110,4 +2110,111 @@ public class DbIntegrationCalculatorTests
             $"exceeding the DB dyno ceiling ({ceiling:F0} hp) by more than 5% — suggests the boost is " +
             "being double-counted (misrouted into the NA-engine's-first-FI branch).");
     }
+
+    // ── Mass: wheel-style + rim-size double-counting ────────────────────────
+    // WheelTierMassDiff's d²·w formula reads the CURRENTLY selected rim diameter/tire width
+    // (not the stock size) and was calibrated against real in-game deltas measured at both a
+    // stock and an up-sized fitment on the same non-stock wheel style — i.e. it already prices
+    // in the size-driven mass change together with the style-driven change. ComputeTotalMass
+    // used to ALSO add the flat RimSizeMassCoef/TireWidthMassCoef terms unconditionally,
+    // double-counting the size portion whenever a non-stock wheel style was combined with a
+    // resized rim/tire (the normal way players actually build a wheel fitment). Fixed by only
+    // applying the flat terms when that axle's wheel style is still stock.
+
+    [Fact]
+    public async Task Mass_WheelStyleWithResizedRim_DoesNotDoubleCountRimSizeCoef()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        var wheelStyle = db.GetAllAftermarketWheels().FirstOrDefault();
+        Assert.NotNull(wheelStyle);
+        int? tier = db.GetWheelTierById(wheelStyle!.Id);
+        Assert.NotNull(tier);
+
+        int carDbId = 0, rimId = 0, stockTier = 0;
+        double rimMassDiff = 0, stockD = 0, stockW = 0, bigD = 0;
+        foreach (var dbCar in db.GetAllCars())
+        {
+            var carStockTier = db.GetStockWheelTier(dbCar.MediaName);
+            if (carStockTier == null) continue;
+
+            var nonStockRim = db.GetRimsFront(dbCar.Id).FirstOrDefault(r => !r.IsStock && r.FrontWheelDiameter > 0);
+            if (nonStockRim == null) continue;
+            if (dbCar.FrontWheelDiameterIN <= 0 || dbCar.FrontTireWidthMM <= 0) continue;
+
+            carDbId = dbCar.Id; rimId = nonStockRim.Id; stockTier = carStockTier.Value;
+            rimMassDiff = nonStockRim.MassDiff;
+            stockD = dbCar.FrontWheelDiameterIN; stockW = dbCar.FrontTireWidthMM;
+            bigD = nonStockRim.FrontWheelDiameter;
+            break;
+        }
+
+        Assert.True(carDbId != 0, "No car found with a known stock wheel tier and a non-stock front rim option — test setup assumption is stale.");
+
+        var car = BuildCarCard(carDbId);
+        car.CurbWeightKg = car.TotalMass; // BuildCarCard only sets TotalMass; SetCarData reads CurbWeightKg
+
+        var partsStock = new SelectedParts();
+        partsStock.SetCarData(car);
+
+        var partsStyleAndRim = new SelectedParts();
+        partsStyleAndRim.SetCarData(car);
+        partsStyleAndRim.WheelFrontId = wheelStyle.Id;
+        partsStyleAndRim.RimFrontPartId = rimId;
+
+        const double WheelTierMassCoefRef = 4.99e-5;
+        const double RimSizeMassCoefRef = 1.10;
+        double expectedTierTermAtBigD = (stockTier - tier.Value) * WheelTierMassCoefRef * bigD * bigD * stockW * 0.5;
+        double expectedFlatRimTerm = rimMassDiff * RimSizeMassCoefRef;
+
+        double actualDelta = partsStyleAndRim.ComputeTotalMass() - partsStock.ComputeTotalMass();
+
+        Assert.True(Math.Abs(actualDelta - expectedTierTermAtBigD) < 0.05,
+            $"Expected only the wheel-tier geometric term ({expectedTierTermAtBigD:F2} kg) when a non-stock " +
+            $"wheel style (tier {tier}) is combined with a resized front rim (car {carDbId}), but got " +
+            $"{actualDelta:F2} kg — would be {expectedTierTermAtBigD + expectedFlatRimTerm:F2} kg if the flat " +
+            "RimSizeMassCoef term were still being double-counted on top.");
+    }
+
+    // ── Mass: unknown stock wheel tier must not guess a baseline of 0 ───────
+    // 12/651 cars have no List_Wheels row with IsStock=1 for their MediaName (several are real
+    // playable cars, e.g. the VW Golf R, Maserati MC20, Acura Integra, BMW M2). Assuming a
+    // baseline tier of 0 for these silently invents a "stock" comparison point that may not be
+    // the real one, giving a wrong-magnitude (or wrong-sign) wheel-style delta. Fixed by leaving
+    // the baseline unresolved (null) and skipping the wheel-tier mass term entirely for these
+    // cars rather than guessing.
+
+    [Fact]
+    public async Task Mass_UnknownStockWheelTier_SkipsWheelStyleTermInsteadOfGuessingZero()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        var dbCar = db.GetCarByMediaName("VW_GolfR_22");
+        Assert.NotNull(dbCar);
+        Assert.Null(db.GetStockWheelTier(dbCar!.MediaName));
+
+        var wheelStyle = db.GetAllAftermarketWheels().FirstOrDefault();
+        Assert.NotNull(wheelStyle);
+
+        var car = BuildCarCard(dbCar.Id);
+        car.CurbWeightKg = car.TotalMass; // BuildCarCard only sets TotalMass; SetCarData reads CurbWeightKg
+
+        var partsStock = new SelectedParts();
+        partsStock.SetCarData(car);
+
+        var partsWithStyle = new SelectedParts();
+        partsWithStyle.SetCarData(car);
+        partsWithStyle.WheelFrontId = wheelStyle!.Id;
+
+        double delta = partsWithStyle.ComputeTotalMass() - partsStock.ComputeTotalMass();
+
+        Assert.True(Math.Abs(delta) < 0.01,
+            $"Car {dbCar.Id} (VW Golf R) has no resolvable stock wheel tier — selecting a non-stock " +
+            $"wheel style should add 0 kg (nothing to compare against) rather than guessing a baseline, " +
+            $"but got a delta of {delta:F2} kg.");
+    }
 }

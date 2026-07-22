@@ -78,7 +78,11 @@ public class SelectedParts : NotifyBase
     public int? WheelRearId { get => _wheelRearId; set { if (Set(ref _wheelRearId, value)) OnPartChanged(); } }
     // Stock wheel lightness tier + stock wheel/tyre geometry — baseline for the
     // wheel-style weight delta (see ComputeTotalMassDiff / WheelTierMassDiff).
-    private int _stockRimTier;
+    // Null when the DB has no IsStock List_Wheels row for this car's MediaName (12/651
+    // cars) — WheelTierMassDiff skips the tier delta entirely rather than guessing a
+    // baseline of 0, which could silently invert or inflate the sign/magnitude of the
+    // "lighter/heavier than stock" comparison for exactly those cars.
+    private int? _stockRimTier;
     private int _stockFrontDiameterIn, _stockRearDiameterIn;
     private int _stockFrontTireWidthMm, _stockRearTireWidthMm;
 
@@ -324,7 +328,7 @@ public class SelectedParts : NotifyBase
         DrivetrainId = stockDt?.DrivetrainID;
         CarBodyOrdinal = car.CarBodyId;
         _stockCarBodyId = car.CarBodyId;
-        _stockRimTier = _db.GetStockWheelTier(dbCar?.MediaName) ?? 0;
+        _stockRimTier = _db.GetStockWheelTier(dbCar?.MediaName);
         _stockFrontDiameterIn = dbCar?.FrontWheelDiameterIN ?? 0;
         _stockRearDiameterIn = dbCar?.RearWheelDiameterIN ?? 0;
         _stockFrontTireWidthMm = dbCar?.FrontTireWidthMM ?? 0;
@@ -452,16 +456,26 @@ public class SelectedParts : NotifyBase
         total += PartMassDiff(_hoodPartId, id => _db.GetHoodById(id));
         total += PartMassDiff(_antiSwayFrontPartId, id => _db.GetArbFrontById(id));
         total += PartMassDiff(_antiSwayRearPartId, id => _db.GetArbRearById(id));
-        // TireWidthMassCoef: the DB's flat width MassDiff undershoots real in-game growth —
-        // see constant definition below for calibration.
-        total += PartMassDiff(_tireWidthFrontPartId, id => _db.GetTireWidthFrontById(id)) * TireWidthMassCoef;
-        total += PartMassDiff(_tireWidthRearPartId, id => _db.GetTireWidthRearById(id)) * TireWidthMassCoef;
+        // TireWidthMassCoef/RimSizeMassCoef: the DB's flat width/diameter MassDiff undershoots
+        // real in-game growth — see constant definitions below for calibration. These only apply
+        // when that axle's wheel STYLE is still stock. WheelTierMassDiff's d²·w formula reads the
+        // CURRENTLY selected rim diameter/tire width (not the stock size) and was calibrated
+        // against real in-game deltas measured at both a stock and an up-sized fitment on the same
+        // non-stock wheel style — i.e. it already prices in the size-driven mass change together
+        // with the style-driven change for that axle. Adding the flat terms on top of a non-stock
+        // style would double-count the size portion.
+        if (_wheelFrontId == null)
+        {
+            total += PartMassDiff(_tireWidthFrontPartId, id => _db.GetTireWidthFrontById(id)) * TireWidthMassCoef;
+            total += PartMassDiff(_rimFrontPartId, id => _db.GetRimFrontById(id)) * RimSizeMassCoef;
+        }
+        if (_wheelRearId == null)
+        {
+            total += PartMassDiff(_tireWidthRearPartId, id => _db.GetTireWidthRearById(id)) * TireWidthMassCoef;
+            total += PartMassDiff(_rimRearPartId, id => _db.GetRimRearById(id)) * RimSizeMassCoef;
+        }
         total += PartMassDiff(_tireAspectRatioFrontPartId, id => _db.GetTireAspectRatioFrontById(id));
         total += PartMassDiff(_tireAspectRatioRearPartId, id => _db.GetTireAspectRatioRearById(id));
-        // RimSizeMassCoef: the DB's flat rim-diameter MassDiff undershoots real in-game growth —
-        // see constant definition below for calibration.
-        total += PartMassDiff(_rimFrontPartId, id => _db.GetRimFrontById(id)) * RimSizeMassCoef;
-        total += PartMassDiff(_rimRearPartId, id => _db.GetRimRearById(id)) * RimSizeMassCoef;
         total += PartMassDiff(_trackSpacingFrontPartId, id => _db.GetTrackSpacingFrontById(id));
         total += PartMassDiff(_trackSpacingRearPartId, id => _db.GetTrackSpacingRearById(id));
         total += PartMassDiff(_drivetrainSwapPartId, id => _db.GetDrivetrainSwapById(id));
@@ -528,6 +542,7 @@ public class SelectedParts : NotifyBase
         int? tireWidthPartId, Func<int, int?> tireWidth)
     {
         if (wheelId == null) return 0;
+        if (_stockRimTier == null) return 0; // unknown stock baseline (no IsStock List_Wheels row) — don't guess
         var tier = _db.GetWheelTierById(wheelId.Value);
         if (tier == null) return 0;
 
@@ -536,7 +551,7 @@ public class SelectedParts : NotifyBase
         if (d <= 0 || w <= 0) return 0;
 
         // Higher tier = lighter wheel ⇒ negative when fitting a lighter wheel than stock.
-        return (_stockRimTier - tier.Value) * WheelTierMassCoef * d * d * w * 0.5;
+        return (_stockRimTier.Value - tier.Value) * WheelTierMassCoef * d * d * w * 0.5;
     }
 
     // Mass delta from swapping to an alternate body (List_UpgradeCarBody.CarBodyId != stock).
