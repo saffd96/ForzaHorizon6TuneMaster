@@ -395,8 +395,17 @@ public class SelectedParts : NotifyBase
             if (fi is { IsStock: false })
                 total += fi.MassDiff;
         }
-        // Intercooler: the base (Lv-1) IC is bundled in the FI kit's MassDiff. Only count the
-        // delta above the base to avoid double-counting (the base is auto-installed by the UI).
+        // Intercooler: for engines whose intercooler list has a genuine IsStock row (a free
+        // baseline bundled with the FI kit, MassDiff always 0 for that row — verified across
+        // all 351 such engines in the DB), only the delta above that baseline is new mass.
+        // ~43% of FI-capable engines (269/620) have NO IsStock row at all — every intercooler
+        // tier for them is a real, separately-required part, so there is nothing to subtract.
+        // Previously this subtracted the lowest-*Level* row's MassDiff unconditionally, which
+        // for those 269 engines silently treated a real ~20-35 kg part as "already bundled" and
+        // undercounted total mass by that amount on every forced-induction build. Subtracting
+        // the actual IsStock row (0 when present, nothing when absent) fixes that while leaving
+        // the 351 engines with a genuine stock row unaffected (their stock row already sits at
+        // the lowest Level with MassDiff 0, so the result is identical there).
         if (_intercoolerPartId != null)
         {
             var ic = _db.GetIntercoolerById(_intercoolerPartId.Value);
@@ -406,7 +415,7 @@ public class SelectedParts : NotifyBase
                 if (_forcedInductionPartId != null)
                 {
                     var allIcs = _db.GetIntercoolers(EngineId ?? 0);
-                    delta -= allIcs.Count > 0 ? allIcs.OrderBy(x => x.Level).First().MassDiff : 0;
+                    delta -= allIcs.FirstOrDefault(x => x.IsStock)?.MassDiff ?? 0;
                 }
                 if (delta > 0) total += delta;
             }

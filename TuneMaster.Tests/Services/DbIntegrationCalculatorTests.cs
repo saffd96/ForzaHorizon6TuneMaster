@@ -1963,4 +1963,98 @@ public class DbIntegrationCalculatorTests
         Assert.True(found >= 3,
             $"Expected drift tires on at least 3 of the tested ordinals, found on {found}");
     }
+
+    // ── Mass calculation: intercooler base-tier subtraction ─────────────────
+    //
+    // SelectedParts.ComputeTotalMass avoids double-counting the intercooler that ships bundled
+    // with a forced-induction kit by subtracting a "base" intercooler MassDiff whenever FI is
+    // installed. That base must be the engine's genuine IsStock row (real, free baseline, always
+    // MassDiff=0) — not simply the lowest Level in the list. ~43% of FI-capable engines in the DB
+    // have no IsStock intercooler row at all (every tier is a real, separately-required part), so
+    // subtracting "lowest Level" there silently wrote off a real ~20-35 kg part on every
+    // forced-induction build.
+
+    [Fact]
+    public async Task Mass_Intercooler_WithNoStockRow_CountsFullSelectedPartMass()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        // Find an engine whose intercooler list has zero IsStock rows (every tier is real mass)
+        // and that also has at least one non-stock single-turbo option to install as the FI part.
+        int engineId = 0, fiId = 0, icId = 0;
+        double expectedIcMass = 0;
+
+        foreach (var dbCar in db.GetAllCars())
+        {
+            var swaps = db.GetEngineSwaps(dbCar.Id);
+            var stockSwap = swaps.FirstOrDefault(s => s.IsStock);
+            if (stockSwap == null) continue;
+            int eid = stockSwap.EngineID;
+
+            var ics = db.GetIntercoolers(eid);
+            if (ics.Count == 0 || ics.Any(i => i.IsStock)) continue;
+
+            var fi = db.GetTurbosSingle(eid).FirstOrDefault(t => !t.IsStock);
+            if (fi == null) continue;
+
+            var lowestIc = ics.OrderBy(i => i.Level).First();
+            engineId = eid; fiId = fi.Id; icId = lowestIc.Id; expectedIcMass = lowestIc.MassDiff;
+            break;
+        }
+
+        Assert.True(engineId != 0, "No engine found with a stock-free intercooler list and a non-stock single-turbo option — test setup assumption is stale.");
+        Assert.True(expectedIcMass > 0, "Test engine's lowest intercooler tier should carry real mass.");
+
+        var withIc = new SelectedParts { EngineId = engineId, ForcedInductionPartId = fiId, IntercoolerPartId = icId };
+        var withoutIc = new SelectedParts { EngineId = engineId, ForcedInductionPartId = fiId, IntercoolerPartId = null };
+
+        double delta = withIc.ComputeTotalMass() - withoutIc.ComputeTotalMass();
+
+        Assert.True(Math.Abs(delta - expectedIcMass) < 0.01,
+            $"Expected the full intercooler MassDiff ({expectedIcMass:F2} kg) to be counted when the " +
+            $"engine has no free/stock intercooler baseline, but got a delta of {delta:F2} kg.");
+    }
+
+    [Fact]
+    public async Task Mass_Intercooler_WithStockRow_SelectingStockTierAddsNoMass()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        // Find an engine whose intercooler list DOES have a genuine IsStock row (the normal,
+        // already-covered case) to confirm the fix doesn't regress it: selecting that stock row
+        // while FI is installed must still add zero extra mass.
+        int engineId = 0, fiId = 0, stockIcId = 0;
+
+        foreach (var dbCar in db.GetAllCars())
+        {
+            var swaps = db.GetEngineSwaps(dbCar.Id);
+            var stockSwap = swaps.FirstOrDefault(s => s.IsStock);
+            if (stockSwap == null) continue;
+            int eid = stockSwap.EngineID;
+
+            var stockIc = db.GetIntercoolers(eid).FirstOrDefault(i => i.IsStock);
+            if (stockIc == null) continue;
+
+            var fi = (DbUpgradePart?)db.GetTurbosSingle(eid).FirstOrDefault(t => t.IsStock)
+                   ?? db.GetTurbosTwin(eid).FirstOrDefault(t => t.IsStock);
+            if (fi == null) continue;
+
+            engineId = eid; fiId = fi.Id; stockIcId = stockIc.Id;
+            break;
+        }
+
+        Assert.True(engineId != 0, "No engine found with a stock intercooler row and a stock FI part — test setup assumption is stale.");
+
+        var withStockIc = new SelectedParts { EngineId = engineId, ForcedInductionPartId = fiId, IntercoolerPartId = stockIcId };
+        var withoutIc = new SelectedParts { EngineId = engineId, ForcedInductionPartId = fiId, IntercoolerPartId = null };
+
+        double delta = withStockIc.ComputeTotalMass() - withoutIc.ComputeTotalMass();
+
+        Assert.True(Math.Abs(delta) < 0.01,
+            $"Selecting the stock intercooler tier should add ~0 kg (it's the free baseline), got {delta:F2} kg.");
+    }
 }
