@@ -2217,4 +2217,68 @@ public class DbIntegrationCalculatorTests
             $"wheel style should add 0 kg (nothing to compare against) rather than guessing a baseline, " +
             $"but got a delta of {delta:F2} kg.");
     }
+
+    // ── Mass: body-kit weight diff lost when loading a saved profile ────────
+    // MainViewModel.LoadSubViewModels calls SetCarData(car, resetParts:false) BEFORE patching
+    // car.CarBodyId to the saved body kit's CarBodyId (that patch needs the kit resolved from
+    // the just-loaded Parts.BodyKitPartId, so it can only happen after). SetCarData used to set
+    // both CarBodyOrdinal and _stockCarBodyId from car.CarBodyId — at that point still the STOCK
+    // id — so a profile with a non-stock body kit ended up with CarBodyOrdinal == _stockCarBodyId
+    // and BodyKitCurbWeightDiff() silently returned 0 for every profile load, undercounting real
+    // in-game mass by however much the kit's own baseline differs from stock (confirmed on a real
+    // profile: ~30 kg). Live editing (picking a kit from the dropdown) never hit this — only
+    // loading a profile that already has BodyKitPartId set before SetCarData runs. Fixed by
+    // deriving _stockCarBodyId from CarDbId directly (immune to car.CarBodyId's patch timing) and
+    // re-deriving CarBodyOrdinal from BodyKitPartId when resetParts is false.
+
+    [Fact]
+    public async Task Mass_LoadingProfileWithBodyKit_StillCountsBodyKitWeightDiff()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        int carDbId = 0, kitBodyId = 0;
+        double expectedDiff = 0;
+        foreach (var dbCar in db.GetAllCars())
+        {
+            foreach (var kit in db.GetCarBodies(dbCar.Id))
+            {
+                if (kit.IsStock) continue;
+                var kitStockWeight = db.GetWeightReductions(kit.Id).FirstOrDefault(w => w.IsStock);
+                var origStockWeight = db.GetWeightReductions(dbCar.Id * 1000).FirstOrDefault(w => w.IsStock);
+                if (kitStockWeight == null || origStockWeight == null) continue;
+                double diff = kitStockWeight.InitialMass - origStockWeight.InitialMass;
+                if (Math.Abs(diff) < 1.0) continue;
+
+                carDbId = dbCar.Id; kitBodyId = kit.Id; expectedDiff = diff;
+                break;
+            }
+            if (carDbId != 0) break;
+        }
+
+        Assert.True(carDbId != 0, "No car found with a non-stock body kit whose stock weight-reduction baseline differs from the original body's — test setup assumption is stale.");
+
+        // Mirror MainViewModel.LoadSubViewModels exactly: SetCarData runs with car.CarBodyId
+        // still at the STOCK value, on a SelectedParts whose BodyKitPartId is already set (as if
+        // just deserialized from a saved profile) — only afterward does car.CarBodyId get
+        // patched to the kit.
+        var car = BuildCarCard(carDbId);
+        car.CurbWeightKg = car.TotalMass;
+        int stockBodyId = car.CarBodyId;
+
+        var parts = new SelectedParts { BodyKitPartId = kitBodyId };
+        parts.SetCarData(car, resetParts: false);
+        car.CarBodyId = kitBodyId; // the post-SetCarData patch LoadSubViewModels performs
+
+        var partsNoKit = new SelectedParts();
+        partsNoKit.SetCarData(car, resetParts: false);
+
+        double actualDiff = parts.ComputeTotalMass() - partsNoKit.ComputeTotalMass();
+
+        Assert.True(Math.Abs(actualDiff - expectedDiff) < 0.05,
+            $"Loading a profile with body kit {kitBodyId} (car {carDbId}, stock body {stockBodyId}) " +
+            $"should count the kit's own {expectedDiff:F2} kg weight difference, but got {actualDiff:F2} kg — " +
+            "looks like BodyKitCurbWeightDiff returned 0 because CarBodyOrdinal got reset to the stock body.");
+    }
 }

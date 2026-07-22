@@ -326,8 +326,24 @@ public class SelectedParts : NotifyBase
         EngineId = car.EngineDbId;
         var stockDt = _db.GetStockDrivetrain(car.CarDbId);
         DrivetrainId = stockDt?.DrivetrainID;
-        CarBodyOrdinal = car.CarBodyId;
-        _stockCarBodyId = car.CarBodyId;
+        // The true stock body is always CarDbId×1000 (see BuildCarCard/PopulateCarFromDb) —
+        // NOT car.CarBodyId, which on profile load may already have been patched to a saved
+        // body kit's CarBodyId by the time SetCarData runs (LoadSubViewModels does the kit
+        // patch after this call). Deriving it independently keeps BodyKitCurbWeightDiff's
+        // "stock vs current" comparison correct regardless of that ordering.
+        _stockCarBodyId = car.CarDbId * 1000;
+        if (resetParts)
+        {
+            CarBodyOrdinal = _stockCarBodyId;
+        }
+        else
+        {
+            // Re-derive from any already-selected body kit rather than trusting car.CarBodyId
+            // (not yet kit-patched at this point) or a possibly stale serialized CarBodyOrdinal —
+            // a profile saved while this same bug was live could have persisted the wrong value.
+            var kit = _bodyKitPartId != null ? _db.GetCarBodyKitById(_bodyKitPartId.Value) : null;
+            CarBodyOrdinal = kit?.CarBodyId ?? _stockCarBodyId;
+        }
         _stockRimTier = _db.GetStockWheelTier(dbCar?.MediaName);
         _stockFrontDiameterIn = dbCar?.FrontWheelDiameterIN ?? 0;
         _stockRearDiameterIn = dbCar?.RearWheelDiameterIN ?? 0;
