@@ -82,6 +82,26 @@ public partial class TuneResultView : UserControl
         catch { return null; }
     }
 
+    private static bool IsOverlayStateValid((double left, double top, double width, double height) state)
+    {
+        if (double.IsNaN(state.left) || double.IsNaN(state.top) ||
+            double.IsNaN(state.width) || double.IsNaN(state.height))
+            return false;
+        if (double.IsInfinity(state.left) || double.IsInfinity(state.top) ||
+            double.IsInfinity(state.width) || double.IsInfinity(state.height))
+            return false;
+        if (state.width < 100 || state.height < 100)
+            return false;
+
+        var winRect = new Rect(state.left, state.top, state.width, state.height);
+        var screenRect = new Rect(
+            SystemParameters.VirtualScreenLeft,
+            SystemParameters.VirtualScreenTop,
+            SystemParameters.VirtualScreenWidth,
+            SystemParameters.VirtualScreenHeight);
+        return winRect.IntersectsWith(screenRect);
+    }
+
     // ── Overlay lifecycle ───────────────────────────────────────────────────
     private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -96,7 +116,7 @@ public partial class TuneResultView : UserControl
             _overlayWindow.DataContext = _vm;
 
             var saved = LoadOverlayState();
-            if (saved.HasValue)
+            if (saved.HasValue && IsOverlayStateValid(saved.Value))
             {
                 _overlayWindow.Left   = saved.Value.left;
                 _overlayWindow.Top    = saved.Value.top;
@@ -105,8 +125,8 @@ public partial class TuneResultView : UserControl
             }
             else if (Application.Current.MainWindow is Window main)
             {
-                _overlayWindow.Left = main.Left + main.ActualWidth - _overlayWindow.Width - 20;
-                _overlayWindow.Top  = main.Top + 60;
+                _overlayWindow.Left = main.Left + (main.ActualWidth - _overlayWindow.Width) / 2;
+                _overlayWindow.Top  = main.Top + (main.ActualHeight - _overlayWindow.Height) / 2;
             }
 
             var window = _overlayWindow;
