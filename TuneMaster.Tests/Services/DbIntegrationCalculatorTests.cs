@@ -2057,4 +2057,57 @@ public class DbIntegrationCalculatorTests
         Assert.True(Math.Abs(delta) < 0.01,
             $"Selecting the stock intercooler tier should add ~0 kg (it's the free baseline), got {delta:F2} kg.");
     }
+
+    // ── Power: CSC/DSC stock-FI upgrade routing (Finding 1) ─────────────────
+    // A car whose factory FI is a centrifugal (CSC) or positive-displacement (DSC) supercharger
+    // was misrouted, on any FI upgrade, into the "NA engine receiving its first FI" branch instead
+    // of the "boosted engine, FI upgrade" branch — because the routing check used a turbo-only
+    // helper that returned 0 for CSC/DSC, mistaking an already-boosted stock engine for an NA one.
+    // That branch reapplies a full boost multiplier on top of stockHP, which is already boosted,
+    // double-counting the supercharger's effect. Fixed by routing purely on `stockFi == null`.
+
+    [Fact]
+    public async Task Power_CscOrDscStockEngine_FiUpgrade_DoesNotDoubleBoost()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        int carDbId = 0, engineId = 0, upgradeFiId = 0;
+        foreach (var dbCar in db.GetAllCars())
+        {
+            var swaps = db.GetEngineSwaps(dbCar.Id);
+            var stockSwap = swaps.FirstOrDefault(s => s.IsStock);
+            if (stockSwap == null) continue;
+            int eid = stockSwap.EngineID;
+
+            var e = db.GetEngine(eid);
+            if (e == null || e.EngineGraphingMaxPower <= 0) continue;
+
+            var upgradeCsc = db.GetCSC(eid).Where(c => !c.IsStock).OrderByDescending(c => c.RedlineRPMScale).FirstOrDefault();
+            var upgradeDsc = db.GetDSC(eid).Where(d => !d.IsStock).OrderByDescending(d => d.RedlineRPMScale).FirstOrDefault();
+            var stockIsCscOrDsc = db.GetCSC(eid).Any(c => c.IsStock) || db.GetDSC(eid).Any(d => d.IsStock);
+            if (!stockIsCscOrDsc) continue;
+
+            int? upgradeId = upgradeCsc?.Id ?? upgradeDsc?.Id;
+            if (upgradeId == null) continue;
+
+            carDbId = dbCar.Id; engineId = eid; upgradeFiId = upgradeId.Value;
+            break;
+        }
+
+        Assert.True(carDbId != 0, "No car found with a CSC/DSC stock FI and a non-stock CSC/DSC upgrade option — test setup assumption is stale.");
+
+        var eng = db.GetEngine(engineId)!;
+        double ceiling = eng.EngineGraphingMaxPower * 1.341;
+
+        var car = BuildCarCard(carDbId);
+        var parts = new SelectedParts { EngineId = engineId, ForcedInductionPartId = upgradeFiId };
+        PowerCalculator.Calculate(car, parts);
+
+        Assert.True(car.PowerHP <= ceiling * 1.05,
+            $"Upgrading FI on a CSC/DSC-stock engine (engine {engineId}) gave {car.PowerHP:F0} hp, " +
+            $"exceeding the DB dyno ceiling ({ceiling:F0} hp) by more than 5% — suggests the boost is " +
+            "being double-counted (misrouted into the NA-engine's-first-FI branch).");
+    }
 }

@@ -356,7 +356,7 @@ public class ValueToRangeConverter : IMultiValueConverter
             return 0.5;
         if (max <= min) return 0.5;
         double ratio = (v - min) / (max - min);
-        return ratio is >= 0.0 and <= 1.0 ? ratio : 0.5;
+        return ratio < 0.0 ? 0.0 : ratio > 1.0 ? 1.0 : ratio;
     }
 
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>

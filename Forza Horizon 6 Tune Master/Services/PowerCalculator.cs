@@ -189,14 +189,20 @@ public static class PowerCalculator
             var ic = db.GetIntercoolerById(parts.IntercoolerPartId.Value);
             if (ic != null && ic.MaxScaleScale > 0.001)
             {
-                // The base (Lv=1) intercooler is always bundled with the FI kit; its effect is
-                // already captured in the stock power anchor (SimPeakPower) or FI MassDiff.
-                // Only count the scale DELTA above the base intercooler so that auto-installing
-                // the base IC does not add spurious power.
+                // The stock intercooler (IsStock row, MaxScaleScale always 1.0 where present —
+                // verified across all 351 such engines in the DB) is bundled with the FI kit;
+                // its effect is already captured in the stock power anchor (SimPeakPower).
+                // Only count the scale DELTA above that baseline so that auto-installing the
+                // stock IC does not add spurious power. ~43% of FI-capable engines (269/620)
+                // have no IsStock row at all — same asymmetry as the intercooler mass fix in
+                // SelectedParts.cs; the lowest-Level row is NOT a safe stand-in for "stock".
+                // Note: currently a no-op for every car in the DB — engines with a genuine
+                // stock FI always have an IsStock IC row that IS the lowest Level (351/351),
+                // and NA engines without one only ever reach this via isNaToFi, whose final
+                // power comes from addPower alone (see below), never mulPower/intercoolerMaxScale.
+                // Kept for correctness/consistency should future DB data break either premise.
                 var allIcs = db.GetIntercoolers(effectiveEngineId);
-                double icBaseScale = allIcs.Count > 0
-                    ? allIcs.OrderBy(x => x.Level).First().MaxScaleScale
-                    : 1.0;
+                double icBaseScale = allIcs.FirstOrDefault(x => x.IsStock)?.MaxScaleScale ?? 1.0;
                 double icDelta = icBaseScale > 0.001 ? ic.MaxScaleScale / icBaseScale : ic.MaxScaleScale;
                 intercoolerMaxScale = icDelta > 1.0001 ? icDelta : 1.0;
             }
@@ -305,7 +311,7 @@ public static class PowerCalculator
             addPower = stockHP + naDeltaPowerHp;
             addTorque = stockTorqueNm + naDeltaTorqueNm;
         }
-        else if (stockFi == null || Ms(stockFi) <= 0)
+        else if (stockFi == null)
         {
             // NA engine receiving its FIRST forced induction.
             // Pressure scale and efficiency depend on FI type:
@@ -534,13 +540,6 @@ public static class PowerCalculator
         if (pressureScale <= 1.0) return 1.0;
         return 1.0 + torqueScale * baseEff * trqRatio * (pressureScale - 1.0);
     }
-
-    private static double Ms(DbUpgradeForcedInduction? fi) => fi switch
-    {
-        DbUpgradeTurboSingle ts => ts.MaxScale,
-        DbUpgradeTurboTwin tt => tt.MaxScale,
-        _ => 0
-    };
 
     private static DbUpgradeForcedInduction? StockForcedInduction(int engineId, Fh6DatabaseService db)
     {

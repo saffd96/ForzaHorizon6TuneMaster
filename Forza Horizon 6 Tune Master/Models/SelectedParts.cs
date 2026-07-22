@@ -350,18 +350,36 @@ public class SelectedParts : NotifyBase
 
     public void ResetAllToStock()
     {
-        foreach (var prop in _resetTargets)
-            prop.SetValue(this, null);
+        _suppressPartChangedNotify = true;
+        try
+        {
+            foreach (var prop in _resetTargets)
+                prop.SetValue(this, null);
+        }
+        finally
+        {
+            _suppressPartChangedNotify = false;
+        }
+        OnPartChanged();
     }
 
     public void ResetCategory(string category)
     {
-        foreach (var prop in _resetTargets)
+        _suppressPartChangedNotify = true;
+        try
         {
-            var attr = prop.GetCustomAttribute<ResetToStockAttribute>(false);
-            if (attr?.Category == category)
-                prop.SetValue(this, null);
+            foreach (var prop in _resetTargets)
+            {
+                var attr = prop.GetCustomAttribute<ResetToStockAttribute>(false);
+                if (attr?.Category == category)
+                    prop.SetValue(this, null);
+            }
         }
+        finally
+        {
+            _suppressPartChangedNotify = false;
+        }
+        OnPartChanged();
     }
 
     private static readonly PropertyInfo[] _resetTargets = typeof(SelectedParts)
@@ -611,8 +629,11 @@ public class SelectedParts : NotifyBase
         return _baseWeightDistFront + diff.Value * 100.0;
     }
 
+    private bool _suppressPartChangedNotify;
+
     private void OnPartChanged()
     {
+        if (_suppressPartChangedNotify) return;
         PartsChanged?.Invoke();
         CarMassUpdated?.Invoke(ComputeTotalMass(), ComputeWeightDistFront());
     }

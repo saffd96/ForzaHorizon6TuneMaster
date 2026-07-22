@@ -472,7 +472,7 @@
                                             Width="20" Height="20" Padding="0" FontSize="11" Margin="4,0,0,0"
                                             VerticalAlignment="Center"
                                             Command="{Binding ResetMaxRpmOverrideCommand}"
-                                            Visibility="{Binding HasMaxRpmOverride, Converter={StaticResource B2V}}"
+                                            Visibility="{Binding HasMaxRpmOverride, Converter={StaticResource B2H}}"
                                             ToolTip="{l:Loc ResultMaxRpmOverrideResetTooltip}"/>
                                 </WrapPanel>
 

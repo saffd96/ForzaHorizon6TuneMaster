@@ -1924,6 +1924,10 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
                 MapPartIdsToEnums(p.Car);
                 p.LastResult = _generator.Generate(p.Car, p.Track, p.Parts ?? new SelectedParts(), Fh6DatabaseService.Instance, p.Constraints);
                 p.Version = SavedProfile.ProfileVersion;
+                // Skip writing back if the user currently has this same profile open — an
+                // interactive edit+save could otherwise race with (and be silently clobbered
+                // by) this background migration write landing after it.
+                if (name == SelectedProfile) continue;
                 _storage.Save(name, p);
                 ok++;
             }
