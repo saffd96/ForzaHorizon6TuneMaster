@@ -852,6 +852,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     {
         new() { Code = "ru" },
         new() { Code = "en" },
+        new() { Code = "fr" },
     };
     public List<LanguageOption> LanguageOptions
     {

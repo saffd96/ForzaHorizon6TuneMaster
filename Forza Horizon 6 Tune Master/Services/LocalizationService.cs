@@ -100,6 +100,8 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
         if (code == "ru")
             SetLanguage("ru");
+        else if (code == "fr")
+            SetLanguage("fr");
         else
             SetLanguage("en");
     }
