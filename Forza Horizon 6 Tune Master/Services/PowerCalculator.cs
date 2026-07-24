@@ -196,11 +196,12 @@ public static class PowerCalculator
                 // stock IC does not add spurious power. ~43% of FI-capable engines (269/620)
                 // have no IsStock row at all — same asymmetry as the intercooler mass fix in
                 // SelectedParts.cs; the lowest-Level row is NOT a safe stand-in for "stock".
-                // Note: currently a no-op for every car in the DB — engines with a genuine
-                // stock FI always have an IsStock IC row that IS the lowest Level (351/351),
-                // and NA engines without one only ever reach this via isNaToFi, whose final
-                // power comes from addPower alone (see below), never mulPower/intercoolerMaxScale.
-                // Kept for correctness/consistency should future DB data break either premise.
+                // Bug fixed 2026-07: for engines with NO factory FI (isNaToFi path below —
+                // e.g. an engine swap that later gets its first Conversions-menu turbo/
+                // supercharger), the final power came from addPower alone, whose pressureScale
+                // never multiplied this delta in — so an intercooler upgrade had zero effect
+                // on displayed power despite fiCurveFull/mulPower correctly including it.
+                // Fixed by folding intercoolerMaxScale into pressureScale in that switch too.
                 var allIcs = db.GetIntercoolers(effectiveEngineId);
                 double icBaseScale = allIcs.FirstOrDefault(x => x.IsStock)?.MaxScaleScale ?? 1.0;
                 double icDelta = icBaseScale > 0.001 ? ic.MaxScaleScale / icBaseScale : ic.MaxScaleScale;
@@ -234,17 +235,19 @@ public static class PowerCalculator
         double naCurPeakHP = naCurPeakProxy / PhysicsConstants.NmRpmToHp;
         double naStkPeakHP = naStkPeakProxy / PhysicsConstants.NmRpmToHp;
 
-        // ── Base breathing (cam + torqueScale only, NO partScale) ──────────────
-        double[] naCurveNoParts = partScale > 1.001
-            ? BuildCamTorqueCurve(dbCar, db, torqueScale, redlineRPM, peakTorqueNm, selectedCam, out _)
-            : torqueCurve;
-        double naBaseProxy = naCurveNoParts.Length > 0 ? TorqueRpmPeak(naCurveNoParts, maxRPM) : naCurPeakProxy;
-        double naBaseHP = naBaseProxy / PhysicsConstants.NmRpmToHp;
-
-        // ── Part HP/torque gains (game applies partScale multiplicatively at curve level) ──
-        double partHP = Math.Max(naCurPeakHP - naBaseHP, 0);
-        double partTq = Math.Max((torqueCurve.Length > 0 ? torqueCurve.Max() : 0)
-                                 - (naCurveNoParts.Length > 0 ? naCurveNoParts.Max() : 0), 0);
+        // ── Full curve-space gain (cam + bolt-on parts combined) over TRUE stock ──
+        // Bug fixed 2026-07: this used to be split into a cam-only "base" curve
+        // (naBaseHP, rebuilt with the CURRENTLY SELECTED cam) and a parts-only delta
+        // (partHP = naCurPeakHP − naBaseHP). Because naBaseHP used selectedCam on
+        // both sides of that subtraction, a camshaft upgrade's own gain cancelled
+        // out of partHP entirely — confirmed on a real build (2016 Cadillac CTS-V +
+        // Viper 8.4L V10 swap + CSC): installing the Race camshaft showed 0 kW
+        // change in-app while the game gained +35 kW. Now the full delta (cam+parts)
+        // is carried forward and scaled by a STABLE anchor (naStkPeakHP, the true
+        // stock-cam curve, never affected by the selected cam — see anchorRatio).
+        double naDeltaPowerHp = Math.Max(naCurPeakHP - naStkPeakHP, 0);
+        double naDeltaTorqueNm = Math.Max((torqueCurve.Length > 0 ? torqueCurve.Max() : 0)
+                                 - (stockCurve.Length > 0 ? stockCurve.Max() : 0), 0);
 
         // ── Scalar power/torque estimates — each branch below overwrites these ──
         // The authoritative result is mulPower (line below) which implements the
@@ -286,10 +289,12 @@ public static class PowerCalculator
                 : (torqueCapNm > MinValidValue ? torqueCapNm * 0.5 : 0);
         if (torqueCapNm > MinValidValue) stockTorqueNm = Math.Min(stockTorqueNm, torqueCapNm);
 
-        // ── Curve-to-real-HP bridge: naBaseHP is the cam-only curve peak (curve-space);
-        //     stockHP is the real dyno figure.  anchorRatio rescales bolt-on HP/Tq gains
-        //     from curve-space into real-HP-space so they can mix with stockHP. ──
-        double anchorRatio = naBaseHP > MinValidValue ? stockHP / naBaseHP : 1.0;
+        // ── Curve-to-real-HP bridge: naStkPeakHP is the TRUE stock (no cam upgrade,
+        //     no parts) curve peak (curve-space) — stable regardless of which cam is
+        //     selected.  stockHP is the real dyno figure.  anchorRatio rescales
+        //     curve-space cam+part gains (naDeltaPowerHp/naDeltaTorqueNm) into
+        //     real-HP-space so they can mix with stockHP. ──
+        double anchorRatio = naStkPeakHP > MinValidValue ? stockHP / naStkPeakHP : 1.0;
 
         // ── Multiplicative fallback ──────────────────────────────────────────
         double[] stockFiCurve = stockFi != null ? ApplyFiCore(stockCurve, stockMaxRPM, stockFi, 1.0) : stockCurve;
@@ -305,9 +310,6 @@ public static class PowerCalculator
         {
             // Cam-only (or pure stock): FI didn't change — anchor to SimPeakPower plus
             // the cam-upgrade delta read directly off the curve. Keeps exact stock figure.
-            double naDeltaPowerHp = (naCurPeakProxy - naStkPeakProxy) / PhysicsConstants.NmRpmToHp;
-            double naDeltaTorqueNm = (torqueCurve.Length > 0 ? torqueCurve.Max() : 0)
-                                     - (stockCurve.Length > 0 ? stockCurve.Max() : 0);
             addPower = stockHP + naDeltaPowerHp;
             addTorque = stockTorqueNm + naDeltaTorqueNm;
         }
@@ -323,19 +325,19 @@ public static class PowerCalculator
             double trqRatio;
             switch (currentFi)
             {
-                case DbUpgradeTurboSingle ts: pressureScale = ts.MaxScale;         baseEff = STBaseEff;  trqRatio = 1.0;   break;
-                case DbUpgradeTurboTwin   tt: pressureScale = tt.MaxScale;         baseEff = TTBaseEff;  trqRatio = 1.0;   break;
-                case DbUpgradeCSC        csc: pressureScale = csc.RedlineRPMScale; baseEff = CSCBaseEff; trqRatio = 0.426; break;
-                case DbUpgradeDSC        dsc: pressureScale = dsc.RedlineRPMScale; baseEff = DSCBaseEff; trqRatio = 1.0;   break;
-                default:                       pressureScale = 1.0;                baseEff = 0;          trqRatio = 0;     break;
+                case DbUpgradeTurboSingle ts: pressureScale = ts.MaxScale * intercoolerMaxScale;         baseEff = STBaseEff;  trqRatio = 1.0;   break;
+                case DbUpgradeTurboTwin   tt: pressureScale = tt.MaxScale * intercoolerMaxScale;         baseEff = TTBaseEff;  trqRatio = 1.0;   break;
+                case DbUpgradeCSC        csc: pressureScale = csc.RedlineRPMScale * intercoolerMaxScale; baseEff = CSCBaseEff; trqRatio = 0.426; break;
+                case DbUpgradeDSC        dsc: pressureScale = dsc.RedlineRPMScale * intercoolerMaxScale; baseEff = DSCBaseEff; trqRatio = 1.0;   break;
+                default:                       pressureScale = 1.0;                                       baseEff = 0;          trqRatio = 0;     break;
             }
             if (pressureScale > 1.0)
             {
-                // Bolt-on parts (cam, exhaust, intake, etc.) increase NA breathing
-                // before the turbo multiplies it.  Scale part gains from curve-space
-                // to real-HP-space via the same anchorRatio used in the FI-upgrade path.
-                double naPowerWithParts = stockHP + partHP * anchorRatio;
-                double naTorqueWithParts = stockTorqueNm + partTq * anchorRatio;
+                // Bolt-on parts AND camshaft (cam, exhaust, intake, etc.) increase NA
+                // breathing before the turbo multiplies it.  Scale the full curve-space
+                // gain to real-HP-space via the same anchorRatio used in the FI-upgrade path.
+                double naPowerWithParts = stockHP + naDeltaPowerHp * anchorRatio;
+                double naTorqueWithParts = stockTorqueNm + naDeltaTorqueNm * anchorRatio;
                 addPower = naPowerWithParts * (1.0 + torqueScale * baseEff * (pressureScale - 1.0));
                 addTorque = naTorqueWithParts * (1.0 + torqueScale * baseEff * trqRatio * (pressureScale - 1.0));
             }
@@ -353,8 +355,8 @@ public static class PowerCalculator
             double naAnchorTq = stockFiMult > 1.001 ? stockTorqueNm / stockFiMult : stockTorqueNm;
             double currentFiMult = FiEfficiencyMultiplier(currentFi, torqueScale);
             double currentFiTqMult = FiTorqueMultiplier(currentFi, torqueScale);
-            addPower = (naAnchorHP + partHP * anchorRatio) * currentFiMult;
-            addTorque = (naAnchorTq + partTq * anchorRatio) * currentFiTqMult;
+            addPower = (naAnchorHP + naDeltaPowerHp * anchorRatio) * currentFiMult;
+            addTorque = (naAnchorTq + naDeltaTorqueNm * anchorRatio) * currentFiTqMult;
         }
 
         // For NA→any-FI, the calibrated pressure-efficiency formula (addPower) is
@@ -396,7 +398,7 @@ public static class PowerCalculator
             double fiMs = fiPart switch { DbUpgradeTurboSingle ts => ts.MaxScale, DbUpgradeTurboTwin tt => tt.MaxScale, _ => -1 };
             Console.WriteLine($"  selectedFi PowerMaxScale={fiPms}  MaxScale={fiMs}  HasAntiLag={fiPart?.HasAntiLag ?? false}");
             Console.WriteLine($"  stockFiMult={FiEfficiencyMultiplier(stockFi, torqueScale):F3}  currentFiMult={FiEfficiencyMultiplier(currentFi, torqueScale):F3}");
-            Console.WriteLine($"  naBaseHP={naBaseHP:F1}  partHP={partHP:F1}");
+            Console.WriteLine($"  anchorRatio={anchorRatio:F3}  naDeltaPowerHp={naDeltaPowerHp:F1}");
             Console.WriteLine($"  intercoolerMaxScale={intercoolerMaxScale:F3}");
             Console.WriteLine($"  addPower={addPower:F1}  mulPower={mulPower:F1}  winner={Math.Max(addPower, mulPower):F1}");
             Console.WriteLine($"  powerCapHP={powerCapHP:F1}  torqueCapNm={torqueCapNm:F1}");

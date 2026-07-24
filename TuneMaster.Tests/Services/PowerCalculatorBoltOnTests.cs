@@ -266,6 +266,126 @@ public class PowerCalculatorBoltOnTests
             $"Closed-throttle peak ({maxClosed:F0} Nm) should be less than full-throttle ({maxFull:F0} Nm).");
     }
 
+    // ── Баг-репорт 2026-07: интеркулер не влияет на мощность при первой
+    // установке наддува на NA-двигатель (isNaToFi-ветка addPower игнорировала
+    // intercoolerMaxScale) ────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Intercooler_AffectsPower_WhenFirstFiInstalledOnNaEngine()
+    {
+        using var env = new TestingEnvironment();
+        var db = Fh6DatabaseService.Instance;
+        await db.InitializeAsync();
+
+        DbCar? testCar = null;
+        int testEngineId = 0, turboPart = 0, lowIcId = 0, highIcId = 0;
+
+        foreach (var dbCar in db.GetAllCars())
+        {
+            if (dbCar.AspirationTypeId == 8 || dbCar.SimPeakPower <= 0) continue;
+            var swaps = db.GetEngineSwaps(dbCar.Id);
+            var stockSwap = swaps.FirstOrDefault(s => s.IsStock);
+            if (stockSwap == null) continue;
+            int eid = stockSwap.EngineID;
+
+            // Только NA двигатели (нет стокового турбо/CSC/DSC) — воспроизводит
+            // isNaToFi-ветку (stockFi == null).
+            bool hasStockFi = db.GetTurbosSingle(eid).Any(t => t.IsStock)
+                            || db.GetTurbosTwin(eid).Any(t => t.IsStock)
+                            || db.GetCSC(eid).Any(t => t.IsStock)
+                            || db.GetDSC(eid).Any(t => t.IsStock);
+            if (hasStockFi) continue;
+
+            var turboUpgrade = (DbUpgradePart?)db.GetTurbosSingle(eid).FirstOrDefault(t => !t.IsStock)
+                            ?? db.GetTurbosTwin(eid).FirstOrDefault(t => !t.IsStock);
+            if (turboUpgrade == null) continue;
+
+            var ics = db.GetIntercoolers(eid);
+            var lowIc = ics.OrderBy(i => i.MaxScaleScale).FirstOrDefault();
+            var highIc = ics.OrderByDescending(i => i.MaxScaleScale).FirstOrDefault();
+            if (lowIc == null || highIc == null || highIc.MaxScaleScale <= lowIc.MaxScaleScale + 0.001) continue;
+
+            testCar = dbCar; testEngineId = eid;
+            turboPart = turboUpgrade.Id; lowIcId = lowIc.Id; highIcId = highIc.Id;
+            break;
+        }
+
+        if (testCar == null) return;
+
+        var cardLow = MakeCard(testCar, testEngineId);
+        PowerCalculator.Calculate(cardLow, new SelectedParts
+            { ForcedInductionPartId = turboPart, IntercoolerPartId = lowIcId });
+
+        var cardHigh = MakeCard(testCar, testEngineId);
+        PowerCalculator.Calculate(cardHigh, new SelectedParts
+            { ForcedInductionPartId = turboPart, IntercoolerPartId = highIcId });
+
+        Assert.True(cardHigh.PowerHP > cardLow.PowerHP,
+            $"Better intercooler ({cardHigh.PowerHP:F0} HP) should give more power than a weaker one ({cardLow.PowerHP:F0} HP) " +
+            "when forced induction is installed for the first time on an NA engine (isNaToFi path).");
+    }
+
+    // ── Баг-репорт 2026-07: апгрейд распредвала не влияет на мощность при
+    // первой установке наддува на NA-двигатель (anchorRatio считался от кривой
+    // с ТЕКУЩИМ распредвалом на обеих сторонах вычитания — прирост от самого
+    // распредвала сокращался и никогда не попадал в addPower) ────────────────
+
+    [Fact]
+    public async Task Camshaft_AffectsPower_WhenFirstFiInstalledOnNaEngine()
+    {
+        using var env = new TestingEnvironment();
+        var db = Fh6DatabaseService.Instance;
+        await db.InitializeAsync();
+
+        DbCar? testCar = null;
+        int testEngineId = 0, turboPart = 0, stockCamId = 0, raceCamId = 0;
+
+        foreach (var dbCar in db.GetAllCars())
+        {
+            if (dbCar.AspirationTypeId == 8 || dbCar.SimPeakPower <= 0) continue;
+            var swaps = db.GetEngineSwaps(dbCar.Id);
+            var stockSwap = swaps.FirstOrDefault(s => s.IsStock);
+            if (stockSwap == null) continue;
+            int eid = stockSwap.EngineID;
+
+            // Только NA двигатели (нет стокового турбо/CSC/DSC) — воспроизводит
+            // isNaToFi-ветку (stockFi == null).
+            bool hasStockFi = db.GetTurbosSingle(eid).Any(t => t.IsStock)
+                            || db.GetTurbosTwin(eid).Any(t => t.IsStock)
+                            || db.GetCSC(eid).Any(t => t.IsStock)
+                            || db.GetDSC(eid).Any(t => t.IsStock);
+            if (hasStockFi) continue;
+
+            var turboUpgrade = (DbUpgradePart?)db.GetTurbosSingle(eid).FirstOrDefault(t => !t.IsStock)
+                            ?? db.GetTurbosTwin(eid).FirstOrDefault(t => !t.IsStock);
+            if (turboUpgrade == null) continue;
+
+            var cams = db.GetCamshafts(eid);
+            var stockCam = cams.FirstOrDefault(c => c.IsStock);
+            var raceCam = cams.Where(c => !c.IsStock)
+                              .OrderByDescending(c => c.RedlineRPM).FirstOrDefault();
+            if (stockCam == null || raceCam == null || raceCam.RedlineRPM <= stockCam.RedlineRPM) continue;
+
+            testCar = dbCar; testEngineId = eid;
+            turboPart = turboUpgrade.Id; stockCamId = stockCam.Id; raceCamId = raceCam.Id;
+            break;
+        }
+
+        if (testCar == null) return;
+
+        var cardStock = MakeCard(testCar, testEngineId);
+        PowerCalculator.Calculate(cardStock, new SelectedParts
+            { ForcedInductionPartId = turboPart, CamshaftPartId = stockCamId });
+
+        var cardRace = MakeCard(testCar, testEngineId);
+        PowerCalculator.Calculate(cardRace, new SelectedParts
+            { ForcedInductionPartId = turboPart, CamshaftPartId = raceCamId });
+
+        Assert.True(cardRace.PowerHP > cardStock.PowerHP,
+            $"Race camshaft ({cardRace.PowerHP:F0} HP) should give more power than stock ({cardStock.PowerHP:F0} HP) " +
+            "when forced induction is installed for the first time on an NA engine (isNaToFi path).");
+    }
+
     // ── КРИТ #2: Manifold на NA-двигателе при добавлении FI-апгрейда ─────────
     // Турбированные двигатели в БД не имеют Manifold с TorqueScale > 1.
     // Тест проверяет NA-двигатель у которого есть manifold + доступный turbo-апгрейд.
