@@ -245,9 +245,14 @@ public static class PowerCalculator
         // change in-app while the game gained +35 kW. Now the full delta (cam+parts)
         // is carried forward and scaled by a STABLE anchor (naStkPeakHP, the true
         // stock-cam curve, never affected by the selected cam — see anchorRatio).
-        double naDeltaPowerHp = Math.Max(naCurPeakHP - naStkPeakHP, 0);
-        double naDeltaTorqueNm = Math.Max((torqueCurve.Length > 0 ? torqueCurve.Max() : 0)
-                                 - (stockCurve.Length > 0 ? stockCurve.Max() : 0), 0);
+        // Left UNCLAMPED here (unlike the old partHP/partTq) — the !fiChanged branch
+        // below always used this raw, unclamped value and is allowed to report a
+        // curve peak below true stock if the DB ever produces one; only the FI
+        // branches (which used to clamp partHP/partTq) apply Math.Max(...,0) at
+        // their own point of use, so this refactor doesn't change !fiChanged's behavior.
+        double naDeltaPowerHp = naCurPeakHP - naStkPeakHP;
+        double naDeltaTorqueNm = (torqueCurve.Length > 0 ? torqueCurve.Max() : 0)
+                                 - (stockCurve.Length > 0 ? stockCurve.Max() : 0);
 
         // ── Scalar power/torque estimates — each branch below overwrites these ──
         // The authoritative result is mulPower (line below) which implements the
@@ -336,8 +341,8 @@ public static class PowerCalculator
                 // Bolt-on parts AND camshaft (cam, exhaust, intake, etc.) increase NA
                 // breathing before the turbo multiplies it.  Scale the full curve-space
                 // gain to real-HP-space via the same anchorRatio used in the FI-upgrade path.
-                double naPowerWithParts = stockHP + naDeltaPowerHp * anchorRatio;
-                double naTorqueWithParts = stockTorqueNm + naDeltaTorqueNm * anchorRatio;
+                double naPowerWithParts = stockHP + Math.Max(naDeltaPowerHp, 0) * anchorRatio;
+                double naTorqueWithParts = stockTorqueNm + Math.Max(naDeltaTorqueNm, 0) * anchorRatio;
                 addPower = naPowerWithParts * (1.0 + torqueScale * baseEff * (pressureScale - 1.0));
                 addTorque = naTorqueWithParts * (1.0 + torqueScale * baseEff * trqRatio * (pressureScale - 1.0));
             }
@@ -355,8 +360,8 @@ public static class PowerCalculator
             double naAnchorTq = stockFiMult > 1.001 ? stockTorqueNm / stockFiMult : stockTorqueNm;
             double currentFiMult = FiEfficiencyMultiplier(currentFi, torqueScale);
             double currentFiTqMult = FiTorqueMultiplier(currentFi, torqueScale);
-            addPower = (naAnchorHP + naDeltaPowerHp * anchorRatio) * currentFiMult;
-            addTorque = (naAnchorTq + naDeltaTorqueNm * anchorRatio) * currentFiTqMult;
+            addPower = (naAnchorHP + Math.Max(naDeltaPowerHp, 0) * anchorRatio) * currentFiMult;
+            addTorque = (naAnchorTq + Math.Max(naDeltaTorqueNm, 0) * anchorRatio) * currentFiTqMult;
         }
 
         // For NA→any-FI, the calibrated pressure-efficiency formula (addPower) is

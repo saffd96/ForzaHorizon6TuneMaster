@@ -109,7 +109,7 @@ public class PowerCalculatorBoltOnTests
 
         Assert.True(peakParts > peakStock,
             $"Curve peak with race exhaust ({peakParts:F0} Nm) should exceed stock ({peakStock:F0} Nm). " +
-            "fiCurve is built from naCurveNoParts without partScale.");
+            "fiCurve must reflect bolt-on part torque scale.");
     }
 
     [Fact]
