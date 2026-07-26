@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -87,13 +88,28 @@ public sealed class UpdateService
         return HexHash(Fh6DatabaseService.LoadEmbeddedDbBytes());
     }
 
+    // Namespace prefix under which every Localization/*.json file is embedded (see the
+    // .csproj's EmbeddedResource entries) - the single source of truth for "which locale
+    // files exist", so adding a new language (embed it + drop it in DUMPER/publish_update.ps1's
+    // folder) never needs a matching hardcoded list here.
+    private const string LocalizationResourcePrefix = "Forza_Horizon_6_Tune_Master.Localization.";
+
+    private static string[] GetLocalizationFileNames() =>
+        _assembly.GetManifestResourceNames()
+            .Where(n => n.StartsWith(LocalizationResourcePrefix, StringComparison.Ordinal)
+                        && n.EndsWith(".json", StringComparison.Ordinal))
+            .Select(n => n[LocalizationResourcePrefix.Length..])
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToArray();
+
     private static string GetCurrentLocHash()
     {
         var combined = new List<byte>();
         bool anyAppData = false;
 
         string locDir = ForzaPaths.UpdateLocDir;
-        foreach (var name in new[] { "en.json", "ru.json", "GameStrings.en.json", "GameStrings.ru.json" })
+        var names = GetLocalizationFileNames();
+        foreach (var name in names)
         {
             string path = Path.Combine(locDir, name);
             if (File.Exists(path))
@@ -106,10 +122,9 @@ public sealed class UpdateService
         if (anyAppData)
             return HexHash(combined.ToArray());
 
-        string ns = "Forza_Horizon_6_Tune_Master.Localization";
-        foreach (var name in new[] { "en.json", "ru.json", "GameStrings.en.json", "GameStrings.ru.json" })
+        foreach (var name in names)
         {
-            using var stream = _assembly.GetManifestResourceStream($"{ns}.{name}");
+            using var stream = _assembly.GetManifestResourceStream($"{LocalizationResourcePrefix}{name}");
             if (stream != null)
             {
                 using var ms = new MemoryStream();
@@ -144,7 +159,7 @@ public sealed class UpdateService
     {
         Directory.CreateDirectory(ForzaPaths.UpdateLocDir);
 
-        var files = new[] { "en.json", "ru.json", "GameStrings.en.json", "GameStrings.ru.json" };
+        var files = GetLocalizationFileNames();
         var tmpPaths = new string[files.Length];
         double step = 1.0 / files.Length;
         try
