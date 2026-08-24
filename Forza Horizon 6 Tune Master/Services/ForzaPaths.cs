@@ -27,7 +27,6 @@ public static class ForzaPaths
 
     public static string BaseDir => BasePath;
     public static string ProfilesDir => Path.Combine(BasePath, "profiles");
-    public static string CachePath => Path.Combine(BasePath, "fh6_cars_fandom.json");
     public static string SettingsPath => Path.Combine(BasePath, "settings.json");
 
     // Downloaded update files (from Supabase), scoped per app version so an upgrade

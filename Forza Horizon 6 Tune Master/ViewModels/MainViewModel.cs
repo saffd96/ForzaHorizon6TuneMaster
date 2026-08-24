@@ -22,6 +22,8 @@ public class MainViewModel : NotifyBase
     private readonly TuneGeneratorService _generator = new();
     private readonly StorageService _storage = new();
     private readonly ProfileService _profileService;
+    private readonly object _profileIoLock = new();
+    private readonly CancellationTokenSource _profileMigrationCts = new();
     private int _tuneGenerationCount;
     private bool _donateShownThisSession;
 
@@ -1201,6 +1203,8 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             OnPropertyChanged(nameof(HasSelectedCar));
             OnPropertyChanged(nameof(SelectedCarDisplayText));
             OnPropertyChanged(nameof(CarSearchText));
+            GenerateCommand?.Raise();
+            SaveCommand?.Raise();
         };
         _carSpec.SetStatusMessage = msg => StatusMessage = msg;
         _carSpec.BusyFlagsChanged = () =>
@@ -1209,8 +1213,8 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             OnPropertyChanged(nameof(IsBusy));
         };
 
-        GenerateCommand        = new RelayCommand(GenerateTune);
-        SaveCommand            = new RelayCommand(SaveProfile);
+        GenerateCommand        = new RelayCommand(() => GenerateTune(), () => HasSelectedCar);
+        SaveCommand            = new RelayCommand(SaveProfile, () => HasSelectedCar);
         LoadCommand            = new RelayCommand(LoadProfile, () => SelectedProfile != null);
         DeleteProfileCommand   = new RelayCommand(DeleteProfile, () => SelectedProfile != null);
         DeleteAllProfilesCommand = new RelayCommand(DeleteAllProfiles);
@@ -1282,7 +1286,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         RefreshProfiles();
         // Migrate/recalculate outdated profiles off the UI thread so a large profile folder
         // doesn't stall startup (each outdated profile is a file read + full tune generation).
-        ProfilesMigrationTask = Task.Run(RecalculateOutdatedProfiles);
+        ProfilesMigrationTask = Task.Run(() => RecalculateOutdatedProfiles(_profileMigrationCts.Token));
         InvalidateAllLanguageDependent();
         _ = LoadCarDatabaseAsync();
     }
@@ -1711,12 +1715,17 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     }
 
     // ── Tune generation ──────────────────────────────────────────────────────
-    private void GenerateTune()
+    private bool GenerateTune(bool trackUsage = true)
     {
+        if (!HasSelectedCar)
+        {
+            StatusMessage = T("StatusFirstSelectCar");
+            return false;
+        }
         if (Car.CarDbId > 0 && Fh6DatabaseService.Instance.GetCar(Car.CarDbId) == null)
         {
-            StatusMessage = "Car data not loaded from database";
-            return;
+            StatusMessage = string.Format(T("StatusGenerationError"), T("DbInitErrorCaption"));
+            return false;
         }
 
         BusyMessage = T("BusyGenerating");
@@ -1731,19 +1740,24 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             // Auto-generation fires on every edit (debounced), so the counter climbs fast. Show
             // the donate prompt at most ONCE per session after meaningful usage, instead of a
             // modal dialog interrupting the user every 100 regenerations.
-            _tuneGenerationCount++;
-            if (!_donateShownThisSession && _tuneGenerationCount >= 100)
+            if (trackUsage)
             {
-                _donateShownThisSession = true;
-                var owner = Application.Current?.MainWindow;
-                if (owner != null)
-                    new DonateWindow { Owner = owner }.ShowDialog();
+                _tuneGenerationCount++;
+                if (!_donateShownThisSession && _tuneGenerationCount >= 100)
+                {
+                    _donateShownThisSession = true;
+                    var owner = Application.Current?.MainWindow;
+                    if (owner != null)
+                        new DonateWindow { Owner = owner }.ShowDialog();
+                }
             }
+            return true;
         }
         catch (Exception ex)
         {
             StatusMessage = string.Format(T("StatusGenerationError"), ex.Message);
             MessageBox.Show(ex.ToString(), T("ErrorCaption"), MessageBoxButton.OK, MessageBoxImage.Error);
+            return false;
         }
         finally
         {
@@ -1809,15 +1823,25 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     {
         try
         {
-            // If the auto-name changed since the last generate (e.g. season switched without
-            // regenerating), delete the stale file so it doesn't duplicate in the dropdown.
-            if (!string.IsNullOrEmpty(Car.Name))
+            if (!HasSelectedCar)
             {
-                string newAutoName = _profileService.AutoProfileName(Car, Track);
-                if (Car.Name != newAutoName)
-                    _profileService.Delete(Car.Name);
+                StatusMessage = T("StatusFirstSelectCar");
+                return;
             }
-            string name = _profileService.Save(Car, Track, _selectedParts, TuneResult, Constraints);
+
+            string oldName = Car.Name;
+            _debounceCts?.Cancel();
+            _pendingGenerationId++;
+            if (!GenerateTune(trackUsage: false)) return;
+
+            string name;
+            lock (_profileIoLock)
+            {
+                // Write the new profile first. If that fails, the previous file remains intact.
+                name = _profileService.Save(Car, Track, _selectedParts, TuneResult, Constraints);
+                if (!string.IsNullOrEmpty(oldName) && oldName != name)
+                    _profileService.Delete(oldName);
+            }
             Car.Name = name;
             RefreshProfiles();
             SelectProfileSilently(name);
@@ -1888,7 +1912,9 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         if (SelectedProfile == null) return;
         if (MessageBox.Show(string.Format(T("DeleteProfileConfirm"), SelectedProfile), T("DeleteProfileTitle"),
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        _profileService.Delete(SelectedProfile);
+        _profileMigrationCts.Cancel();
+        lock (_profileIoLock)
+            _profileService.Delete(SelectedProfile);
         RefreshProfiles();
         StatusMessage = T("StatusProfileDeleted");
     }
@@ -1897,7 +1923,9 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     {
         if (MessageBox.Show(T("DeleteAllProfilesConfirm"), T("DeleteAllProfilesTitle"),
                 MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
-        _profileService.DeleteAll();
+        _profileMigrationCts.Cancel();
+        lock (_profileIoLock)
+            _profileService.DeleteAll();
         RefreshProfiles();
         StatusMessage = T("StatusAllProfilesDeleted");
     }
@@ -1916,13 +1944,14 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
     }
 
     // ── Auto-recalculate profiles with outdated version ───────────────────
-    private void RecalculateOutdatedProfiles()
+    private void RecalculateOutdatedProfiles(CancellationToken cancellationToken)
     {
         var names = _profileService.GetProfileNames();
         if (names.Count == 0) return;
         int ok = 0;
         foreach (var name in names)
         {
+            if (cancellationToken.IsCancellationRequested) break;
             var p = _profileService.Load(name);
             if (p == null) continue;
             if (p.Version == SavedProfile.ProfileVersion) continue;
@@ -1936,8 +1965,12 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
                 // Skip writing back if the user currently has this same profile open — an
                 // interactive edit+save could otherwise race with (and be silently clobbered
                 // by) this background migration write landing after it.
-                if (name == SelectedProfile) continue;
-                _storage.Save(name, p);
+                lock (_profileIoLock)
+                {
+                    if (cancellationToken.IsCancellationRequested) break;
+                    if (name == SelectedProfile) continue;
+                    _storage.Save(name, p);
+                }
                 ok++;
             }
             catch (Exception ex)

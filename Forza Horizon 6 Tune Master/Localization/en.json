@@ -8,12 +8,8 @@
   "StatusGenerationError": "Generation error: {0}",
   "BusyGenerating": "Calculating tune...",
   "BusyLoadingSpecs": "Loading specs...",
-  "BusyFetchingAi": "Fetching specs via AI...",
   "BusyLoadingCars": "Loading car database...",
   "BusyRefreshingCars": "Refreshing car database...",
-  "StatusAiRequested": "Requesting specs for {0} via AI...",
-  "StatusAiReceived": "Specs received for {0}{1}",
-  "StatusAiError": "AI error: {0}",
   "StatusSpecsLoaded": "Wiki specs loaded for {0} {1}",
   "StatusSpecsError": "Wiki: failed to load specs — {0}",
   "StatusProfileSaved": "Profile «{0}» saved",
@@ -48,7 +44,6 @@
   "CarSearchClearTooltip": "Clear selection",
   "RefreshDbTooltip": "Refresh car database from website",
   "ClearCacheTooltip": "Clear database cache (requires reload)",
-  "ClearAiCacheTooltip": "Clear AI spec cache",
 
   "SectionMass": "MASS & BALANCE",
   "SectionEngine": "ENGINE",
@@ -402,7 +397,7 @@
   "ChangelogTitle": "What\u0027s new",
   "ChangelogClose": "OK",
 
-  "ChangelogV0": "• FORCED-INDUCTION POWER FIX. Camshaft and intercooler upgrades no longer silently do nothing when added to a naturally-aspirated engine that's just getting its first turbo or supercharger from the Conversions menu — both now correctly add power.\n• DRAG STRIP GEARING. Launch-RPM tuning no longer wastes passes chasing a final-drive fit that undoes its own change. Gearboxes with more gears than a short strip's trap speed needs no longer get every gear crammed into a narrow band — the extra gears now extend past it as real overdrive ratios. Mile-distance gearing recalibrated against real in-game trap speeds.\n• TOP SPEED ACCURACY. Cars whose recorded top speed was itself limited by their stock gearbox (not by aerodynamics) no longer feed a wrong drag coefficient into every speed and gearing calculation.\n• WEIGHT ACCOUNTING FIXES. Wheel-style weight no longer double-counts with a rim/tire size change on the same axle; intercooler weight is no longer written off for engines with no factory-stock intercooler tier; body-kit weight now applies correctly when loading a saved profile with a non-stock kit.\n• MANUAL OVERRIDES (NEW). Max RPM, spring rate min/max, and ride height can now be typed in directly in the results panel, plus a manual-gearbox mode that shifts to the rev limiter instead of leaving an automatic's safety margin.\n• UI FIXES & FRENCH LOCALIZATION. The floating overlay now centers on screen instead of risking an off-screen position; override fields no longer shift the layout when toggled; carbureted engines show \"Carburetor\" instead of \"Fuel System\"; added a button to open the profiles folder. The app is now available in French.",
+  "ChangelogV0": "• CALCULATIONS AND DATABASE. Drift tires no longer disappear from the list; changing tire width updates the aspect ratio; spring rates are clamped to the selected part limits; the stock NISMO GT-R differential retains deceleration adjustment. Weight calculation no longer double-counts wheel-size changes and correctly includes intercoolers and body kits.\n• PROFILES AND GENERATION. A car must now be selected before generating or saving. Saving recalculates pending changes; profile renaming is safe and no longer races background migration.\n• INTERFACE AND LANGUAGES. Added 24 interface languages and a clear language-switch icon; fixed corrupted language names, improved scrollbars, and virtualized long lists.\n• CLEANUP. Removed unused remnants of the discontinued AI integration.",
 
   "Enum_EngineType_I1": "I1 (single-cylinder)",
   "Enum_EngineType_I2": "I2",

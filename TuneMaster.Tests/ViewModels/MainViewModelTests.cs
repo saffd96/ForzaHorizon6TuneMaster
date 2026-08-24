@@ -11,6 +11,19 @@ public class MainViewModelTests : IDisposable
 {
     private readonly TestingEnvironment _testEnv = new();
 
+    private static void SelectTestCar(MainViewModel vm)
+    {
+        Fh6DatabaseService.Instance.InitializeAsync().GetAwaiter().GetResult();
+        var car = Fh6DatabaseService.Instance.GetCar(247)!;
+        vm.SelectedCar = new CarData
+        {
+            Id = car.Id,
+            Make = car.MakeName,
+            Model = car.ModelShort,
+            Year = car.Year
+        };
+    }
+
     public void Dispose()
     {
         _testEnv.Dispose();
@@ -262,10 +275,27 @@ public class MainViewModelTests : IDisposable
     public void GenerateCommand_UpdatesStatus()
     {
         var vm = new MainViewModel();
+        SelectTestCar(vm);
         vm.GenerateCommand.Execute(null);
 
         Assert.NotNull(vm.TuneResult);
         Assert.True(vm.HasResult);
+    }
+
+    [Fact]
+    public void GenerateAndSaveCommands_RequireSelectedCar()
+    {
+        var vm = new MainViewModel();
+
+        Assert.False(vm.GenerateCommand.CanExecute(null));
+        Assert.False(vm.SaveCommand.CanExecute(null));
+
+        vm.GenerateCommand.Execute(null);
+        vm.SaveCommand.Execute(null);
+
+        Assert.Null(vm.TuneResult);
+        Assert.Empty(vm.Profiles);
+        Assert.Equal(LocalizationService.Instance.T("StatusFirstSelectCar"), vm.StatusMessage);
     }
 
     [Fact]
@@ -577,6 +607,7 @@ public class MainViewModelTests : IDisposable
     public void SaveCommand_SavesProfile()
     {
         var vm = new MainViewModel();
+        SelectTestCar(vm);
         vm.Car.Make = "TestMake";
         vm.Car.Model = "TestModel";
         vm.Car.Year = 2024;
@@ -591,6 +622,7 @@ public class MainViewModelTests : IDisposable
     public void SaveCommand_SavesAndStatusUpdated()
     {
         var vm = new MainViewModel();
+        SelectTestCar(vm);
         vm.Car.Make = "StatusTest";
         vm.Car.Model = "Car";
 
@@ -603,6 +635,7 @@ public class MainViewModelTests : IDisposable
     public void SaveProfile_AutoName()
     {
         var vm = new MainViewModel();
+        SelectTestCar(vm);
         vm.Car.Make = "SaveNameMake";
         vm.Car.Model = "SaveNameModel";
         vm.Car.Year = 2024;
@@ -613,6 +646,39 @@ public class MainViewModelTests : IDisposable
         Assert.Contains("SaveNameMake", name);
         Assert.Contains("SaveNameModel", name);
         Assert.Contains("2024", name);
+    }
+
+    [Fact]
+    public void SaveCommand_RecalculatesPendingChangesBeforeWriting()
+    {
+        var vm = new MainViewModel();
+        SelectTestCar(vm);
+        vm.Track.Discipline = Discipline.Road;
+        vm.GenerateCommand.Execute(null);
+
+        vm.Track.Discipline = Discipline.Drift;
+        vm.SaveCommand.Execute(null);
+
+        var saved = new StorageService().Load(vm.Car.Name);
+        Assert.NotNull(saved?.LastResult);
+        Assert.Equal(Discipline.Drift, saved!.LastResult!.Track.Discipline);
+    }
+
+    [Fact]
+    public void SaveCommand_FailedRenameKeepsPreviousProfile()
+    {
+        var vm = new MainViewModel();
+        SelectTestCar(vm);
+        vm.SaveCommand.Execute(null);
+        string oldName = vm.Car.Name;
+
+        vm.Track.Season = Season.Winter;
+        string newName = new ProfileService(new StorageService()).AutoProfileName(vm.Car, vm.Track);
+        System.IO.Directory.CreateDirectory(System.IO.Path.Combine(ForzaPaths.ProfilesDir, newName + ".json.tmp"));
+
+        vm.SaveCommand.Execute(null);
+
+        Assert.Contains(oldName, new StorageService().GetProfileNames());
     }
 
     [Fact]
@@ -639,6 +705,7 @@ public class MainViewModelTests : IDisposable
     public void SaveCommand_SavesProfileWithVersion()
     {
         var vm = new MainViewModel();
+        SelectTestCar(vm);
         vm.Car.Make = "VersionCheck";
         vm.Car.Model = "Car";
         vm.Car.Year = 2024;

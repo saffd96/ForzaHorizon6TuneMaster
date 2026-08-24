@@ -214,6 +214,15 @@
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility"   Value="Auto"/>
         <Setter Property="ScrollViewer.CanContentScroll"              Value="True"/>
+        <Setter Property="VirtualizingPanel.IsVirtualizing"           Value="True"/>
+        <Setter Property="VirtualizingPanel.VirtualizationMode"       Value="Recycling"/>
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel/>
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
         <Setter Property="Foreground"  Value="{StaticResource TextBrush}"/>
         <Setter Property="Background"  Value="{StaticResource ElevatedBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
@@ -285,9 +294,9 @@
                                         CornerRadius="0,0,5,5"
                                         Padding="2">
                                     <ScrollViewer SnapsToDevicePixels="True"
+                                                  CanContentScroll="True"
                                                   VerticalScrollBarVisibility="Auto">
-                                        <StackPanel IsItemsHost="True"
-                                                    KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
                                     </ScrollViewer>
                                 </Border>
                             </Grid>
@@ -669,26 +678,54 @@
     <Style TargetType="ScrollBar">
         <Setter Property="OverridesDefaultStyle" Value="True"/>
         <Setter Property="Background"            Value="Transparent"/>
-        <Setter Property="Width"                 Value="6"/>
+        <Setter Property="Width"                 Value="10"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
                     <Grid>
-                        <Track x:Name="PART_Track" IsDirectionReversed="True">
+                        <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}" IsDirectionReversed="True">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton x:Name="DecreaseButton"
+                                              Command="{x:Static ScrollBar.PageUpCommand}"
+                                              Background="Transparent" Focusable="False"/>
+                            </Track.DecreaseRepeatButton>
                             <Track.Thumb>
-                                <Thumb>
+                                <Thumb MinHeight="24" MinWidth="24">
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
-                                            <Border Background="#3A4060" CornerRadius="3"/>
+                                            <Border x:Name="ThumbBody" Background="#596080" CornerRadius="5"/>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="ThumbBody" Property="Background" Value="{StaticResource CyanBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Thumb.Template>
                                 </Thumb>
                             </Track.Thumb>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton x:Name="IncreaseButton"
+                                              Command="{x:Static ScrollBar.PageDownCommand}"
+                                              Background="Transparent" Focusable="False"/>
+                            </Track.IncreaseRepeatButton>
                         </Track>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Orientation" Value="Horizontal">
+                            <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
+                            <Setter TargetName="DecreaseButton" Property="Command" Value="{x:Static ScrollBar.PageLeftCommand}"/>
+                            <Setter TargetName="IncreaseButton" Property="Command" Value="{x:Static ScrollBar.PageRightCommand}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="Width" Value="Auto"/>
+                <Setter Property="Height" Value="10"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- ═══════════════════════════════════════════════════════════════

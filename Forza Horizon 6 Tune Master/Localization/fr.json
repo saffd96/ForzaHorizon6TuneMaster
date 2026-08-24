@@ -8,12 +8,8 @@
   "StatusGenerationError": "Erreur de génération : {0}",
   "BusyGenerating": "Calcul du réglage...",
   "BusyLoadingSpecs": "Chargement des caractéristiques...",
-  "BusyFetchingAi": "Récupération des specs via IA...",
   "BusyLoadingCars": "Chargement de la base de voitures...",
   "BusyRefreshingCars": "Mise à jour de la base de voitures...",
-  "StatusAiRequested": "Demande des specs pour {0} via IA...",
-  "StatusAiReceived": "Spécifications reçues pour {0}{1}",
-  "StatusAiError": "Erreur IA : {0}",
   "StatusSpecsLoaded": "Spécifications Wiki chargées pour {0} {1}",
   "StatusSpecsError": "Wiki : échec de chargement — {0}",
   "StatusProfileSaved": "Profil « {0} » sauvegardé",
@@ -48,7 +44,6 @@
   "CarSearchClearTooltip": "Effacer la sélection",
   "RefreshDbTooltip": "Actualiser la base depuis le site",
   "ClearCacheTooltip": "Vider le cache (rechargement requis)",
-  "ClearAiCacheTooltip": "Vider le cache des specs IA",
 
   "SectionMass": "MASSE & ÉQUILIBRAGE",
   "SectionEngine": "MOTEUR",
@@ -402,7 +397,7 @@
   "ChangelogTitle": "Nouveautés",
   "ChangelogClose": "OK",
 
-  "ChangelogV0": "• PUISSANCE AVEC TURBO CORRIGÉE. Les améliorations d'arbre à cames et d'intercooler ne restent plus sans effet lorsqu'elles sont ajoutées à un moteur atmosphérique qui reçoit son premier turbo ou compresseur via le menu Conversions — les deux ajoutent désormais bien de la puissance.\n• RAPPORTS AU DRAG. Le réglage du régime de départ ne gaspille plus de passes à poursuivre un ajustement de pont qui annule lui-même le changement ; les boîtes avec plus de rapports que nécessaire pour la vitesse de pointe d'une piste courte ne compressent plus tous les rapports dans une bande étroite — les rapports en trop s'étendent désormais au-delà comme de vrais rapports surmultipliés. Le facteur du Mile a été recalibré sur des relevés réels de vitesse de pointe en jeu.\n• PRÉCISION DE LA VITESSE MAXIMALE. Les voitures dont la vitesse maximale enregistrée était en réalité limitée par leur boîte de vitesses d'origine (et non par l'aérodynamique) n'introduisent plus un mauvais coefficient de traînée dans tous les calculs de vitesse et de rapports.\n• CORRECTIONS DE MASSE. Le poids lié au style de jante ne se cumule plus avec un changement de taille de jante/pneu sur le même essieu ; la masse de l'intercooler n'est plus ignorée pour les moteurs sans palier d'intercooler d'origine ; le poids du kit carrosserie s'applique désormais correctement au chargement d'un profil enregistré avec un kit non standard.\n• SURCHARGES MANUELLES (NOUVEAU). Le régime maximal, la raideur min/max des ressorts et la garde au sol peuvent désormais être saisis directement dans le panneau de résultats, plus un mode « boîte manuelle » qui monte jusqu'au régime de coupure au lieu de la marge de sécurité d'une automatique.\n• CORRECTIONS D'INTERFACE ET LOCALISATION FRANÇAISE. La fenêtre flottante se centre désormais à l'écran au lieu de risquer de s'ouvrir hors champ ; les champs de surcharge ne décalent plus la mise en page lors de leur activation ; les moteurs à carburateur affichent « Carburateur » au lieu de « Système d'alimentation » ; ajout d'un bouton pour ouvrir le dossier des profils. L'application est désormais disponible en français.",
+  "ChangelogV0": "• CALCULS ET BASE DE DONNÉES. Les pneus drift ne disparaissent plus de la liste ; modifier la largeur met à jour le profil du pneu ; la raideur des ressorts est limitée aux valeurs de la pièce choisie ; le différentiel d’origine du NISMO GT-R conserve le réglage de décélération. Le calcul du poids ne compte plus deux fois les changements de taille des roues et inclut correctement les intercoolers et kits carrosserie.\n• PROFILS ET GÉNÉRATION. Une voiture doit désormais être sélectionnée avant de calculer ou d’enregistrer. L’enregistrement recalcule les modifications en attente ; le renommage du profil est sûr et n’entre plus en conflit avec la migration en arrière-plan.\n• INTERFACE ET LANGUES. Ajout de 24 langues et d’une icône claire de changement de langue ; correction des noms de langue corrompus, amélioration des barres de défilement et virtualisation des longues listes.\n• NETTOYAGE. Suppression des restes inutilisés de l’intégration IA abandonnée.",
 
   "Enum_EngineType_I1": "I1 (monocylindre)",
   "Enum_EngineType_I2": "I2",

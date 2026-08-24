@@ -1710,34 +1710,68 @@ public class DbIntegrationCalculatorTests
 
         var cars = Fh6DatabaseService.Instance.GetAllCars();
         int missing = 0;
-        foreach (var car in cars.Take(100))
+        foreach (var car in cars)
         {
             int carBodyId = car.Id * 1000;
             if (Fh6DatabaseService.Instance.GetCarBody(carBodyId) == null)
                 missing++;
         }
-        Assert.True(missing == 0, $"{missing} of first 100 cars missing CarBody record");
+        Assert.True(missing == 0, $"{missing} cars missing CarBody record");
     }
 
     [Fact]
-    public async Task Db_SpringDamperPhysics_NoNullReferences()
+    public async Task Db_AllSuspensionPhysicsReferencesResolve()
     {
         using var env = new TestingEnvironment();
         await InitDbAsync();
 
         var db = Fh6DatabaseService.Instance;
-        int nullRefs = 0;
-
-        var sds = db.GetSpringDampers(247);
-        foreach (var sd in sds)
+        var missing = new List<string>();
+        foreach (var car in db.GetAllCars())
         {
-            if (db.GetSpringDamperPhysics(sd.FrontSpringDamperPhysicsID) == null)
-                nullRefs++;
-            if (db.GetSpringDamperPhysics(sd.RearSpringDamperPhysicsID) == null)
-                nullRefs++;
+            foreach (var sd in db.GetSpringDampers(car.Id))
+            {
+                if (sd.FrontSpringDamperPhysicsID > 0 && db.GetSpringDamperPhysics(sd.FrontSpringDamperPhysicsID) == null)
+                    missing.Add($"car {car.Id}: front spring physics {sd.FrontSpringDamperPhysicsID}");
+                if (sd.RearSpringDamperPhysicsID > 0 && db.GetSpringDamperPhysics(sd.RearSpringDamperPhysicsID) == null)
+                    missing.Add($"car {car.Id}: rear spring physics {sd.RearSpringDamperPhysicsID}");
+            }
+            foreach (var arb in db.GetAntiSwayFront(car.Id))
+                if (arb.AntiSwayPhysicsID > 0 && db.GetAntiSwayPhysics(arb.AntiSwayPhysicsID) == null)
+                    missing.Add($"car {car.Id}: front ARB physics {arb.AntiSwayPhysicsID}");
+            foreach (var arb in db.GetAntiSwayRear(car.Id))
+                if (arb.AntiSwayPhysicsID > 0 && db.GetAntiSwayPhysics(arb.AntiSwayPhysicsID) == null)
+                    missing.Add($"car {car.Id}: rear ARB physics {arb.AntiSwayPhysicsID}");
         }
 
-        Assert.True(nullRefs == 0, $"{nullRefs} null physics references found");
+        Assert.True(missing.Count == 0,
+            $"{missing.Count} unresolved suspension references:\n{string.Join("\n", missing.Take(20))}");
+    }
+
+    [Fact]
+    public async Task Db_AllCars_StockUiSelectionsPreserveCurbWeight()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+
+        var db = Fh6DatabaseService.Instance;
+        foreach (var dbCar in db.GetAllCars())
+        {
+            var car = BuildCarCard(dbCar.Id);
+            var parts = new SelectedParts();
+            parts.SetCarData(car);
+
+            new SwapsViewModel().LoadForCar(car, parts);
+            new EnginePartsViewModel().LoadForCar(car, parts);
+            new MotorPartsViewModel().LoadForCar(car, parts);
+            new SuspensionViewModel().LoadForCar(car, parts);
+            new TransmissionViewModel().LoadForCar(car, parts);
+            new TiresWheelsViewModel().LoadForCar(car, parts);
+            new AeroVisualViewModel().LoadForCar(car, parts);
+
+            Assert.Equal(car.CurbWeightKg, parts.ComputeTotalMass(), 6);
+            Assert.Null(parts.ComputeWeightDistFront());
+        }
     }
 
     [Fact]
