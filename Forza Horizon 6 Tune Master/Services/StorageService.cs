@@ -9,7 +9,7 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 
 public class SavedProfile
 {
-    public const string ProfileVersion = "v2.3";
+    public const string ProfileVersion = "v2.4";
 
     public CarCard Car { get; set; } = new();
     public TrackInfo Track { get; set; } = new();
