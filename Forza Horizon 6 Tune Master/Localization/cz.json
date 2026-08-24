@@ -355,7 +355,7 @@
   "ChangelogWindowTitle": "Co je nového — Tune Master",
   "ChangelogTitle": "Co je nového",
   "ChangelogClose": "OK",
-  "ChangelogV0": "• VÝPOČTY A DATABÁZE. Driftové pneumatiky již nemizí ze seznamu; změna šířky pneumatiky aktualizuje profil; tuhost pružin je omezena rozsahem vybraného dílu; sériový diferenciál NISMO GT-R zachovává nastavení zpomalení. Výpočet hmotnosti již nezapočítává změny velikosti kol dvakrát a správně zahrnuje mezichladiče a bodykity.\n• PROFILY A GENEROVÁNÍ. Před výpočtem nebo uložením je nyní nutné vybrat vůz. Při ukládání se přepočítají čekající změny; přejmenování profilu je bezpečné a nekoliduje s migrací na pozadí.\n• ROZHRANÍ A JAZYKY. Přidáno 24 jazyků rozhraní a srozumitelná ikona změny jazyka; opraveny poškozené názvy jazyků, vylepšeny posuvníky a virtualizovány dlouhé seznamy.\n• ÚKLID. Odstraněny nepoužívané zbytky ukončené integrace AI.",
+  "ChangelogV0": "• VÝPOČTY A DATABÁZE. Driftové pneumatiky již nemizí ze seznamu; změna šířky pneumatiky aktualizuje profil; tuhost pružin je omezena rozsahem vybraného dílu; sériový diferenciál NISMO GT-R zachovává nastavení zpomalení. Výpočet hmotnosti již nezapočítává změny velikosti kol dvakrát a správně zahrnuje mezichladiče a bodykity.\n• PROFILY A GENEROVÁNÍ. Před výpočtem nebo uložením je nyní nutné vybrat vůz. Při ukládání se přepočítají čekající změny; přejmenování profilu je bezpečné a nekoliduje s migrací na pozadí.\n• ROZHRANÍ A JAZYKY. Přidáno 24 jazyků rozhraní a srozumitelná ikona změny jazyka; opraveny poškozené názvy jazyků, vylepšeny posuvníky a virtualizovány dlouhé seznamy.",
   "Enum_EngineType_I1": "I1 (jednoválec)",
   "Enum_EngineType_I2": "I2",
   "Enum_EngineType_I3": "I3",

@@ -397,7 +397,7 @@
   "ChangelogTitle": "What\u0027s new",
   "ChangelogClose": "OK",
 
-  "ChangelogV0": "• CALCULATIONS AND DATABASE. Drift tires no longer disappear from the list; changing tire width updates the aspect ratio; spring rates are clamped to the selected part limits; the stock NISMO GT-R differential retains deceleration adjustment. Weight calculation no longer double-counts wheel-size changes and correctly includes intercoolers and body kits.\n• PROFILES AND GENERATION. A car must now be selected before generating or saving. Saving recalculates pending changes; profile renaming is safe and no longer races background migration.\n• INTERFACE AND LANGUAGES. Added 24 interface languages and a clear language-switch icon; fixed corrupted language names, improved scrollbars, and virtualized long lists.\n• CLEANUP. Removed unused remnants of the discontinued AI integration.",
+  "ChangelogV0": "• CALCULATIONS AND DATABASE. Drift tires no longer disappear from the list; changing tire width updates the aspect ratio; spring rates are clamped to the selected part limits; the stock NISMO GT-R differential retains deceleration adjustment. Weight calculation no longer double-counts wheel-size changes and correctly includes intercoolers and body kits.\n• PROFILES AND GENERATION. A car must now be selected before generating or saving. Saving recalculates pending changes; profile renaming is safe and no longer races background migration.\n• INTERFACE AND LANGUAGES. Added 24 interface languages and a clear language-switch icon; fixed corrupted language names, improved scrollbars, and virtualized long lists.",
 
   "Enum_EngineType_I1": "I1 (single-cylinder)",
   "Enum_EngineType_I2": "I2",
