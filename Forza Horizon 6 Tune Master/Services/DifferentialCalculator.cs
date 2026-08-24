@@ -19,7 +19,11 @@ internal static class DifferentialCalculator
         // Deriving this from the resolved part (rather than the DifferentialUpgrade enum)
         // is robust to the DB Level→enum mapping, which is not 1:1 (DB levels skip 4),
         // so e.g. a race diff would otherwise be misread as "Sport" and hide decel.
-        bool hasDecel = Math.Max(diff.RearLimitedSlipTorqueDecel, diff.FrontLimitedSlipTorqueDecel) > 0.01;
+        bool hasDecel = TuningPhysicsContext.DifferentialSupportsDecel(diff);
+        double rearAccelMax = TuningPhysicsContext.DifferentialSliderMax(diff, diff.RearLimitedSlipTorqueAccel);
+        double rearDecelMax = TuningPhysicsContext.DifferentialSliderMax(diff, diff.RearLimitedSlipTorqueDecel);
+        double frontAccelMax = TuningPhysicsContext.DifferentialSliderMax(diff, diff.FrontLimitedSlipTorqueAccel);
+        double frontDecelMax = TuningPhysicsContext.DifferentialSliderMax(diff, diff.FrontLimitedSlipTorqueDecel);
 
         // Adjust for power delivery: more torque needs more lock, but very high torque
         // on a light car is easier to break loose, so we cap the increase.
@@ -66,14 +70,14 @@ internal static class DifferentialCalculator
             rearAccelTarget *= powerMul * wheelbaseFactor * seasonMul * rotationMul;
             rearDecelTarget *= powerMul * wheelbaseFactor * seasonMul * rotationMul;
 
-            double rearAccel = ClampToMax(rearAccelTarget, diff.RearLimitedSlipTorqueAccel);
-            double rearDecel = hasDecel ? ClampToMax(rearDecelTarget, diff.RearLimitedSlipTorqueDecel) : 0.0;
+            double rearAccel = ClampToMax(rearAccelTarget, rearAccelMax);
+            double rearDecel = hasDecel ? ClampToMax(rearDecelTarget, rearDecelMax) : 0.0;
 
             (double frontAccelTarget, double frontDecelTarget) = FrontLockTargets(track.Discipline);
             frontAccelTarget *= wheelbaseFactor * seasonMul * rotationMul;
             frontDecelTarget *= wheelbaseFactor * seasonMul * rotationMul;
-            double frontAccel = ClampToMax(frontAccelTarget, diff.FrontLimitedSlipTorqueAccel);
-            double frontDecel = hasDecel ? ClampToMax(frontDecelTarget, diff.FrontLimitedSlipTorqueDecel) : 0.0;
+            double frontAccel = ClampToMax(frontAccelTarget, frontAccelMax);
+            double frontDecel = hasDecel ? ClampToMax(frontDecelTarget, frontDecelMax) : 0.0;
 
             // Centre bias: start from the part's rear torque split, then nudge per discipline.
             double centerBias = diff.RearToqueSplit;
@@ -94,9 +98,9 @@ internal static class DifferentialCalculator
 
             // Re-bias the rear diff output to account for the centre split.
             double rearFactor = 0.85 + centerBias * 0.15;
-            r.DiffAccel = Math.Round(CalculationHelpers.Clamp(rearAccel * rearFactor, 0.0, diff.RearLimitedSlipTorqueAccel) * 100.0);
+            r.DiffAccel = Math.Round(CalculationHelpers.Clamp(rearAccel * rearFactor, 0.0, rearAccelMax) * 100.0);
             if (hasDecel)
-                r.DiffDecel = Math.Round(CalculationHelpers.Clamp(rearDecel * rearFactor, 0.0, diff.RearLimitedSlipTorqueDecel) * 100.0);
+                r.DiffDecel = Math.Round(CalculationHelpers.Clamp(rearDecel * rearFactor, 0.0, rearDecelMax) * 100.0);
 
             r.DiffFrontAccel = Math.Round(frontAccel * 100.0);
             if (hasDecel)
@@ -114,8 +118,8 @@ internal static class DifferentialCalculator
             accelTarget *= powerMul * wheelbaseFactor * seasonMul * rotationMul;
             decelTarget *= powerMul * wheelbaseFactor * seasonMul * rotationMul;
 
-            double accel = ClampToMax(accelTarget, diff.FrontLimitedSlipTorqueAccel);
-            double decel = hasDecel ? ClampToMax(decelTarget, diff.FrontLimitedSlipTorqueDecel) : 0.0;
+            double accel = ClampToMax(accelTarget, frontAccelMax);
+            double decel = hasDecel ? ClampToMax(decelTarget, frontDecelMax) : 0.0;
 
             r.DiffAccel = Math.Round(accel * 100.0);
             if (hasDecel)
@@ -132,8 +136,8 @@ internal static class DifferentialCalculator
             accelTarget *= powerMul * wheelbaseFactor * seasonMul * rotationMul;
             decelTarget *= powerMul * wheelbaseFactor * seasonMul * rotationMul;
 
-            double accel = ClampToMax(accelTarget, diff.RearLimitedSlipTorqueAccel);
-            double decel = hasDecel ? ClampToMax(decelTarget, diff.RearLimitedSlipTorqueDecel) : 0.0;
+            double accel = ClampToMax(accelTarget, rearAccelMax);
+            double decel = hasDecel ? ClampToMax(decelTarget, rearDecelMax) : 0.0;
 
             r.DiffAccel = Math.Round(accel * 100.0);
             if (hasDecel)

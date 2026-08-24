@@ -587,6 +587,7 @@ public class TuneGeneratorServiceTests
     [InlineData(TireType.Offroad)]
     [InlineData(TireType.Drag)]
     [InlineData(TireType.Winter)]
+    [InlineData(TireType.Drift)]
     public void Generate_AllTireTypes_NoThrow(TireType tire)
     {
         var car = CarFactory.DefaultCar();

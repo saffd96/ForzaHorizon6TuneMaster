@@ -21,7 +21,7 @@ public enum EngineType { I1, I2, I3, I4, I5, I6, I8, Boxer, V6, V8, V10, V12, W1
 
 public enum EnginePosition { Front, Mid, Rear }
 
-public enum TireType { Stock, Street, Sport, SemiSlick, Slick, Rally, Offroad, Drag, Winter }
+public enum TireType { Stock, Street, Sport, SemiSlick, Slick, Rally, Offroad, Drag, Winter, Drift }
 
 public enum SuspensionUpgrade { Stock, Street, Sport, Race, Rally, Drift, Offroad }
 

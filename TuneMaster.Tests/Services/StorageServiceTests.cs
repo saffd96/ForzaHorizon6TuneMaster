@@ -29,6 +29,17 @@ public class StorageServiceTests : IDisposable
     }
 
     [Fact]
+    public void AutoProfileName_DistinguishesDragDistances()
+    {
+        var service = new ProfileService(_storage);
+        var car = new CarCard { Year = 2024, Make = "Nissan", Model = "GT-R" };
+        var quarter = new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Quarter };
+        var mile = new TrackInfo { Discipline = Discipline.Drag, DragDistance = DragDistance.Mile };
+
+        Assert.NotEqual(service.AutoProfileName(car, quarter), service.AutoProfileName(car, mile));
+    }
+
+    [Fact]
     public void GetProfileNames_UnderscoreName_FileNamePreserved()
     {
         _storage.Save("My_Profile", new SavedProfile { Car = new CarCard { Make = "Test" } });

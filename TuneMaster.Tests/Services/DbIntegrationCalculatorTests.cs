@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Forza_Horizon_6_Tune_Master.Models;
 using Forza_Horizon_6_Tune_Master.Services;
+using Forza_Horizon_6_Tune_Master.ViewModels;
 using TuneMaster.Tests.Helpers;
 using Xunit;
 
@@ -44,7 +45,8 @@ public class DbIntegrationCalculatorTests
             Model = dbCar.ModelShort,
             Year = dbCar.Year,
             TotalMass = dbCar.CurbWeight * 100,
-            WeightDistributionFront = dbCar.WeightDistribution,
+            CurbWeightKg = dbCar.CurbWeight * 100,
+            WeightDistributionFront = dbCar.WeightDistribution * 100,
             EngineType = EngineTypeFromCylinder(dbCar.CylinderID),
             EnginePosition = EnginePositionFromPlacement(dbCar.EnginePlacementID),
             AspirationType = AspirationTypeFromId(dbCar.AspirationTypeId),
@@ -59,17 +61,19 @@ public class DbIntegrationCalculatorTests
             OnlyFinalDriveCalculation = false,
             FrontTireWidth = dbCar.FrontTireWidthMM,
             FrontTireProfile = dbCar.FrontTireAspect,
+            StockFrontTireProfile = dbCar.FrontTireAspect,
             RearTireWidth = dbCar.RearTireWidthMM,
             RearTireProfile = dbCar.RearTireAspect,
+            StockRearTireProfile = dbCar.RearTireAspect,
             FrontRimDiameter = dbCar.FrontWheelDiameterIN,
             RearRimDiameter = dbCar.RearWheelDiameterIN,
             TireType = TireType.Stock,
             SuspensionUpgrade = SuspensionUpgrade.Race,
             DifferentialUpgrade = DifferentialUpgrade.Race,
             BrakesUpgrade = BrakesUpgrade.Race,
-            Wheelbase = (int)(body?.Wheelbase ?? 2700),
-            FrontTrack = (int)(body?.ModelFrontTrackOuter ?? 1550),
-            RearTrack = (int)(body?.ModelRearTrackOuter ?? 1570),
+            Wheelbase = body != null ? body.Wheelbase * 1000 : 2700,
+            FrontTrack = body != null ? body.ModelFrontTrackOuter * 1000 : 1550,
+            RearTrack = body != null ? body.ModelRearTrackOuter * 1000 : 1570,
             Cd = 0,
             FrontalAreaM2 = 0,
             HasFrontARB = true,
@@ -97,18 +101,18 @@ public class DbIntegrationCalculatorTests
     private static EnginePosition EnginePositionFromPlacement(int placementId) => placementId switch
     {
         1 => EnginePosition.Front,
+        2 => EnginePosition.Mid,
         3 => EnginePosition.Rear,
         _ => EnginePosition.Front
     };
 
     private static AspirationType? AspirationTypeFromId(int aspId) => aspId switch
     {
-        0 => Forza_Horizon_6_Tune_Master.Models.AspirationType.Natural,
-        1 => Forza_Horizon_6_Tune_Master.Models.AspirationType.SingleTurbo,
-        2 => Forza_Horizon_6_Tune_Master.Models.AspirationType.TwinTurbo,
-        3 => Forza_Horizon_6_Tune_Master.Models.AspirationType.PositiveDisplacement,
-        4 => Forza_Horizon_6_Tune_Master.Models.AspirationType.Centrifugal,
-        5 => Forza_Horizon_6_Tune_Master.Models.AspirationType.Electric,
+        2 => Forza_Horizon_6_Tune_Master.Models.AspirationType.SingleTurbo,
+        3 => Forza_Horizon_6_Tune_Master.Models.AspirationType.TwinTurbo,
+        5 => Forza_Horizon_6_Tune_Master.Models.AspirationType.PositiveDisplacement,
+        6 => Forza_Horizon_6_Tune_Master.Models.AspirationType.Centrifugal,
+        8 => Forza_Horizon_6_Tune_Master.Models.AspirationType.Electric,
         _ => Forza_Horizon_6_Tune_Master.Models.AspirationType.Natural
     };
 
@@ -141,6 +145,110 @@ public class DbIntegrationCalculatorTests
         var dbCar = Fh6DatabaseService.Instance.GetCar(247);
         Assert.NotNull(dbCar);
         Assert.InRange(dbCar.WeightDistribution, 0.30, 0.70);
+    }
+
+    [Fact]
+    public async Task DbCar_AllDrivableCarsResolveStockWheelById()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        var cars = db.GetAllCars();
+        Assert.Equal(660, cars.Count);
+        Assert.All(cars, car =>
+        {
+            Assert.True(car.StockWheelID > 0, $"Car {car.Id} has no StockWheelID");
+            Assert.NotNull(db.GetWheelTierById(car.StockWheelID));
+        });
+    }
+
+    [Theory]
+    [InlineData(1, EnginePosition.Front)]
+    [InlineData(2, EnginePosition.Mid)]
+    [InlineData(3, EnginePosition.Rear)]
+    public void EnginePlacementId_MapsWithoutOrdinalShift(int placementId, EnginePosition expected)
+    {
+        Assert.Equal(expected, CarSpecController.EnginePositionFromPlacement(placementId));
+    }
+
+    [Fact]
+    public void TireWidth_UpdatesEquivalentProfile_AndDriftKeepsItsType()
+    {
+        Assert.Equal(30, PartDisplayNameResolver.EquivalentProfile(255, 40, 335));
+        Assert.Equal(TireType.Drift, MainViewModel.TireTypeFromCompoundLevel(15));
+    }
+
+    [Theory]
+    [InlineData(4094)]
+    [InlineData(4260)]
+    public async Task NismoStockDifferential_ProfileSupportsDecel(int carId)
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+        var drivetrain = db.GetDrivetrainSwaps(carId).Single(p => p.IsStock);
+        var differential = db.GetDifferentials(drivetrain.DrivetrainID).Single(p => p.IsStock);
+
+        Assert.Equal(3, differential.Level);
+        Assert.Equal(3, differential.DifferentialProfileID);
+        Assert.True(TuningPhysicsContext.DifferentialSupportsDecel(differential));
+        Assert.Equal(1.0, TuningPhysicsContext.DifferentialSliderMax(
+            differential, differential.RearLimitedSlipTorqueDecel));
+
+        var car = BuildCarCard(carId);
+        var parts = new SelectedParts();
+        parts.SetCarData(car);
+        parts.DifferentialPartId = differential.Id;
+        var result = new TuneResult();
+        DifferentialCalculator.CalculateDifferential(car, CarFactory.DefaultTrack(), parts,
+            db, result, result.Explanations);
+        Assert.True(result.DiffDecel > 0);
+    }
+
+    [Fact]
+    public async Task ClassicStockDifferential_ProfileSevenDoesNotUnlockFullRange()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+        var drivetrain = db.GetDrivetrainSwaps(251).Single(p => p.IsStock);
+        var differential = db.GetDifferentials(drivetrain.DrivetrainID).Single(p => p.IsStock);
+
+        Assert.Equal(1, differential.Level);
+        Assert.Equal(7, differential.DifferentialProfileID);
+        Assert.False(TuningPhysicsContext.DifferentialSupportsFullTuning(differential));
+        Assert.Equal(differential.RearLimitedSlipTorqueAccel,
+            TuningPhysicsContext.DifferentialSliderMax(
+                differential, differential.RearLimitedSlipTorqueAccel));
+    }
+
+    [Fact]
+    public async Task StockParts_WithNonzeroRawMassDiff_DoNotChangeCurbWeight()
+    {
+        using var env = new TestingEnvironment();
+        await InitDbAsync();
+        var db = Fh6DatabaseService.Instance;
+
+        var chassisCar = BuildCarCard(4168);
+        var chassisParts = new SelectedParts();
+        chassisParts.SetCarData(chassisCar);
+        chassisParts.ChassisStiffnessPartId = db.GetChassisStiffness(4168000).Single(p => p.IsStock).Id;
+        Assert.Equal(chassisCar.CurbWeightKg, chassisParts.ComputeTotalMass(), 6);
+        Assert.Null(chassisParts.ComputeWeightDistFront());
+
+        var hoodCar = BuildCarCard(1599);
+        var hoodParts = new SelectedParts();
+        hoodParts.SetCarData(hoodCar);
+        hoodParts.HoodPartId = db.GetHoods(1599000).Single(p => p.IsStock).Id;
+        Assert.Equal(hoodCar.CurbWeightKg, hoodParts.ComputeTotalMass(), 6);
+        Assert.Null(hoodParts.ComputeWeightDistFront());
+
+        var bumperCar = BuildCarCard(3072);
+        var bumperParts = new SelectedParts();
+        bumperParts.SetCarData(bumperCar);
+        bumperParts.FrontBumperPartId = db.GetFrontBumpers(3072000).Single(p => p.IsStock).Id;
+        Assert.Equal(bumperCar.CurbWeightKg, bumperParts.ComputeTotalMass(), 6);
     }
 
     [Fact]
@@ -2178,16 +2286,12 @@ public class DbIntegrationCalculatorTests
             "RimSizeMassCoef term were still being double-counted on top.");
     }
 
-    // ── Mass: unknown stock wheel tier must not guess a baseline of 0 ───────
-    // 12/651 cars have no List_Wheels row with IsStock=1 for their MediaName (several are real
-    // playable cars, e.g. the VW Golf R, Maserati MC20, Acura Integra, BMW M2). Assuming a
-    // baseline tier of 0 for these silently invents a "stock" comparison point that may not be
-    // the real one, giving a wrong-magnitude (or wrong-sign) wheel-style delta. Fixed by leaving
-    // the baseline unresolved (null) and skipping the wheel-tier mass term entirely for these
-    // cars rather than guessing.
+    // ── Mass: StockWheelID resolves List_Wheels MediaName aliases ───────────
+    // Several playable cars use an alias or casing variant in List_Wheels. Data_Car.StockWheelID
+    // is the authoritative relationship and preserves the correct wheel-tier mass baseline.
 
     [Fact]
-    public async Task Mass_UnknownStockWheelTier_SkipsWheelStyleTermInsteadOfGuessingZero()
+    public async Task Mass_StockWheelId_ResolvesMediaNameAlias()
     {
         using var env = new TestingEnvironment();
         await InitDbAsync();
@@ -2196,6 +2300,8 @@ public class DbIntegrationCalculatorTests
         var dbCar = db.GetCarByMediaName("VW_GolfR_22");
         Assert.NotNull(dbCar);
         Assert.Null(db.GetStockWheelTier(dbCar!.MediaName));
+        var stockTier = db.GetWheelTierById(dbCar.StockWheelID);
+        Assert.NotNull(stockTier);
 
         var wheelStyle = db.GetAllAftermarketWheels().FirstOrDefault();
         Assert.NotNull(wheelStyle);
@@ -2211,11 +2317,13 @@ public class DbIntegrationCalculatorTests
         partsWithStyle.WheelFrontId = wheelStyle!.Id;
 
         double delta = partsWithStyle.ComputeTotalMass() - partsStock.ComputeTotalMass();
+        double expected = (stockTier.Value - wheelStyle.MassLevel) * 4.99e-5
+            * dbCar.FrontWheelDiameterIN * dbCar.FrontWheelDiameterIN
+            * dbCar.FrontTireWidthMM * 0.5;
 
-        Assert.True(Math.Abs(delta) < 0.01,
-            $"Car {dbCar.Id} (VW Golf R) has no resolvable stock wheel tier — selecting a non-stock " +
-            $"wheel style should add 0 kg (nothing to compare against) rather than guessing a baseline, " +
-            $"but got a delta of {delta:F2} kg.");
+        Assert.True(Math.Abs(delta - expected) < 0.01,
+            $"Car {dbCar.Id} (VW Golf R) should resolve stock tier {stockTier} via StockWheelID; " +
+            $"expected {expected:F2} kg, got {delta:F2} kg.");
     }
 
     // ── Mass: body-kit weight diff lost when loading a saved profile ────────

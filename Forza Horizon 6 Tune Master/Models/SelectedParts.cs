@@ -344,7 +344,11 @@ public class SelectedParts : NotifyBase
             var kit = _bodyKitPartId != null ? _db.GetCarBodyKitById(_bodyKitPartId.Value) : null;
             CarBodyOrdinal = kit?.CarBodyId ?? _stockCarBodyId;
         }
-        _stockRimTier = _db.GetStockWheelTier(dbCar?.MediaName);
+        // Data_Car.StockWheelID is the authoritative relationship. MediaName is not stable:
+        // 12 drivable cars use aliases/casing variants that do not match List_Wheels.MediaName.
+        _stockRimTier = dbCar is { StockWheelID: > 0 }
+            ? _db.GetWheelTierById(dbCar.StockWheelID)
+            : _db.GetStockWheelTier(dbCar?.MediaName);
         _stockFrontDiameterIn = dbCar?.FrontWheelDiameterIN ?? 0;
         _stockRearDiameterIn = dbCar?.RearWheelDiameterIN ?? 0;
         _stockFrontTireWidthMm = dbCar?.FrontTireWidthMM ?? 0;
@@ -605,14 +609,18 @@ public class SelectedParts : NotifyBase
     {
         if (partId == null) return 0;
         var part = getter(partId.Value);
-        return part?.MassDiff ?? 0;
+        // CurbWeight already represents the complete stock car. A handful of stock DB rows
+        // carry a non-zero MassDiff, so adding their raw value breaks the stock-mass invariant.
+        return part is { IsStock: false } ? part.MassDiff : 0;
     }
 
     private static double? AddWeightDist<T>(double? current, int? partId, Func<int, T?> getter) where T : DbUpgradePart
     {
         if (partId == null) return current;
         var part = getter(partId.Value);
-        if (part?.WeightDistDiff == null) return current;
+        // WeightDistribution is also a complete stock-car baseline. As with MassDiff,
+        // stock rows must not be applied a second time when dropdowns select them.
+        if (part is not { IsStock: false } || part.WeightDistDiff == null) return current;
         return (current ?? 0) + part.WeightDistDiff.Value;
     }
 

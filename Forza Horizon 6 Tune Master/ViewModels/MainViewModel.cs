@@ -426,7 +426,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             if (_hasDiffDecel == null)
             {
                 var diff = TuningPhysicsContext.Differential(Car, _selectedParts, Fh6DatabaseService.Instance);
-                _hasDiffDecel = Math.Max(diff.RearLimitedSlipTorqueDecel, diff.FrontLimitedSlipTorqueDecel) > 0.01;
+                _hasDiffDecel = TuningPhysicsContext.DifferentialSupportsDecel(diff);
             }
             return _hasDiffDecel.Value;
         }
@@ -1427,9 +1427,10 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         MapPartIdsToEnums(car);
     }
 
-    private void MapPartIdsToEnums(CarCard car)
+    private void MapPartIdsToEnums(CarCard car, SelectedParts? selectedParts = null)
     {
         var db = Fh6DatabaseService.Instance;
+        var parts = selectedParts ?? _selectedParts;
         
         // Only override Tire Type when a compound is actually fitted; otherwise keep
         // the CarCard default (Sport, crr=0.005). Previously MapTierFromLevel(null)
@@ -1437,35 +1438,35 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         // car on first load and further lowering the already-underestimated top speed.
 
         // NOT MapTierFromLevel: List_UpgradeTireCompound.Level is a fixed GAME-WIDE code
-        // (0/1/15=street, 2=sport, 3/4=semi-slick, 5=rally, 6=slick, 7=offroad, 8=snow,
-        // 9=drag, 10-12=vintage race), verified across the whole DB — it does NOT line up
+        // (0/1=street, 2=sport, 3/4=semi-slick, 5=rally, 6=slick, 7=offroad, 8=snow,
+        // 9=drag, 10-12=vintage race, 15=drift), verified across the whole DB — it does NOT line up
         // with TireType's declaration order (…, Offroad=6, Drag=7, Winter=8). Ordinal mapping
         // clamped Level=9 (Drag) to index 8 = Winter, so every car with a Drag compound
         // silently got Winter's rolling resistance (0.009 vs Drag's real 0.005) and any other
         // code keyed on TireType saw "Winter" instead of "Drag".
-        if (_selectedParts.TireCompoundPartId != null)
-            car.TireType = TireTypeFromCompoundLevel(db.GetTireCompoundById(_selectedParts.TireCompoundPartId.Value)?.Level ?? 0);
-        car.SuspensionUpgrade = MapTierFromLevel<SuspensionUpgrade>(_selectedParts.SpringDamperPartId,
+        if (parts.TireCompoundPartId != null)
+            car.TireType = TireTypeFromCompoundLevel(db.GetTireCompoundById(parts.TireCompoundPartId.Value)?.Level ?? 0);
+        car.SuspensionUpgrade = MapTierFromLevel<SuspensionUpgrade>(parts.SpringDamperPartId,
             id => db.GetSpringDamperById(id)?.Level ?? 0);
-        car.BrakesUpgrade = MapTierFromLevel<BrakesUpgrade>(_selectedParts.BrakePartId,
+        car.BrakesUpgrade = MapTierFromLevel<BrakesUpgrade>(parts.BrakePartId,
             id => db.GetBrakesById(id)?.Level ?? 0);
-        car.DifferentialUpgrade = MapTierFromLevel<DifferentialUpgrade>(_selectedParts.DifferentialPartId,
+        car.DifferentialUpgrade = MapTierFromLevel<DifferentialUpgrade>(parts.DifferentialPartId,
             id => db.GetDifferentialById(id)?.Level ?? 0);
 
-        car.HasRearAero = _selectedParts.RearWingPartId != null;
+        car.HasRearAero = parts.RearWingPartId != null;
         // A front bumper/splitter adds front downforce only if its resolved aero physics
         // actually produce any — AeroPhysicsID > 0 alone isn't enough (see
         // TuningPhysicsContext.HasRealAero: IDs 1/2/3/20 are shared zero-downforce placeholders
         // that every plain stock/cosmetic bumper points at, including on widebody kits whose
         // only bumper option is one of these — so a widebody's real aero profile, if any, was
         // never picked up here).
-        var frontBumper = _selectedParts.FrontBumperPartId != null
-            ? db.GetFrontBumperById(_selectedParts.FrontBumperPartId.Value) : null;
+        var frontBumper = parts.FrontBumperPartId != null
+            ? db.GetFrontBumperById(parts.FrontBumperPartId.Value) : null;
         var frontAeroPhys = frontBumper != null && frontBumper.AeroPhysicsID > 0
             ? db.GetAeroPhysics(frontBumper.AeroPhysicsID) : null;
         car.HasFrontAero = TuningPhysicsContext.HasRealAero(frontAeroPhys);
-        car.HasFrontARB = _selectedParts.AntiSwayFrontPartId != null;
-        car.HasRearARB = _selectedParts.AntiSwayRearPartId != null;
+        car.HasFrontARB = parts.AntiSwayFrontPartId != null;
+        car.HasRearARB = parts.AntiSwayRearPartId != null;
     }
 
     private void UpdateAspirationTypeFromForcedInduction()
@@ -1512,6 +1513,14 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             ? db.GetTireWidthRearById(_selectedParts.TireWidthRearPartId.Value) : null;
         if (twr != null) Car.RearTireWidth = twr.RearTireWidth;
 
+        var stockCar = db.GetCar(Car.CarDbId);
+        int frontBaseProfile = PartDisplayNameResolver.EquivalentProfile(
+            stockCar?.FrontTireWidthMM ?? Car.FrontTireWidth,
+            Car.StockFrontTireProfile, Car.FrontTireWidth);
+        int rearBaseProfile = PartDisplayNameResolver.EquivalentProfile(
+            stockCar?.RearTireWidthMM ?? Car.RearTireWidth,
+            Car.StockRearTireProfile, Car.RearTireWidth);
+
         var rf = _selectedParts.RimFrontPartId != null
             ? db.GetRimFrontById(_selectedParts.RimFrontPartId.Value) : null;
         if (rf != null) Car.FrontRimDiameter = rf.FrontWheelDiameter;
@@ -1522,11 +1531,11 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
 
         var taf = _selectedParts.TireAspectRatioFrontPartId != null
             ? db.GetTireAspectRatioFrontById(_selectedParts.TireAspectRatioFrontPartId.Value) : null;
-        if (taf != null) Car.FrontTireProfile = (int)(Car.StockFrontTireProfile + taf.FrontTireAspectRatioOffset);
+        Car.FrontTireProfile = frontBaseProfile + (int)(taf?.FrontTireAspectRatioOffset ?? 0);
 
         var tar = _selectedParts.TireAspectRatioRearPartId != null
             ? db.GetTireAspectRatioRearById(_selectedParts.TireAspectRatioRearPartId.Value) : null;
-        if (tar != null) Car.RearTireProfile = (int)(Car.StockRearTireProfile + tar.RearTireAspectRatioOffset);
+        Car.RearTireProfile = rearBaseProfile + (int)(tar?.RearTireAspectRatioOffset ?? 0);
 
         UpdateTrackSpacing(db);
     }
@@ -1635,9 +1644,9 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
 
     // List_UpgradeTireCompound.Level's game-wide meaning, confirmed against every car in the DB
     // (see MapPartIdsToEnums) — direct lookup instead of MapTierFromLevel's ordinal assumption.
-    private static TireType TireTypeFromCompoundLevel(int level) => level switch
+    internal static TireType TireTypeFromCompoundLevel(int level) => level switch
     {
-        0 or 1 or 15 => TireType.Street,
+        0 or 1 => TireType.Street,
         2 => TireType.Sport,
         3 or 4 => TireType.SemiSlick,
         5 => TireType.Rally,
@@ -1646,6 +1655,7 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
         8 => TireType.Winter,
         9 => TireType.Drag,
         10 or 11 or 12 => TireType.Sport, // vintage/classic race compounds — closest modern grip tier
+        15 => TireType.Drift,
         _ => TireType.Street
     };
 
@@ -1922,8 +1932,9 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
             try
             {
                 // v1.x profiles had enums as [JsonIgnore] — restore from PartIds
-                MapPartIdsToEnums(p.Car);
-                p.LastResult = _generator.Generate(p.Car, p.Track, p.Parts ?? new SelectedParts(), Fh6DatabaseService.Instance, p.Constraints);
+                var profileParts = p.Parts ?? new SelectedParts();
+                MapPartIdsToEnums(p.Car, profileParts);
+                p.LastResult = _generator.Generate(p.Car, p.Track, profileParts, Fh6DatabaseService.Instance, p.Constraints);
                 p.Version = SavedProfile.ProfileVersion;
                 // Skip writing back if the user currently has this same profile open — an
                 // interactive edit+save could otherwise race with (and be silently clobbered

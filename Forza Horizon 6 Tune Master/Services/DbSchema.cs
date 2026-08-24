@@ -33,6 +33,7 @@ public record DbCar
     public double WeightDistribution { get; init; }
     public int NumGears { get; init; }
     public int DriveTypeID { get; init; }
+    public int StockWheelID { get; init; }
     public int FrontTireWidthMM { get; init; }
     public int FrontTireAspect { get; init; }
     public int FrontWheelDiameterIN { get; init; }
@@ -397,6 +398,7 @@ public sealed record DbUpgradeDriveline : DbUpgradePart
 public sealed record DbUpgradeDifferential : DbUpgradePart
 {
     public int DrivetrainID { get; init; }
+    public int DifferentialProfileID { get; init; }
     public double FrontLimitedSlipTorqueAccel { get; init; }
     public double FrontLimitedSlipTorqueDecel { get; init; }
     public double RearLimitedSlipTorqueAccel { get; init; }

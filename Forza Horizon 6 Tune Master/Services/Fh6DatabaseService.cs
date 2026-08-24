@@ -74,6 +74,7 @@ public class Fh6DatabaseService
     // _initialized guard is set — a plain Dictionary corrupts under concurrent writes.
     private readonly ConcurrentDictionary<string, int> _stockWheelTierByMedia = new();
     private readonly ConcurrentDictionary<string, double> _stockWheelMassByMedia = new();
+    private readonly ConcurrentDictionary<int, int> _wheelTierById = new();
     private volatile List<DbWheel> _allWheelOptions = new();
     private readonly ConcurrentDictionary<int, DbWheel> _allWheelOptionsById = new();
     private readonly ConcurrentDictionary<int, List<DbUpgradeWeightReduction>> _weightReductionsByCarBodyId = new();
@@ -255,6 +256,7 @@ public class Fh6DatabaseService
             string media = S(r, 0); double mass = D(r, 1); bool stock = B(r, 2);
             int id = I(r, 3); string displayName = S(r, 4); int manId = I(r, 5);
             int massLevel = I(r, 6);
+            _wheelTierById[id] = massLevel;
             if (stock)
             {
                 if (!string.IsNullOrEmpty(media))
@@ -308,7 +310,7 @@ public class Fh6DatabaseService
             "GameDragScale,GameDownforceScale,GameDownforceScaleOffroad," +
             "FrontDownforceClampKG,RearDownforceClampKG,[TopSpeed-mph],SimTopSpeed," +
             "SimBrakeDistance60MPH,SimBrakeDistance100MPH,BrakeProfile," +
-            "Traction_Road,Traction_OffRoad,Traction_Snow FROM Data_Car WHERE IsDrivable=1";
+            "Traction_Road,Traction_OffRoad,Traction_Snow,StockWheelID FROM Data_Car WHERE IsDrivable=1";
         using var r = cmd.ExecuteReader();
         while (r.Read())
         {
@@ -323,6 +325,7 @@ public class Fh6DatabaseService
                 FrontTireWidthMM = I(r, 13), FrontTireAspect = I(r, 14),
                 FrontWheelDiameterIN = I(r, 15), RearTireWidthMM = I(r, 16),
                 RearTireAspect = I(r, 17), RearWheelDiameterIN = I(r, 18),
+                StockWheelID = I(r, 48),
                 MakeName = S(r, 19), SimPeakPower = D(r, 20), SimPeakAngVel = D(r, 21),
                 SimPeakTorque = D(r, 22), SimPeakTorqueAngVel = D(r, 23),
                 SimRedlineAngVel = D(r, 24), GameTorqueScale = D(r, 25),
@@ -1056,7 +1059,7 @@ public class Fh6DatabaseService
             "RearLimitedSlipRelVelClamp,RearLimitedSlipAccelDefInputTorque," +
             "CenterLimitedSlipTorqueAccel,CenterLimitedSlipTorqueDecel," +
             "CenterLimitedSlipRelVelClamp,CenterLimitedSlipAccelDefInputTorque," +
-            "RearToqueSplit " +
+            "RearToqueSplit,DifferentialProfileID " +
             "FROM List_UpgradeDrivetrainDifferential";
         using var r = cmd.ExecuteReader();
         while (r.Read())
@@ -1071,7 +1074,8 @@ public class Fh6DatabaseService
                 RearLimitedSlipTorqueDecel = D(r, 12),
                 CenterLimitedSlipTorqueAccel = D(r, 15),
                 CenterLimitedSlipTorqueDecel = D(r, 16),
-                RearToqueSplit = D(r, 19)
+                RearToqueSplit = D(r, 19),
+                DifferentialProfileID = I(r, 20)
             });
         }
     }
@@ -1457,7 +1461,7 @@ public class Fh6DatabaseService
 
     public int? GetWheelTierById(int id)
     {
-        return _allWheelOptionsById.TryGetValue(id, out var w) ? w.MassLevel : null;
+        return _wheelTierById.TryGetValue(id, out var tier) ? tier : null;
     }
 
     public double? GetWheelMassById(int id)

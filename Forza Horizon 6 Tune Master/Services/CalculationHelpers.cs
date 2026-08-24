@@ -93,6 +93,7 @@ internal static class CalculationHelpers
         TireType.Winter    => 0.009,
         TireType.Offroad   => 0.011,
         TireType.Drag      => 0.005,
+        TireType.Drift     => 0.005,
         _                  => 0.006
     };
 

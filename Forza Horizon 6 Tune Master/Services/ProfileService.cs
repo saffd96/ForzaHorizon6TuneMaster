@@ -18,7 +18,8 @@ public class ProfileService
     // language-neutral); the localized labels stay in the UI only.
     public string AutoProfileName(CarCard car, TrackInfo track)
     {
-        return $"{car.Year} {car.Make} {car.Model} {car.DriveType} {car.EngineType} {track.Discipline} {track.Season}".Trim();
+        string dragDistance = track.Discipline == Discipline.Drag ? $" {track.DragDistance}" : "";
+        return $"{car.Year} {car.Make} {car.Model} {car.DriveType} {car.EngineType} {track.Discipline}{dragDistance} {track.Season}".Trim();
     }
 
     public string Save(CarCard car, TrackInfo track, TuningConstraints _, TuneResult? result) =>

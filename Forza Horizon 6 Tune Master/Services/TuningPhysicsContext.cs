@@ -10,6 +10,22 @@ namespace Forza_Horizon_6_Tune_Master.Services;
 /// </summary>
 internal static class TuningPhysicsContext
 {
+    // Upgrade levels 3/5/6/7 are the fully adjustable Race/Rally/Drift/Offroad parts.
+    // DifferentialProfileID identifies the differential family, not adjustability: profile 7,
+    // for example, is also used by non-adjustable stock differentials on classic cars.
+    // Stored accel/decel values are defaults for the fully adjustable levels, not maxima.
+    internal static bool DifferentialSupportsFullTuning(DbUpgradeDifferential differential) =>
+        differential.Level is 3 or 5 or 6 or 7;
+
+    internal static bool DifferentialSupportsDecel(DbUpgradeDifferential differential) =>
+        DifferentialSupportsFullTuning(differential) ||
+        Math.Max(differential.RearLimitedSlipTorqueDecel,
+            differential.FrontLimitedSlipTorqueDecel) > 0.01;
+
+    internal static double DifferentialSliderMax(
+        DbUpgradeDifferential differential, double storedDefault) =>
+        DifferentialSupportsFullTuning(differential) ? 1.0 : storedDefault;
+
     public static DbSpringDamperPhysics FrontSpringDamper(CarCard car, SelectedParts parts, Fh6DatabaseService db)
     {
         var upgrade = ResolveSpringDamperUpgrade(car, parts, db);

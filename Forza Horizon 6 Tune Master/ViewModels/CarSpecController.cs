@@ -70,7 +70,7 @@ internal class CarSpecController
 
         car.CarDbId = dbCar.Id;
         car.Year = dbCar.Year;
-        car.EnginePosition = (EnginePosition)dbCar.EnginePlacementID;
+        car.EnginePosition = EnginePositionFromPlacement(dbCar.EnginePlacementID);
         car.PowertrainType = dbCar.AspirationTypeId == 8
             ? PowertrainType.Electric
             : PowertrainType.ICE;
@@ -285,6 +285,14 @@ internal class CarSpecController
             IsLoadingCars = false;
         }
     }
+
+    internal static EnginePosition EnginePositionFromPlacement(int placementId) => placementId switch
+    {
+        1 => EnginePosition.Front,
+        2 => EnginePosition.Mid,
+        3 => EnginePosition.Rear,
+        _ => EnginePosition.Front
+    };
 
     private static string T(string key) => LocalizationService.Instance.T(key);
 }

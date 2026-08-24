@@ -480,7 +480,7 @@ public class PartDisplayNameResolver
         return isStock ? $"{s} ({T("Part_Stock")})" : s;
     }
 
-    private static int EquivalentProfile(int stockWidthMm, int stockProfile, int widthMm)
+    internal static int EquivalentProfile(int stockWidthMm, int stockProfile, int widthMm)
     {
         if (widthMm <= 0 || stockWidthMm <= 0) return stockProfile;
         double sidewallMm = stockWidthMm * stockProfile / 100.0;
