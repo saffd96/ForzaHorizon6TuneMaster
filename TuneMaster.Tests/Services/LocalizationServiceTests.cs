@@ -12,6 +12,42 @@ public class LocalizationServiceTests : IDisposable
     {
         _testEnv.Dispose();
     }
+
+    public static IEnumerable<object[]> SupportedLanguages =>
+        LocalizationService.SupportedLanguageCodes.Select(code => new object[] { code });
+
+    [Theory]
+    [MemberData(nameof(SupportedLanguages))]
+    public void SetLanguage_AllBundledLocalesLoadUiAndGameStrings(string code)
+    {
+        var service = LocalizationService.Instance;
+
+        Assert.True(service.SetLanguage(code));
+        Assert.Equal(code, service.CurrentLanguage);
+        Assert.False(service.IsFallbackKey("AppName"));
+        Assert.False(service.IsFallbackKey("Upgrades_IDS_Name_1"));
+        foreach (string labelCode in LocalizationService.SupportedLanguageCodes)
+        {
+            string key = $"Language{char.ToUpperInvariant(labelCode[0])}{labelCode[1..]}";
+            Assert.DoesNotContain("?", service.T(key));
+        }
+    }
+
+    [Theory]
+    [InlineData("pt-BR", "br")]
+    [InlineData("pt-PT", "pt")]
+    [InlineData("zh-CN", "chs")]
+    [InlineData("zh-TW", "cht")]
+    [InlineData("en-GB", "gb")]
+    [InlineData("es-MX", "mx")]
+    [InlineData("cs-CZ", "cz")]
+    [InlineData("ja-JP", "jp")]
+    public void LanguageCodeFromCulture_MapsGameLocaleCodes(string culture, string expected)
+    {
+        Assert.Equal(expected,
+            LocalizationService.LanguageCodeFromCulture(
+                System.Globalization.CultureInfo.GetCultureInfo(culture)));
+    }
     [Fact]
     public void Instance_IsSingleton()
     {

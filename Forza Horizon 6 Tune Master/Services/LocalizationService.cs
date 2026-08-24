@@ -21,6 +21,13 @@ public sealed class LocalizationService : INotifyPropertyChanged
 
     private const string FallbackCode = "en";
 
+    public static IReadOnlyList<string> SupportedLanguageCodes { get; } = new[]
+    {
+        "ru", "en", "fr", "de", "es", "it", "pt", "br", "mx", "gb",
+        "pl", "cz", "hu", "nl", "dk", "no", "sv", "fi", "el", "tr",
+        "chs", "cht", "jp", "ko"
+    };
+
     private static string SettingsPath => ForzaPaths.SettingsPath;
 
     public string CurrentLanguage => _currentCode;
@@ -95,15 +102,26 @@ public sealed class LocalizationService : INotifyPropertyChanged
             return;
         }
 
-        var system = CultureInfo.CurrentUICulture;
-        var code = system.TwoLetterISOLanguageName;
+        SetLanguage(LanguageCodeFromCulture(CultureInfo.CurrentUICulture));
+    }
 
-        if (code == "ru")
-            SetLanguage("ru");
-        else if (code == "fr")
-            SetLanguage("fr");
-        else
-            SetLanguage("en");
+    internal static string LanguageCodeFromCulture(CultureInfo culture)
+    {
+        string name = culture.Name.ToLowerInvariant();
+        string code = culture.TwoLetterISOLanguageName.ToLowerInvariant();
+        return code switch
+        {
+            "pt" => name == "pt-br" ? "br" : "pt",
+            "zh" => name.Contains("hant") || name is "zh-tw" or "zh-hk" or "zh-mo" ? "cht" : "chs",
+            "cs" => "cz",
+            "da" => "dk",
+            "ja" => "jp",
+            "en" => name == "en-gb" ? "gb" : "en",
+            "es" => name == "es-mx" ? "mx" : "es",
+            "nb" or "nn" => "no",
+            _ when SupportedLanguageCodes.Contains(code, StringComparer.Ordinal) => code,
+            _ => FallbackCode
+        };
     }
 
     private void SaveLanguageSetting(string code)
@@ -286,12 +304,12 @@ public sealed class LocalizationService : INotifyPropertyChanged
                     {
                         foreach (var (table, tableEntries) in gameTables)
                         {
-                            foreach (var (id, value) in tableEntries)
-                            {
-                                dict[$"{table}_{id}"] = value;
-                            }
+                        foreach (var (id, value) in tableEntries)
+                        {
+                            dict[$"{table}_{id}"] = value;
                         }
                     }
+                }
                 }
             }
             catch (Exception ex)

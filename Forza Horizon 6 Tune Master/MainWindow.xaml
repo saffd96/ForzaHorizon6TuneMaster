@@ -130,8 +130,19 @@
                                   Margin="0,0,6,0"
                                   ToolTip="{l:Loc SpringUnitTooltip}"/>
                         <Separator Grid.Column="4" Margin="0,2,6,2"/>
-                        <TextBlock Grid.Column="5" Text="{l:Loc LanguageLabel}" Foreground="{StaticResource TextMutedBrush}"
-                                   FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center"
+                                    Margin="0,0,5,0" ToolTip="{l:Loc LanguageTooltip}">
+                            <!-- Vector globe: remains readable regardless of the selected UI font. -->
+                            <Grid Width="15" Height="15" Margin="0,0,5,0" VerticalAlignment="Center">
+                                <Ellipse Stroke="{StaticResource CyanBrush}" StrokeThickness="1.2"/>
+                                <Path Data="M7.5,0.6 C4.2,3.8 4.2,11.2 7.5,14.4 M7.5,0.6 C10.8,3.8 10.8,11.2 7.5,14.4"
+                                      Stroke="{StaticResource CyanBrush}" StrokeThickness="1.1" Fill="Transparent"/>
+                                <Path Data="M1,5 C4.5,6.1 10.5,6.1 14,5 M1,10 C4.5,8.9 10.5,8.9 14,10"
+                                      Stroke="{StaticResource CyanBrush}" StrokeThickness="1.1" Fill="Transparent"/>
+                            </Grid>
+                            <TextBlock Text="{l:Loc LanguageLabel}" Foreground="{StaticResource TextMutedBrush}"
+                                       FontSize="{DynamicResource FontXSmall}" VerticalAlignment="Center"/>
+                        </StackPanel>
                         <ComboBox Grid.Column="6" ItemsSource="{Binding LanguageOptions}"
                                   DisplayMemberPath="Label"
                                   SelectedItem="{Binding SelectedLanguageItem}"

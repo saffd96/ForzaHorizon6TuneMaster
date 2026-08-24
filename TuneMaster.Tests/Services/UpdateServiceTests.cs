@@ -118,24 +118,18 @@ public sealed class UpdateServiceTests : IDisposable
     [Fact]
     public async Task DownloadLocAsync_WritesFiles()
     {
-        string enJson = """{"key": "value"}""";
-        string ruJson = """{"key": "значение"}""";
-        string frJson = """{"key": "valeur"}""";
-        string gsEn = """{}""";
-        string gsRu = """{}""";
-        string gsFr = """{}""";
+        string uiJson = """{"key": "value"}""";
+        string gameJson = """{}""";
+        var names = GetBundledLocalizationNames();
+        var contents = names.ToDictionary(
+            name => name,
+            name => name.StartsWith("GameStrings.", StringComparison.Ordinal) ? gameJson : uiJson,
+            StringComparer.Ordinal);
 
-        // DownloadLocAsync now discovers the file list from the assembly's embedded
-        // Localization resources (en/ru/fr + GameStrings.en/ru/fr, see
-        // UpdateService.GetLocalizationFileNames), not a hardcoded 4-file list - the hash
-        // below must cover exactly those 6, in the same StringComparer.Ordinal order.
+        // Mirror DownloadLocAsync's dynamically discovered embedded-resource list.
         var combined = new List<byte>();
-        combined.AddRange(System.Text.Encoding.UTF8.GetBytes(gsEn));
-        combined.AddRange(System.Text.Encoding.UTF8.GetBytes(gsFr));
-        combined.AddRange(System.Text.Encoding.UTF8.GetBytes(gsRu));
-        combined.AddRange(System.Text.Encoding.UTF8.GetBytes(enJson));
-        combined.AddRange(System.Text.Encoding.UTF8.GetBytes(frJson));
-        combined.AddRange(System.Text.Encoding.UTF8.GetBytes(ruJson));
+        foreach (var name in names)
+            combined.AddRange(System.Text.Encoding.UTF8.GetBytes(contents[name]));
         string locHash = ComputeHexHash(combined.ToArray());
 
         _handler.Handler = req =>
@@ -143,18 +137,9 @@ public sealed class UpdateServiceTests : IDisposable
             var path = req.RequestUri!.AbsolutePath;
             if (path.EndsWith("loc.sha256"))
                 return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(locHash) };
-            if (path.EndsWith("GameStrings.en.json"))
-                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(gsEn) };
-            if (path.EndsWith("GameStrings.fr.json"))
-                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(gsFr) };
-            if (path.EndsWith("GameStrings.ru.json"))
-                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(gsRu) };
-            if (path.EndsWith("en.json"))
-                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(enJson) };
-            if (path.EndsWith("fr.json"))
-                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(frJson) };
-            if (path.EndsWith("ru.json"))
-                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(ruJson) };
+            string name = Path.GetFileName(path);
+            if (contents.TryGetValue(name, out string? content))
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(content) };
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         };
 
@@ -163,7 +148,7 @@ public sealed class UpdateServiceTests : IDisposable
         Assert.True(File.Exists(Path.Combine(ForzaPaths.UpdateLocDir, "en.json")));
         Assert.True(File.Exists(Path.Combine(ForzaPaths.UpdateLocDir, "ru.json")));
         Assert.True(File.Exists(Path.Combine(ForzaPaths.UpdateLocDir, "fr.json")));
-        Assert.Equal(enJson, File.ReadAllText(Path.Combine(ForzaPaths.UpdateLocDir, "en.json")));
+        Assert.Equal(uiJson, File.ReadAllText(Path.Combine(ForzaPaths.UpdateLocDir, "en.json")));
     }
 
     [Fact]
@@ -176,10 +161,8 @@ public sealed class UpdateServiceTests : IDisposable
             var path = req.RequestUri!.AbsolutePath;
             if (path.EndsWith("loc.sha256"))
                 return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("0".Repeat(64)) };
-            if (path.EndsWith("en.json") || path.EndsWith("ru.json") || path.EndsWith("fr.json"))
+            if (path.EndsWith(".json"))
                 return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(enJson) };
-            if (path.EndsWith("GameStrings.en.json") || path.EndsWith("GameStrings.ru.json") || path.EndsWith("GameStrings.fr.json"))
-                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{}") };
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         };
 
@@ -264,6 +247,14 @@ public sealed class UpdateServiceTests : IDisposable
         if (dir == null) throw new DirectoryNotFoundException("Could not find repo root (.sln) above " + AppContext.BaseDirectory);
         return dir.FullName;
     }
+
+    private static string[] GetBundledLocalizationNames() =>
+        typeof(UpdateService).Assembly.GetManifestResourceNames()
+            .Where(name => name.StartsWith("Forza_Horizon_6_Tune_Master.Localization.", StringComparison.Ordinal)
+                           && name.EndsWith(".json", StringComparison.Ordinal))
+            .Select(name => name["Forza_Horizon_6_Tune_Master.Localization.".Length..])
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToArray();
 
     private static string ComputeHexHash(byte[] data) =>
         Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant();

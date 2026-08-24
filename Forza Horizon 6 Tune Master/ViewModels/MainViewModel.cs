@@ -848,12 +848,9 @@ public AeroVisualViewModel AeroVisualVM { get; } = new();
 
     // ── Language ────────────────────────────────────────────────────────────
     private bool _syncingLanguage;
-    private List<LanguageOption> _languageOptions = new()
-    {
-        new() { Code = "ru" },
-        new() { Code = "en" },
-        new() { Code = "fr" },
-    };
+    private List<LanguageOption> _languageOptions = LocalizationService.SupportedLanguageCodes
+        .Select(code => new LanguageOption { Code = code })
+        .ToList();
     public List<LanguageOption> LanguageOptions
     {
         get => _languageOptions;
